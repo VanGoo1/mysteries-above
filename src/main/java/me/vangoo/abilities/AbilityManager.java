@@ -24,15 +24,10 @@ public class AbilityManager {
 
     public Ability GetAbilityFromItem(ItemStack item, int sequence, Pathway pathway) {
         if (!item.hasItemMeta()) return null;
-        LotmPlugin plugin = (LotmPlugin) Bukkit.getPluginManager().getPlugin("LOTM-Plugin");
         ItemMeta meta = item.getItemMeta();
         assert meta != null;
         if (!meta.hasLore()) return null;
 
-        plugin.getLogger().info("Looking for ability ");
-        for (Ability a : pathway.GetAbilitiesForSequence(sequence)) {
-            plugin.getLogger().info(a.getName());
-        }
         return pathway.GetAbilitiesForSequence(sequence).stream().filter(a -> a.getName().equalsIgnoreCase(ChatColor.stripColor(item.getItemMeta().getDisplayName()))).findFirst().orElse(null);
     }
 

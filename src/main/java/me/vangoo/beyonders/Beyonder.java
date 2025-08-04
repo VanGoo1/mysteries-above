@@ -1,7 +1,9 @@
 package me.vangoo.beyonders;
 
+import me.vangoo.abilities.Ability;
 import me.vangoo.pathways.Pathway;
 
+import java.util.List;
 import java.util.UUID;
 
 public class Beyonder {
@@ -11,6 +13,7 @@ public class Beyonder {
     private int mastery; // level progress
     private int spirituality; // mana
     private int maxSpirituality;
+    private List<Ability> abilities;
 
     public Beyonder(UUID playerId) {
         this.playerId = playerId;
@@ -18,6 +21,11 @@ public class Beyonder {
         this.mastery = 0;
         this.spirituality = 0;
         this.maxSpirituality = 0;
+    }
+
+    public Beyonder(UUID playerId, List<Ability> abilities) {
+        this(playerId);
+        this.abilities = abilities;
     }
 
     public boolean canAdvance() {
@@ -59,6 +67,10 @@ public class Beyonder {
 
     public int getMaxSpirituality() {
         return maxSpirituality;
+    }
+
+    public List<Ability> getAbilities() {
+        return abilities;
     }
 
     public void setPathway(Pathway pathway) {
