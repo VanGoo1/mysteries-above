@@ -1,0 +1,9 @@
+name: LOTM-Plugin
+version: 0.0
+main: me.vangoo.LotmPlugin
+api-version: "1.21"
+
+commands:
+  beyonder:
+    description: Manage your Beyonder abilities and pathways
+    usage: /<command> [args]
