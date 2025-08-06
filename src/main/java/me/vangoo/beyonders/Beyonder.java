@@ -37,12 +37,17 @@ public class Beyonder {
             sequence--;
             mastery = 0;
             updateMaxSpirituality();
+            abilities.addAll(pathway.GetAbilitiesForSequence(sequence - 1));
         }
     }
 
     private void updateMaxSpirituality() {
-        maxSpirituality = (10 - sequence) * 50;
+        maxSpirituality = (10 - sequence) * 100;
         spirituality = maxSpirituality;
+    }
+
+    public void setSpirituality(int spirituality) {
+        this.spirituality = Math.min(spirituality, maxSpirituality);
     }
 
     public UUID getPlayerId() {

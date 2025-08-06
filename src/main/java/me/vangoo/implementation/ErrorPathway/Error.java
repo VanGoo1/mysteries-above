@@ -1,6 +1,7 @@
 package me.vangoo.implementation.ErrorPathway;
 
-import me.vangoo.implementation.ErrorPathway.abilities.KillYourselfAbility;
+import me.vangoo.implementation.ErrorPathway.abilities.FractureOfRealitiesAbility;
+import me.vangoo.implementation.ErrorPathway.abilities.ShadowTheft;
 import me.vangoo.pathways.Pathway;
 import me.vangoo.pathways.PathwayGroup;
 
@@ -13,6 +14,6 @@ public class Error extends Pathway {
 
     @Override
     protected void initializeAbilities() {
-        sequenceAbilities.put(9, List.of(new KillYourselfAbility()));
+        sequenceAbilities.put(9, List.of(new ShadowTheft(), new FractureOfRealitiesAbility()));
     }
 }

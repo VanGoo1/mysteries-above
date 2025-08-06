@@ -14,6 +14,8 @@ import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +33,7 @@ public class PotionManager implements Listener {
     }
 
     private void initializePotions() {
-        potions.add(new ErrorPotions(pathwayManager.getPathway("Error"), Color.fromRGB(11, 11, 69)));
+        potions.add(new ErrorPotions(pathwayManager.getPathway("Error"), Color.fromRGB(26, 0, 181)));
     }
 
     public List<PathwayPotions> getPotions() {
@@ -64,7 +66,7 @@ public class PotionManager implements Listener {
         if (pathway == null || sequence == -1) return;
         Beyonder beyonder = plugin.getBeyonderManager().GetBeyonder(player.getUniqueId());
         if (beyonder == null) {
-            beyonder = new Beyonder(player.getUniqueId());
+            beyonder = new Beyonder(player.getUniqueId(), pathway.GetAbilitiesForSequence(9));
         }
         if (!canConsumePotion(beyonder, pathway, sequence)) {
             event.setCancelled(true);
@@ -102,12 +104,20 @@ public class PotionManager implements Listener {
             beyonder.setPathway(pathway);
             beyonderManager.AddBeyonder(beyonder);
             beyonder.setMaxSpirituality(100);
+            beyonder.setSpirituality(beyonder.getMaxSpirituality());
             beyonderManager.createSpiritualityBar(player, beyonder);
-
         } else {
             beyonder.advance();
             player.sendMessage("§aВи просунулися до послідовності " + beyonder.getSequence() + "!");
         }
 
+        player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 100, 0));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 200, 1));
+
+        // Звукові ефекти
+        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 0.8f);
+
+        // Частинки
+        player.getWorld().spawnParticle(Particle.PORTAL, player.getLocation().add(0, 1, 0), 50);
     }
 }

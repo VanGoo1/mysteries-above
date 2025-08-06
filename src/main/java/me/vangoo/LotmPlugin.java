@@ -1,5 +1,6 @@
 package me.vangoo;
 
+import me.vangoo.abilities.Ability;
 import me.vangoo.abilities.AbilityManager;
 import me.vangoo.beyonders.BeyonderManager;
 import me.vangoo.commands.BeyonderCommand;
@@ -26,6 +27,7 @@ public class LotmPlugin extends JavaPlugin {
     }
 
     private void initializeManagers() {
+        Ability.setPlugin(this);
         NBTBuilder.setPlugin(this);
         this.pathwayManager = new PathwayManager();
         this.potionManager = new PotionManager(pathwayManager, this);

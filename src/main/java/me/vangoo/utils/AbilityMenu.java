@@ -47,7 +47,7 @@ public class AbilityMenu {
         if (beyonder == null) {
             return;
         }
-        Inventory menu = createMenu(beyonder.getPathway().GetAbilitiesForSequence(beyonder.getSequence()));
+        Inventory menu = createMenu(beyonder.getAbilities());
         player.openInventory(menu);
     }
 

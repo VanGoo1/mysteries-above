@@ -11,7 +11,7 @@ public abstract class Pathway {
     protected final Map<Integer, List<Ability>> sequenceAbilities;
     private final List<String> sequenceNames;
     private final PathwayGroup group;
-    private String name;
+    private final String name;
 
     public Pathway(PathwayGroup group, List<String> sequenceNames) {
         name = this.getClass().getName();

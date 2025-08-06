@@ -20,7 +20,6 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.Iterator;
 
-import static org.bukkit.Bukkit.getServer;
 
 public class AbilityMenuListener implements Listener {
 
@@ -91,11 +90,10 @@ public class AbilityMenuListener implements Listener {
         if (event.getCursor() == null) return;
         Beyonder beyonder = beyonderManager.GetBeyonder(player.getUniqueId());
         if (beyonder == null) return;
-        if (abilityManager.GetAbilityFromItem(event.getCursor(), beyonder.getSequence(), beyonder.getPathway()) == null) return;
+        if (abilityManager.GetAbilityFromItem(event.getCursor(), beyonder.getSequence(), beyonder.getPathway()) == null)
+            return;
 
         if (event.getAction() == InventoryAction.PLACE_ALL || event.getAction() == InventoryAction.PLACE_ONE || event.getAction() == InventoryAction.PLACE_SOME) {
-            getServer().getPluginManager().getPlugin("LOTM-Plugin").getLogger().info("place event2");
-
             if (event.getSlotType() == InventoryType.SlotType.CRAFTING) {
                 event.setCancelled(true);
             }
@@ -139,6 +137,4 @@ public class AbilityMenuListener implements Listener {
             abilityMenu.giveAbilityMenuItemToPlayer(player);
         }
     }
-
-
 }

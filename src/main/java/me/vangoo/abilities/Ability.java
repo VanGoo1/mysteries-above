@@ -1,18 +1,24 @@
 package me.vangoo.abilities;
 
+import me.vangoo.LotmPlugin;
 import me.vangoo.beyonders.Beyonder;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-public interface Ability {
-    String getName();
+public abstract class Ability {
+    protected static LotmPlugin plugin;
 
-    String getDescription();
+    public static void setPlugin(LotmPlugin plugin) {
+        Ability.plugin = plugin;
+    }
 
-    int getSpiritualityCost();
+    public abstract String getName();
 
-    void execute(Player caster, Beyonder beyonder);
+    public abstract String getDescription();
 
-    public ItemStack getItem();
+    public abstract int getSpiritualityCost();
 
+    public abstract void execute(Player caster, Beyonder beyonder);
+
+    public abstract ItemStack getItem();
 }

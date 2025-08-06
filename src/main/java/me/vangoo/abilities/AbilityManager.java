@@ -1,9 +1,7 @@
 package me.vangoo.abilities;
 
-import me.vangoo.LotmPlugin;
 import me.vangoo.beyonders.Beyonder;
 import me.vangoo.pathways.Pathway;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -25,11 +23,16 @@ public class AbilityManager {
     public Ability GetAbilityFromItem(ItemStack item, int sequence, Pathway pathway) {
         if (!item.hasItemMeta()) return null;
         ItemMeta meta = item.getItemMeta();
-        assert meta != null;
-        if (!meta.hasLore()) return null;
+        if (meta == null || !meta.hasLore()) return null;
+        String displayName = ChatColor.stripColor(meta.getDisplayName()).toLowerCase();
 
-        return pathway.GetAbilitiesForSequence(sequence).stream().filter(a -> a.getName().equalsIgnoreCase(ChatColor.stripColor(item.getItemMeta().getDisplayName()))).findFirst().orElse(null);
+        for (int seq = sequence; seq >= 0; seq--) {
+            for (Ability ability : pathway.GetAbilitiesForSequence(seq)) {
+                if (ability.getName().equalsIgnoreCase(displayName)) {
+                    return ability;
+                }
+            }
+        }
+        return null;
     }
-
-
 }
