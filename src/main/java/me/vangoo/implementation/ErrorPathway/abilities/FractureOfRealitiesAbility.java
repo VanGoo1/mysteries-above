@@ -12,7 +12,9 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.WorldCreator;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class FractureOfRealitiesAbility extends Ability {
@@ -36,7 +38,12 @@ public class FractureOfRealitiesAbility extends Ability {
     }
 
     @Override
-    public void execute(Player caster, Beyonder beyonder) {
+    public int getCooldown() {
+        return 120;
+    }
+
+    @Override
+    public boolean execute(Player caster, Beyonder beyonder) {
         Location center = caster.getLocation().add(0, 1.2, 0);
         // ефект частинок
         Bukkit.getScheduler().runTaskAsynchronously(
@@ -72,6 +79,7 @@ public class FractureOfRealitiesAbility extends Ability {
             newLoc.setY(caster.getWorld().getHighestBlockYAt(newLoc) + 1);
             target.teleport(newLoc);
         }
+        return true;
     }
 
     @Override
@@ -81,8 +89,9 @@ public class FractureOfRealitiesAbility extends Ability {
         meta.setDisplayName("§c" + getName());
         List<String> lore = new ArrayList<>();
         lore.add("§7Сотворює аномалію навколо");
-        lore.add(ChatColor.WHITE + "Радіус: " + RADIUS);
-        lore.add(ChatColor.WHITE + "Тривалість: " + DURATION_TICKS / 20 + "c");
+        lore.add(ChatColor.WHITE + "Витрати духовності: " + ChatColor.BLUE + getSpiritualityCost());
+        lore.add(ChatColor.WHITE + "Радіус: " + ChatColor.BLUE + RADIUS);
+        lore.add(ChatColor.WHITE + "Тривалість: " + ChatColor.BLUE + DURATION_TICKS / 20 + "c");
         meta.setLore(lore);
         item.setItemMeta(meta);
         return item;

@@ -4,6 +4,7 @@ import me.vangoo.LotmPlugin;
 import me.vangoo.beyonders.Beyonder;
 import me.vangoo.beyonders.BeyonderManager;
 import me.vangoo.implementation.ErrorPathway.ErrorPotions;
+import me.vangoo.implementation.VisionaryPathway.VisionaryPotions;
 import me.vangoo.pathways.Pathway;
 import me.vangoo.pathways.PathwayManager;
 import org.bukkit.*;
@@ -19,6 +20,7 @@ import org.bukkit.potion.PotionEffectType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class PotionManager implements Listener {
     private final List<PathwayPotions> potions;
@@ -34,6 +36,13 @@ public class PotionManager implements Listener {
 
     private void initializePotions() {
         potions.add(new ErrorPotions(pathwayManager.getPathway("Error"), Color.fromRGB(26, 0, 181)));
+        potions.add(new VisionaryPotions(pathwayManager.getPathway("Visionary"), Color.fromRGB(128, 128, 128)));
+    }
+
+    public Optional<PathwayPotions> getPotionsPathway(String pathwayName) {
+        return potions.stream()
+                .filter(potion -> potion.getPathway().getName().equalsIgnoreCase(pathwayName))
+                .findFirst();
     }
 
     public List<PathwayPotions> getPotions() {

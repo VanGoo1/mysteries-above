@@ -14,7 +14,7 @@ public abstract class Pathway {
     private final String name;
 
     public Pathway(PathwayGroup group, List<String> sequenceNames) {
-        name = this.getClass().getName();
+        name = this.getClass().getSimpleName();
         this.group = group;
         this.sequenceNames = sequenceNames;
         sequenceAbilities = new HashMap<>();

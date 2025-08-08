@@ -36,19 +36,19 @@ public class ShadowTheft extends Ability {
     }
 
     @Override
-    public void execute(Player caster, Beyonder beyonder) {
-        // Перевірка духовності
-        if (beyonder.getSpirituality() < SPIRITUALITY_COST) {
-            caster.sendMessage(ChatColor.RED + "Недостатньо духовності!");
-            return;
-        }
+    public int getCooldown() {
+        return 120;
+    }
+
+    @Override
+    public boolean execute(Player caster, Beyonder beyonder) {
 
         // Знаходимо найближчу ціль (гравця або моба)
         LivingEntity target = findNearestTarget(caster);
 
         if (target == null) {
             caster.sendMessage(ChatColor.RED + "Немає цілей в радіусі " + RANGE + " блоків!");
-            return;
+            return false;
         }
 
         // Ефект телепортації
@@ -95,6 +95,7 @@ public class ShadowTheft extends Ability {
 
         // Ефект тіней навколо гравця
         createShadowEffect(caster);
+        return true;
     }
 
     private LivingEntity findNearestTarget(Player caster) {
@@ -297,8 +298,8 @@ public class ShadowTheft extends Ability {
             meta.setDisplayName(ChatColor.DARK_PURPLE + getName());
             List<String> lore = new ArrayList<>();
             lore.add(ChatColor.GRAY + getDescription());
-            lore.add(ChatColor.WHITE + "Витрати духовності: " + getSpiritualityCost());
-            lore.add(ChatColor.WHITE + "Дальність: " + RANGE + " блоків");
+            lore.add(ChatColor.WHITE + "Витрати духовності: " + ChatColor.BLUE + getSpiritualityCost());
+            lore.add(ChatColor.WHITE + "Дальність: " + ChatColor.BLUE + RANGE + " блоків");
             lore.add(ChatColor.WHITE + "Невидимість: 3 секунди");
             meta.setLore(lore);
             item.setItemMeta(meta);

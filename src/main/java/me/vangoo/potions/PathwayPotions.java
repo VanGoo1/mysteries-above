@@ -78,4 +78,8 @@ public abstract class PathwayPotions {
     protected void addMainSupplementaryRecipe(int sequence, ItemStack... ingredients) {
         supplementaryIngredients.put(sequence, ingredients);
     }
+
+    public Pathway getPathway() {
+        return pathway;
+    }
 }

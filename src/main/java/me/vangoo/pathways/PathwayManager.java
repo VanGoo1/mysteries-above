@@ -1,6 +1,7 @@
 package me.vangoo.pathways;
 
 import me.vangoo.implementation.ErrorPathway.Error;
+import me.vangoo.implementation.VisionaryPathway.Visionary;
 
 import java.util.HashMap;
 import java.util.List;
@@ -18,6 +19,9 @@ public class PathwayManager {
         pathways.put("Error", new Error(PathwayGroup.LordOfMysteries,
                 List.of("Error (Bug)", "Worm of Time", "Fate Stealer", "Mentor of Deceit", "Parasite", "Dream Stealer",
                         "Prometheus", "Cryptologist", "Swindler", "Marauder")));
+        pathways.put("Visionary", new Visionary(PathwayGroup.GodAlmighty,
+                List.of("Visionary", "Author", "Discerner", "Dream Weaver", "Manipulator", "Dreamwalker", "Hypnotist",
+                        "Psychiatrist", "Telepathist", "Spectator")));
     }
 
     public Pathway getPathway(String name) {

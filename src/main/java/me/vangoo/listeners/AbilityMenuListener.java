@@ -77,7 +77,7 @@ public class AbilityMenuListener implements Listener {
 
         Beyonder beyonder = beyonderManager.GetBeyonder(player.getUniqueId());
         if (beyonder == null) return;
-        if (abilityManager.GetAbilityFromItem(event.getCurrentItem(), beyonder.getSequence(), beyonder.getPathway()) != null) {
+        if (abilityManager.GetAbilityFromItem(event.getCurrentItem(), beyonder) != null) {
             if (event.getView().getTopInventory().getType() != InventoryType.CRAFTING) {
                 event.setCancelled(true);
             }
@@ -90,7 +90,7 @@ public class AbilityMenuListener implements Listener {
         if (event.getCursor() == null) return;
         Beyonder beyonder = beyonderManager.GetBeyonder(player.getUniqueId());
         if (beyonder == null) return;
-        if (abilityManager.GetAbilityFromItem(event.getCursor(), beyonder.getSequence(), beyonder.getPathway()) == null)
+        if (abilityManager.GetAbilityFromItem(event.getCursor(), beyonder) == null)
             return;
 
         if (event.getAction() == InventoryAction.PLACE_ALL || event.getAction() == InventoryAction.PLACE_ONE || event.getAction() == InventoryAction.PLACE_SOME) {
@@ -108,7 +108,7 @@ public class AbilityMenuListener implements Listener {
         Beyonder beyonder = beyonderManager.GetBeyonder(event.getPlayer().getUniqueId());
         if (beyonder == null) return;
 
-        if (abilityManager.GetAbilityFromItem(event.getItemDrop().getItemStack(), beyonder.getSequence(), beyonder.getPathway()) != null) {
+        if (abilityManager.GetAbilityFromItem(event.getItemDrop().getItemStack(), beyonder) != null) {
             event.getItemDrop().remove();
         }
     }
@@ -122,7 +122,7 @@ public class AbilityMenuListener implements Listener {
             ItemStack item = iterator.next();
             if (abilityMenu.isAbilityMenu(item)) {
                 iterator.remove();
-            } else if (abilityManager.GetAbilityFromItem(item, beyonder.getSequence(), beyonder.getPathway()) != null) {
+            } else if (abilityManager.GetAbilityFromItem(item, beyonder) != null) {
                 iterator.remove();
             }
         }

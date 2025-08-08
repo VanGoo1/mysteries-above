@@ -100,7 +100,7 @@ public class BeyonderManager implements Listener {
         Beyonder beyonder = GetBeyonder(player.getUniqueId());
         if (beyonder == null) return;
 
-        Ability ability = abilityManager.GetAbilityFromItem(item, beyonder.getSequence(), beyonder.getPathway());
+        Ability ability = abilityManager.GetAbilityFromItem(item, beyonder);
         if (ability == null) return;
 
         boolean success = abilityManager.executeAbility(player, beyonder, ability);
