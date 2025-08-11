@@ -1,9 +1,7 @@
 package me.vangoo.utils;
 
-import me.vangoo.LotmPlugin;
 import me.vangoo.abilities.Ability;
 import me.vangoo.beyonders.Beyonder;
-import me.vangoo.beyonders.BeyonderManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -32,7 +30,7 @@ public class AbilityMenu {
         ItemStack item = new ItemStack(Material.ECHO_SHARD);
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName(ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "Містичні здібності");
-        meta.addEnchant(Enchantment.AQUA_AFFINITY, 2, false);
+        meta.addEnchant(Enchantment.LUCK_OF_THE_SEA, 2, true);
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 
         List<String> lore = new ArrayList<>();

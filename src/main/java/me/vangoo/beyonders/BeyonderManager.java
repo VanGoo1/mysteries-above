@@ -102,7 +102,7 @@ public class BeyonderManager implements Listener {
 
         Ability ability = abilityManager.GetAbilityFromItem(item, beyonder);
         if (ability == null) return;
-
+        event.setCancelled(true);
         boolean success = abilityManager.executeAbility(player, beyonder, ability);
         if (success) {
             beyonder.DecrementSpirituality(ability.getSpiritualityCost());

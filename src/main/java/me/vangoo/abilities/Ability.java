@@ -24,6 +24,10 @@ public abstract class Ability {
         Ability.plugin = plugin;
     }
 
+    public boolean isPassive(){
+        return false;
+    }
+
     public abstract String getName();
 
     public abstract String getDescription();

@@ -1,5 +1,6 @@
 package me.vangoo.listeners;
 
+import me.vangoo.abilities.Ability;
 import me.vangoo.abilities.AbilityManager;
 import me.vangoo.beyonders.Beyonder;
 import me.vangoo.beyonders.BeyonderManager;
@@ -43,6 +44,7 @@ public class AbilityMenuListener implements Listener {
         }
     }
 
+    // handles click on menu item and ability item in menu
     @EventHandler
     public void onMenuClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
@@ -65,7 +67,12 @@ public class AbilityMenuListener implements Listener {
             if (player.getInventory().contains(abilityItem)) {
                 return;
             }
-            player.getInventory().addItem(abilityItem);
+            Ability ability = abilityManager.GetAbilityFromItem(abilityItem, beyonder);
+            if (ability.isPassive()) {
+                abilityManager.executeAbility(player, beyonder, ability);
+            } else {
+                player.getInventory().addItem(abilityItem);
+            }
         }
     }
 
