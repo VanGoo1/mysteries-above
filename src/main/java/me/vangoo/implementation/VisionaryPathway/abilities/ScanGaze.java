@@ -3,15 +3,13 @@ package me.vangoo.implementation.VisionaryPathway.abilities;
 import me.vangoo.abilities.Ability;
 import me.vangoo.beyonders.Beyonder;
 import org.bukkit.ChatColor;
-import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.RayTraceResult;
 
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,7 +18,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ScanGaze extends Ability {
     private static final int RANGE = 5;
 
-    // Запам'ятовуємо ціль, по якій гравець клікнув, щоб execute знав кого сканувати
     private final Map<UUID, LivingEntity> pendingTargets = new ConcurrentHashMap<>();
 
     public void setTargetFor(UUID casterId, LivingEntity target) {
@@ -76,24 +73,15 @@ public class ScanGaze extends Ability {
 
     @Override
     public ItemStack getItem() {
-        ItemStack item = new ItemStack(Material.BOOK);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.setDisplayName(ChatColor.GOLD + getName());
-            meta.setLore(Arrays.asList(
-                    ChatColor.GRAY + "клік по гравцю для сканування",
-                    ChatColor.GRAY + "Вартість: " + ChatColor.BLUE + "5",
-                    ChatColor.GRAY + "Кулдаун: " + ChatColor.BLUE + "10с",
-                    ChatColor.GRAY + "Радіус: " + ChatColor.BLUE + RANGE
-            ));
-            item.setItemMeta(meta);
-        }
-        return item;
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("Радіус", String.valueOf(RANGE) + "блоків");
+
+        return abilityItemFactory.createItem(this, attributes);
     }
 
     @Override
     public int getCooldown() {
-        return 200;
+        return 10;
     }
 
     private LivingEntity getLookTarget(Player player, double range) {

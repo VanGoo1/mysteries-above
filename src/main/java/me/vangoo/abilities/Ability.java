@@ -7,24 +7,18 @@ import org.bukkit.inventory.ItemStack;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.Objects;
 
 public abstract class Ability {
     protected static LotmPlugin plugin;
-    protected LocalDateTime lastUse = LocalDateTime.now();
 
-    public LocalDateTime getLastUse() {
-        return lastUse;
-    }
-
-    public void updateLastUse() {
-        lastUse = LocalDateTime.now();
-    }
+    protected static AbilityItemFactory abilityItemFactory = new AbilityItemFactory();
 
     public static void setPlugin(LotmPlugin plugin) {
         Ability.plugin = plugin;
     }
 
-    public boolean isPassive(){
+    public boolean isPassive() {
         return false;
     }
 
@@ -39,4 +33,24 @@ public abstract class Ability {
     public abstract ItemStack getItem();
 
     public abstract int getCooldown();
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+
+        Ability other = (Ability) obj;
+
+        return Objects.equals(getName(), other.getName());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getName());
+    }
 }

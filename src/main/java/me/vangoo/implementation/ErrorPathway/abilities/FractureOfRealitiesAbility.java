@@ -7,15 +7,11 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.WorldCreator;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class FractureOfRealitiesAbility extends Ability {
 
@@ -39,7 +35,7 @@ public class FractureOfRealitiesAbility extends Ability {
 
     @Override
     public int getCooldown() {
-        return 120;
+        return 6;
     }
 
     @Override
@@ -84,16 +80,10 @@ public class FractureOfRealitiesAbility extends Ability {
 
     @Override
     public ItemStack getItem() {
-        ItemStack item = new ItemStack(Material.COMPASS);
-        ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName("§c" + getName());
-        List<String> lore = new ArrayList<>();
-        lore.add("§7Сотворює аномалію навколо");
-        lore.add(ChatColor.WHITE + "Витрати духовності: " + ChatColor.BLUE + getSpiritualityCost());
-        lore.add(ChatColor.WHITE + "Радіус: " + ChatColor.BLUE + RADIUS);
-        lore.add(ChatColor.WHITE + "Тривалість: " + ChatColor.BLUE + DURATION_TICKS / 20 + "c");
-        meta.setLore(lore);
-        item.setItemMeta(meta);
-        return item;
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("Радіус", String.valueOf(RADIUS));
+        attributes.put("Тривалість", DURATION_TICKS / 20 + "c");
+
+        return abilityItemFactory.createItem(this, attributes);
     }
 }

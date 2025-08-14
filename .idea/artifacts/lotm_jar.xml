@@ -3,6 +3,8 @@
     <output-path>$USER_HOME$/Desktop/dev server 1.21.8/plugins</output-path>
     <root id="archive" name="lotm.jar">
       <element id="module-output" name="lotm" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/fr/skytasul/reflection-remapper/2.0.0/reflection-remapper-2.0.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/fr/skytasul/glowingentities/1.4.7/glowingentities-1.4.7.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>

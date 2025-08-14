@@ -1,7 +1,9 @@
 package me.vangoo;
 
+import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.abilities.Ability;
 import me.vangoo.abilities.AbilityManager;
+import me.vangoo.abilities.CooldownManager;
 import me.vangoo.beyonders.BeyonderManager;
 import me.vangoo.commands.BeyonderCommand;
 import me.vangoo.listeners.AbilityMenuListener;
@@ -17,13 +19,21 @@ public class LotmPlugin extends JavaPlugin {
     private PathwayManager pathwayManager;
     private PotionManager potionManager;
     private AbilityManager abilityManager;
+    private GlowingEntities glowingEntities;
 
     @Override
     public void onEnable() {
+        glowingEntities = new GlowingEntities(this);
         saveDefaultConfig();
         initializeManagers();
         registerCommands();
         registerEvents();
+    }
+
+    @Override
+    public void onDisable() {
+        super.onDisable();
+        glowingEntities.disable();
     }
 
     private void initializeManagers() {
@@ -31,7 +41,7 @@ public class LotmPlugin extends JavaPlugin {
         NBTBuilder.setPlugin(this);
         this.pathwayManager = new PathwayManager();
         this.potionManager = new PotionManager(pathwayManager, this);
-        this.abilityManager = new AbilityManager();
+        this.abilityManager = new AbilityManager(new CooldownManager());
         this.beyonderManager = new BeyonderManager(this, pathwayManager, abilityManager, new BossBarUtil());
     }
 
@@ -60,5 +70,9 @@ public class LotmPlugin extends JavaPlugin {
 
     public AbilityManager getAbilityManager() {
         return abilityManager;
+    }
+
+    public GlowingEntities getGlowingEntities() {
+        return glowingEntities;
     }
 }

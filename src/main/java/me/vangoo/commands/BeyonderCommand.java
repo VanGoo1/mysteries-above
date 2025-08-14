@@ -22,7 +22,7 @@ public class BeyonderCommand implements CommandExecutor, TabCompleter {
 
     // Константи для магічних чисел
     private static final int DEFAULT_SEQUENCE = 9;
-    private static final int MIN_SEQUENCE = 1;
+    private static final int MIN_SEQUENCE = 0;
     private static final int MAX_SEQUENCE = 9;
 
     // Повідомлення
@@ -54,7 +54,6 @@ public class BeyonderCommand implements CommandExecutor, TabCompleter {
             }
         } catch (Exception e) {
             player.sendMessage(PREFIX + ChatColor.RED + "Сталася помилка при виконанні команди!");
-            e.printStackTrace(); // Для дебагу
         }
 
         return true;

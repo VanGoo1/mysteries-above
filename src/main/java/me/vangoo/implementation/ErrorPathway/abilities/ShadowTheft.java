@@ -9,9 +9,7 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 
 public class ShadowTheft extends Ability {
@@ -292,18 +290,10 @@ public class ShadowTheft extends Ability {
 
     @Override
     public ItemStack getItem() {
-        ItemStack item = new ItemStack(Material.PAPER);
-        var meta = item.getItemMeta();
-        if (meta != null) {
-            meta.setDisplayName(ChatColor.DARK_PURPLE + getName());
-            List<String> lore = new ArrayList<>();
-            lore.add(ChatColor.GRAY + getDescription());
-            lore.add(ChatColor.WHITE + "Витрати духовності: " + ChatColor.BLUE + getSpiritualityCost());
-            lore.add(ChatColor.WHITE + "Дальність: " + ChatColor.BLUE + RANGE + " блоків");
-            lore.add(ChatColor.WHITE + "Невидимість: 3 секунди");
-            meta.setLore(lore);
-            item.setItemMeta(meta);
-        }
-        return item;
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("Дальність", RANGE + "блоків");
+        attributes.put("Невидимість", "3 секунди");
+
+        return abilityItemFactory.createItem(this, attributes);
     }
 }
