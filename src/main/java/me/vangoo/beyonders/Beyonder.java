@@ -3,6 +3,7 @@ package me.vangoo.beyonders;
 import me.vangoo.abilities.Ability;
 import me.vangoo.pathways.Pathway;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,11 +14,13 @@ public class Beyonder {
     private int mastery; // level progress
     private int spirituality; // mana
     private int maxSpirituality;
+    private int sanityLossScale;
     private List<Ability> abilities;
 
     public Beyonder(UUID playerId) {
         this.playerId = playerId;
         this.sequence = -1;
+        this.sanityLossScale = 0;
         this.mastery = 0;
         this.spirituality = 0;
         this.maxSpirituality = 0;
@@ -25,7 +28,7 @@ public class Beyonder {
 
     public Beyonder(UUID playerId, List<Ability> abilities) {
         this(playerId);
-        this.abilities = abilities;
+        this.abilities = new ArrayList<>(abilities);
     }
 
     public boolean canAdvance() {
@@ -37,13 +40,32 @@ public class Beyonder {
             sequence--;
             mastery = 0;
             updateMaxSpirituality();
-            abilities.addAll(pathway.GetAbilitiesForSequence(sequence - 1));
+            abilities.addAll(pathway.GetAbilitiesForSequence(sequence));
         }
     }
 
-    private void updateMaxSpirituality() {
-        maxSpirituality = (10 - sequence) * 100;
-        spirituality = maxSpirituality;
+    public void updateMaxSpirituality() {
+        if (sequence < 0) {
+            this.maxSpirituality = 0;
+            return;
+        }
+
+        int seq = Math.min(9, this.sequence);
+        int idx = 9 - seq;
+
+        int[] minValues = {100, 300, 600, 1000, 1600, 2280, 3100, 4049, 5126, 6331};
+        int[] maxValues = {200, 500, 900, 1500, 2000, 2700, 3460, 4306, 5237, 7000};
+
+        int min = minValues[idx];
+        int max = maxValues[idx];
+
+        if (max < min) {
+            max = min;
+        }
+
+        float t = Math.max(0, Math.min(100, this.mastery)) / 100.0f;
+
+        this.maxSpirituality = Math.round(min + (max - min) * t);
     }
 
     public void setSpirituality(int spirituality) {
@@ -64,6 +86,15 @@ public class Beyonder {
 
     public int getMastery() {
         return mastery;
+    }
+
+    public void setMastery(int mastery) {
+        if (mastery > 100)
+            mastery = 100;
+        else if (mastery < 0)
+            mastery = 0;
+
+        this.mastery = mastery;
     }
 
     public int getSpirituality() {

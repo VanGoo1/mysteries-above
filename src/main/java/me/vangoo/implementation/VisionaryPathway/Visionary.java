@@ -1,5 +1,6 @@
 package me.vangoo.implementation.VisionaryPathway;
 
+import me.vangoo.implementation.VisionaryPathway.abilities.DangerSense;
 import me.vangoo.implementation.VisionaryPathway.abilities.GoodMemory;
 import me.vangoo.implementation.VisionaryPathway.abilities.ScanGaze;
 import me.vangoo.implementation.VisionaryPathway.abilities.SharpVision;
@@ -16,5 +17,6 @@ public class Visionary extends Pathway {
     @Override
     protected void initializeAbilities() {
         sequenceAbilities.put(9, List.of(new GoodMemory(), new ScanGaze(), new SharpVision()));
+        sequenceAbilities.put(8, List.of(new DangerSense()));
     }
 }

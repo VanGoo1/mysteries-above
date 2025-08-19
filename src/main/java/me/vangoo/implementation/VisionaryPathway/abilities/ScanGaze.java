@@ -7,8 +7,10 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.util.RayTraceResult;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -31,7 +33,7 @@ public class ScanGaze extends Ability {
 
     @Override
     public String getDescription() {
-        return "При натисканні на гравця показує його HP, голод та броню.";
+        return "При натисканні на гравця показує його HP, голод та броню. Для менших послідовностей: колір залежить від HP цілі.";
     }
 
     @Override
@@ -68,13 +70,37 @@ public class ScanGaze extends Ability {
         caster.sendMessage(ChatColor.GRAY + "Здоров'я: " + ChatColor.YELLOW + hp + ChatColor.GRAY + " / " + ChatColor.YELLOW + maxHp);
         caster.sendMessage(ChatColor.GRAY + "Голод: " + ChatColor.YELLOW + hunger + ChatColor.GRAY + " / " + ChatColor.YELLOW + "20");
         caster.sendMessage(ChatColor.GRAY + "Броня: " + ChatColor.YELLOW + (int) armor + ChatColor.GRAY + " / " + ChatColor.YELLOW + "20");
+
+        if (beyonder.getSequence() < 9) {
+            // Показ насичення
+            float saturation = p.getSaturation();
+            caster.sendMessage(ChatColor.GRAY + "Насичення: " + ChatColor.YELLOW + String.format("%.1f", saturation));
+
+            // Показ активних ефектів
+            Collection<PotionEffect> effects = p.getActivePotionEffects();
+            if (!effects.isEmpty()) {
+                caster.sendMessage(ChatColor.GRAY + "Активні ефекти:");
+                for (PotionEffect effect : effects) {
+                    String effectName = effect.getType().getName();
+                    int duration = effect.getDuration() / 20; // конвертуємо тики в секунди
+                    int amplifier = effect.getAmplifier() + 1; // рівень ефекту (починається з 0)
+
+                    caster.sendMessage(ChatColor.GRAY + "  • " + ChatColor.LIGHT_PURPLE + effectName +
+                            ChatColor.GRAY + " (" + ChatColor.WHITE + amplifier + ChatColor.GRAY + ") - " +
+                            ChatColor.AQUA + duration + "с");
+                }
+            } else {
+                caster.sendMessage(ChatColor.GRAY + "Активні ефекти: " + ChatColor.YELLOW + "відсутні");
+            }
+        }
+
         return true;
     }
 
     @Override
     public ItemStack getItem() {
         Map<String, String> attributes = new HashMap<>();
-        attributes.put("Радіус", String.valueOf(RANGE) + "блоків");
+        attributes.put("Радіус", RANGE + " блоків");
 
         return abilityItemFactory.createItem(this, attributes);
     }

@@ -4,6 +4,7 @@ import me.vangoo.abilities.Ability;
 import me.vangoo.beyonders.Beyonder;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -15,7 +16,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class GoodMemory extends Ability {
-    private static final int OBSERVE_TICKS_REQUIRED = 5 * 20; // 5s
+    private static final int OBSERVE_TICKS_REQUIRED = 3 * 20; // 3s
     private static final int GLOW_TICKS = 20 * 20; // 20s
     private static final int RANGE = 30;
 
@@ -39,7 +40,7 @@ public class GoodMemory extends Ability {
 
     @Override
     public String getDescription() {
-        return "Після " + OBSERVE_TICKS_REQUIRED / 20 + "с спостереження за мобом чи гравцем — ціль підсвічується на " + GLOW_TICKS / 20 + "с.";
+        return "Після " + OBSERVE_TICKS_REQUIRED / 20 + "с спостереження за мобом чи гравцем — ціль підсвічується на " + GLOW_TICKS / 20 + "с. ";
     }
 
     @Override
@@ -71,9 +72,9 @@ public class GoodMemory extends Ability {
             glowingEntities.put(id, ConcurrentHashMap.newKeySet());
             glowTasks.put(id, new ConcurrentHashMap<>());
 
-            BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, () -> tickObserver(caster, state), 1L, 5L);
+            BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, () -> tickObserver(caster, state, beyonder), 1L, 5L);
             tasks.put(id, task);
-            caster.sendMessage(ChatColor.GREEN + "Хороша пам'ять" + ChatColor.GRAY + " увімкнена. Спостерігайте за ціллю 5с.");
+            caster.sendMessage(ChatColor.GREEN + "Хороша пам'ять" + ChatColor.GRAY + " увімкнена. Спостерігайте за ціллю " + OBSERVE_TICKS_REQUIRED / 20 + "с.");
         }
         return true; // перемикач завжди "успішний"
     }
@@ -83,6 +84,7 @@ public class GoodMemory extends Ability {
         Map<String, String> attributes = new HashMap<>();
         attributes.put("Тривалість", GLOW_TICKS / 20 + "с");
         attributes.put("Дальність", RANGE + " блоків");
+        attributes.put("Час спостереження", OBSERVE_TICKS_REQUIRED / 20 + "с");
 
         return abilityItemFactory.createItem(this, attributes);
     }
@@ -92,7 +94,7 @@ public class GoodMemory extends Ability {
         return 0; // пасивна
     }
 
-    private void tickObserver(Player caster, ObservingState state) {
+    private void tickObserver(Player caster, ObservingState state, Beyonder beyonder) {
         if (caster == null || !caster.isOnline()) return;
 
         LivingEntity target = getLookTarget(caster, RANGE);
@@ -116,25 +118,29 @@ public class GoodMemory extends Ability {
 
             // Перевірити чи ціль вже підсвічена для цього гравця
             if (!glowingEntities.get(casterId).contains(targetId)) {
-                addGlowing(caster, target);
+                addGlowing(caster, target, beyonder);
+                String healthInfo = beyonder.getSequence() < 9 ? " [" + getHealthPercentage(target) + "% HP]" : "";
                 caster.sendMessage(ChatColor.GREEN + "Ви запам'ятали " + ChatColor.WHITE + getEntityName(target)
-                        + ChatColor.GREEN + ". Його підсвічено на 20с.");
+                        + ChatColor.GREEN + healthInfo + ". Його підсвічено на " + GLOW_TICKS / 20 + "с.");
             }
             // Після спрацьовування почати відлік знову (щоб можна було підсвітити іншу ціль)
             state.ticks = 0;
         }
     }
 
-    private void addGlowing(Player caster, LivingEntity target) {
+    private void addGlowing(Player caster, LivingEntity target, Beyonder beyonder) {
         UUID casterId = caster.getUniqueId();
         UUID targetId = target.getUniqueId();
 
         // Додати до списку підсвічених
         glowingEntities.get(casterId).add(targetId);
 
-        // Включити підсвічування через GlowingEntities API з жовтим кольором
+        // Визначити колір підсвічування
+        ChatColor glowColor = getGlowColor(target, beyonder);
+
+        // Включити підсвічування через GlowingEntities API
         try {
-            plugin.getGlowingEntities().setGlowing(target, caster, ChatColor.YELLOW);
+            plugin.getGlowingEntities().setGlowing(target, caster, glowColor);
         } catch (ReflectiveOperationException e) {
             plugin.getLogger().warning("Failed to set glowing for entity " + target.getUniqueId() + ": " + e.getMessage());
 
@@ -146,6 +152,38 @@ public class GoodMemory extends Ability {
         BukkitTask glowTask = Bukkit.getScheduler().runTaskLater(plugin, () -> removeGlowing(caster, target), GLOW_TICKS);
 
         glowTasks.get(casterId).put(targetId, glowTask);
+    }
+
+    /**
+     * Визначає колір підсвічування в залежності від рівня HP цілі та послідовності beyonder'а
+     */
+    private ChatColor getGlowColor(LivingEntity target, Beyonder beyonder) {
+        // Для послідовності >= 9 завжди жовтий колір
+        if (beyonder.getSequence() >= 9) {
+            return ChatColor.WHITE;
+        }
+
+        // Для послідовності < 9 колір залежить від рівня HP
+        double healthPercentage = (target.getHealth() / target.getAttribute(Attribute.MAX_HEALTH).getValue()) * 100;
+
+        if (healthPercentage >= 80) {
+            return ChatColor.GREEN;        // 80-100% HP - зелений
+        } else if (healthPercentage >= 60) {
+            return ChatColor.YELLOW;       // 60-79% HP - жовтий
+        } else if (healthPercentage >= 40) {
+            return ChatColor.GOLD;         // 40-59% HP - золотий
+        } else if (healthPercentage >= 20) {
+            return ChatColor.RED;          // 20-39% HP - червоний
+        } else {
+            return ChatColor.DARK_RED;     // 0-19% HP - темно-червоний
+        }
+    }
+
+    /**
+     * Отримує відсоток здоров'я цілі
+     */
+    private int getHealthPercentage(LivingEntity target) {
+        return (int) Math.round((target.getHealth() / target.getAttribute(Attribute.MAX_HEALTH).getValue()) * 100);
     }
 
     private void removeGlowing(Player caster, LivingEntity target) {

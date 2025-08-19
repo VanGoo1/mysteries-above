@@ -6,6 +6,7 @@ import me.vangoo.abilities.AbilityManager;
 import me.vangoo.abilities.CooldownManager;
 import me.vangoo.beyonders.BeyonderManager;
 import me.vangoo.commands.BeyonderCommand;
+import me.vangoo.commands.MasteryCommand;
 import me.vangoo.listeners.AbilityMenuListener;
 import me.vangoo.pathways.PathwayManager;
 import me.vangoo.potions.PotionManager;
@@ -54,6 +55,7 @@ public class LotmPlugin extends JavaPlugin {
 
     private void registerCommands() {
         getCommand("beyonder").setExecutor(new BeyonderCommand(potionManager));
+        getCommand("mastery").setExecutor(new MasteryCommand(beyonderManager));
     }
 
     public BeyonderManager getBeyonderManager() {

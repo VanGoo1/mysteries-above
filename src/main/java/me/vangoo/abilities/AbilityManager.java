@@ -28,8 +28,14 @@ public class AbilityManager {
         }
 
         boolean result = ability.execute(caster, beyonder);
-        if (result)
+        if (result) {
             cooldownManager.setCooldown(caster.getUniqueId(), ability);
+            if (!ability.isPassive()) {
+                beyonder.setMastery(beyonder.getMastery() + 1);
+                beyonder.updateMaxSpirituality();
+            }
+        }
+
         return result;
     }
 

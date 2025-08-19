@@ -4,26 +4,18 @@ import me.vangoo.LotmPlugin;
 import me.vangoo.abilities.Ability;
 import me.vangoo.abilities.AbilityManager;
 import me.vangoo.pathways.PathwayManager;
-import me.vangoo.utils.AbilityMenu;
 import me.vangoo.utils.BossBarUtil;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
-import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class BeyonderManager implements Listener {
     private final LotmPlugin plugin;
@@ -105,11 +97,11 @@ public class BeyonderManager implements Listener {
         event.setCancelled(true);
         boolean success = abilityManager.executeAbility(player, beyonder, ability);
         if (success) {
+//            player.setCooldown(item, ability.getCooldown() * 20);
             beyonder.DecrementSpirituality(ability.getSpiritualityCost());
             updateSpiritualityBar(beyonder);
         }
     }
-
 
     public void updateSpiritualityBar(Beyonder beyonder) {
         Player player = Bukkit.getPlayer(beyonder.getPlayerId());

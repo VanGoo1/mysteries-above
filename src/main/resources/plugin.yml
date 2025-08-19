@@ -7,3 +7,6 @@ commands:
   beyonder:
     description: Manage your Beyonder abilities and pathways
     usage: /<command> [args]
+  mastery:
+    description: manage mastery
+    usage: /mastery [get|set|add] [значення]
