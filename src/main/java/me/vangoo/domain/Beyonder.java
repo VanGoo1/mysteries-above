@@ -1,7 +1,4 @@
-package me.vangoo.beyonders;
-
-import me.vangoo.abilities.Ability;
-import me.vangoo.pathways.Pathway;
+package me.vangoo.domain;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,12 +86,7 @@ public class Beyonder {
     }
 
     public void setMastery(int mastery) {
-        if (mastery > 100)
-            mastery = 100;
-        else if (mastery < 0)
-            mastery = 0;
-
-        this.mastery = mastery;
+        this.mastery = Math.clamp(mastery, 0, 100);
     }
 
     public int getSpirituality() {
@@ -133,5 +125,13 @@ public class Beyonder {
         if (spirituality < 0) {
             spirituality = 0;
         }
+    }
+
+    public int getSanityLossScale() {
+        return sanityLossScale;
+    }
+
+    public void setSanityLossScale(int sanityLossScale) {
+        this.sanityLossScale = Math.clamp(sanityLossScale, 0, 100);
     }
 }

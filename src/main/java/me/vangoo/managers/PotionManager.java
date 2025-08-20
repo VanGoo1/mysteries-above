@@ -1,12 +1,11 @@
-package me.vangoo.potions;
+package me.vangoo.managers;
 
 import me.vangoo.LotmPlugin;
-import me.vangoo.beyonders.Beyonder;
-import me.vangoo.beyonders.BeyonderManager;
+import me.vangoo.domain.Beyonder;
+import me.vangoo.domain.PathwayPotions;
 import me.vangoo.implementation.ErrorPathway.ErrorPotions;
 import me.vangoo.implementation.VisionaryPathway.VisionaryPotions;
-import me.vangoo.pathways.Pathway;
-import me.vangoo.pathways.PathwayManager;
+import me.vangoo.domain.Pathway;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -14,7 +13,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -67,7 +65,7 @@ public class PotionManager implements Listener {
         for (PathwayPotions p : potions) {
             for (int i = 0; i < 10; i++) {
                 if (p.returnPotionForSequence(i).isSimilar(item)) {
-                    pathway = p.pathway;
+                    pathway = p.getPathway();
                     sequence = i;
                 }
             }

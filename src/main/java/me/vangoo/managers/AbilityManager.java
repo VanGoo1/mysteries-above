@@ -1,6 +1,7 @@
-package me.vangoo.abilities;
+package me.vangoo.managers;
 
-import me.vangoo.beyonders.Beyonder;
+import me.vangoo.domain.Ability;
+import me.vangoo.domain.Beyonder;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.ChatColor;

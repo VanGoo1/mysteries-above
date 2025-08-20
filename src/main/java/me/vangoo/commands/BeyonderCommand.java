@@ -1,7 +1,7 @@
 package me.vangoo.commands;
 
-import me.vangoo.potions.PotionManager;
-import me.vangoo.potions.PathwayPotions;
+import me.vangoo.managers.PotionManager;
+import me.vangoo.domain.PathwayPotions;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -11,7 +11,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;

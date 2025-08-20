@@ -1,16 +1,16 @@
 package me.vangoo;
 
 import fr.skytasul.glowingentities.GlowingEntities;
-import me.vangoo.abilities.Ability;
-import me.vangoo.abilities.AbilityManager;
-import me.vangoo.abilities.CooldownManager;
-import me.vangoo.beyonders.BeyonderManager;
+import me.vangoo.domain.Ability;
+import me.vangoo.managers.AbilityManager;
+import me.vangoo.managers.CooldownManager;
+import me.vangoo.managers.BeyonderManager;
 import me.vangoo.commands.BeyonderCommand;
 import me.vangoo.commands.MasteryCommand;
 import me.vangoo.listeners.AbilityMenuListener;
-import me.vangoo.pathways.PathwayManager;
-import me.vangoo.potions.PotionManager;
-import me.vangoo.utils.AbilityMenu;
+import me.vangoo.managers.PathwayManager;
+import me.vangoo.managers.PotionManager;
+import me.vangoo.domain.AbilityMenu;
 import me.vangoo.utils.BossBarUtil;
 import me.vangoo.utils.NBTBuilder;
 import org.bukkit.plugin.java.JavaPlugin;

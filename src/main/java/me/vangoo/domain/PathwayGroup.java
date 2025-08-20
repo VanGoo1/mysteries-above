@@ -1,4 +1,4 @@
-package me.vangoo.pathways;
+package me.vangoo.domain;
 
 public enum PathwayGroup {
     LordOfMysteries("Lord of Mysteries"),

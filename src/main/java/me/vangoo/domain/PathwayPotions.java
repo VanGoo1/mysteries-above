@@ -1,6 +1,5 @@
-package me.vangoo.potions;
+package me.vangoo.domain;
 
-import me.vangoo.pathways.Pathway;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Material;
@@ -13,15 +12,14 @@ import org.bukkit.persistence.PersistentDataType;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 
 public abstract class PathwayPotions {
     protected HashMap<Integer, ItemStack[]> mainIngredients;
     protected HashMap<Integer, ItemStack[]> supplementaryIngredients;
-    Pathway pathway;
-    Color potionColor;
-    ChatColor nameColor;
-    List<String> loreDescriptionSection;
+    private Pathway pathway;
+    private Color potionColor;
+    private ChatColor nameColor;
+    private List<String> loreDescriptionSection;
 
     public PathwayPotions(Pathway pathway, Color potionColor, ChatColor nameColor, List<String> loreDescriptionSection) {
         this.potionColor = potionColor;

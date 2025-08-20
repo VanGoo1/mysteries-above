@@ -1,12 +1,10 @@
-package me.vangoo.abilities;
+package me.vangoo.domain;
 
 import me.vangoo.LotmPlugin;
-import me.vangoo.beyonders.Beyonder;
+import me.vangoo.managers.AbilityItemFactory;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.Objects;
 
 public abstract class Ability {

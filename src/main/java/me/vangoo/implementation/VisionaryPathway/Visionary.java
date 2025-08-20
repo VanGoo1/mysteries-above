@@ -4,8 +4,8 @@ import me.vangoo.implementation.VisionaryPathway.abilities.DangerSense;
 import me.vangoo.implementation.VisionaryPathway.abilities.GoodMemory;
 import me.vangoo.implementation.VisionaryPathway.abilities.ScanGaze;
 import me.vangoo.implementation.VisionaryPathway.abilities.SharpVision;
-import me.vangoo.pathways.Pathway;
-import me.vangoo.pathways.PathwayGroup;
+import me.vangoo.domain.Pathway;
+import me.vangoo.domain.PathwayGroup;
 
 import java.util.List;
 

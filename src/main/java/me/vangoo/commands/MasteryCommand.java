@@ -1,7 +1,7 @@
 package me.vangoo.commands;
 
-import me.vangoo.beyonders.Beyonder;
-import me.vangoo.beyonders.BeyonderManager;
+import me.vangoo.domain.Beyonder;
+import me.vangoo.managers.BeyonderManager;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;

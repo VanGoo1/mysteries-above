@@ -1,9 +1,8 @@
-package me.vangoo.beyonders;
+package me.vangoo.managers;
 
 import me.vangoo.LotmPlugin;
-import me.vangoo.abilities.Ability;
-import me.vangoo.abilities.AbilityManager;
-import me.vangoo.pathways.PathwayManager;
+import me.vangoo.domain.Ability;
+import me.vangoo.domain.Beyonder;
 import me.vangoo.utils.BossBarUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.boss.BarColor;

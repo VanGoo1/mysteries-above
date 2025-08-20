@@ -2,8 +2,8 @@ package me.vangoo.implementation.ErrorPathway;
 
 import me.vangoo.implementation.ErrorPathway.abilities.FractureOfRealitiesAbility;
 import me.vangoo.implementation.ErrorPathway.abilities.ShadowTheft;
-import me.vangoo.pathways.Pathway;
-import me.vangoo.pathways.PathwayGroup;
+import me.vangoo.domain.Pathway;
+import me.vangoo.domain.PathwayGroup;
 
 import java.util.List;
 

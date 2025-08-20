@@ -1,7 +1,7 @@
 package me.vangoo.implementation.VisionaryPathway.abilities;
 
-import me.vangoo.abilities.Ability;
-import me.vangoo.beyonders.Beyonder;
+import me.vangoo.domain.Ability;
+import me.vangoo.domain.Beyonder;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.attribute.Attribute;

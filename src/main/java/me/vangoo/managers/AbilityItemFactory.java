@@ -1,5 +1,6 @@
-package me.vangoo.abilities;
+package me.vangoo.managers;
 
+import me.vangoo.domain.Ability;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;

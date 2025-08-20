@@ -1,6 +1,4 @@
-package me.vangoo.pathways;
-
-import me.vangoo.abilities.Ability;
+package me.vangoo.domain;
 
 import java.util.ArrayList;
 import java.util.HashMap;

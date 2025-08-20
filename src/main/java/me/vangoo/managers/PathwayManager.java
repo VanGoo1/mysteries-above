@@ -1,5 +1,7 @@
-package me.vangoo.pathways;
+package me.vangoo.managers;
 
+import me.vangoo.domain.Pathway;
+import me.vangoo.domain.PathwayGroup;
 import me.vangoo.implementation.ErrorPathway.Error;
 import me.vangoo.implementation.VisionaryPathway.Visionary;
 

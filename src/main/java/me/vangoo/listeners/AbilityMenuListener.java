@@ -1,10 +1,10 @@
 package me.vangoo.listeners;
 
-import me.vangoo.abilities.Ability;
-import me.vangoo.abilities.AbilityManager;
-import me.vangoo.beyonders.Beyonder;
-import me.vangoo.beyonders.BeyonderManager;
-import me.vangoo.utils.AbilityMenu;
+import me.vangoo.domain.Ability;
+import me.vangoo.managers.AbilityManager;
+import me.vangoo.domain.Beyonder;
+import me.vangoo.managers.BeyonderManager;
+import me.vangoo.domain.AbilityMenu;
 import me.vangoo.utils.NBTBuilder;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;

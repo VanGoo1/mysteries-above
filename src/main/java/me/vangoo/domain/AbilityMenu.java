@@ -1,7 +1,6 @@
-package me.vangoo.utils;
+package me.vangoo.domain;
 
-import me.vangoo.abilities.Ability;
-import me.vangoo.beyonders.Beyonder;
+import me.vangoo.utils.NBTBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -20,7 +19,6 @@ import static org.bukkit.Bukkit.createInventory;
 public class AbilityMenu {
     private static final String MENU_TITLE = "§8Меню Здібностей";
     private static final int MENU_SIZE = 54;
-
 
     public AbilityMenu() {
 

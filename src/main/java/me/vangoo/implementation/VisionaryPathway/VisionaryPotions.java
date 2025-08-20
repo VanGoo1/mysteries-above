@@ -1,7 +1,7 @@
 package me.vangoo.implementation.VisionaryPathway;
 
-import me.vangoo.pathways.Pathway;
-import me.vangoo.potions.PathwayPotions;
+import me.vangoo.domain.Pathway;
+import me.vangoo.domain.PathwayPotions;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Material;

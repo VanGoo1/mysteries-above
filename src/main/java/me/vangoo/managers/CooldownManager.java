@@ -1,5 +1,7 @@
-package me.vangoo.abilities;
+package me.vangoo.managers;
 
+
+import me.vangoo.domain.Ability;
 
 import java.util.Map;
 import java.util.UUID;

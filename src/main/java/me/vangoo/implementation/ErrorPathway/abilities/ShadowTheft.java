@@ -1,7 +1,7 @@
 package me.vangoo.implementation.ErrorPathway.abilities;
 
-import me.vangoo.abilities.Ability;
-import me.vangoo.beyonders.Beyonder;
+import me.vangoo.domain.Ability;
+import me.vangoo.domain.Beyonder;
 import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
