@@ -1,6 +1,6 @@
 name: Mysteries-Above
 version: 0.0
-main: me.vangoo.LotmPlugin
+main: me.vangoo.MysteriesAbovePlugin
 api-version: "1.21"
 
 commands:
@@ -8,5 +8,5 @@ commands:
     description: Manage your Beyonder abilities and pathways
     usage: /<command> [args]
   mastery:
-    description: manage mastery
+    description: Manage mastery
     usage: /mastery [get|set|add] [значення]

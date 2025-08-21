@@ -1,6 +1,6 @@
 package me.vangoo.utils;
 
-import me.vangoo.LotmPlugin;
+import me.vangoo.MysteriesAbovePlugin;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -16,7 +16,7 @@ public class NBTBuilder {
     private final ItemStack itemStack;
     private final ItemMeta itemMeta;
     private final PersistentDataContainer container;
-    private static LotmPlugin plugin;
+    private static MysteriesAbovePlugin plugin;
 
     public NBTBuilder(ItemStack itemStack) {
         if (itemStack == null) {
@@ -32,7 +32,7 @@ public class NBTBuilder {
         this.container = this.itemMeta.getPersistentDataContainer();
     }
 
-    public static void setPlugin(LotmPlugin plugin){
+    public static void setPlugin(MysteriesAbovePlugin plugin){
         NBTBuilder.plugin = plugin;
     }
 

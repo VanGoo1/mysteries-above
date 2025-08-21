@@ -1,6 +1,6 @@
 package me.vangoo.domain;
 
-import me.vangoo.LotmPlugin;
+import me.vangoo.MysteriesAbovePlugin;
 import me.vangoo.managers.AbilityItemFactory;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -8,11 +8,11 @@ import org.bukkit.inventory.ItemStack;
 import java.util.Objects;
 
 public abstract class Ability {
-    protected static LotmPlugin plugin;
+    protected static MysteriesAbovePlugin plugin;
 
     protected static AbilityItemFactory abilityItemFactory = new AbilityItemFactory();
 
-    public static void setPlugin(LotmPlugin plugin) {
+    public static void setPlugin(MysteriesAbovePlugin plugin) {
         Ability.plugin = plugin;
     }
 
