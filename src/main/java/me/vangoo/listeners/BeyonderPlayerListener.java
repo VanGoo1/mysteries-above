@@ -4,6 +4,7 @@ import me.vangoo.domain.Ability;
 import me.vangoo.domain.Beyonder;
 import me.vangoo.managers.AbilityManager;
 import me.vangoo.managers.BeyonderManager;
+import me.vangoo.managers.RampagerManager;
 import me.vangoo.utils.BossBarUtil;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -40,7 +41,6 @@ public class BeyonderPlayerListener implements Listener {
     }
 
 
-
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
         switch (event.getAction()) {
@@ -63,7 +63,6 @@ public class BeyonderPlayerListener implements Listener {
         boolean success = abilityManager.executeAbility(player, beyonder, ability);
         if (success) {
 //            player.setCooldown(item, ability.getCooldown() * 20);
-            beyonder.DecrementSpirituality(ability.getSpiritualityCost());
             beyonderManager.updateSpiritualityBar(beyonder);
         }
     }

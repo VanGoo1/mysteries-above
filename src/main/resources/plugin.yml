@@ -4,9 +4,12 @@ main: me.vangoo.MysteriesAbovePlugin
 api-version: "1.21"
 
 commands:
-  beyonder:
+  pathway:
     description: Manage your Beyonder abilities and pathways
-    usage: /<command> [args]
+    usage: /pathway [args]
   mastery:
     description: Manage mastery
-    usage: /mastery [get|set|add] [значення]
+    usage: /mastery [info]
+  rampager:
+    description: оудап
+    usage: /rampager set <1-100>

@@ -1,17 +1,14 @@
 package me.vangoo;
 
 import fr.skytasul.glowingentities.GlowingEntities;
+import me.vangoo.commands.RampagerCommand;
 import me.vangoo.domain.Ability;
 import me.vangoo.listeners.BeyonderPlayerListener;
 import me.vangoo.listeners.PathwayPotionListener;
-import me.vangoo.managers.AbilityManager;
-import me.vangoo.managers.CooldownManager;
-import me.vangoo.managers.BeyonderManager;
-import me.vangoo.commands.BeyonderCommand;
+import me.vangoo.managers.*;
+import me.vangoo.commands.PathwayCommand;
 import me.vangoo.commands.MasteryCommand;
 import me.vangoo.listeners.AbilityMenuListener;
-import me.vangoo.managers.PathwayManager;
-import me.vangoo.managers.PotionManager;
 import me.vangoo.domain.AbilityMenu;
 import me.vangoo.utils.BossBarUtil;
 import me.vangoo.utils.NBTBuilder;
@@ -23,6 +20,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     private PotionManager potionManager;
     private AbilityManager abilityManager;
     private GlowingEntities glowingEntities;
+    private RampagerManager rampagerManager;
 
     @Override
     public void onEnable() {
@@ -43,13 +41,14 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         Ability.setPlugin(this);
         NBTBuilder.setPlugin(this);
         this.pathwayManager = new PathwayManager();
+        this.rampagerManager = new RampagerManager();
         this.potionManager = new PotionManager(pathwayManager, this);
-        this.abilityManager = new AbilityManager(new CooldownManager());
+        this.abilityManager = new AbilityManager(new CooldownManager(), rampagerManager);
         this.beyonderManager = new BeyonderManager(this, new BossBarUtil());
     }
 
     private void registerEvents() {
-        AbilityMenuListener abilityMenuListener = new AbilityMenuListener(new AbilityMenu(), beyonderManager, abilityManager);
+        AbilityMenuListener abilityMenuListener = new AbilityMenuListener(new AbilityMenu(), beyonderManager, abilityManager, rampagerManager);
         BeyonderPlayerListener beyonderPlayerListener = new BeyonderPlayerListener(beyonderManager, new BossBarUtil(), abilityManager);
         PathwayPotionListener pathwayPotionListener = new PathwayPotionListener(potionManager, beyonderManager);
         getServer().getPluginManager().registerEvents(abilityMenuListener, this);
@@ -58,8 +57,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     }
 
     private void registerCommands() {
-        getCommand("beyonder").setExecutor(new BeyonderCommand(potionManager));
+        getCommand("pathway").setExecutor(new PathwayCommand(potionManager));
         getCommand("mastery").setExecutor(new MasteryCommand(beyonderManager));
+        getCommand("rampager").setExecutor(new RampagerCommand(beyonderManager));
     }
 
     public BeyonderManager getBeyonderManager() {

@@ -12,9 +12,11 @@ import org.bukkit.inventory.meta.ItemMeta;
 public class AbilityManager {
 
     CooldownManager cooldownManager;
+    private final RampagerManager rampagerManager;
 
-    public AbilityManager(CooldownManager cooldownManager) {
+    public AbilityManager(CooldownManager cooldownManager, RampagerManager rampagerManager) {
         this.cooldownManager = cooldownManager;
+        this.rampagerManager = rampagerManager;
     }
 
     public boolean executeAbility(Player caster, Beyonder beyonder, Ability ability) {
@@ -28,12 +30,21 @@ public class AbilityManager {
             return false;
         }
 
+        if (rampagerManager.executeLossOfControl(caster, beyonder)) {
+            cooldownManager.setCooldown(caster.getUniqueId(), ability);
+            return false;
+        }
+
         boolean result = ability.execute(caster, beyonder);
         if (result) {
             cooldownManager.setCooldown(caster.getUniqueId(), ability);
             if (!ability.isPassive()) {
                 beyonder.setMastery(beyonder.getMastery() + 1);
                 beyonder.updateMaxSpirituality();
+                beyonder.DecrementSpirituality(ability.getSpiritualityCost());
+                if (beyonder.getSpirituality() <= beyonder.getMaxSpirituality() * 0.05) {
+                    beyonder.setSanityLossScale(beyonder.getSanityLossScale() + 1);
+                }
             }
         }
 

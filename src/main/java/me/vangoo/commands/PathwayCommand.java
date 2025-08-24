@@ -16,7 +16,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class BeyonderCommand implements CommandExecutor, TabCompleter {
+public class PathwayCommand implements CommandExecutor, TabCompleter {
     private final PotionManager potionManager;
 
     // Константи для магічних чисел
@@ -25,15 +25,15 @@ public class BeyonderCommand implements CommandExecutor, TabCompleter {
     private static final int MAX_SEQUENCE = 9;
 
     // Повідомлення
-    private static final String PREFIX = ChatColor.DARK_PURPLE + "[Beyonder] " + ChatColor.RESET;
+    private static final String PREFIX = ChatColor.DARK_PURPLE + "[Pathway] " + ChatColor.RESET;
     private static final String USAGE_MESSAGE = PREFIX + ChatColor.YELLOW +
-            "Використання: /beyonder [pathway] [sequence]\n" +
+            "Використання: /pathway [pathway] [sequence]\n" +
             ChatColor.GRAY + "Приклади:\n" +
-            ChatColor.WHITE + "  /beyonder " + ChatColor.GRAY + "- отримати зілля першого pathway sequence 9\n" +
-            ChatColor.WHITE + "  /beyonder Error " + ChatColor.GRAY + "- отримати Error pathway sequence 9\n" +
-            ChatColor.WHITE + "  /beyonder Visionary 5 " + ChatColor.GRAY + "- отримати Visionary pathway sequence 5";
+            ChatColor.WHITE + "  /Pathway " + ChatColor.GRAY + "- отримати зілля першого pathway sequence 9\n" +
+            ChatColor.WHITE + "  /Pathway Error " + ChatColor.GRAY + "- отримати Error pathway sequence 9\n" +
+            ChatColor.WHITE + "  /Pathway Visionary 5 " + ChatColor.GRAY + "- отримати Visionary pathway sequence 5";
 
-    public BeyonderCommand(PotionManager potionManager) {
+    public PathwayCommand(PotionManager potionManager) {
         this.potionManager = potionManager;
     }
 

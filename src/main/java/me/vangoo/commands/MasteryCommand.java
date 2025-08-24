@@ -100,10 +100,6 @@ public class MasteryCommand implements CommandExecutor, TabCompleter {
 
         player.sendMessage(ChatColor.GREEN + "Засвоєння змінено з " + ChatColor.YELLOW + oldMastery +
                 ChatColor.GREEN + " на " + ChatColor.YELLOW + value + ChatColor.GREEN + " (" + value + "%)");
-
-        if (beyonder.canAdvance()) {
-            player.sendMessage(ChatColor.GOLD + "★ Ви досягли максимального засвоєння і можете просунутися!");
-        }
     }
 
     private void showUsage(Player player) {

@@ -5,7 +5,10 @@ import me.vangoo.managers.AbilityManager;
 import me.vangoo.domain.Beyonder;
 import me.vangoo.managers.BeyonderManager;
 import me.vangoo.domain.AbilityMenu;
+import me.vangoo.managers.RampagerManager;
 import me.vangoo.utils.NBTBuilder;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -20,6 +23,7 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Iterator;
+import java.util.Random;
 
 
 public class AbilityMenuListener implements Listener {
@@ -27,11 +31,14 @@ public class AbilityMenuListener implements Listener {
     AbilityMenu abilityMenu;
     BeyonderManager beyonderManager;
     AbilityManager abilityManager;
+    private final RampagerManager rampagerManager;
 
-    public AbilityMenuListener(AbilityMenu abilityMenu, BeyonderManager beyonderManager, AbilityManager abilityManager) {
+    public AbilityMenuListener(AbilityMenu abilityMenu, BeyonderManager beyonderManager, AbilityManager abilityManager,
+                               RampagerManager rampagerManager) {
         this.abilityMenu = abilityMenu;
         this.beyonderManager = beyonderManager;
         this.abilityManager = abilityManager;
+        this.rampagerManager = rampagerManager;
     }
 
     @EventHandler

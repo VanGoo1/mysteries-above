@@ -66,12 +66,12 @@ public class DangerSense extends Ability {
 
     @Override
     public String getName() {
-        return "[Пасивна] Відчуття небезпеки";
+        return "[Пасивна] Психічне відлуння";
     }
 
     @Override
     public String getDescription() {
-        return "Спостерігайте за гравцем " + OBSERVE_TIME_TICKS / 20 + "с на відстані до " + RANGE + " блоків, щоб виявити небезпечні предмети в його інвентарі. Кулдаун на кожну ціль: " + COOLDOWN_PER_TARGET / 60 + "хв " + COOLDOWN_PER_TARGET % 60 + "с.";
+        return "Якщо стояти поруч з гравцем впродовж" + OBSERVE_TIME_TICKS / 20 + "с на відстані до " + RANGE + " блоків, то можна виявити небезпечні предмети в його інвентарі.";
     }
 
     @Override
