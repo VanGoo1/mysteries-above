@@ -1,5 +1,6 @@
 package me.vangoo;
 
+import de.slikey.effectlib.EffectManager;
 import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.commands.RampagerCommand;
 import me.vangoo.domain.Ability;
@@ -21,6 +22,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     private AbilityManager abilityManager;
     private GlowingEntities glowingEntities;
     private RampagerManager rampagerManager;
+    private EffectManager effectManager;
 
     @Override
     public void onEnable() {
@@ -45,6 +47,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         this.potionManager = new PotionManager(pathwayManager, this);
         this.abilityManager = new AbilityManager(new CooldownManager(), rampagerManager);
         this.beyonderManager = new BeyonderManager(this, new BossBarUtil());
+        this.effectManager = new EffectManager(this);
     }
 
     private void registerEvents() {
@@ -80,5 +83,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
     public GlowingEntities getGlowingEntities() {
         return glowingEntities;
+    }
+
+    public EffectManager getEffectManager() {
+        return effectManager;
     }
 }
