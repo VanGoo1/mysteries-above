@@ -9,10 +9,21 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class AbilityManager {
 
-    CooldownManager cooldownManager;
+    private final CooldownManager cooldownManager;
     private final RampagerManager rampagerManager;
+
+    /**
+     * Карта для відстеження гравців з заблокованими здібностями та часу закінчення блокування.
+     */
+    private final Map<UUID, Long> lockedPlayers = new ConcurrentHashMap<>();
+
+
 
     public AbilityManager(CooldownManager cooldownManager, RampagerManager rampagerManager) {
         this.cooldownManager = cooldownManager;
@@ -20,6 +31,11 @@ public class AbilityManager {
     }
 
     public boolean executeAbility(Player caster, Beyonder beyonder, Ability ability) {
+
+        if (isLocked(caster)) {
+            return false;
+        }
+
         if (beyonder.getSpirituality() < ability.getSpiritualityCost()) {
             caster.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.RED + "Недостатньо духовності"));
             return false;
@@ -65,4 +81,36 @@ public class AbilityManager {
 
         return null;
     }
+
+
+    /**
+     * Блокує гравцю можливість використовувати здібності на певний час.
+     * @param player Гравець для блокування.
+     * @param durationSeconds Тривалість блокування в секундах.
+     */
+    public void lockPlayer(Player player, int durationSeconds) {
+        long expirationTime = System.currentTimeMillis() + (durationSeconds * 1000L);
+        lockedPlayers.put(player.getUniqueId(), expirationTime);
+    }
+
+    /**
+     * Перевіряє, чи заблоковані здібності у гравця.
+     * @param player Гравець для перевірки.
+     * @return true, якщо здібності заблоковані, інакше false.
+     */
+    private boolean isLocked(Player player) {
+        Long expirationTime = lockedPlayers.get(player.getUniqueId());
+
+        if (expirationTime == null) {
+            return false; // Гравець не заблокований
+        }
+
+        if (System.currentTimeMillis() > expirationTime) {
+            lockedPlayers.remove(player.getUniqueId()); // Час блокування минув
+            return false;
+        }
+        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.DARK_PURPLE + "Ваші здібності тимчасово заблоковані!"));
+        return true;
+    }
+
 }
