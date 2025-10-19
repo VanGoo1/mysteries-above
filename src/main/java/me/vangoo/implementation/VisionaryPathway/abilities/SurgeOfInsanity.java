@@ -1,12 +1,11 @@
 package me.vangoo.implementation.VisionaryPathway.abilities;
 
-import de.slikey.effectlib.EffectManager;
-import de.slikey.effectlib.effect.SphereEffect;
+import de.slikey.effectlib.effect.ConeEffect;
 import me.vangoo.domain.Ability;
 import me.vangoo.domain.Beyonder;
-import org.bukkit.Color;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.Particle;
-import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -15,13 +14,12 @@ import org.bukkit.potion.PotionEffectType;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 public class SurgeOfInsanity extends Ability {
     private static final int RANGE = 5;
     private static final int COOLDOWN = 30;
     private static final int EFFECT_DURATION = 10 * 20; // 10 секунд
-
+    private static final int SANITY_INCREASE = 15;      // <-- НОВА КОНСТАНТА
 
     @Override
     public String getName() {
@@ -40,9 +38,6 @@ public class SurgeOfInsanity extends Ability {
 
     @Override
     public boolean execute(Player caster, Beyonder beyonder) {
-
-
-        // Встановлюємо тривалість блокування здібностей в секундах
         final int ABILITY_LOCK_SECONDS = 10;
 
         if (beyonder.getSpirituality() < getSpiritualityCost()) {
@@ -50,31 +45,43 @@ public class SurgeOfInsanity extends Ability {
             return false;
         }
 
-        // Візуальний ефект
-        SphereEffect sphereEffect = new SphereEffect(plugin.getEffectManager());
-        sphereEffect.setEntity(caster);
-        sphereEffect.radius = RANGE;
-        sphereEffect.particle = Particle.DRAGON_BREATH;
-        sphereEffect.color = Color.PURPLE;
-        sphereEffect.duration = 1500;
-        sphereEffect.start();
+        // --- Візуальний ефект (без змін) ---
+        ConeEffect coneEffect = new ConeEffect(plugin.getEffectManager());
+        Location effectLocation = caster.getLocation().clone();
+        effectLocation.setPitch(90);
+        coneEffect.setLocation(effectLocation);
+        coneEffect.particle = Particle.DRAGON_BREATH;
+        coneEffect.radiusGrow = 0.2f; // Зроблено трохи швидшим для динамічності
+        coneEffect.lengthGrow = 0.001f;
+        coneEffect.duration = 1000;
+        coneEffect.particles = 30;
+        coneEffect.angularVelocity = Math.PI / 16;
+        coneEffect.period = 1;
+        coneEffect.start();
+        // ------------------------------------------
 
         for (Entity entity : caster.getNearbyEntities(RANGE, RANGE, RANGE)) {
             if (entity instanceof Player target && !entity.equals(caster)) {
-
-                // Слабкість і сліпота накладаються на ВСІХ гравців
                 target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, EFFECT_DURATION, 0));
                 target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, EFFECT_DURATION, 0));
 
-                // Перевіряємо, чи є ціль Потойбічним
-                if (plugin.getBeyonderManager().GetBeyonder(target.getUniqueId()) != null) {
-                    // Якщо так, блокуємо їй здібності через AbilityManager
+                // --- ЗМІНА: Отримуємо об'єкт Beyonder один раз для ефективності ---
+                Beyonder targetBeyonder = plugin.getBeyonderManager().GetBeyonder(target.getUniqueId());
+
+                if (targetBeyonder != null) {
                     target.sendMessage("§5Ваш розум затьмарюється! Вам важко контролювати свої сили.");
 
-                    // --- ОСНОВНА ЗМІНА ---
-                    // Викликаємо метод для блокування гравця, який ми раніше додали в AbilityManager
+                    // 1. Блокуємо здібності (існуюча логіка)
                     plugin.getAbilityManager().lockPlayer(target, ABILITY_LOCK_SECONDS);
-                    // ---------------------
+
+                    // --- 2. НОВА ЛОГІКА: Підвищуємо втрату контролю ---
+                    int currentSanityLoss = targetBeyonder.getSanityLossScale();
+                    int newSanityLoss = currentSanityLoss + SANITY_INCREASE;
+                    targetBeyonder.setSanityLossScale(newSanityLoss); // Використовуємо ваш сеттер
+
+                    // Повідомляємо гравця про зміну
+                    target.sendMessage(ChatColor.RED + "Ваша втрата контролю зросла: " + currentSanityLoss + " → " + newSanityLoss);
+                    // ----------------------------------------------------
 
                 } else {
                     target.sendMessage("§5Ви відчуваєте раптовий наплив божевілля!");
@@ -90,7 +97,6 @@ public class SurgeOfInsanity extends Ability {
     public ItemStack getItem() {
         Map<String, String> attributes = new HashMap<>();
         attributes.put("Дальність", RANGE + " блоків");
-        attributes.put("Кулдаун", COOLDOWN + "с");
         attributes.put("Тривалість ефектів", (EFFECT_DURATION / 20) + "с");
         return abilityItemFactory.createItem(this, attributes);
     }
