@@ -16,6 +16,9 @@ import me.vangoo.utils.NBTBuilder;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class MysteriesAbovePlugin extends JavaPlugin {
+    // --- ЗМІНА #1: Додаємо поле для AbilityMenu ---
+    private AbilityMenu abilityMenu;
+
     private BeyonderManager beyonderManager;
     private PathwayManager pathwayManager;
     private PotionManager potionManager;
@@ -29,63 +32,60 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         glowingEntities = new GlowingEntities(this);
         saveDefaultConfig();
         initializeManagers();
-        registerCommands();
         registerEvents();
+        registerCommands();
     }
 
     @Override
     public void onDisable() {
-        super.onDisable();
+        // --- ЗМІНА #2: Важливо коректно вимикати EffectLib ---
+        if (effectManager != null) {
+            effectManager.dispose();
+        }
         glowingEntities.disable();
+        super.onDisable();
     }
 
     private void initializeManagers() {
         Ability.setPlugin(this);
         NBTBuilder.setPlugin(this);
+
+        // --- ЗМІНА #3: Ініціалізуємо AbilityMenu тут, щоб він був єдиним для всього плагіну ---
+        this.abilityMenu = new AbilityMenu();
         this.pathwayManager = new PathwayManager();
         this.rampagerManager = new RampagerManager();
         this.potionManager = new PotionManager(pathwayManager, this);
-        this.abilityManager = new AbilityManager(new CooldownManager(), rampagerManager);
+        this.abilityManager = new AbilityManager(new CooldownManager(), rampagerManager); // Додано AbilityLockManager
         this.beyonderManager = new BeyonderManager(this, new BossBarUtil());
         this.effectManager = new EffectManager(this);
     }
 
     private void registerEvents() {
-        AbilityMenuListener abilityMenuListener = new AbilityMenuListener(new AbilityMenu(), beyonderManager, abilityManager, rampagerManager);
+        // --- ЗМІНА #4: Передаємо єдиний екземпляр AbilityMenu в слухач ---
+        AbilityMenuListener abilityMenuListener = new AbilityMenuListener(abilityMenu, beyonderManager, abilityManager, rampagerManager);
+
         BeyonderPlayerListener beyonderPlayerListener = new BeyonderPlayerListener(beyonderManager, new BossBarUtil(), abilityManager);
         PathwayPotionListener pathwayPotionListener = new PathwayPotionListener(potionManager, beyonderManager);
+
         getServer().getPluginManager().registerEvents(abilityMenuListener, this);
         getServer().getPluginManager().registerEvents(beyonderPlayerListener, this);
         getServer().getPluginManager().registerEvents(pathwayPotionListener, this);
     }
 
     private void registerCommands() {
-        getCommand("pathway").setExecutor(new PathwayCommand(potionManager));
+        // --- ЗМІНА #5: Реєструємо нову об'єднану команду з усіма залежностями ---
+        PathwayCommand pathwayCommand = new PathwayCommand(potionManager, beyonderManager, pathwayManager, abilityMenu, abilityManager);
+        getCommand("pathway").setExecutor(pathwayCommand);
+        getCommand("pathway").setTabCompleter(pathwayCommand); // Також реєструємо автодоповнення
         getCommand("mastery").setExecutor(new MasteryCommand(beyonderManager));
         getCommand("rampager").setExecutor(new RampagerCommand(beyonderManager));
     }
 
-    public BeyonderManager getBeyonderManager() {
-        return beyonderManager;
-    }
-
-    public PathwayManager getPathwayManager() {
-        return pathwayManager;
-    }
-
-    public PotionManager getPotionManager() {
-        return potionManager;
-    }
-
-    public AbilityManager getAbilityManager() {
-        return abilityManager;
-    }
-
-    public GlowingEntities getGlowingEntities() {
-        return glowingEntities;
-    }
-
-    public EffectManager getEffectManager() {
-        return effectManager;
-    }
+    // Геттери залишаються без змін
+    public BeyonderManager getBeyonderManager() { return beyonderManager; }
+    public PathwayManager getPathwayManager() { return pathwayManager; }
+    public PotionManager getPotionManager() { return potionManager; }
+    public AbilityManager getAbilityManager() { return abilityManager; }
+    public GlowingEntities getGlowingEntities() { return glowingEntities; }
+    public EffectManager getEffectManager() { return effectManager; }
 }

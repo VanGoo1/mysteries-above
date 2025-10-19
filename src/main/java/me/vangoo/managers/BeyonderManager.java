@@ -71,4 +71,12 @@ public class BeyonderManager {
     public void AddBeyonder(Beyonder beyonder) {
         beyonders.put(beyonder.getPlayerId(), beyonder);
     }
+    public void RemoveBeyonder(UUID playerId) {
+        beyonders.remove(playerId);
+        // Також прибираємо бос-бар, якщо гравець онлайн
+        Player player = Bukkit.getPlayer(playerId);
+        if (player != null && player.isOnline()) {
+            bossBarUtil.removePlayer(player);
+        }
+    }
 }

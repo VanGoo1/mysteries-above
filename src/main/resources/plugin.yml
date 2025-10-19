@@ -6,7 +6,7 @@ api-version: "1.21"
 commands:
   pathway:
     description: Manage your Beyonder abilities and pathways
-    usage: /pathway [args]
+    usage: /<command> <get|set|remove> ...
   mastery:
     description: Manage mastery
     usage: /mastery [info]

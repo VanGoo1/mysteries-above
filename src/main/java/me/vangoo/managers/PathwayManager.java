@@ -5,6 +5,7 @@ import me.vangoo.domain.PathwayGroup;
 import me.vangoo.implementation.ErrorPathway.Error;
 import me.vangoo.implementation.VisionaryPathway.Visionary;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,18 @@ public class PathwayManager {
     }
 
     public Pathway getPathway(String name) {
-        return pathways.get(name);
+        // Краще зробити пошук нечутливим до регістру для зручності гравців
+        return pathways.entrySet().stream()
+                .filter(entry -> entry.getKey().equalsIgnoreCase(name))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * НОВИЙ МЕТОД: Повертає всі назви шляхів для автодоповнення команди.
+     */
+    public Collection<String> getAllPathwayNames() {
+        return pathways.keySet();
     }
 }

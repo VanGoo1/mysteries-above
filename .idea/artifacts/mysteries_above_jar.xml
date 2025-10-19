@@ -1,11 +1,11 @@
 <component name="ArtifactManager">
   <artifact type="jar" build-on-make="true" name="mysteries-above:jar">
-    <output-path>$USER_HOME$/Desktop/dev server/plugins</output-path>
+    <output-path>$USER_HOME$/OneDrive/Desktop/DEV SERVER/plugins</output-path>
     <root id="archive" name="mysteries-above.jar">
       <element id="module-output" name="mysteries-above" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/fr/skytasul/reflection-remapper/2.0.0/reflection-remapper-2.0.0.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/fr/skytasul/glowingentities/1.4.7/glowingentities-1.4.7.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/elmakers/mine/bukkit/EffectLib/10.2/EffectLib-10.2.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/fr/skytasul/glowingentities/1.4.7/glowingentities-1.4.7.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/fr/skytasul/reflection-remapper/2.0.0/reflection-remapper-2.0.0.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>
