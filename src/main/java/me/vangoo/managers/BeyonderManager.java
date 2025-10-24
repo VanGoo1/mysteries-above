@@ -2,6 +2,7 @@ package me.vangoo.managers;
 
 import me.vangoo.MysteriesAbovePlugin;
 import me.vangoo.domain.Beyonder;
+import me.vangoo.infrastructure.IBeyonderStorage;
 import me.vangoo.utils.BossBarUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.boss.BarColor;
@@ -14,22 +15,22 @@ import java.util.*;
 public class BeyonderManager {
     private final MysteriesAbovePlugin plugin;
     private final BossBarUtil bossBarUtil;
-    private Map<UUID, Beyonder> beyonders;
+    private IBeyonderStorage beyonderStorage;
 
-    public BeyonderManager(MysteriesAbovePlugin plugin, BossBarUtil bossBarUtil) {
+    public BeyonderManager(MysteriesAbovePlugin plugin, BossBarUtil bossBarUtil, IBeyonderStorage beyonderStorage) {
         this.plugin = plugin;
         this.bossBarUtil = bossBarUtil;
-        loadBeyonders();
+        this.beyonderStorage = beyonderStorage;
         startSpiritualityRegeneration();
     }
 
-    private void loadBeyonders() {
-        this.beyonders = new HashMap<>();
-    }
+//    private void loadBeyonders() {
+//        this.beyonders = new HashMap<>();
+//    }
 
     private void startSpiritualityRegeneration() {
         Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            beyonders.values().forEach(this::regenerateSpirituality);
+            beyonderStorage.getAll().values().forEach(this::regenerateSpirituality);
         }, 20L, 20L); // Кожну секунду
     }
 
@@ -65,18 +66,22 @@ public class BeyonderManager {
 
     @Nullable
     public Beyonder GetBeyonder(UUID playerId) {
-        return beyonders.get(playerId);
+        return beyonderStorage.get(playerId);
     }
 
     public void AddBeyonder(Beyonder beyonder) {
-        beyonders.put(beyonder.getPlayerId(), beyonder);
+        beyonderStorage.add(beyonder);
     }
     public void RemoveBeyonder(UUID playerId) {
-        beyonders.remove(playerId);
+        beyonderStorage.remove(playerId);
         // Також прибираємо бос-бар, якщо гравець онлайн
         Player player = Bukkit.getPlayer(playerId);
         if (player != null && player.isOnline()) {
             bossBarUtil.removePlayer(player);
         }
+    }
+
+    public void updateBeyonder(Beyonder beyonder) {
+        beyonderStorage.update(beyonder.getPlayerId(), beyonder);
     }
 }

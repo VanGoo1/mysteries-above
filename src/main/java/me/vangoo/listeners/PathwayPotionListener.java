@@ -69,12 +69,13 @@ public class PathwayPotionListener implements Listener {
             player.sendMessage(ChatColor.GREEN + "Вітаємо у світі Потойбічних, " + player.getDisplayName());
             beyonder.setSequence(sequence);
             beyonder.setPathway(pathway);
-            beyonderManager.AddBeyonder(beyonder);
             beyonder.setMaxSpirituality(100);
             beyonder.setSpirituality(beyonder.getMaxSpirituality());
+            beyonderManager.AddBeyonder(beyonder);
             beyonderManager.createSpiritualityBar(player, beyonder);
         } else {
             beyonder.advance();
+            beyonderManager.updateBeyonder(beyonder);
             player.sendMessage("§aВи просунулися до послідовності " + beyonder.getSequence() + "!");
         }
 

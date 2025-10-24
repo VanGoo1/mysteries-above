@@ -36,9 +36,6 @@ public class PathwayManager {
                 .orElse(null);
     }
 
-    /**
-     * НОВИЙ МЕТОД: Повертає всі назви шляхів для автодоповнення команди.
-     */
     public Collection<String> getAllPathwayNames() {
         return pathways.keySet();
     }
