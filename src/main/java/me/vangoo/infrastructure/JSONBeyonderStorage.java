@@ -20,11 +20,13 @@ public class JSONBeyonderStorage implements IBeyonderStorage {
     private File file;
     private final Gson gson;
     private final Map<UUID, Beyonder> beyonders;
-    private PathwayAdapter pathwayAdapter;
 
     public JSONBeyonderStorage(String url, PathwayAdapter pathwayAdapter) {
-        this.pathwayAdapter = pathwayAdapter;
-        gson = new GsonBuilder().setPrettyPrinting().registerTypeAdapter(Pathway.class, pathwayAdapter).create();
+        gson = new GsonBuilder()
+                .setPrettyPrinting()
+                .registerTypeAdapter(Pathway.class, pathwayAdapter)
+                .excludeFieldsWithoutExposeAnnotation()
+                .create();
         beyonders = new HashMap<>();
 
         file = new File(url);
@@ -36,6 +38,19 @@ public class JSONBeyonderStorage implements IBeyonderStorage {
             Logger.getLogger(JSONBeyonderStorage.class.getName()).warning(e.getMessage());
         }
         loadFromFile();
+
+        for (Beyonder beyonder : beyonders.values()) {
+            Logger.getLogger(JSONBeyonderStorage.class.getName()).warning(String.valueOf(beyonder.getSanityLossScale()));
+            int sanityLossScale = beyonder.getSanityLossScale();
+            int spirituality = beyonder.getSpirituality();
+            int mastery  = beyonder.getMastery();
+            beyonder = new Beyonder(beyonder.getPlayerId(), beyonder.getSequence(), beyonder.getPathway());
+            beyonder.setSpirituality(spirituality);
+            beyonder.setMastery(mastery);
+            beyonder.setSanityLossScale(sanityLossScale);
+            beyonder.updateMaxSpirituality();
+            beyonders.put(beyonder.getPlayerId(), beyonder);
+        }
     }
 
     private boolean saveToFile() {
@@ -82,6 +97,13 @@ public class JSONBeyonderStorage implements IBeyonderStorage {
         }
         beyonders.remove(playerId);
         return saveToFile();
+    }
+
+    @Override
+    public void saveAll() {
+        try (FileWriter writer = new FileWriter(file)) {
+            gson.toJson(this.beyonders, writer);
+        } catch (IOException e) { Logger.getLogger(JSONBeyonderStorage.class.getName()).warning(e.getMessage()); }
     }
 
     @Override

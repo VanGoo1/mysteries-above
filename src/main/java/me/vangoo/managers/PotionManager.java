@@ -39,11 +39,11 @@ public class PotionManager {
         return potions;
     }
 
-    public boolean canConsumePotion(Beyonder beyonder, Pathway pathway, int sequence) {
+    public boolean canConsumePotion(Beyonder beyonder, Pathway pathway, int potionSequence) {
         // Якщо гравець не потусторонній
-        if (beyonder.getSequence() == -1) {
+        if (beyonder == null) {
             // Може стати потустороннім тільки з зілля послідовності 9
-            return sequence == 9;
+            return potionSequence == 9;
         }
         // Якщо гравець вже потусторонній
         // Перевіряємо чи той самий шлях та чи тієї ж групи
@@ -52,7 +52,7 @@ public class PotionManager {
         }
 
         // Перевіряємо чи наступна послідовність (у зворотному порядку)
-        if (beyonder.getSequence() != sequence + 1) {
+        if (beyonder.getSequence() != potionSequence + 1) {
             return false; // Не та послідовність
         }
 

@@ -79,10 +79,7 @@ public class PathwayCommand implements CommandExecutor, TabCompleter {
                     abilities.addAll(path.GetAbilitiesForSequence(i));
                 }
 
-                Beyonder beyonder = new Beyonder(target.getUniqueId(), abilities);
-                beyonder.setPathway(path);
-                beyonder.setSequence(sequence);
-                beyonder.updateMaxSpirituality();
+                Beyonder beyonder = new Beyonder(target.getUniqueId(), sequence,path);
                 beyonder.setSpirituality(beyonder.getMaxSpirituality());
 
                 beyonderManager.AddBeyonder(beyonder);

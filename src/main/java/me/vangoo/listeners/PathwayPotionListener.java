@@ -53,22 +53,19 @@ public class PathwayPotionListener implements Listener {
         }
         if (pathway == null) return;
         Beyonder beyonder = beyonderManager.GetBeyonder(player.getUniqueId());
-        if (beyonder == null) {
-            beyonder = new Beyonder(player.getUniqueId(), pathway.GetAbilitiesForSequence(9));
-        }
+
         if (!potionManager.canConsumePotion(beyonder, pathway, sequence)) {
             event.setCancelled(true);
             return;
         }
-        applyPotionEffect(player, beyonder, sequence, pathway);
+        beyonder = new Beyonder(player.getUniqueId(), sequence, pathway);
+
+        applyPotionEffect(player, beyonder);
     }
 
-    private void applyPotionEffect(Player player, Beyonder beyonder,
-                                   int sequence, Pathway pathway) {
-        if (beyonder.getSequence() == -1) {
+    private void applyPotionEffect(Player player, Beyonder beyonder) {
+        if (beyonder.getSequence() == 9) {
             player.sendMessage(ChatColor.GREEN + "Вітаємо у світі Потойбічних, " + player.getDisplayName());
-            beyonder.setSequence(sequence);
-            beyonder.setPathway(pathway);
             beyonder.setMaxSpirituality(100);
             beyonder.setSpirituality(beyonder.getMaxSpirituality());
             beyonderManager.AddBeyonder(beyonder);
