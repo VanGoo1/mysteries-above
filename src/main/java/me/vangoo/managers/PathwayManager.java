@@ -28,7 +28,6 @@ public class PathwayManager {
     }
 
     public Pathway getPathway(String name) {
-        // Краще зробити пошук нечутливим до регістру для зручності гравців
         return pathways.entrySet().stream()
                 .filter(entry -> entry.getKey().equalsIgnoreCase(name))
                 .map(Map.Entry::getValue)

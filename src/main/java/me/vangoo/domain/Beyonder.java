@@ -1,31 +1,33 @@
 package me.vangoo.domain;
 
+import com.google.gson.annotations.Expose;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class Beyonder {
-    private final UUID playerId;
-    private Pathway pathway; // class
-    private int sequence; // level
-    private int mastery; // level progress
-    private int spirituality; // mana
-    private int maxSpirituality;
-    private int sanityLossScale;
-    private List<Ability> abilities;
+    @Expose private final UUID playerId;
+    @Expose private Pathway pathway; // class
+    @Expose private int sequence; // level
+    @Expose private int mastery; // level progress
+    @Expose private int spirituality; // mana
+    @Expose private int maxSpirituality;
+    @Expose private int sanityLossScale;
+    private final List<Ability> abilities;
 
-    public Beyonder(UUID playerId) {
+    public Beyonder(UUID playerId, int sequence, Pathway pathway) {
+        abilities = new ArrayList<>();
         this.playerId = playerId;
-        this.sequence = -1;
-        this.sanityLossScale = 0;
+        this.sequence = sequence;
+        this.pathway = pathway;
         this.mastery = 0;
         this.spirituality = 0;
-        this.maxSpirituality = 0;
-    }
-
-    public Beyonder(UUID playerId, List<Ability> abilities) {
-        this(playerId);
-        this.abilities = new ArrayList<>(abilities);
+        this.sanityLossScale = 0;
+        updateMaxSpirituality();
+        for (int i = 9; i >= sequence; i--) {
+            abilities.addAll(pathway.GetAbilitiesForSequence(i));
+        }
     }
 
     public boolean canAdvance() {

@@ -45,6 +45,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
             effectManager.dispose();
         }
         glowingEntities.disable();
+        beyonderStorage.saveAll();
         super.onDisable();
     }
 
@@ -52,13 +53,13 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         Ability.setPlugin(this);
         NBTBuilder.setPlugin(this);
 
-        this.beyonderStorage = new JSONBeyonderStorage(this.getDataFolder() + "beyonders.json",
-                new PathwayAdapter(pathwayManager));
         this.abilityMenu = new AbilityMenu();
         this.pathwayManager = new PathwayManager();
         this.rampagerManager = new RampagerManager();
         this.potionManager = new PotionManager(pathwayManager, this);
         this.abilityManager = new AbilityManager(new CooldownManager(), rampagerManager);
+        this.beyonderStorage = new JSONBeyonderStorage(this.getDataFolder() + "beyonders.json",
+                new PathwayAdapter(pathwayManager));
         this.beyonderManager = new BeyonderManager(this, new BossBarUtil(), beyonderStorage);
         this.effectManager = new EffectManager(this);
     }
