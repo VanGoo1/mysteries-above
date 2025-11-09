@@ -13,3 +13,6 @@ commands:
   rampager:
     description: оудап
     usage: /rampager set <1-100>
+  potion:
+    description: get sequence potions
+    usage: /potion ...

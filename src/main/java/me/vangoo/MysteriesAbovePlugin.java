@@ -3,6 +3,7 @@ package me.vangoo;
 import de.slikey.effectlib.EffectManager;
 import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.commands.RampagerCommand;
+import me.vangoo.commands.SequencePotionCommand;
 import me.vangoo.domain.Ability;
 import me.vangoo.infrastructure.IBeyonderStorage;
 import me.vangoo.infrastructure.JSONBeyonderStorage;
@@ -76,9 +77,12 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     }
 
     private void registerCommands() {
-        PathwayCommand pathwayCommand = new PathwayCommand(potionManager, beyonderManager, pathwayManager, abilityMenu, abilityManager);
+        PathwayCommand pathwayCommand = new PathwayCommand(beyonderManager, pathwayManager, abilityMenu, abilityManager);
+        SequencePotionCommand sequencePotionCommand = new SequencePotionCommand(potionManager);
         getCommand("pathway").setExecutor(pathwayCommand);
-        getCommand("pathway").setTabCompleter(pathwayCommand); // Також реєструємо автодоповнення
+        getCommand("pathway").setTabCompleter(pathwayCommand);
+        getCommand("potion").setExecutor(sequencePotionCommand);
+        getCommand("potion").setTabCompleter(sequencePotionCommand);
         getCommand("mastery").setExecutor(new MasteryCommand(beyonderManager));
         getCommand("rampager").setExecutor(new RampagerCommand(beyonderManager));
     }

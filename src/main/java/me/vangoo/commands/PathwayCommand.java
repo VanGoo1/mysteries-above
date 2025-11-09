@@ -15,7 +15,6 @@ import java.util.stream.IntStream;
 
 public class PathwayCommand implements CommandExecutor, TabCompleter {
 
-    private final PotionManager potionManager;
     private final BeyonderManager beyonderManager;
     private final PathwayManager pathwayManager;
     private final AbilityMenu abilityMenu;
@@ -23,8 +22,7 @@ public class PathwayCommand implements CommandExecutor, TabCompleter {
 
     private static final String PREFIX = ChatColor.DARK_PURPLE + "[Pathway] " + ChatColor.RESET;
 
-    public PathwayCommand(PotionManager potionManager, BeyonderManager beyonderManager, PathwayManager pathwayManager, AbilityMenu abilityMenu, AbilityManager abilityManager) {
-        this.potionManager = potionManager;
+    public PathwayCommand(BeyonderManager beyonderManager, PathwayManager pathwayManager, AbilityMenu abilityMenu, AbilityManager abilityManager) {
         this.beyonderManager = beyonderManager;
         this.pathwayManager = pathwayManager;
         this.abilityMenu = abilityMenu;
@@ -34,24 +32,11 @@ public class PathwayCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage(PREFIX + ChatColor.GRAY + "Використання: /pw <get|set|remove> ...");
+            sender.sendMessage(PREFIX + ChatColor.GRAY + "Використання: /pw <set|remove> ...");
             return true;
         }
 
         switch (args[0].toLowerCase()) {
-            case "get" -> {
-                if (!(sender instanceof Player player)) {
-                    sender.sendMessage(PREFIX + ChatColor.RED + "Тільки гравець може отримати зілля.");
-                    return true;
-                }
-                if (args.length < 2) {
-                    player.sendMessage(PREFIX + ChatColor.RED + "Вкажіть назву шляху.");
-                    return true;
-                }
-                int sequence = (args.length >= 3) ? Integer.parseInt(args[2]) : 9;
-                potionManager.getPotionsPathway(args[1]).ifPresent(potions -> givePotion(player, potions, sequence));
-                player.sendMessage(PREFIX + ChatColor.GREEN + "Зілля видано.");
-            }
             case "set" -> {
                 if (args.length != 4) {
                     sender.sendMessage(PREFIX + ChatColor.RED + "Використання: /pw set <гравець> <шлях> <послідовність>");
@@ -68,18 +53,13 @@ public class PathwayCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
 
-                // Якщо гравець вже Потойбічний, просто очищуємо його дані перед встановленням нових
                 if (beyonderManager.GetBeyonder(target.getUniqueId()) != null) {
                     clearBeyonderData(target);
                 }
 
                 int sequence = Integer.parseInt(args[3]);
-                List<Ability> abilities = new ArrayList<>();
-                for (int i = 9; i >= sequence; i--) {
-                    abilities.addAll(path.GetAbilitiesForSequence(i));
-                }
 
-                Beyonder beyonder = new Beyonder(target.getUniqueId(), sequence,path);
+                Beyonder beyonder = new Beyonder(target.getUniqueId(), sequence, path);
                 beyonder.setSpirituality(beyonder.getMaxSpirituality());
 
                 beyonderManager.AddBeyonder(beyonder);
@@ -130,20 +110,16 @@ public class PathwayCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        // Логіка автодоповнення залишена, оскільки вона дуже корисна
         if (args.length == 1) {
-            return StringUtil.copyPartialMatches(args[0], Arrays.asList("get", "set", "remove"), new ArrayList<>());
+            return StringUtil.copyPartialMatches(args[0], Arrays.asList("set", "remove"), new ArrayList<>());
         }
         String sub = args[0].toLowerCase();
         if (args.length == 2) {
-            if (sub.equals("get")) return StringUtil.copyPartialMatches(args[1], potionManager.getPotions().stream().map(p -> p.getPathway().getName()).toList(), new ArrayList<>());
             if (sub.equals("set") || sub.equals("remove")) return StringUtil.copyPartialMatches(args[1], Bukkit.getOnlinePlayers().stream().map(Player::getName).toList(), new ArrayList<>());
         }
         if (args.length == 3) {
-            if (sub.equals("get") || sub.equals("set")) {
-                List<String> options = sub.equals("get")
-                        ? IntStream.rangeClosed(0, 9).mapToObj(String::valueOf).toList()
-                        : pathwayManager.getAllPathwayNames().stream().toList();
+            if (sub.equals("set")) {
+                List<String> options = pathwayManager.getAllPathwayNames().stream().toList();
                 return StringUtil.copyPartialMatches(args[2], options, new ArrayList<>());
             }
         }
