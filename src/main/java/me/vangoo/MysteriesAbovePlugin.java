@@ -53,7 +53,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         Ability.setPlugin(this);
         NBTBuilder.setPlugin(this);
 
-        this.abilityMenu = new AbilityMenu();
+        this.abilityMenu = new AbilityMenu(this);
         this.pathwayManager = new PathwayManager();
         this.rampagerManager = new RampagerManager();
         this.potionManager = new PotionManager(pathwayManager, this);

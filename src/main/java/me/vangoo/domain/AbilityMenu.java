@@ -1,6 +1,8 @@
 package me.vangoo.domain;
 
+import me.vangoo.MysteriesAbovePlugin;
 import me.vangoo.utils.NBTBuilder;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -19,9 +21,10 @@ import static org.bukkit.Bukkit.createInventory;
 public class AbilityMenu {
     private static final String MENU_TITLE = "§8Меню Здібностей";
     private static final int MENU_SIZE = 54;
+    private final MysteriesAbovePlugin plugin;
 
-    public AbilityMenu() {
-
+    public AbilityMenu(MysteriesAbovePlugin plugin) {
+        this.plugin = plugin;
     }
 
     private ItemStack getItem() {
@@ -44,7 +47,9 @@ public class AbilityMenu {
             return;
         }
         Inventory menu = createMenu(beyonder.getAbilities());
-        player.openInventory(menu);
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            player.openInventory(menu);
+        });
     }
 
     private Inventory createMenu(List<Ability> availableAbilities) {

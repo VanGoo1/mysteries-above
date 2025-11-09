@@ -8,6 +8,8 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.Map;
 import java.util.UUID;
@@ -59,6 +61,7 @@ public class AbilityManager {
                 beyonder.updateMaxSpirituality();
                 beyonder.DecrementSpirituality(ability.getSpiritualityCost());
                 if (beyonder.getSpirituality() <= beyonder.getMaxSpirituality() * 0.05) {
+                    caster.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 20, 0));
                     beyonder.setSanityLossScale(beyonder.getSanityLossScale() + 1);
                 }
             }
@@ -82,22 +85,11 @@ public class AbilityManager {
         return null;
     }
 
-
-    /**
-     * Блокує гравцю можливість використовувати здібності на певний час.
-     * @param player Гравець для блокування.
-     * @param durationSeconds Тривалість блокування в секундах.
-     */
     public void lockPlayer(Player player, int durationSeconds) {
         long expirationTime = System.currentTimeMillis() + (durationSeconds * 1000L);
         lockedPlayers.put(player.getUniqueId(), expirationTime);
     }
 
-    /**
-     * Перевіряє, чи заблоковані здібності у гравця.
-     * @param player Гравець для перевірки.
-     * @return true, якщо здібності заблоковані, інакше false.
-     */
     private boolean isLocked(Player player) {
         Long expirationTime = lockedPlayers.get(player.getUniqueId());
 

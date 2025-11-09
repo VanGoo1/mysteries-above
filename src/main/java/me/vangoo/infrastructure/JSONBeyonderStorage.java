@@ -40,7 +40,6 @@ public class JSONBeyonderStorage implements IBeyonderStorage {
         loadFromFile();
 
         for (Beyonder beyonder : beyonders.values()) {
-            Logger.getLogger(JSONBeyonderStorage.class.getName()).warning(String.valueOf(beyonder.getSanityLossScale()));
             int sanityLossScale = beyonder.getSanityLossScale();
             int spirituality = beyonder.getSpirituality();
             int mastery  = beyonder.getMastery();
