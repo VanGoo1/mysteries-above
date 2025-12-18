@@ -111,7 +111,6 @@ public class AbilityMenuListener implements Listener {
         }
     }
 
-
     @EventHandler
     public void onItemDrop(PlayerDropItemEvent event) {
         ItemStack item = event.getItemDrop().getItemStack();

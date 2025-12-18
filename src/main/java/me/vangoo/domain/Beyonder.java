@@ -34,6 +34,27 @@ public class Beyonder {
         return mastery >= 100 && sequence > 0;
     }
 
+    public boolean canConsumePotion(Pathway pathwayOfPotion, int potionSequence) {
+        // Перевіряємо чи той самий шлях та чи тієї ж групи
+        if (pathwayOfPotion.getGroup() != pathway.getGroup()) {
+            return false;
+        }
+
+        // Перевіряємо чи наступна послідовність (у зворотному порядку)
+        if (getSequence() != potionSequence + 1) {
+            return false; // Не та послідовність
+        }
+
+        // Перевіряємо чи засвоєння 100%
+        return getMastery() >= 100;
+    }
+
+    public void cleanUpAbilities() {
+        for (Ability ability : abilities) {
+            ability.cleanUp();
+        }
+    }
+
     public void advance() {
         if (canAdvance()) {
             sequence--;
@@ -105,10 +126,6 @@ public class Beyonder {
 
     public void setPathway(Pathway pathway) {
         this.pathway = pathway;
-    }
-
-    public void setSequence(int sequence) {
-        this.sequence = sequence;
     }
 
     public void setMaxSpirituality(int maxSpirituality) {

@@ -53,8 +53,11 @@ public class PathwayPotionListener implements Listener {
         }
         if (pathway == null) return;
         Beyonder beyonder = beyonderManager.GetBeyonder(player.getUniqueId());
-
-        if (!potionManager.canConsumePotion(beyonder, pathway, sequence)) {
+        if (beyonder == null){
+            event.setCancelled(true);
+            return;
+        }
+        if (!beyonder.canConsumePotion(pathway, sequence)) {
             event.setCancelled(true);
             return;
         }

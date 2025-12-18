@@ -42,10 +42,7 @@ public class FractureOfRealitiesAbility extends Ability {
     public boolean execute(Player caster, Beyonder beyonder) {
         Location center = caster.getLocation().add(0, 1.2, 0);
         // ефект частинок
-        Bukkit.getScheduler().runTaskAsynchronously(
-
-                plugin,
-                () -> {
+        Bukkit.getScheduler().runTask(plugin, () -> {
                     for (int i = 0; i < DURATION_TICKS; i += 4) {
                         double angle = (i / 4) * Math.PI / 8;
                         double x = Math.cos(angle) * RADIUS;

@@ -15,6 +15,8 @@ import org.bukkit.util.RayTraceResult;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.bukkit.Bukkit.getPlayer;
+
 public class GoodMemory extends Ability {
     private static final int OBSERVE_TICKS_REQUIRED = 3 * 20; // 3s
     private static final int GLOW_TICKS = 20 * 20; // 20s
@@ -73,7 +75,6 @@ public class GoodMemory extends Ability {
             glowTasks.put(id, new ConcurrentHashMap<>());
 
             BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, () -> tickObserver(caster, state, beyonder), 1L, 5L);
-            tasks.put(id, task);
             caster.sendMessage(ChatColor.GREEN + "Хороша пам'ять" + ChatColor.GRAY + " увімкнена. Спостерігайте за ціллю " + OBSERVE_TICKS_REQUIRED / 20 + "с.");
         }
         return true; // перемикач завжди "успішний"
@@ -265,5 +266,17 @@ public class GoodMemory extends Ability {
             return (LivingEntity) res.getHitEntity();
         }
         return null;
+    }
+
+    @Override
+    public void cleanUp(){
+        tasks.forEach((id, task) -> {
+            Player player = Bukkit.getPlayer(id);
+            if (player != null)
+                removeAllGlowing(player);
+        });
+
+        tasks.clear();
+        states.clear();
     }
 }

@@ -9,6 +9,8 @@ import org.bukkit.entity.Player;
 
 import java.util.Random;
 
+import static org.bukkit.Bukkit.getLogger;
+
 public class RampagerManager {
     private final Random random = new Random();
 
@@ -98,7 +100,10 @@ public class RampagerManager {
 
     private void spawnWardenAtPlayerLocation(Player player, Beyonder beyonder) {
         Location spawnLocation = player.getLocation();
-
+        if (spawnLocation.getWorld() == null) {
+            getLogger().warning("Cannot spawn warden: world is null");
+            return;
+        }
         // Спавнимо Вардена
         org.bukkit.entity.Warden warden = (org.bukkit.entity.Warden) spawnLocation.getWorld()
                 .spawnEntity(spawnLocation, org.bukkit.entity.EntityType.WARDEN);

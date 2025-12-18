@@ -104,5 +104,4 @@ public class AbilityManager {
         player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.DARK_PURPLE + "Ваші здібності тимчасово заблоковані!"));
         return true;
     }
-
 }

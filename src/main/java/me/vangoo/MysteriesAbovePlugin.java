@@ -47,6 +47,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         }
         glowingEntities.disable();
         beyonderStorage.saveAll();
+        beyonderStorage.getAll().forEach(((uuid, beyonder) -> beyonder.cleanUpAbilities()));
         super.onDisable();
     }
 

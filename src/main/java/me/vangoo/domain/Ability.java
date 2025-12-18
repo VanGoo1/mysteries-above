@@ -51,4 +51,6 @@ public abstract class Ability {
     public int hashCode() {
         return Objects.hash(getName());
     }
+
+    public void cleanUp(){};
 }

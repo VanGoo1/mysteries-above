@@ -13,6 +13,8 @@ import org.bukkit.scheduler.BukkitTask;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.bukkit.Bukkit.getLogger;
+
 public class DangerSense extends Ability {
     private static final int OBSERVE_TIME_TICKS = 20 * 20; // 20 секунд
     private static final int RANGE = 8; // 8 блоків
@@ -27,6 +29,23 @@ public class DangerSense extends Ability {
 
     // Кулдауни на конкретних цілей {caster -> {target -> expireTime}}
     private final Map<UUID, Map<UUID, Long>> targetCooldowns = new ConcurrentHashMap<>();
+
+    @Override
+    public void cleanUp(){
+        for (BukkitTask task : observeTasks.values()) {
+            if (task != null && !task.isCancelled()) {
+                try {
+                    task.cancel();
+                } catch (Exception e) {
+                    getLogger().warning("error with canceling task");
+                }
+            }
+        }
+
+        observeTasks.clear();
+        currentTargets.clear();
+        targetCooldowns.clear();
+    }
 
     // Небезпечні предмети
     private static final Set<Material> DANGEROUS_ITEMS = Set.of(
