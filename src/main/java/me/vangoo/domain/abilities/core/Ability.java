@@ -5,16 +5,19 @@ import java.util.Objects;
 public abstract class Ability {
     public abstract String getName();
 
-    public boolean isPassive() {
-        return false;
-    }
-
     public abstract String getDescription();
 
     public abstract int getSpiritualityCost();
 
+    /**
+     * Cooldown in seconds
+     */
+    public abstract int getCooldown();
+
+    public abstract AbilityType getType();
+
     public final AbilityResult execute(IAbilityContext context) {
-        if (!isPassive() && context.hasCooldown(this))
+        if (getType() != AbilityType.ACTIVE && context.hasCooldown(this))
             return AbilityResult.failure("Cooldown: " + context.getRemainingCooldownSeconds(this));
         if (!canExecute(context))
             return AbilityResult.failure("can't execute this ability");
@@ -39,11 +42,6 @@ public abstract class Ability {
     protected void postExecution(IAbilityContext context) {
         // Override for effects after execution
     }
-
-    /**
-     * Cooldown in seconds
-     */
-    public abstract int getCooldown();
 
     @Override
     public boolean equals(Object obj) {

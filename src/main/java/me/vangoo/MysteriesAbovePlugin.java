@@ -3,12 +3,14 @@ package me.vangoo;
 import de.slikey.effectlib.EffectManager;
 import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.application.services.*;
+import me.vangoo.infrastructure.schedulers.PassiveAbilityScheduler;
 import me.vangoo.presentation.commands.RampagerCommand;
 import me.vangoo.presentation.commands.SequencePotionCommand;
 import me.vangoo.infrastructure.IBeyonderRepository;
 import me.vangoo.infrastructure.JSONBeyonderRepository;
 import me.vangoo.infrastructure.abilities.AbilityItemFactory;
 import me.vangoo.presentation.listeners.BeyonderPlayerListener;
+import me.vangoo.presentation.listeners.PassiveAbilityLifecycleListener;
 import me.vangoo.presentation.listeners.PathwayPotionListener;
 import me.vangoo.presentation.commands.PathwayCommand;
 import me.vangoo.presentation.commands.MasteryCommand;
@@ -20,7 +22,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class MysteriesAbovePlugin extends JavaPlugin {
 
-    private AbilityMenu abilityMenu;
+    AbilityMenu abilityMenu;
     CooldownManager cooldownManager;
     AbilityLockManager lockManager;
     PathwayManager pathwayManager;
@@ -32,6 +34,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     IBeyonderRepository beyonderStorage;
     RampageEffectsHandler rampageEffectsHandler;
     AbilityItemFactory abilityItemFactory;
+    PassiveAbilityManager passiveAbilityManager;
+    PassiveAbilityScheduler passiveAbilityScheduler;
 
     @Override
     public void onEnable() {
@@ -41,16 +45,12 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         registerEvents();
         registerCommands();
 
-        getServer().getScheduler().runTaskTimer(
-                this,
-                () -> beyonderService.regenerateAll(),
-                20L,
-                20L
-        );
+        startSchedulers();
     }
 
     @Override
     public void onDisable() {
+        stopSchedulers();
         if (effectManager != null) {
             effectManager.dispose();
         }
@@ -78,8 +78,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 );
 
         this.beyonderService = new BeyonderService(beyonderStorage, new BossBarUtil());
-
         this.lockManager = new AbilityLockManager();
+        this.passiveAbilityManager = new PassiveAbilityManager();
 
         this.abilityExecutor = new AbilityExecutor(
                 this,
@@ -87,23 +87,42 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 beyonderService,
                 lockManager,
                 rampageEffectsHandler,
-                glowingEntities
+                glowingEntities,
+                passiveAbilityManager
         );
 
         this.potionManager = new PotionManager(pathwayManager, this);
         this.effectManager = new EffectManager(this);
+
+        this.passiveAbilityScheduler = new PassiveAbilityScheduler(
+                this,
+                passiveAbilityManager,
+                beyonderService,
+                cooldownManager,
+                lockManager,
+                glowingEntities
+        );
     }
 
     private void registerEvents() {
-        AbilityMenuListener abilityMenuListener = new AbilityMenuListener(abilityMenu, beyonderService, abilityExecutor, abilityItemFactory, rampageEffectsHandler);
+        AbilityMenuListener abilityMenuListener =
+                new AbilityMenuListener(abilityMenu, beyonderService, abilityExecutor, abilityItemFactory, rampageEffectsHandler);
 
-        BeyonderPlayerListener beyonderPlayerListener = new BeyonderPlayerListener(beyonderService, new BossBarUtil(), abilityExecutor, abilityItemFactory);
-        PathwayPotionListener pathwayPotionListener = new PathwayPotionListener(potionManager, beyonderService);
+        BeyonderPlayerListener beyonderPlayerListener =
+                new BeyonderPlayerListener(beyonderService, new BossBarUtil(), abilityExecutor, abilityItemFactory);
+
+        PathwayPotionListener pathwayPotionListener =
+                new PathwayPotionListener(potionManager, beyonderService);
+
+        PassiveAbilityLifecycleListener passiveAbilityLifecycleListener =
+                new PassiveAbilityLifecycleListener(this.passiveAbilityScheduler);
 
         getServer().getPluginManager().registerEvents(abilityMenuListener, this);
         getServer().getPluginManager().registerEvents(beyonderPlayerListener, this);
         getServer().getPluginManager().registerEvents(pathwayPotionListener, this);
+        getServer().getPluginManager().registerEvents(passiveAbilityLifecycleListener, this);
     }
+
 
     private void registerCommands() {
         PathwayCommand pathwayCommand = new PathwayCommand(beyonderService, pathwayManager, abilityMenu, abilityItemFactory);
@@ -114,5 +133,23 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getCommand("potion").setTabCompleter(sequencePotionCommand);
         getCommand("mastery").setExecutor(new MasteryCommand(beyonderService));
         getCommand("rampager").setExecutor(new RampagerCommand(beyonderService));
+    }
+
+    private void startSchedulers() {
+        getServer().getScheduler().runTaskTimer(
+                this,
+                () -> beyonderService.regenerateAll(),
+                20L,
+                20L
+        );
+
+        // NEW: Start passive ability scheduler
+        passiveAbilityScheduler.start();
+    }
+
+    private void stopSchedulers() {
+        if (passiveAbilityScheduler != null) {
+            passiveAbilityScheduler.stop();
+        }
     }
 }

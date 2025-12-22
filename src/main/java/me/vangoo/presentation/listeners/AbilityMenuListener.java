@@ -10,6 +10,7 @@ import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.infrastructure.abilities.AbilityItemFactory;
 import me.vangoo.infrastructure.ui.AbilityMenu;
 import me.vangoo.infrastructure.ui.NBTBuilder;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -22,7 +23,6 @@ import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
-
 
 
 /**
@@ -136,12 +136,21 @@ public class AbilityMenuListener implements Listener {
             return;
         }
 
-        // Execute passive abilities immediately
-        if (ability.isPassive()) {
-            executePassiveAbility(player, beyonder, ability);
-        } else {
-            // Give active ability item to player
-            player.getInventory().addItem(abilityItem);
+        switch (ability.getType()) {
+            case ACTIVE:
+                // Give item to player
+                player.getInventory().addItem(abilityItem);
+                break;
+
+            case TOGGLEABLE_PASSIVE:
+                // Execute to toggle
+                executePassiveAbility(player, beyonder, ability);
+                break;
+
+            case PERMANENT_PASSIVE:
+                // Cannot interact with permanent passives
+                player.sendMessage(ChatColor.YELLOW + "Ця здібність завжди активна");
+                break;
         }
     }
 

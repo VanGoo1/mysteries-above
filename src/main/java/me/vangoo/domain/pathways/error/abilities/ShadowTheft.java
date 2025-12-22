@@ -2,6 +2,7 @@ package me.vangoo.domain.pathways.error.abilities;
 
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.AbilityResult;
+import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -18,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class ShadowTheft extends Ability {
+public class ShadowTheft extends ActiveAbility {
     private static final int RANGE = 8;
     private static final int SPIRITUALITY_COST = 25;
     private static final int COOLDOWN_SECONDS = 120;

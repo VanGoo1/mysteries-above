@@ -5,9 +5,7 @@ import me.vangoo.MysteriesAbovePlugin;
 import me.vangoo.application.abilities.AbilityExecutionResult;
 import me.vangoo.application.abilities.SanityLossCheckResult;
 import me.vangoo.application.abilities.SanityPenalty;
-import me.vangoo.domain.abilities.core.Ability;
-import me.vangoo.domain.abilities.core.AbilityResult;
-import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.abilities.core.*;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.SanityLoss;
 import org.bukkit.entity.Player;
@@ -24,14 +22,16 @@ public class AbilityExecutor {
     private final AbilityLockManager abilityLockManager;
     private final RampageEffectsHandler rampageEffectsHandler;
     private final GlowingEntities glowingEntities;
+    private final PassiveAbilityManager passiveAbilityManager;
 
-    public AbilityExecutor(MysteriesAbovePlugin plugin, CooldownManager cooldownManager, BeyonderService beyonderService, AbilityLockManager abilityLockManager, RampageEffectsHandler rampageEffectsHandler, GlowingEntities glowingEntities) {
+    public AbilityExecutor(MysteriesAbovePlugin plugin, CooldownManager cooldownManager, BeyonderService beyonderService, AbilityLockManager abilityLockManager, RampageEffectsHandler rampageEffectsHandler, GlowingEntities glowingEntities, PassiveAbilityManager passiveAbilityManager) {
         this.plugin = plugin;
         this.cooldownManager = cooldownManager;
         this.beyonderService = beyonderService;
         this.abilityLockManager = abilityLockManager;
         this.rampageEffectsHandler = rampageEffectsHandler;
         this.glowingEntities = glowingEntities;
+        this.passiveAbilityManager = passiveAbilityManager;
     }
 
 
@@ -71,13 +71,15 @@ public class AbilityExecutor {
         }
 
         // 5. Update beyonder state (domain)
-        if (!ability.isPassive()) {
+        if (ability.getType() == AbilityType.ACTIVE) {
             try {
                 beyonder.useAbility(ability, ability.getSpiritualityCost());
                 beyonderService.updateBeyonder(beyonder);
             } catch (IllegalStateException e) {
                 return AbilityExecutionResult.failure(e.getMessage());
             }
+        } else if (ability.getType() == AbilityType.TOGGLEABLE_PASSIVE) {
+            passiveAbilityManager.toggleAbility(beyonder.getPlayerId(), (ToggleablePassiveAbility) ability, context);
         }
 
         return AbilityExecutionResult.success();

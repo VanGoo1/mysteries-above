@@ -2,6 +2,7 @@ package me.vangoo.domain.pathways.visionary.abilities;
 
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.AbilityResult;
+import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import org.bukkit.ChatColor;
 import org.bukkit.Particle;
@@ -12,7 +13,7 @@ import org.bukkit.potion.PotionEffectType;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class SharpVision extends Ability {
+public class SharpVision extends ActiveAbility {
     private static final int RANGE = 100;
     private static final int DURATION_SECONDS = 30;
     private static final int DURATION_TICKS = DURATION_SECONDS * 20;

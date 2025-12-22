@@ -1,6 +1,7 @@
 package me.vangoo.infrastructure.abilities;
 
 import me.vangoo.domain.abilities.core.Ability;
+import me.vangoo.domain.abilities.core.AbilityType;
 import me.vangoo.domain.entities.Beyonder;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -27,7 +28,7 @@ public class AbilityItemFactory {
                 lore.add(ChatColor.GRAY + line);
             }
 
-            if (!ability.isPassive()) {
+            if (ability.getType() == AbilityType.ACTIVE) {
                 lore.add(ChatColor.GRAY + "Кулдаун: " + ChatColor.BLUE + ability.getCooldown() + "c");
                 lore.add(ChatColor.GRAY + "Вартість: " + ChatColor.BLUE + ability.getSpiritualityCost());
             }

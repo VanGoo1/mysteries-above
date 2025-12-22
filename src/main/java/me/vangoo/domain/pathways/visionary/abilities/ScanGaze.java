@@ -2,6 +2,7 @@ package me.vangoo.domain.pathways.visionary.abilities;
 
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.AbilityResult;
+import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.entities.Beyonder;
 import org.bukkit.ChatColor;
@@ -12,7 +13,7 @@ import org.bukkit.potion.PotionEffect;
 import java.util.Optional;
 
 
-public class ScanGaze extends Ability {
+public class ScanGaze extends ActiveAbility {
     private static final int RANGE = 5;
 
     @Override

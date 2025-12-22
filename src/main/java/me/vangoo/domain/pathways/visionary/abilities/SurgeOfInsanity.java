@@ -2,13 +2,14 @@ package me.vangoo.domain.pathways.visionary.abilities;
 
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.AbilityResult;
+import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import org.bukkit.ChatColor;
 import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffectType;
 
-public class SurgeOfInsanity extends Ability {
+public class SurgeOfInsanity extends ActiveAbility {
     private static final int RANGE = 5;
     private static final int COOLDOWN = 30;
     private static final int EFFECT_DURATION = 10 * 20; // 10 секунд

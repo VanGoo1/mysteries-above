@@ -1,18 +1,15 @@
 package me.vangoo.domain.pathways.visionary.abilities;
 
-import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.abilities.core.ToggleablePassiveAbility;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DangerSense extends Ability {
+public class DangerSense extends ToggleablePassiveAbility {
     private static final int OBSERVE_TIME_TICKS = 20 * 20; // 20 секунд
     private static final int RANGE = 8; // 8 блоків
     private static final int COOLDOWN_PER_TARGET = 150; // 2.5 хвилини в секундах
@@ -72,16 +69,6 @@ public class DangerSense extends Ability {
     }
 
     @Override
-    public int getSpiritualityCost() {
-        return 0; // пасивна здібність
-    }
-
-    @Override
-    public boolean isPassive() {
-        return true;
-    }
-
-    @Override
     protected AbilityResult performExecution(IAbilityContext context) {
         UUID casterId = context.getCasterId();
 
@@ -102,8 +89,19 @@ public class DangerSense extends Ability {
 
         return AbilityResult.success();
     }
+
     @Override
-    public int getCooldown() {
-        return 0; // пасивна здібність без загального кулдауну
+    public void onEnable(IAbilityContext context) {
+
+    }
+
+    @Override
+    public void onDisable(IAbilityContext context) {
+
+    }
+
+    @Override
+    public void tick(IAbilityContext context) {
+
     }
 }

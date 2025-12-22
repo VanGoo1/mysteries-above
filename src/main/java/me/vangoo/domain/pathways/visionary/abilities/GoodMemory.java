@@ -1,36 +1,96 @@
 package me.vangoo.domain.pathways.visionary.abilities;
 
-import me.vangoo.domain.abilities.core.Ability;
-import me.vangoo.domain.abilities.core.AbilityResult;
-import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.abilities.core.*;
 import org.bukkit.ChatColor;
+import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class GoodMemory extends Ability {
-    private static final int OBSERVE_TICKS_REQUIRED = 3 * 20; // 3s
-    private static final int GLOW_TICKS = 20 * 20; // 20s
-    private static final int RANGE = 30;
+public class GoodMemory extends ToggleablePassiveAbility {
+    // Configuration
+    private static final int OBSERVE_DURATION_TICKS = 2 * 20; // 2 seconds
+    private static final int GLOW_DURATION_TICKS = 20 * 20; // 20 seconds
+    private static final int OBSERVATION_RANGE = 30;
+    private static final int GRACE_PERIOD_TICKS = 5; // 0.25s tolerance for lag
+    private static final int POST_ACTIVATION_COOLDOWN = 10; // 0.5s cooldown after marking target
 
-    // Track which casters have this ability enabled
-    private final Set<UUID> enabledCasters = ConcurrentHashMap.newKeySet();
+    // Per-caster state
+    private final Map<UUID, ObservationState> observations = new ConcurrentHashMap<>();
+    private final Map<UUID, Set<UUID>> markedTargets = new ConcurrentHashMap<>();
+    private final Map<UUID, Map<UUID, Integer>> markDurations = new ConcurrentHashMap<>();
 
-    // Для відстеження підсвічених entities per caster
-    private final Map<UUID, Set<UUID>> glowingEntities = new ConcurrentHashMap<>();
-    private final Map<UUID, Map<UUID, Integer>> glowTicksRemaining = new ConcurrentHashMap<>();
+    /**
+     * Tracks observation progress for a single caster
+     */
+    private static class ObservationState {
+        private LivingEntity target;
+        private UUID targetId;
+        private int progressTicks;
+        private int graceTicks;
+        private int cooldownTicks;
 
-    private static class ObservingState {
-        LivingEntity current;
-        int ticks;
+        boolean isObserving() {
+            return target != null && !isInCooldown();
+        }
+
+        boolean isInCooldown() {
+            return cooldownTicks > 0;
+        }
+
+        void reset() {
+            target = null;
+            targetId = null;
+            progressTicks = 0;
+            graceTicks = 0;
+            // keep cooldownTicks as-is (cooldown preserved until it naturally expires)
+        }
+
+        void startCooldown() {
+            progressTicks = 0;
+            graceTicks = GRACE_PERIOD_TICKS;
+            cooldownTicks = POST_ACTIVATION_COOLDOWN;
+        }
+
+        void decrementCooldown() {
+            if (cooldownTicks > 0) {
+                cooldownTicks--;
+            }
+        }
+
+        void decrementGrace() {
+            if (graceTicks > 0) {
+                graceTicks--;
+            }
+        }
+
+        void setTarget(LivingEntity newTarget) {
+            this.target = newTarget;
+            this.targetId = newTarget.getUniqueId();
+            this.progressTicks = 0;
+            this.graceTicks = GRACE_PERIOD_TICKS;
+        }
+
+        void incrementProgress() {
+            progressTicks++;
+            graceTicks = GRACE_PERIOD_TICKS; // Reset grace on successful observation
+        }
+
+        int getProgressPercentage() {
+            return (progressTicks * 100) / OBSERVE_DURATION_TICKS;
+        }
+
+        boolean isComplete() {
+            return progressTicks >= OBSERVE_DURATION_TICKS;
+        }
     }
 
-    // Store observing states per caster
-    private final Map<UUID, ObservingState> observingStates = new ConcurrentHashMap<>();
+    // ==========================================
+    // ABILITY METADATA
+    // ==========================================
 
     @Override
     public String getName() {
@@ -39,154 +99,252 @@ public class GoodMemory extends Ability {
 
     @Override
     public String getDescription() {
-        return "Після " + OBSERVE_TICKS_REQUIRED / 20 + "с спостереження за мобом чи гравцем — ціль підсвічується на " +
-                GLOW_TICKS / 20 + "с в радіусі " + RANGE + " блоків.";
+        return String.format(
+                "Після %.1fс спостереження за мобом чи гравцем — ціль підсвічується на %dс в радіусі %d блоків. " +
+                        "Увімкніть/вимкніть правою кнопкою миші.",
+                OBSERVE_DURATION_TICKS / 20.0,
+                GLOW_DURATION_TICKS / 20,
+                OBSERVATION_RANGE
+        );
     }
 
-    @Override
-    public int getSpiritualityCost() {
-        return 0;
-    }
-
-    @Override
-    public boolean isPassive() {
-        return true;
-    }
+    // ==========================================
+    // LIFECYCLE HOOKS
+    // ==========================================
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        UUID casterId = context.getCasterId();
-
-        if (enabledCasters.contains(casterId)) {
-            // Вимкнути
-            enabledCasters.remove(casterId);
-            observingStates.remove(casterId);
-
-            // Видалити всі підсвічування для цього гравця
-            removeAllGlowingForCaster(casterId, context);
-
-            context.sendMessageToCaster(
-                    ChatColor.YELLOW + "Хороша пам'ять" + ChatColor.GRAY + " вимкнена."
-            );
-        } else {
-            // Увімкнути
-            enabledCasters.add(casterId);
-            observingStates.put(casterId, new ObservingState());
-            glowingEntities.put(casterId, ConcurrentHashMap.newKeySet());
-            glowTicksRemaining.put(casterId, new ConcurrentHashMap<>());
-
-            context.sendMessageToCaster(
-                    ChatColor.GREEN + "Хороша пам'ять" + ChatColor.GRAY + " увімкнена. Спостерігайте за ціллю " +
-                            OBSERVE_TICKS_REQUIRED / 20 + "с."
-            );
-        }
-
+        // Toggle handled by PassiveAbilityManager (platform)
         return AbilityResult.success();
     }
 
+    @Override
+    public void onEnable(IAbilityContext context) {
+        UUID casterId = context.getCasterId();
+        observations.put(casterId, new ObservationState());
+        markedTargets.put(casterId, ConcurrentHashMap.newKeySet());
+        markDurations.put(casterId, new ConcurrentHashMap<>());
+
+        context.sendMessageToCaster(
+                ChatColor.GREEN + "Хороша пам'ять " +
+                        ChatColor.GRAY + "увімкнена. Спостерігайте за ціллю " +
+                        (OBSERVE_DURATION_TICKS / 20.0) + "с."
+        );
+    }
+
+    @Override
+    public void onDisable(IAbilityContext context) {
+        UUID casterId = context.getCasterId();
+        removeAllMarks(casterId, context);
+        observations.remove(casterId);
+
+        context.sendMessageToCaster(
+                ChatColor.YELLOW + "Хороша пам'ять " +
+                        ChatColor.GRAY + "вимкнена."
+        );
+    }
+
+    /**
+     * Main tick called by platform every server tick while ability enabled.
+     * Бизнес-логика: уменьшает марк-таймеры в начале, затем работает с наблюдением.
+     */
+    @Override
     public void tick(IAbilityContext context) {
-        if (!enabledCasters.contains(context.getCasterId())) {
+        UUID casterId = context.getCasterId();
+        ObservationState state = observations.get(casterId);
+
+        if (state == null) {
             return;
         }
-
-        UUID casterId = context.getCasterId();
-        ObservingState state = observingStates.get(casterId);
-        if (state == null) return;
 
         Player caster = context.getCaster();
-        if (caster == null || !caster.isOnline()) return;
-
-        // Get target using context
-        Optional<LivingEntity> targetedEntity = context.getTargetedEntity(RANGE);
-
-        if (!targetedEntity.isPresent() || !caster.hasLineOfSight(targetedEntity.get())) {
-            // Немає валідної цілі — скинути стан
-            state.current = null;
-            state.ticks = 0;
+        if (caster == null || !caster.isOnline()) {
             return;
         }
 
-        LivingEntity target = targetedEntity.get();
+        // --- ВАЖНО: обновляем время пометок каждый тик, независимо от налаживания прицела ---
+        updateMarkDurations(casterId, context);
 
-        if (state.current == null || !state.current.equals(target)) {
-            state.current = target;
-            state.ticks = 0;
-        } else {
-            state.ticks += 1;
+        // Handle post-activation cooldown
+        if (state.isInCooldown()) {
+            state.decrementCooldown();
+            return;
         }
 
-        if (state.ticks >= OBSERVE_TICKS_REQUIRED) {
-            UUID targetId = target.getUniqueId();
+        // Try to find target
+        Optional<LivingEntity> targetOpt = context.getTargetedEntity(OBSERVATION_RANGE);
 
-            // Перевірити чи ціль вже підсвічена для цього гравця
-            if (!glowingEntities.get(casterId).contains(targetId)) {
-                addGlowing(casterId, target, context);
-
-                String healthInfo = "[HP: " + getHealthPercentage(target) + "%]";
-                context.sendMessage(
-                        casterId,
-                        ChatColor.GREEN + "Ви запам'ятали " + ChatColor.WHITE + getEntityName(target) +
-                                ChatColor.GREEN + " " + healthInfo + ". Підсвічено на " + GLOW_TICKS / 20 + "с."
-                );
-            }
-
-            // Після спрацьовування почати відлік знову
-            state.ticks = 0;
+        if (!targetOpt.isPresent()) {
+            handleNoTarget(state);
+            return;
         }
 
-        // Update glow ticks
-        updateGlowTicks(casterId, context);
-    }
-
-    private void updateGlowTicks(UUID casterId, IAbilityContext context) {
-        Map<UUID, Integer> glowTicks = glowTicksRemaining.get(casterId);
-        if (glowTicks == null) return;
-
-        Set<UUID> entitiesToRemove = new HashSet<>();
-
-        for (Map.Entry<UUID, Integer> entry : glowTicks.entrySet()) {
-            UUID targetId = entry.getKey();
-            int remainingTicks = entry.getValue() - 1;
-
-            if (remainingTicks <= 0) {
-                entitiesToRemove.add(targetId);
-            } else {
-                entry.setValue(remainingTicks);
-            }
-        }
-
-        // Remove expired glowing entities
-        for (UUID targetId : entitiesToRemove) {
-            removeGlowing(casterId, targetId, context);
-        }
-    }
-
-    private void addGlowing(UUID casterId, LivingEntity target, IAbilityContext context) {
+        LivingEntity target = targetOpt.get();
         UUID targetId = target.getUniqueId();
 
-        // Додати до списку підсвічених
-        glowingEntities.get(casterId).add(targetId);
-        glowTicksRemaining.get(casterId).put(targetId, GLOW_TICKS);
+        // Skip if already marked
+        if (isTargetMarked(casterId, targetId)) {
+            // keep state reset to avoid re-accumulating progress on already marked target
+            state.reset();
+            return;
+        }
 
-        // Визначити колір підсвічування на основі здоров'я
-        ChatColor glowColor = getGlowColor(target);
+        // Check line of sight
+        if (!caster.hasLineOfSight(target)) {
+            handleLostLineOfSight(state);
+            return;
+        }
 
-        // Використати context для підсвічування
-        context.setGlowing(targetId, glowColor, GLOW_TICKS);
+        // Valid target - process observation
+        processObservation(state, target, targetId, casterId, context);
     }
 
-    private ChatColor getGlowColor(LivingEntity target) {
-        int healthPercentage = getHealthPercentage(target);
+    // ==========================================
+    // OBSERVATION LOGIC
+    // ==========================================
 
-        if (healthPercentage > 75) {
-            return ChatColor.GREEN;
-        } else if (healthPercentage > 50) {
-            return ChatColor.YELLOW;
-        } else if (healthPercentage > 25) {
-            return ChatColor.GOLD;
+    private void handleNoTarget(ObservationState state) {
+        if (state.graceTicks > 0) {
+            state.decrementGrace();
         } else {
-            return ChatColor.RED;
+            state.reset();
         }
+    }
+
+    private void handleLostLineOfSight(ObservationState state) {
+        if (state.graceTicks > 0) {
+            state.decrementGrace();
+        } else {
+            state.reset();
+        }
+    }
+
+    private void processObservation(ObservationState state, LivingEntity target, UUID targetId,
+                                    UUID casterId, IAbilityContext context) {
+        // If started observing a new target -> set it and wait for next ticks to accumulate
+        if (state.targetId == null || !state.targetId.equals(targetId)) {
+            state.setTarget(target);
+            return;
+        }
+
+        // Continue observing same target
+        state.incrementProgress();
+
+        // Check if observation complete
+        if (state.isComplete()) {
+            markTarget(casterId, target, context);
+            state.startCooldown();
+        }
+    }
+
+    private void markTarget(UUID casterId, LivingEntity target, IAbilityContext context) {
+        UUID targetId = target.getUniqueId();
+
+        Set<UUID> marks = markedTargets.get(casterId);
+        Map<UUID, Integer> durations = markDurations.get(casterId);
+
+        if (marks == null || durations == null) {
+            return;
+        }
+
+        // add mark and initialise duration counter
+        marks.add(targetId);
+        durations.put(targetId, GLOW_DURATION_TICKS);
+
+        // apply glowing via context (контекст не должен сам удалять glowing по таймеру)
+        ChatColor color = getHealthColor(target);
+        context.setGlowing(targetId, color, GLOW_DURATION_TICKS);
+
+        // notify caster
+        String healthInfo = String.format("[HP: %d%%]", getHealthPercentage(target));
+        context.sendMessage(
+                casterId,
+                ChatColor.GREEN + "✓ Запам'ятано: " +
+                        ChatColor.WHITE + getEntityName(target) + " " +
+                        ChatColor.GREEN + healthInfo +
+                        " [" + (GLOW_DURATION_TICKS / 20) + "с]"
+        );
+
+        context.playSoundToCaster(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.5f);
+    }
+
+    /**
+     * Decrement all mark durations for this caster once per tick.
+     * When duration reaches zero — unmark target (and remove glow via context).
+     */
+    private void updateMarkDurations(UUID casterId, IAbilityContext context) {
+        Map<UUID, Integer> durations = markDurations.get(casterId);
+        if (durations == null || durations.isEmpty()) {
+            return;
+        }
+
+        Set<UUID> expired = new HashSet<>();
+
+        // Decrement remaining ticks
+        for (Map.Entry<UUID, Integer> entry : durations.entrySet()) {
+            int remaining = entry.getValue() - 1;
+
+            if (remaining <= 0) {
+                expired.add(entry.getKey());
+            } else {
+                entry.setValue(remaining);
+            }
+        }
+
+        // Unmark expired (this will remove from markedTargets and durations, and remove glowing)
+        for (UUID targetId : expired) {
+            unmarkTarget(casterId, targetId, context);
+        }
+    }
+
+    private void unmarkTarget(UUID casterId, UUID targetId, IAbilityContext context) {
+        Set<UUID> marks = markedTargets.get(casterId);
+        if (marks != null) {
+            marks.remove(targetId);
+        }
+
+        Map<UUID, Integer> durations = markDurations.get(casterId);
+        if (durations != null) {
+            durations.remove(targetId);
+        }
+
+        context.removeGlowing(targetId);
+    }
+
+    private void removeAllMarks(UUID casterId, IAbilityContext context) {
+        Set<UUID> marks = markedTargets.get(casterId);
+        if (marks != null) {
+            for (UUID targetId : new HashSet<>(marks)) {
+                context.removeGlowing(targetId);
+            }
+            marks.clear();
+        }
+
+        Map<UUID, Integer> durations = markDurations.get(casterId);
+        if (durations != null) {
+            durations.clear();
+        }
+
+        markedTargets.remove(casterId);
+        markDurations.remove(casterId);
+    }
+
+    private boolean isTargetMarked(UUID casterId, UUID targetId) {
+        Set<UUID> marks = markedTargets.get(casterId);
+        return marks != null && marks.contains(targetId);
+    }
+
+    // ==========================================
+    // HELPERS
+    // ==========================================
+
+    private ChatColor getHealthColor(LivingEntity target) {
+        int percentage = getHealthPercentage(target);
+
+        if (percentage > 75) return ChatColor.GREEN;
+        if (percentage > 50) return ChatColor.YELLOW;
+        if (percentage > 25) return ChatColor.GOLD;
+        return ChatColor.RED;
     }
 
     private int getHealthPercentage(LivingEntity target) {
@@ -196,55 +354,20 @@ public class GoodMemory extends Ability {
         return (int) Math.round((target.getHealth() / maxHealth) * 100);
     }
 
-    private void removeGlowing(UUID casterId, UUID targetId, IAbilityContext context) {
-        Set<UUID> playerGlowing = glowingEntities.get(casterId);
-        if (playerGlowing != null) {
-            playerGlowing.remove(targetId);
+    private String getEntityName(LivingEntity entity) {
+        if (entity instanceof Player) {
+            return entity.getName();
         }
-
-        Map<UUID, Integer> glowTicks = glowTicksRemaining.get(casterId);
-        if (glowTicks != null) {
-            glowTicks.remove(targetId);
+        if (entity.getCustomName() != null) {
+            return entity.getCustomName();
         }
-
-        // Використати context для видалення підсвічування
-        context.removeGlowing(targetId);
-    }
-
-    private void removeAllGlowingForCaster(UUID casterId, IAbilityContext context) {
-        Set<UUID> playerGlowing = glowingEntities.get(casterId);
-        if (playerGlowing != null) {
-            for (UUID targetId : playerGlowing) {
-                context.removeGlowing(targetId);
-            }
-            playerGlowing.clear();
-        }
-
-        Map<UUID, Integer> glowTicks = glowTicksRemaining.get(casterId);
-        if (glowTicks != null) {
-            glowTicks.clear();
-        }
-
-        glowingEntities.remove(casterId);
-        glowTicksRemaining.remove(casterId);
-    }
-
-    private String getEntityName(Entity e) {
-        if (e instanceof Player) return e.getName();
-        if (e.getCustomName() != null) return e.getCustomName();
-        return e.getType().name();
-    }
-
-    @Override
-    public int getCooldown() {
-        return 0;
+        return entity.getType().name();
     }
 
     @Override
     public void cleanUp() {
-        enabledCasters.clear();
-        observingStates.clear();
-        glowingEntities.clear();
-        glowTicksRemaining.clear();
+        observations.clear();
+        markedTargets.clear();
+        markDurations.clear();
     }
 }

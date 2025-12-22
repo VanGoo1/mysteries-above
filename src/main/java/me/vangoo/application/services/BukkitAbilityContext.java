@@ -116,7 +116,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     public Optional<LivingEntity> getTargetedEntity(double maxRange) {
         RayTraceResult result = world.rayTraceEntities(
                 caster.getEyeLocation(),
-                caster.getLocation().getDirection(),
+                caster.getEyeLocation().getDirection(),
                 maxRange,
                 entity -> entity instanceof LivingEntity && !entity.equals(caster)
         );
@@ -133,7 +133,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     public Optional<Player> getTargetedPlayer(double maxRange) {
         RayTraceResult result = world.rayTraceEntities(
                 caster.getEyeLocation(),
-                caster.getLocation().getDirection(),
+                caster.getEyeLocation().getDirection(),
                 maxRange,
                 entity -> entity instanceof Player && !entity.equals(caster)
         );
@@ -306,6 +306,11 @@ public class BukkitAbilityContext implements IAbilityContext {
     public void lockAbilities(UUID playerId, int durationSeconds) {
         lockManager.lockPlayer(playerId, durationSeconds);
     }
+//
+//    @Override
+//    public boolean isPassiveAbilityEnabled(String abilityName) {
+//        return passiveAbilityManager.isToggleableEnabled(getCasterId(), abilityName);
+//    }
 
     // ==========================================
     // INVENTORY
@@ -403,6 +408,7 @@ public class BukkitAbilityContext implements IAbilityContext {
             setGlowing(entityId, color, durationTicks);
         }
     }
+
 
     // ==========================================
     // PRIVATE HELPERS

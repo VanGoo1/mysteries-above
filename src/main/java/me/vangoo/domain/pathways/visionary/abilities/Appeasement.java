@@ -2,6 +2,7 @@ package me.vangoo.domain.pathways.visionary.abilities;
 
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.AbilityResult;
+import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -13,7 +14,7 @@ import org.bukkit.potion.PotionEffectType;
 
 import java.util.List;
 
-public class Appeasement extends Ability {
+public class Appeasement extends ActiveAbility {
     private static final int RANGE = 4;
     private static final int COOLDOWN = 40;
     private static final int SANITY_REDUCTION = 25;

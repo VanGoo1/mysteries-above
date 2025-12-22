@@ -1,5 +1,6 @@
 package me.vangoo.domain.pathways.error.abilities;
 
+import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.AbilityResult;
@@ -10,7 +11,7 @@ import org.bukkit.potion.PotionEffectType;
 
 import java.util.List;
 
-public class FractureOfRealitiesAbility extends Ability {
+public class FractureOfRealitiesAbility extends ActiveAbility {
 
     private static final int RADIUS = 8;
     private static final int DURATION_TICKS = 80; // 4 seconds

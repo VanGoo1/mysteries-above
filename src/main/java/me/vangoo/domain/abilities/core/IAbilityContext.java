@@ -84,6 +84,8 @@ public interface IAbilityContext {
 
     void lockAbilities(UUID playerId, int durationSeconds);
 
+//    boolean isPassiveAbilityEnabled(String abilityName);
+
     // =INVENTORY AND ITEMS=
     void giveItem(HumanEntity entity, ItemStack item);
 
