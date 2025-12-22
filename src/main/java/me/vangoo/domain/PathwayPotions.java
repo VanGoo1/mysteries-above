@@ -1,5 +1,6 @@
 package me.vangoo.domain;
 
+import me.vangoo.domain.entities.Pathway;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Material;
