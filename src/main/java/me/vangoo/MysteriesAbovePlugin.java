@@ -3,18 +3,16 @@ package me.vangoo;
 import de.slikey.effectlib.EffectManager;
 import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.application.services.*;
+import me.vangoo.infrastructure.schedulers.MasteryRegenerationScheduler;
 import me.vangoo.infrastructure.schedulers.PassiveAbilityScheduler;
 import me.vangoo.presentation.commands.RampagerCommand;
 import me.vangoo.presentation.commands.SequencePotionCommand;
 import me.vangoo.infrastructure.IBeyonderRepository;
 import me.vangoo.infrastructure.JSONBeyonderRepository;
 import me.vangoo.infrastructure.abilities.AbilityItemFactory;
-import me.vangoo.presentation.listeners.BeyonderPlayerListener;
-import me.vangoo.presentation.listeners.PassiveAbilityLifecycleListener;
-import me.vangoo.presentation.listeners.PathwayPotionListener;
+import me.vangoo.presentation.listeners.*;
 import me.vangoo.presentation.commands.PathwayCommand;
 import me.vangoo.presentation.commands.MasteryCommand;
-import me.vangoo.presentation.listeners.AbilityMenuListener;
 import me.vangoo.infrastructure.ui.AbilityMenu;
 import me.vangoo.infrastructure.ui.BossBarUtil;
 import me.vangoo.infrastructure.ui.NBTBuilder;
@@ -38,7 +36,10 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     AbilityItemFactory abilityItemFactory;
     PassiveAbilityManager passiveAbilityManager;
     PassiveAbilityScheduler passiveAbilityScheduler;
+    MasteryRegenerationScheduler masteryRegenerationScheduler;
+    BeyonderSleepListener beyonderSleepListener;
     AbilityContextFactory abilityContextFactory;
+
     @Override
     public void onEnable() {
         glowingEntities = new GlowingEntities(this);
@@ -83,7 +84,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         this.lockManager = new AbilityLockManager();
         this.passiveAbilityManager = new PassiveAbilityManager();
         this.effectManager = new EffectManager(this);
-        this.abilityContextFactory = new AbilityContextFactory(this,cooldownManager,beyonderService,lockManager,glowingEntities,effectManager);
+        this.abilityContextFactory = new AbilityContextFactory(this, cooldownManager, beyonderService, lockManager, glowingEntities, effectManager);
         this.abilityExecutor = new AbilityExecutor(
                 beyonderService,
                 lockManager,
@@ -100,6 +101,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 beyonderService,
                 abilityContextFactory
         );
+
+        this.masteryRegenerationScheduler = new MasteryRegenerationScheduler(this, beyonderService);
+        this.beyonderSleepListener = new BeyonderSleepListener(beyonderService);
     }
 
     private void registerEvents() {
@@ -119,6 +123,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(beyonderPlayerListener, this);
         getServer().getPluginManager().registerEvents(pathwayPotionListener, this);
         getServer().getPluginManager().registerEvents(passiveAbilityLifecycleListener, this);
+        getServer().getPluginManager().registerEvents(beyonderSleepListener, this);
     }
 
 
@@ -143,11 +148,13 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
         // NEW: Start passive ability scheduler
         passiveAbilityScheduler.start();
+        masteryRegenerationScheduler.start();
     }
 
     private void stopSchedulers() {
         if (passiveAbilityScheduler != null) {
             passiveAbilityScheduler.stop();
         }
+        masteryRegenerationScheduler.stop();
     }
 }

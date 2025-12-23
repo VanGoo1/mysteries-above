@@ -1,12 +1,13 @@
 package me.vangoo.domain.pathways.visionary.abilities;
 
-import me.vangoo.domain.abilities.core.Ability;
+
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.entities.Beyonder;
 import org.bukkit.ChatColor;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 
@@ -30,6 +31,13 @@ public class ScanGaze extends ActiveAbility {
     @Override
     public int getSpiritualityCost() {
         return 5;
+    }
+
+    @Override
+    protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
+        return context.getTargetedPlayer(RANGE)
+                .filter(p -> context.isBeyonder(p.getUniqueId()))
+                .map(p -> p);
     }
 
     @Override

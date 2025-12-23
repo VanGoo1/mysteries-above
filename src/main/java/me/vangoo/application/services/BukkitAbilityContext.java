@@ -20,6 +20,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.RayTraceResult;
 
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -310,11 +311,30 @@ public class BukkitAbilityContext implements IAbilityContext {
     public void lockAbilities(UUID playerId, int durationSeconds) {
         lockManager.lockPlayer(playerId, durationSeconds);
     }
-//
-//    @Override
-//    public boolean isPassiveAbilityEnabled(String abilityName) {
-//        return passiveAbilityManager.isToggleableEnabled(getCasterId(), abilityName);
-//    }
+
+    // ==========================================
+    // BEYONDER INFORMATION (for sequence checks)
+    // ==========================================
+
+    @Override
+    @Nullable
+    public Beyonder getBeyonderFromEntity(UUID entityId) {
+        return beyonderService.getBeyonder(entityId);
+    }
+
+    @Override
+    public boolean isBeyonder(UUID entityId) {
+        return beyonderService.getBeyonder(entityId) != null;
+    }
+
+    @Override
+    public Optional<Integer> getEntitySequenceLevel(UUID entityId) {
+        Beyonder beyonder = beyonderService.getBeyonder(entityId);
+        if (beyonder == null) {
+            return Optional.empty();
+        }
+        return Optional.of(beyonder.getSequenceLevel());
+    }
 
     // ==========================================
     // INVENTORY
@@ -460,7 +480,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     public void playLineEffect(Location start, Location end, Particle particle) {
         LineEffect effect = new LineEffect(effectManager);
         effect.setLocation(start);
-        effect.setTargetLocation(end);
+        effect.setTarget(end);
         effect.particle = particle;
         effect.particles = 20;
         effectManager.start(effect);

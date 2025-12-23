@@ -148,6 +148,11 @@ public class PassiveAbilityScheduler {
         UUID playerId = player.getUniqueId();
         Beyonder beyonder = beyonderService.getBeyonder(playerId);
 
+        if (beyonder != null) {
+            passiveAbilityManager.cleanupPlayer(beyonder, getOrCreateContext(player));
+        } else {
+            passiveAbilityManager.unregisterPlayer(playerId);
+        }
         // Cleanup abilities
         passiveAbilityManager.cleanupPlayer(beyonder, getOrCreateContext(player));
 

@@ -159,7 +159,8 @@ public class Beyonder {
 
         if (result.isSuccess()) {
             spirituality = spirituality.decrement(cost);
-            mastery = mastery.increment();
+            double c = (double) ability.getSpiritualityCost() / getMaxSpirituality();
+            mastery = mastery.increment((int) Math.ceil(c));
 
             // Raise domain event
 //            raiseEvent(new BeyonderEvent.AbilityUsed(
@@ -172,7 +173,7 @@ public class Beyonder {
 
             // Check for critical spirituality
             if (spirituality.isCritical()) {
-                increaseSanityLoss(1);
+                increaseSanityLoss(2);
 //                raiseEvent(new BeyonderEvent.SpiritualityDepleted(
 //                        UUID.randomUUID(),
 //                        playerId,
@@ -186,7 +187,7 @@ public class Beyonder {
 
     public void regenerateSpirituality() {
         if (!spirituality.isFull()) {
-            int regenRate = spiritualityCalculator.calculateRegenerationRate(sequence);
+            int regenRate = spiritualityCalculator.calculateRegenerationRate(sequence, mastery);
             spirituality = spirituality.regenerate(regenRate);
         }
     }

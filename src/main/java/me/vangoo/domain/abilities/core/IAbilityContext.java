@@ -17,6 +17,8 @@ import org.bukkit.Sound;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
 
+import javax.annotation.Nullable;
+
 
 public interface IAbilityContext {
     // ==================== CASTER ====================
@@ -84,7 +86,12 @@ public interface IAbilityContext {
 
     void lockAbilities(UUID playerId, int durationSeconds);
 
-//    boolean isPassiveAbilityEnabled(String abilityName);
+    @Nullable
+    Beyonder getBeyonderFromEntity(UUID entityId);
+
+    boolean isBeyonder(UUID entityId);
+
+    Optional<Integer> getEntitySequenceLevel(UUID entityId);
 
     // =INVENTORY AND ITEMS=
     void giveItem(HumanEntity entity, ItemStack item);
@@ -107,9 +114,9 @@ public interface IAbilityContext {
     /**
      * Create a sphere effect at location
      *
-     * @param location Center of sphere
-     * @param radius Radius of sphere
-     * @param particle Particle type to use
+     * @param location      Center of sphere
+     * @param radius        Radius of sphere
+     * @param particle      Particle type to use
      * @param durationTicks How long effect lasts
      */
     void playSphereEffect(Location location, double radius, Particle particle, int durationTicks);
@@ -117,9 +124,9 @@ public interface IAbilityContext {
     /**
      * Create a helix/spiral effect between two points
      *
-     * @param start Start location
-     * @param end End location
-     * @param particle Particle type
+     * @param start         Start location
+     * @param end           End location
+     * @param particle      Particle type
      * @param durationTicks Duration
      */
     void playHelixEffect(Location start, Location end, Particle particle, int durationTicks);
@@ -127,9 +134,9 @@ public interface IAbilityContext {
     /**
      * Create a circle effect at location
      *
-     * @param location Center of circle
-     * @param radius Radius
-     * @param particle Particle type
+     * @param location      Center of circle
+     * @param radius        Radius
+     * @param particle      Particle type
      * @param durationTicks Duration
      */
     void playCircleEffect(Location location, double radius, Particle particle, int durationTicks);
@@ -137,8 +144,8 @@ public interface IAbilityContext {
     /**
      * Create a line effect between two points
      *
-     * @param start Start location
-     * @param end End location
+     * @param start    Start location
+     * @param end      End location
      * @param particle Particle type
      */
     void playLineEffect(Location start, Location end, Particle particle);
@@ -146,11 +153,11 @@ public interface IAbilityContext {
     /**
      * Create a cone effect (useful for directional abilities)
      *
-     * @param apex Tip of cone
-     * @param direction Direction cone points
-     * @param angle Cone opening angle in degrees
-     * @param length Length of cone
-     * @param particle Particle type
+     * @param apex          Tip of cone
+     * @param direction     Direction cone points
+     * @param angle         Cone opening angle in degrees
+     * @param length        Length of cone
+     * @param particle      Particle type
      * @param durationTicks Duration
      */
     void playConeEffect(Location apex, org.bukkit.util.Vector direction, double angle,
@@ -159,10 +166,10 @@ public interface IAbilityContext {
     /**
      * Create a vortex/tornado effect
      *
-     * @param location Center location
-     * @param height Height of vortex
-     * @param radius Base radius
-     * @param particle Particle type
+     * @param location      Center location
+     * @param height        Height of vortex
+     * @param radius        Base radius
+     * @param particle      Particle type
      * @param durationTicks Duration
      */
     void playVortexEffect(Location location, double height, double radius,
@@ -171,9 +178,9 @@ public interface IAbilityContext {
     /**
      * Create a wave effect emanating from location
      *
-     * @param center Center point
-     * @param radius Wave radius
-     * @param particle Particle type
+     * @param center        Center point
+     * @param radius        Wave radius
+     * @param particle      Particle type
      * @param durationTicks Duration
      */
     void playWaveEffect(Location center, double radius, Particle particle, int durationTicks);
@@ -181,9 +188,9 @@ public interface IAbilityContext {
     /**
      * Create a cube outline effect
      *
-     * @param location Center of cube
-     * @param size Size of cube edges
-     * @param particle Particle type
+     * @param location      Center of cube
+     * @param size          Size of cube edges
+     * @param particle      Particle type
      * @param durationTicks Duration
      */
     void playCubeEffect(Location location, double size, Particle particle, int durationTicks);
@@ -191,8 +198,8 @@ public interface IAbilityContext {
     /**
      * Create an animated trail effect following an entity
      *
-     * @param entityId Entity to follow
-     * @param particle Particle type
+     * @param entityId      Entity to follow
+     * @param particle      Particle type
      * @param durationTicks Duration
      */
     void playTrailEffect(UUID entityId, Particle particle, int durationTicks);
@@ -200,10 +207,10 @@ public interface IAbilityContext {
     /**
      * Create a beam effect between two locations (laser-like)
      *
-     * @param start Start location
-     * @param end End location
-     * @param particle Particle type
-     * @param width Beam width
+     * @param start         Start location
+     * @param end           End location
+     * @param particle      Particle type
+     * @param width         Beam width
      * @param durationTicks Duration
      */
     void playBeamEffect(Location start, Location end, Particle particle,
@@ -212,8 +219,8 @@ public interface IAbilityContext {
     /**
      * Create an explosion ring effect
      *
-     * @param center Center of explosion
-     * @param radius Ring radius
+     * @param center   Center of explosion
+     * @param radius   Ring radius
      * @param particle Particle type
      */
     void playExplosionRingEffect(Location center, double radius, Particle particle);

@@ -44,6 +44,13 @@ public class AbilityExecutor {
             return AbilityExecutionResult.failure("Здібності заблоковані!");
         }
 
+        IAbilityContext context = abilityContextFactory.createContext(player);
+
+        AbilityResult abilityResult = beyonder.useAbility(ability, context);
+
+        if (abilityResult.isCooldownFailure())
+            return AbilityExecutionResult.failure(abilityResult.getMessage());
+
         // Check sanity loss BEFORE execution
         SanityLossCheckResult sanityCheck = checkSanityLoss(beyonder.getSanityLoss());
         if (!sanityCheck.canExecuteAbility()) {
@@ -57,9 +64,6 @@ public class AbilityExecutor {
             );
         }
 
-        IAbilityContext context = abilityContextFactory.createContext(player);
-
-        AbilityResult abilityResult = beyonder.useAbility(ability, context);
         beyonderService.updateBeyonder(beyonder);
 
         if (ability.getType() == AbilityType.TOGGLEABLE_PASSIVE) {

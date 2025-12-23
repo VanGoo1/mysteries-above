@@ -50,10 +50,7 @@ public class PassiveAbilityManager {
      * @return true if now enabled, false if now disabled
      */
     public boolean toggleAbility(UUID playerId, ToggleablePassiveAbility ability, IAbilityContext context) {
-        Set<String> enabled = enabledToggleableAbilities.get(playerId);
-        if (enabled == null) {
-            return false;
-        }
+        Set<String> enabled = enabledToggleableAbilities.computeIfAbsent(playerId, k -> ConcurrentHashMap.newKeySet());
 
         String abilityName = ability.getName();
         boolean wasEnabled = enabled.contains(abilityName);
@@ -231,7 +228,6 @@ public class PassiveAbilityManager {
      */
     public void cleanupPlayer(Beyonder beyonder, IAbilityContext context) {
         if (beyonder == null) {
-            unregisterPlayer(beyonder.getPlayerId());
             return;
         }
 

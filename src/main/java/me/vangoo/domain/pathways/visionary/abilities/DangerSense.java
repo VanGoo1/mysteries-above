@@ -36,7 +36,7 @@ public class DangerSense extends ToggleablePassiveAbility {
 
     @Override
     public String getName() {
-        return ChatColor.LIGHT_PURPLE + "Психічне відлуння";
+        return "Психічне відлуння";
     }
 
     @Override
