@@ -1,16 +1,16 @@
 package me.vangoo.domain.entities;
 
 import me.vangoo.domain.abilities.core.Ability;
+import me.vangoo.domain.abilities.core.AbilityResult;
+import me.vangoo.domain.abilities.core.AbilityType;
+import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.services.SpiritualityCalculator;
 import me.vangoo.domain.valueobjects.Mastery;
 import me.vangoo.domain.valueobjects.SanityLoss;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.domain.valueobjects.Spirituality;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class Beyonder {
     private final UUID playerId;
@@ -137,25 +137,51 @@ public class Beyonder {
         loadAbilities();
     }
 
-    public void useAbility(Ability ability, int spiritualityCost) {
-        if (!spirituality.hasSufficient(spiritualityCost)) {
-            throw new IllegalStateException(
-                    "Insufficient spirituality: required=" + spiritualityCost +
-                            ", available=" + spirituality.current());
+    public AbilityResult useAbility(Ability ability, IAbilityContext context) {
+        if (!hasAbility(ability)) {
+            return AbilityResult.failure("У вас немає цієї здібності");
         }
-        if (!abilities.contains(ability))
-            throw new IllegalStateException("Beyonder does not have ability: " + ability);
 
-        spirituality = spirituality.decrement(spiritualityCost);
-
-        // Increment mastery when using abilities
-        mastery = mastery.increment();
-        updateMaximumSpirituality();
-
-        // Check for critical spirituality and increase sanity loss
-        if (spirituality.isCritical()) {
-            increaseSanityLoss(1);
+        if (ability.getType() != AbilityType.ACTIVE) {
+            return ability.execute(context);
         }
+
+        int cost = ability.getSpiritualityCost();
+
+        if (!spirituality.hasSufficient(cost)) {
+            return AbilityResult.failure(
+                    String.format("Недостатньо духовності: потрібно %d, є %d",
+                            cost, spirituality.current())
+            );
+        }
+
+        AbilityResult result = ability.execute(context);
+
+        if (result.isSuccess()) {
+            spirituality = spirituality.decrement(cost);
+            mastery = mastery.increment();
+
+            // Raise domain event
+//            raiseEvent(new BeyonderEvent.AbilityUsed(
+//                    UUID.randomUUID(),
+//                    playerId,
+//                    ability.getName(),
+//                    cost,
+//                    Instant.now()
+//            ));
+
+            // Check for critical spirituality
+            if (spirituality.isCritical()) {
+                increaseSanityLoss(1);
+//                raiseEvent(new BeyonderEvent.SpiritualityDepleted(
+//                        UUID.randomUUID(),
+//                        playerId,
+//                        spirituality,
+//                        Instant.now()
+//                ));
+            }
+        }
+        return result;
     }
 
     public void regenerateSpirituality() {
@@ -228,5 +254,17 @@ public class Beyonder {
 
     public List<Ability> getAbilities() {
         return abilities != null ? Collections.unmodifiableList(abilities) : Collections.emptyList();
+    }
+
+    private boolean hasAbility(Ability ability) {
+        return abilities != null && abilities.contains(ability);
+    }
+
+    public Optional<Ability> getAbilityByName(String name) {
+        if (abilities == null) return Optional.empty();
+
+        return abilities.stream()
+                .filter(a -> a.getName().equals(name))
+                .findFirst();
     }
 }

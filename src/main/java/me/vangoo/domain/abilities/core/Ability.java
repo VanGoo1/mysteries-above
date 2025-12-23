@@ -17,15 +17,20 @@ public abstract class Ability {
     public abstract AbilityType getType();
 
     public final AbilityResult execute(IAbilityContext context) {
-        if (getType() != AbilityType.ACTIVE && context.hasCooldown(this))
-            return AbilityResult.failure("Cooldown: " + context.getRemainingCooldownSeconds(this));
+        if (getType() == AbilityType.ACTIVE && context.hasCooldown(this)) {
+            return AbilityResult.failure(
+                    "Cooldown: " + context.getRemainingCooldownSeconds(this) + "с"
+            );
+        }
         if (!canExecute(context))
             return AbilityResult.failure("can't execute this ability");
         preExecution(context);
         AbilityResult result = performExecution(context);
         if (result.isSuccess()) {
             postExecution(context);
-            context.setCooldown(this, getCooldown());
+            if (getType() == AbilityType.ACTIVE) {
+                context.setCooldown(this, getCooldown());
+            }
         }
         return result;
     }

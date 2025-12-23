@@ -20,6 +20,8 @@ import me.vangoo.infrastructure.ui.BossBarUtil;
 import me.vangoo.infrastructure.ui.NBTBuilder;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
+
 public class MysteriesAbovePlugin extends JavaPlugin {
 
     AbilityMenu abilityMenu;
@@ -36,7 +38,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     AbilityItemFactory abilityItemFactory;
     PassiveAbilityManager passiveAbilityManager;
     PassiveAbilityScheduler passiveAbilityScheduler;
-
+    AbilityContextFactory abilityContextFactory;
     @Override
     public void onEnable() {
         glowingEntities = new GlowingEntities(this);
@@ -73,34 +75,30 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
         this.beyonderStorage =
                 new JSONBeyonderRepository(
-                        this.getDataFolder() + "beyonders.json",
+                        this.getDataFolder() + File.separator + "beyonders.json",
                         pathwayManager
                 );
 
         this.beyonderService = new BeyonderService(beyonderStorage, new BossBarUtil());
         this.lockManager = new AbilityLockManager();
         this.passiveAbilityManager = new PassiveAbilityManager();
-
+        this.effectManager = new EffectManager(this);
+        this.abilityContextFactory = new AbilityContextFactory(this,cooldownManager,beyonderService,lockManager,glowingEntities,effectManager);
         this.abilityExecutor = new AbilityExecutor(
-                this,
-                cooldownManager,
                 beyonderService,
                 lockManager,
                 rampageEffectsHandler,
-                glowingEntities,
-                passiveAbilityManager
+                passiveAbilityManager,
+                abilityContextFactory
         );
 
         this.potionManager = new PotionManager(pathwayManager, this);
-        this.effectManager = new EffectManager(this);
 
         this.passiveAbilityScheduler = new PassiveAbilityScheduler(
                 this,
                 passiveAbilityManager,
                 beyonderService,
-                cooldownManager,
-                lockManager,
-                glowingEntities
+                abilityContextFactory
         );
     }
 

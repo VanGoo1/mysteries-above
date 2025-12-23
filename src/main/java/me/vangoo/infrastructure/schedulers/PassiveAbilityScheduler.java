@@ -1,5 +1,6 @@
 package me.vangoo.infrastructure.schedulers;
 
+import de.slikey.effectlib.EffectManager;
 import me.vangoo.MysteriesAbovePlugin;
 import me.vangoo.application.services.*;
 import me.vangoo.domain.abilities.core.IAbilityContext;
@@ -24,9 +25,8 @@ public class PassiveAbilityScheduler {
     private final MysteriesAbovePlugin plugin;
     private final PassiveAbilityManager passiveAbilityManager;
     private final BeyonderService beyonderService;
-    private final CooldownManager cooldownManager;
-    private final AbilityLockManager lockManager;
-    private final fr.skytasul.glowingentities.GlowingEntities glowingEntities;
+    private final AbilityContextFactory abilityContextFactory;
+
 
     private BukkitTask tickTask;
     private final Map<UUID, IAbilityContext> playerContexts;
@@ -37,16 +37,14 @@ public class PassiveAbilityScheduler {
             MysteriesAbovePlugin plugin,
             PassiveAbilityManager passiveAbilityManager,
             BeyonderService beyonderService,
-            CooldownManager cooldownManager,
-            AbilityLockManager lockManager,
-            fr.skytasul.glowingentities.GlowingEntities glowingEntities
+            AbilityContextFactory abilityContextFactory
+
     ) {
         this.plugin = plugin;
         this.passiveAbilityManager = passiveAbilityManager;
         this.beyonderService = beyonderService;
-        this.cooldownManager = cooldownManager;
-        this.lockManager = lockManager;
-        this.glowingEntities = glowingEntities;
+        this.abilityContextFactory = abilityContextFactory;
+
         this.playerContexts = new HashMap<>();
     }
 
@@ -116,14 +114,7 @@ public class PassiveAbilityScheduler {
         }
 
         // Create new context
-        IAbilityContext context = new BukkitAbilityContext(
-                player,
-                plugin,
-                cooldownManager,
-                beyonderService,
-                lockManager,
-                glowingEntities
-        );
+        IAbilityContext context = abilityContextFactory.createContext(player);
 
         playerContexts.put(playerId, context);
         return context;

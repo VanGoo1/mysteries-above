@@ -1,6 +1,8 @@
 package me.vangoo.application.services;
 
 
+import de.slikey.effectlib.EffectManager;
+import de.slikey.effectlib.effect.*;
 import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.MysteriesAbovePlugin;
 import me.vangoo.domain.abilities.core.Ability;
@@ -30,6 +32,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     private final BeyonderService beyonderService;
     private final AbilityLockManager lockManager;
     private final GlowingEntities glowingEntities;
+    private final EffectManager effectManager;
     private static final Logger LOGGER = Logger.getLogger(BukkitAbilityContext.class.getName());
     // Cache for performance (valid only during single ability execution)
     private final Map<UUID, Entity> entityCache = new HashMap<>();
@@ -39,7 +42,7 @@ public class BukkitAbilityContext implements IAbilityContext {
             MysteriesAbovePlugin plugin,
             CooldownManager cooldownManager,
             BeyonderService beyonderService,
-            AbilityLockManager lockManager, GlowingEntities glowingEntities
+            AbilityLockManager lockManager, GlowingEntities glowingEntities, EffectManager effectManager
     ) {
         this.caster = caster;
         this.world = caster.getWorld();
@@ -48,6 +51,7 @@ public class BukkitAbilityContext implements IAbilityContext {
         this.beyonderService = beyonderService;
         this.lockManager = lockManager;
         this.glowingEntities = glowingEntities;
+        this.effectManager = effectManager;
     }
 
     // ==========================================
@@ -407,6 +411,189 @@ public class BukkitAbilityContext implements IAbilityContext {
         for (UUID entityId : entityIds) {
             setGlowing(entityId, color, durationTicks);
         }
+    }
+
+// ==========================================
+    // VISUAL EFFECTS (EffectLib)
+    // ==========================================
+
+    @Override
+    public void playSphereEffect(Location location, double radius, Particle particle, int durationTicks) {
+        SphereEffect effect = new SphereEffect(effectManager);
+        effect.setLocation(location);
+        effect.radius = (float) radius;
+        effect.particle = particle;
+        effect.particles = 50;
+        effect.iterations = durationTicks;
+        effect.period = 1;
+        effectManager.start(effect);
+    }
+
+    @Override
+    public void playHelixEffect(Location start, Location end, Particle particle, int durationTicks) {
+        HelixEffect effect = new HelixEffect(effectManager);
+        effect.setLocation(start);
+        effect.setTarget(end);
+        effect.particle = particle;
+        effect.strands = 3;
+        effect.radius = 0.5f;
+        effect.curve = 10;
+        effect.rotation = Math.PI / 4;
+        effect.iterations = durationTicks;
+        effect.period = 1;
+        effectManager.start(effect);
+    }
+
+    @Override
+    public void playCircleEffect(Location location, double radius, Particle particle, int durationTicks) {
+        CircleEffect effect = new CircleEffect(effectManager);
+        effect.setLocation(location);
+        effect.radius = (float) radius;
+        effect.particle = particle;
+        effect.particles = 30;
+        effect.iterations = durationTicks;
+        effect.period = 1;
+        effectManager.start(effect);
+    }
+
+    @Override
+    public void playLineEffect(Location start, Location end, Particle particle) {
+        LineEffect effect = new LineEffect(effectManager);
+        effect.setLocation(start);
+        effect.setTargetLocation(end);
+        effect.particle = particle;
+        effect.particles = 20;
+        effectManager.start(effect);
+    }
+
+    @Override
+    public void playConeEffect(Location apex, org.bukkit.util.Vector direction, double angle, double length, Particle particle, int durationTicks) {
+        ConeEffect effect = new ConeEffect(effectManager);
+        effect.setLocation(apex);
+        effect.particle = particle;
+        effect.lengthGrow = (float) (length / durationTicks);
+        effect.radiusGrow = (float) (Math.tan(Math.toRadians(angle / 2)) * length / durationTicks);
+        effect.particles = 30;
+        effect.iterations = durationTicks;
+        effect.period = 1;
+
+        // Set direction
+        Location target = apex.clone().add(direction.normalize().multiply(length));
+        effect.setTarget(target);
+
+        effectManager.start(effect);
+    }
+
+    @Override
+    public void playVortexEffect(Location location, double height, double radius,
+                                 Particle particle, int durationTicks) {
+        VortexEffect effect = new VortexEffect(effectManager);
+        effect.setLocation(location);
+        effect.particle = particle;
+        effect.radius = (float) radius;
+        effect.grow = (float) height / durationTicks;
+        effect.radials = 0.1f;
+        effect.circles = 10;
+        effect.helixes = 3;
+        effect.iterations = durationTicks;
+        effect.period = 1;
+        effectManager.start(effect);
+    }
+
+    @Override
+    public void playWaveEffect(Location center, double radius, Particle particle, int durationTicks) {
+        CircleEffect effect = new CircleEffect(effectManager);
+        effect.setLocation(center);
+        effect.particle = particle;
+        effect.particles = 40;
+        effect.iterations = durationTicks;
+        effect.period = 1;
+
+        // Animate radius growth
+        final double radiusPerTick = radius / durationTicks;
+        final int[] currentIteration = {0};
+
+        scheduleRepeating(() -> {
+            if (currentIteration[0]++ >= durationTicks) {
+                return;
+            }
+            effect.radius = (float) (radiusPerTick * currentIteration[0]);
+        }, 0, 1);
+
+        effect.start();
+    }
+
+    @Override
+    public void playCubeEffect(Location location, double size, Particle particle, int durationTicks) {
+        CubeEffect effect = new CubeEffect(effectManager);
+        effect.setLocation(location);
+        effect.particle = particle;
+        effect.edgeLength = (float) size;
+        effect.particles = 8;
+        effect.iterations = durationTicks;
+        effect.period = 1;
+        effectManager.start(effect);
+    }
+
+    @Override
+    public void playTrailEffect(UUID entityId, Particle particle, int durationTicks) {
+        Entity entity = getEntity(entityId);
+        if (entity == null) return;
+
+        // Manual trail implementation since TrailEffect might not exist
+        final int[] ticksRemaining = {durationTicks};
+
+        scheduleRepeating(() -> {
+            if (ticksRemaining[0]-- <= 0 || !entity.isValid()) {
+                return;
+            }
+
+            Location loc = entity.getLocation().add(0, 0.5, 0);
+            world.spawnParticle(particle, loc, 3, 0.2, 0.2, 0.2, 0);
+        }, 0, 2); // Every 2 ticks for performance
+    }
+
+    @Override
+    public void playBeamEffect(Location start, Location end, Particle particle,
+                               double width, int durationTicks) {
+        // Use modified line effect with thickness
+        LineEffect effect = new LineEffect(effectManager);
+        effect.setLocation(start);
+        effect.setTarget(end);
+        effect.particle = particle;
+        effect.particles = (int) (start.distance(end) * 5); // Dense particles
+        effect.iterations = durationTicks;
+        effect.period = 1;
+        effectManager.start(effect);
+    }
+
+    @Override
+    public void playExplosionRingEffect(Location center, double radius, Particle particle) {
+        final double[] currentRadius = {0.1};
+        final double radiusStep = radius / 20;
+
+        scheduleRepeating(new Runnable() {
+            int ticks = 0;
+
+            @Override
+            public void run() {
+                if (ticks++ >= 20) {
+                    return;
+                }
+
+                // Draw circle at current radius
+                for (int i = 0; i < 50; i++) {
+                    double angle = 2 * Math.PI * i / 50;
+                    double x = currentRadius[0] * Math.cos(angle);
+                    double z = currentRadius[0] * Math.sin(angle);
+
+                    Location particleLoc = center.clone().add(x, 0, z);
+                    world.spawnParticle(particle, particleLoc, 1, 0, 0, 0, 0);
+                }
+
+                currentRadius[0] += radiusStep;
+            }
+        }, 0, 1);
     }
 
 

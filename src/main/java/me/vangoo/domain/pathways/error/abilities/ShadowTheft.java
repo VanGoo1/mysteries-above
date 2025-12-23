@@ -1,38 +1,35 @@
 package me.vangoo.domain.pathways.error.abilities;
 
-import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.inventory.Inventory;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class ShadowTheft extends ActiveAbility {
-    private static final int RANGE = 8;
+    private static final double RANGE = 8.0;
     private static final int SPIRITUALITY_COST = 25;
     private static final int COOLDOWN_SECONDS = 120;
-    private static final int INVISIBILITY_DURATION = 60; // 3 seconds in ticks
+    private static final int INVISIBILITY_TICKS = 60; // 3 секунди
 
     @Override
     public String getName() {
-        return "Shadow Theft";
+        return "Крадіжка тіні";
     }
 
     @Override
     public String getDescription() {
-        return "Телепортуйтеся за спину ворога в радіусі " + RANGE + " блоків та вкрадіть випадковий предмет. Стаєте невидимими на 3 секунди.";
+        return "Телепортує за спину ворога, викрадає випадковий предмет та дарує невидимість на 3с.";
     }
 
     @Override
@@ -48,264 +45,115 @@ public class ShadowTheft extends ActiveAbility {
     @Override
     protected void preExecution(IAbilityContext context) {
         Location startLoc = context.getCasterLocation();
-
-        // Ефект телепортації (початок)
-        context.spawnParticle(Particle.PORTAL, startLoc.clone().add(0, 1, 0), 50, 0.5, 0.5, 0.5);
-        context.spawnParticle(Particle.SMOKE, startLoc.clone().add(0, 1, 0), 20, 0.3, 0.3, 0.3);
-
-        // Звук зникнення
+        context.spawnParticle(Particle.PORTAL, startLoc.add(0, 1, 0), 50, 0.5, 0.5, 0.5);
         context.playSoundToCaster(Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.2f);
     }
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        // 1. Знайти найближчу ціль
-        List<LivingEntity> nearbyEntities = context.getNearbyEntities(RANGE);
-
-        if (nearbyEntities.isEmpty()) {
-            return AbilityResult.failure("Немає цілей в радіусі " + RANGE + " блоків!");
-        }
-
-        LivingEntity target = findNearestTarget(context.getCasterLocation(), nearbyEntities);
+        // 1. Пошук цілі через контекст
+        LivingEntity target = context.getNearbyEntities(RANGE).stream()
+                .min(Comparator.comparingDouble(e -> e.getLocation().distance(context.getCasterLocation())))
+                .orElse(null);
 
         if (target == null) {
-            return AbilityResult.failure("Не вдалося знайти підходящу ціль!");
+            return AbilityResult.failure("Ціль не знайдена!");
         }
 
-        // 2. Розрахувати позицію за спиною
-        Location behindTarget = calculateBehindLocation(target);
+        // 2. Розрахунок позиції (бізнес-логіка)
+        Location behindTarget = calculateSafeBehindLocation(target);
 
-        // 3. Телепортуватись
+        // 3. Переміщення через контекст
         context.teleport(context.getCasterId(), behindTarget);
 
-        // 4. Ефект появи
-        context.spawnParticle(Particle.PORTAL, behindTarget, 50, 0.5, 0.5, 0.5);
-        context.spawnParticle(Particle.SMOKE, behindTarget, 20, 0.3, 0.3, 0.3);
+        // Візуальні ефекти на місці прибуття
+        context.spawnParticle(Particle.SMOKE, behindTarget, 30, 0.3, 0.5, 0.3);
         context.playSound(behindTarget, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 0.8f);
 
-        // 5. Спробувати вкрасти предмет (тільки у HumanEntity)
-        boolean stolen = attemptTheft(context, target);
+        // 4. Спроба крадіжки
+        boolean success = attemptTheft(context, target);
 
-        // 6. Дати невидимість якщо вкрали
-        if (stolen) {
-            context.applyEffect(
-                    context.getCasterId(),
-                    PotionEffectType.INVISIBILITY,
-                    INVISIBILITY_DURATION,
-                    0
-            );
-
-            // Ефект тіней навколо caster'а
-            createShadowEffect(context);
-
-            context.sendMessageToCaster("§aУспішно вкрали предмет!");
+        if (success) {
+            applyShadowStealth(context);
+            context.sendMessageToCaster(ChatColor.GREEN + "Ви успішно викрали предмет та зникли в тінях!");
             return AbilityResult.success();
         }
 
-        // Крадіжка не вдалась, але телепортація була
-        context.sendMessageToCaster("§eНе вдалося нічого вкрасти");
-        return AbilityResult.success(); // Здібність все одно спрацювала
+        context.sendMessageToCaster(ChatColor.YELLOW + "Телепортація вдалася, але кишені цілі порожні.");
+        return AbilityResult.success();
     }
 
     @Override
     protected void postExecution(IAbilityContext context) {
-        // Фінальний звук
         context.playSoundToCaster(Sound.ENTITY_BAT_TAKEOFF, 0.5f, 1.5f);
     }
 
     // ==========================================
-    // PRIVATE METHODS - BUSINESS LOGIC
+    // ЛОГІКА РОЗРАХУНКУ (Pure Logic)
     // ==========================================
 
-    /**
-     * Знайти найближчу валідну ціль
-     */
-    private LivingEntity findNearestTarget(Location from, List<LivingEntity> entities) {
-        LivingEntity nearest = null;
-        double minDistance = RANGE;
+    private Location calculateSafeBehindLocation(LivingEntity target) {
+        Location loc = target.getLocation();
+        Vector direction = loc.getDirection().normalize();
+        Location behind = loc.clone().subtract(direction.multiply(1.2)); // 1.2 блоки назад
 
-        for (LivingEntity entity : entities) {
-            // Пропускаємо неживих
-            if (entity.isDead()) continue;
-
-            double distance = entity.getLocation().distance(from);
-            if (distance < minDistance) {
-                nearest = entity;
-                minDistance = distance;
-            }
+        // Перевірка безпеки: якщо блок за спиною твердий, повертаємо локацію цілі (наступимо на неї)
+        if (behind.getBlock().getType().isSolid()) {
+            return loc;
         }
-
-        return nearest;
+        return behind;
     }
 
-    /**
-     * Розрахувати позицію за спиною цілі
-     */
-    private Location calculateBehindLocation(LivingEntity target) {
-        Location targetLoc = target.getLocation();
-        Vector direction = targetLoc.getDirection().normalize();
-
-        // Позиція за спиною (протилежно до напрямку погляду)
-        Vector behind = direction.multiply(-1.5); // 1.5 блоки назад
-        Location behindLoc = targetLoc.clone().add(behind);
-
-        // Перевірити чи безпечна позиція
-        if (isSafeLocation(behindLoc)) {
-            return behindLoc;
-        }
-
-        // Якщо небезпечно - просто поруч з ціллю
-        return targetLoc.clone().add(1, 0, 0);
-    }
-
-    /**
-     * Перевірити чи безпечна локація для телепортації
-     */
-    private boolean isSafeLocation(Location loc) {
-        // Перевірити чи не solid блок
-        if (loc.getBlock().getType().isSolid()) {
-            return false;
-        }
-
-        // Перевірити блок над головою
-        Location above = loc.clone().add(0, 1, 0);
-        if (above.getBlock().getType().isSolid()) {
-            return false;
-        }
-
-        // Перевірити чи не падає у void
-        return !(loc.getY() < 0);
-    }
-
-    /**
-     * Спробувати вкрасти предмет
-     * Працює тільки з HumanEntity (Player, Villager з інвентарем)
-     */
     private boolean attemptTheft(IAbilityContext context, LivingEntity target) {
-        // Тільки HumanEntity мають інвентар для крадіжки
-        if (!(target instanceof HumanEntity human)) {
-            return false;
-        }
+        if (!(target instanceof HumanEntity human)) return false;
 
-        Inventory inventory = human.getInventory();
-        List<ItemStack> validItems = new ArrayList<>();
+        // Отримуємо предмети через стандартний Bukkit API (context дає доступ до Player/HumanEntity)
+        ItemStack[] contents = human.getInventory().getContents();
+        List<ItemStack> lootPool = new ArrayList<>();
 
-        // Знайти всі предмети які можна вкрасти
-        for (ItemStack item : inventory.getContents()) {
-            if (item != null && item.getType() != Material.AIR) {
-                // Не красти важливі предмети (опціонально)
-                if (!isProtectedItem(item)) {
-                    validItems.add(item);
-                }
+        for (ItemStack item : contents) {
+            if (item != null && item.getType() != Material.AIR && !isProtected(item)) {
+                lootPool.add(item);
             }
         }
 
-        if (validItems.isEmpty()) {
-            return false;
-        }
+        if (lootPool.isEmpty()) return false;
 
-        // Вибрати випадковий предмет
-        ItemStack targetItem = validItems.get(
-                ThreadLocalRandom.current().nextInt(validItems.size())
-        );
+        // Вибір випадкового предмета
+        ItemStack targetItem = lootPool.get(ThreadLocalRandom.current().nextInt(lootPool.size()));
+        ItemStack toSteal = targetItem.clone();
+        toSteal.setAmount(1);
 
-        // Створити копію для крадіжки (1 штука)
-        ItemStack stolenItem = targetItem.clone();
-        stolenItem.setAmount(1);
+        // Використання методів контексту для маніпуляції інвентарем
+        if (context.removeItem(human, toSteal)) {
+            context.giveItem(context.getCaster(), toSteal);
 
-        // Забрати у цілі
-        boolean removed = context.removeItem(human, stolenItem);
-
-        if (removed) {
-            // Дати caster'у
-            context.giveItem(context.getCaster(), stolenItem);
-
-            // Повідомити ціль (якщо це гравець)
-            if (target instanceof org.bukkit.entity.Player player) {
-                context.sendMessage(
-                        player.getUniqueId(),
-                        "§cХтось вкрав у вас " + getItemName(stolenItem) + "!"
-                );
-                context.playSound(
-                        player.getLocation(),
-                        Sound.ENTITY_ITEM_PICKUP,
-                        1.0f,
-                        0.8f
-                );
+            if (human instanceof Player victim) {
+                context.sendMessage(victim.getUniqueId(), ChatColor.RED + "Ви відчули, як хтось порпався у ваших речах...");
+                context.playSound(victim.getLocation(), Sound.ENTITY_ITEM_PICKUP, 0.5f, 0.5f);
             }
-
             return true;
         }
 
         return false;
     }
 
-    /**
-     * Перевірити чи предмет захищений від крадіжки
-     */
-    private boolean isProtectedItem(ItemStack item) {
-        // Приклад: не красти зачаровані предмети високого рівня
-        if (item.getEnchantments().size() > 3) {
-            return true;
-        }
-
-        // Не красти рідкісні предмети
+    private boolean isProtected(ItemStack item) {
         Material type = item.getType();
-        if (type == Material.NETHERITE_SWORD ||
-                type == Material.NETHERITE_AXE ||
-                type == Material.ELYTRA ||
-                type == Material.TOTEM_OF_UNDYING) {
-            return true;
-        }
-
-        return false;
+        return type.name().contains("NETHERITE") || type == Material.ELYTRA || type == Material.TOTEM_OF_UNDYING;
     }
 
-    /**
-     * Отримати відображувану назву предмета
-     */
-    private String getItemName(ItemStack item) {
-        if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
-            return item.getItemMeta().getDisplayName();
-        }
+    private void applyShadowStealth(IAbilityContext context) {
+        // Ефекти через контекст
+        context.applyEffect(context.getCasterId(), PotionEffectType.INVISIBILITY, INVISIBILITY_TICKS, 0);
 
-        // Fallback до типу матеріалу
-        return item.getType().name().toLowerCase().replace('_', ' ');
-    }
-
-    /**
-     * Створити ефект тіней навколо caster'а (під час невидимості)
-     */
-    private void createShadowEffect(IAbilityContext context) {
-        // Повторюючий ефект протягом невидимості
-        final int[] ticks = {0};
-
+        // Повторюваний візуальний ефект (Shadow Trail)
+        final int[] elapsed = {0};
         context.scheduleRepeating(() -> {
-            if (ticks[0] >= INVISIBILITY_DURATION) {
-                return; // Зупиниться автоматично
-            }
+            if (elapsed[0] >= INVISIBILITY_TICKS) return;
 
-            Location loc = context.getCasterLocation();
-
-            // Темні частинки навколо
-            context.spawnParticle(
-                    Particle.SMOKE,
-                    loc,
-                    5,
-                    0.5, 1.0, 0.5
-            );
-
-            // Іноді додати angry villager (для dramatic effect)
-            if (ticks[0] % 10 == 0) {
-                context.spawnParticle(
-                        Particle.ANGRY_VILLAGER,
-                        loc,
-                        3,
-                        0.3, 0.5, 0.3
-                );
-            }
-
-            ticks[0]++;
-        }, 0, 1); // Кожен тік
+            context.spawnParticle(Particle.SMOKE, context.getCasterLocation().add(0, 0.5, 0), 3, 0.2, 0.2, 0.2);
+            elapsed[0] += 2;
+        }, 0, 2);
     }
 }
