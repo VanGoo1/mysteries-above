@@ -1,9 +1,11 @@
 package me.vangoo.domain.entities;
 
+import me.vangoo.application.abilities.SanityPenalty;
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.AbilityType;
 import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.services.SpiritualityCalculator;
 import me.vangoo.domain.valueobjects.Mastery;
 import me.vangoo.domain.valueobjects.SanityLoss;
@@ -19,7 +21,7 @@ public class Beyonder {
     private Mastery mastery;
     private Spirituality spirituality;
     private SanityLoss sanityLoss;
-
+    private transient Random random;
     private transient List<Ability> abilities;
     private transient SpiritualityCalculator spiritualityCalculator;
 
@@ -41,7 +43,7 @@ public class Beyonder {
         this.sanityLoss = SanityLoss.none();
         this.abilities = new ArrayList<>();
         this.spiritualityCalculator = new SpiritualityCalculator();
-
+        this.random = new Random();
         // Calculate initial spirituality
         updateMaximumSpirituality();
         this.spirituality = Spirituality.empty(spirituality.maximum());
@@ -73,6 +75,9 @@ public class Beyonder {
     public void initializeTransientFields() {
         if (spiritualityCalculator == null) {
             spiritualityCalculator = new SpiritualityCalculator();
+        }
+        if (random == null) {
+            random = new Random();
         }
         if (abilities == null || abilities.isEmpty()) {
             loadAbilities();
@@ -142,47 +147,142 @@ public class Beyonder {
             return AbilityResult.failure("У вас немає цієї здібності");
         }
 
-        if (ability.getType() != AbilityType.ACTIVE) {
-            return ability.execute(context);
-        }
-
-        int cost = ability.getSpiritualityCost();
-
-        if (!spirituality.hasSufficient(cost)) {
-            return AbilityResult.failure(
-                    String.format("Недостатньо духовності: потрібно %d, є %d",
-                            cost, spirituality.current())
-            );
-        }
-
-        AbilityResult result = ability.execute(context);
-
-        if (result.isSuccess()) {
-            spirituality = spirituality.decrement(cost);
-            double c = (double) ability.getSpiritualityCost() / getMaxSpirituality();
-            mastery = mastery.increment((int) Math.ceil(c));
-
-            // Raise domain event
-//            raiseEvent(new BeyonderEvent.AbilityUsed(
-//                    UUID.randomUUID(),
-//                    playerId,
-//                    ability.getName(),
-//                    cost,
-//                    Instant.now()
-//            ));
-
-            // Check for critical spirituality
-            if (spirituality.isCritical()) {
-                increaseSanityLoss(2);
-//                raiseEvent(new BeyonderEvent.SpiritualityDepleted(
-//                        UUID.randomUUID(),
-//                        playerId,
-//                        spirituality,
-//                        Instant.now()
-//                ));
+        if (ability.getType() == AbilityType.ACTIVE) {
+            int cost = ability.getSpiritualityCost();
+            if (!spirituality.hasSufficient(cost)) {
+                return AbilityResult.insufficientResources(
+                        String.format("Недостатньо духовності: потрібно %d, є %d",
+                                cost, spirituality.current())
+                );
             }
         }
-        return result;
+
+        AbilityResult executionResult = ability.execute(context);
+
+        if (!executionResult.isSuccess()) {
+            return executionResult;
+        }
+
+        if (ability.getType() == AbilityType.ACTIVE) {
+            int cost = ability.getSpiritualityCost();
+            spirituality = spirituality.decrement(cost);
+
+            double masteryGainRatio = (double) cost / getMaxSpirituality();
+            int masteryGain = (int) Math.ceil(masteryGainRatio * 100);
+            mastery = mastery.increment(masteryGain);
+
+            if (spirituality.isCritical()) {
+                increaseSanityLoss(2);
+            }
+        }
+
+        SanityPenalty penalty = checkAndCalculateSanityPenalty();
+
+        if (penalty.hasEffect()) {
+            String message = getSanityLossMessage();
+            return AbilityResult.successWithPenalty(penalty, message);
+        }
+
+        return AbilityResult.success();
+    }
+
+    private SanityPenalty checkAndCalculateSanityPenalty() {
+        // Negligible sanity loss - no check needed
+        if (sanityLoss.isNegligible()) {
+            return SanityPenalty.none();
+        }
+
+        double failureChance = sanityLoss.calculateFailureChance();
+
+        // Roll for penalty
+        if (random.nextDouble() >= failureChance) {
+            return SanityPenalty.none();
+        }
+
+        // Check failed - calculate penalty
+        return calculatePenalty();
+    }
+
+    /**
+     * Calculate penalty based on sanity loss severity and sequence level
+     */
+    private SanityPenalty calculatePenalty() {
+        // EXTREME: 96-100 → Death
+        if (sanityLoss.isExtreme()) {
+            return SanityPenalty.extreme();
+        }
+
+        // CRITICAL: 81-95 → Large penalties
+        if (sanityLoss.isCritical()) {
+            if (random.nextBoolean()) {
+                int spiritualityLoss = SequenceScaler.scaleSpiritualityLoss(
+                        getMaxSpirituality(),
+                        sequence.level()
+                );
+                return SanityPenalty.spiritualityLoss(spiritualityLoss);
+            } else {
+                int damage = SequenceScaler.scaleDamagePenalty(sequence.level());
+                return SanityPenalty.damage(damage);
+            }
+        }
+
+        // SEVERE: 61-80 → Medium penalties
+        if (sanityLoss.isSevere()) {
+            if (random.nextBoolean()) {
+                int spiritualityLoss = SequenceScaler.scaleSpiritualityLoss(
+                        getMaxSpirituality(),
+                        sequence.level()
+                ) * 2 / 3;
+                return SanityPenalty.spiritualityLoss(Math.max(5, spiritualityLoss));
+            } else {
+                int damage = SequenceScaler.scaleDamagePenalty(sequence.level());
+                return SanityPenalty.damage(damage);
+            }
+        }
+
+        // SERIOUS: 41-60 → Small penalties
+        if (sanityLoss.isSerious()) {
+            if (random.nextDouble() < 0.7) {
+                int damage = SequenceScaler.scaleDamagePenalty(sequence.level());
+                return SanityPenalty.damage(Math.max(1, damage / 2));
+            } else {
+                int spiritualityLoss = SequenceScaler.scaleSpiritualityLoss(
+                        getMaxSpirituality(),
+                        sequence.level()
+                ) / 3;
+                return SanityPenalty.spiritualityLoss(Math.max(3, spiritualityLoss));
+            }
+        }
+
+        // MODERATE: 21-40 → Rare minor damage
+        if (sanityLoss.isModerate()) {
+            if (random.nextDouble() < 0.3) {
+                return SanityPenalty.damage(1);
+            }
+        }
+
+        // MINOR: 11-20 → No penalty
+        return SanityPenalty.none();
+    }
+
+    /**
+     * Generate message based on current sanity loss
+     */
+    private String getSanityLossMessage() {
+        if (sanityLoss.isMinor()) {
+            return "Ваші руки злегка тремтять...";
+        } else if (sanityLoss.isModerate()) {
+            return "Ваші сили відмовляються слухатися!";
+        } else if (sanityLoss.isSerious()) {
+            return "Хаос у вашій свідомості блокує здібності!";
+        } else if (sanityLoss.isSevere()) {
+            return "Втрата контролю посилюється!";
+        } else if (sanityLoss.isCritical()) {
+            return "Божевільний шепіт заважає зосередитися!";
+        } else if (sanityLoss.isExtreme()) {
+            return "ХАОС ПОГЛИНАЄ ВАШУ СВІДОМІСТЬ!";
+        }
+        return "Щось не так...";
     }
 
     public void restoreAfterSleep(){

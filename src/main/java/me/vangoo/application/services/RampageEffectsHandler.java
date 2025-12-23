@@ -1,6 +1,5 @@
 package me.vangoo.application.services;
 
-import me.vangoo.application.abilities.SanityLossCheckResult;
 import me.vangoo.application.abilities.SanityPenalty;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.Spirituality;
@@ -14,25 +13,21 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Warden;
 
-import java.util.Objects;
 
 import static org.bukkit.Bukkit.getLogger;
 
 public class RampageEffectsHandler {
 
-    /**
-     * Show effects based on sanity loss check result
-     */
-    public void showSanityLossEffects(Player player, Beyonder beyonder, SanityLossCheckResult result) {
-        if (Objects.equals(result.penalty(), SanityPenalty.none())) {
+    public void applySanityPenalty(Player player, Beyonder beyonder, SanityPenalty penalty) {
+        if (!penalty.hasEffect()) {
             return;
         }
 
-        // Show action bar message
-        showActionBarMessage(player, result.message());
+        // Show message and visuals based on penalty type
+        String message = getSanityPenaltyMessage(penalty);
+        showActionBarMessage(player, message);
 
-        // Apply penalty effects
-        SanityPenalty penalty = result.penalty();
+        // Apply physical effects based on penalty type
         switch (penalty.type()) {
             case DAMAGE -> applyDamage(player, penalty.amount());
             case SPIRITUALITY_LOSS -> applySpiritualityLoss(player, beyonder, penalty.amount());
@@ -40,42 +35,55 @@ public class RampageEffectsHandler {
         }
     }
 
-    /**
-     * Show message in action bar
-     */
+    private String getSanityPenaltyMessage(SanityPenalty penalty) {
+        return switch (penalty.type()) {
+            case DAMAGE -> {
+                if (penalty.amount() <= 2) {
+                    yield "Ваші руки злегка тремтять...";
+                } else if (penalty.amount() <= 5) {
+                    yield "Ваші сили відмовляються слухатися!";
+                } else if (penalty.amount() <= 10) {
+                    yield "Хаос у вашій свідомості завдає шкоди!";
+                } else {
+                    yield "Втрата контролю посилюється!";
+                }
+            }
+            case SPIRITUALITY_LOSS -> {
+                if (penalty.amount() <= 10) {
+                    yield "Хаос викрадає вашу духовність...";
+                } else if (penalty.amount() <= 50) {
+                    yield "Божевільний шепіт виснажує вас!";
+                } else {
+                    yield "Втрата контролю вкрала велику частину духовності!";
+                }
+            }
+            case EXTREME -> "ХАОС ПОГЛИНАЄ ВАШУ СВІДОМІСТЬ!";
+            default -> "Щось не так...";
+        };
+    }
+
     private void showActionBarMessage(Player player, String message) {
-        ChatColor color = determineMessageColor(message);
+        ChatColor color = ChatColor.YELLOW;
+
+        if (message.contains("ХАОС ПОГЛИНАЄ")) {
+            color = ChatColor.DARK_PURPLE;
+        } else if (message.contains("Божевільний") || message.contains("посилюється")) {
+            color = ChatColor.DARK_RED;
+        } else if (message.contains("Хаос") || message.contains("шкоди")) {
+            color = ChatColor.RED;
+        } else if (message.contains("відмовляються")) {
+            color = ChatColor.GOLD;
+        }
+
         player.spigot().sendMessage(ChatMessageType.ACTION_BAR,
                 new TextComponent(color + message));
     }
 
-    /**
-     * Determine color based on message severity
-     */
-    private ChatColor determineMessageColor(String message) {
-        if (message.contains("ХАОС ПОГЛИНАЄ")) {
-            return ChatColor.DARK_PURPLE;
-        } else if (message.contains("Божевільний")) {
-            return ChatColor.DARK_RED;
-        } else if (message.contains("Хаос")) {
-            return ChatColor.RED;
-        } else if (message.contains("відмовляються")) {
-            return ChatColor.GOLD;
-        }
-        return ChatColor.YELLOW;
-    }
-
-    /**
-     * Apply physical damage penalty
-     */
     private void applyDamage(Player player, int amount) {
         player.damage(amount);
-        player.sendMessage(ChatColor.RED + "Хаос завдає вам шкоди!");
+        player.sendMessage(ChatColor.RED + "Хаос завдає вам " + amount + " шкоди!");
     }
 
-    /**
-     * Apply spirituality loss penalty
-     */
     private void applySpiritualityLoss(Player player, Beyonder beyonder, int amount) {
         Spirituality current = beyonder.getSpirituality();
         Spirituality reduced = current.decrement(amount);
@@ -85,26 +93,13 @@ public class RampageEffectsHandler {
                 "Втрата контролю вкрала " + amount + " духовності!");
     }
 
-    /**
-     * Apply extreme rampage effects - death and warden transformation
-     */
     private void applyExtremeRampage(Player player, Beyonder beyonder) {
-        // Show dramatic message
         showExtremeRampageMessages(player);
-
-        // Notify nearby players
         notifyNearbyPlayers(player);
-
-        // Spawn warden
         spawnWardenTransformation(player);
-
-        // Kill player
         player.setHealth(0.0);
     }
 
-    /**
-     * Show dramatic transformation messages
-     */
     private void showExtremeRampageMessages(Player player) {
         player.sendMessage(ChatColor.DARK_PURPLE + "=".repeat(50));
         player.sendMessage(ChatColor.GRAY + "" + ChatColor.BOLD + "ВТРАТА КОНТРОЛЮ");
@@ -113,9 +108,6 @@ public class RampageEffectsHandler {
         player.sendMessage(ChatColor.DARK_PURPLE + "=".repeat(50));
     }
 
-    /**
-     * Notify nearby players about transformation
-     */
     private void notifyNearbyPlayers(Player player) {
         Location loc = player.getLocation();
         String message = ChatColor.DARK_RED + "" + ChatColor.BOLD +
@@ -128,9 +120,6 @@ public class RampageEffectsHandler {
         }
     }
 
-    /**
-     * Spawn warden at player location with effects
-     */
     private void spawnWardenTransformation(Player player) {
         Location location = player.getLocation();
         if (location.getWorld() == null) {
@@ -138,27 +127,22 @@ public class RampageEffectsHandler {
             return;
         }
 
-        // Spawn warden
         Warden warden = (Warden) location.getWorld()
                 .spawnEntity(location, EntityType.WARDEN);
 
-        // Configure warden
         warden.setCustomName(ChatColor.DARK_RED + "" + ChatColor.BOLD +
                 "Бешаний " + player.getName());
         warden.setCustomNameVisible(true);
 
-        // Target nearest player
         Player nearestPlayer = findNearestPlayer(location, player);
         if (nearestPlayer != null) {
             warden.setTarget(nearestPlayer);
         }
 
-        // Visual effects
         location.getWorld().strikeLightningEffect(location);
         location.getWorld().playSound(location, Sound.ENTITY_WARDEN_EMERGE, 2.0f, 0.5f);
         location.getWorld().playSound(location, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.0f, 0.8f);
 
-        // Particle effects
         location.getWorld().spawnParticle(
                 Particle.SOUL_FIRE_FLAME,
                 location.add(0, 1, 0),
@@ -166,9 +150,6 @@ public class RampageEffectsHandler {
         );
     }
 
-    /**
-     * Find nearest player within range
-     */
     private Player findNearestPlayer(Location location, Player exclude) {
         Player nearest = null;
         double nearestDistance = Double.MAX_VALUE;

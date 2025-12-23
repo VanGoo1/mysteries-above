@@ -19,9 +19,10 @@ import me.vangoo.infrastructure.ui.NBTBuilder;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.util.logging.Logger;
 
 public class MysteriesAbovePlugin extends JavaPlugin {
-
+    Logger pluginLogger;
     AbilityMenu abilityMenu;
     CooldownManager cooldownManager;
     AbilityLockManager lockManager;
@@ -42,6 +43,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        this.pluginLogger = this.getLogger();
         glowingEntities = new GlowingEntities(this);
         saveDefaultConfig();
         initializeManagers();
@@ -108,10 +110,10 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
     private void registerEvents() {
         AbilityMenuListener abilityMenuListener =
-                new AbilityMenuListener(abilityMenu, beyonderService, abilityExecutor, abilityItemFactory, rampageEffectsHandler);
+                new AbilityMenuListener(abilityMenu, beyonderService, abilityExecutor, abilityItemFactory, pluginLogger);
 
         BeyonderPlayerListener beyonderPlayerListener =
-                new BeyonderPlayerListener(beyonderService, new BossBarUtil(), abilityExecutor, abilityItemFactory);
+                new BeyonderPlayerListener(beyonderService, new BossBarUtil(), abilityExecutor, abilityItemFactory, pluginLogger);
 
         PathwayPotionListener pathwayPotionListener =
                 new PathwayPotionListener(potionManager, beyonderService);

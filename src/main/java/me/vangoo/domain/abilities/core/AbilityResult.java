@@ -1,5 +1,6 @@
 package me.vangoo.domain.abilities.core;
 
+import me.vangoo.application.abilities.SanityPenalty;
 import me.vangoo.domain.valueobjects.SequenceBasedSuccessChance;
 
 import javax.annotation.Nullable;
@@ -9,6 +10,7 @@ public class AbilityResult {
     private final String message;
     private final FailureReason failureReason;
     private final SequenceBasedSuccessChance successChance;
+    private final SanityPenalty sanityPenalty;
 
     /**
      * Reason why an ability failed
@@ -26,12 +28,14 @@ public class AbilityResult {
             boolean success,
             String message,
             FailureReason reason,
-            @Nullable SequenceBasedSuccessChance successChance
+            @Nullable SequenceBasedSuccessChance successChance,
+            @Nullable SanityPenalty sanityPenalty
     ) {
         this.success = success;
         this.message = message;
         this.failureReason = reason;
         this.successChance = successChance;
+        this.sanityPenalty = sanityPenalty;
     }
 
     // ==========================================
@@ -39,11 +43,18 @@ public class AbilityResult {
     // ==========================================
 
     public static AbilityResult success() {
-        return new AbilityResult(true, null, FailureReason.NONE, null);
+        return new AbilityResult(true, null, FailureReason.NONE, null, null);
     }
 
     public static AbilityResult successWithMessage(String message) {
-        return new AbilityResult(true, message, FailureReason.NONE, null);
+        return new AbilityResult(true, message, FailureReason.NONE, null, null);
+    }
+
+    /**
+     * Success with sanity penalty - ability executed successfully but sanity loss caused a penalty
+     */
+    public static AbilityResult successWithPenalty(SanityPenalty penalty, String message) {
+        return new AbilityResult(true, message, FailureReason.NONE, null, penalty);
     }
 
     // ==========================================
@@ -51,34 +62,31 @@ public class AbilityResult {
     // ==========================================
 
     public static AbilityResult failure(String reason) {
-        return new AbilityResult(false, reason, FailureReason.CUSTOM, null);
+        return new AbilityResult(false, reason, FailureReason.CUSTOM, null, null);
     }
 
     public static AbilityResult cooldownFailure(long remainingSeconds) {
         String message = "Cooldown: " + remainingSeconds + "с";
-        return new AbilityResult(false, message, FailureReason.COOLDOWN, null);
+        return new AbilityResult(false, message, FailureReason.COOLDOWN, null, null);
     }
 
     public static AbilityResult insufficientResources(String message) {
-        return new AbilityResult(false, message, FailureReason.INSUFFICIENT_RESOURCES, null);
+        return new AbilityResult(false, message, FailureReason.INSUFFICIENT_RESOURCES, null, null);
     }
 
     public static AbilityResult invalidTarget(String message) {
-        return new AbilityResult(false, message, FailureReason.INVALID_TARGET, null);
+        return new AbilityResult(false, message, FailureReason.INVALID_TARGET, null, null);
     }
 
     /**
      * Create failure due to sequence-based resistance
-     *
-     * @param successChance The chance calculation that was rolled
-     * @return Failure result with sequence information
      */
     public static AbilityResult sequenceResistance(SequenceBasedSuccessChance successChance) {
         String message = String.format(
                 "Ціль чинила опір! (Шанс успіху: %s)",
                 successChance.getFormattedChance()
         );
-        return new AbilityResult(false, message, FailureReason.SEQUENCE_RESISTANCE, successChance);
+        return new AbilityResult(false, message, FailureReason.SEQUENCE_RESISTANCE, successChance, null);
     }
 
     // ==========================================
@@ -103,6 +111,11 @@ public class AbilityResult {
         return successChance;
     }
 
+    @Nullable
+    public SanityPenalty getSanityPenalty() {
+        return sanityPenalty;
+    }
+
     // ==========================================
     // Convenience Methods
     // ==========================================
@@ -119,13 +132,21 @@ public class AbilityResult {
         return message != null && !message.isEmpty();
     }
 
+    /**
+     * Check if result has sanity penalty (success or failure with penalty)
+     */
+    public boolean hasSanityPenalty() {
+        return sanityPenalty != null && sanityPenalty.hasEffect();
+    }
+
     @Override
     public String toString() {
         return "AbilityResult[" +
                 "success=" + success + ", " +
                 "message=" + message + ", " +
                 "reason=" + failureReason + ", " +
-                "successChance=" + (successChance != null ? successChance.getFormattedChance() : "N/A") +
+                "successChance=" + (successChance != null ? successChance.getFormattedChance() : "N/A") + ", " +
+                "sanityPenalty=" + (sanityPenalty != null ? sanityPenalty : "N/A") +
                 ']';
     }
 }

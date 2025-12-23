@@ -124,12 +124,6 @@ public class GoodMemory extends ToggleablePassiveAbility {
         observations.put(casterId, new ObservationState());
         markedTargets.put(casterId, ConcurrentHashMap.newKeySet());
         markDurations.put(casterId, new ConcurrentHashMap<>());
-
-        context.sendMessageToCaster(
-                ChatColor.GREEN + "Хороша пам'ять " +
-                        ChatColor.GRAY + "увімкнена. Спостерігайте за ціллю " +
-                        (OBSERVE_DURATION_TICKS / 20.0) + "с."
-        );
     }
 
     @Override

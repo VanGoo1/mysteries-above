@@ -1,11 +1,10 @@
 package me.vangoo.presentation.listeners;
 
-import me.vangoo.application.abilities.AbilityExecutionResult;
 import me.vangoo.application.services.AbilityExecutor;
 import me.vangoo.application.services.BeyonderService;
-import me.vangoo.application.services.RampageEffectsHandler;
 import me.vangoo.domain.abilities.core.Ability;
 
+import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.infrastructure.abilities.AbilityItemFactory;
 import me.vangoo.infrastructure.ui.AbilityMenu;
@@ -24,6 +23,8 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.logging.Logger;
+
 
 /**
  * Listener for ability menu interactions.
@@ -34,20 +35,20 @@ public class AbilityMenuListener implements Listener {
     private final BeyonderService beyonderService;
     private final AbilityExecutor abilityExecutor;
     private final AbilityItemFactory abilityItemFactory;
-    private final RampageEffectsHandler effectsHandler;
+    private final Logger logger;
 
     public AbilityMenuListener(
             AbilityMenu abilityMenu,
             BeyonderService beyonderService,
             AbilityExecutor abilityExecutor,
             AbilityItemFactory abilityItemFactory,
-            RampageEffectsHandler effectsHandler
+            Logger logger
     ) {
         this.abilityMenu = abilityMenu;
         this.beyonderService = beyonderService;
         this.abilityExecutor = abilityExecutor;
         this.abilityItemFactory = abilityItemFactory;
-        this.effectsHandler = effectsHandler;
+        this.logger = logger;
     }
 
     @EventHandler
@@ -158,18 +159,16 @@ public class AbilityMenuListener implements Listener {
      * Execute passive ability when selected from menu
      */
     private void executePassiveAbility(Player player, Beyonder beyonder, Ability ability) {
+        AbilityResult result = abilityExecutor.execute(beyonder, ability);
 
-        AbilityExecutionResult result = abilityExecutor.execute(beyonder, ability);
-
+        logger.info(result.toString());
         if (!result.isSuccess()) {
-            player.sendMessage("§c" + result.message());
-
-            if (result.hasSanityPenalty()) {
-                effectsHandler.showSanityLossEffects(player, beyonder, result.sanityCheck());
-            }
+            player.sendMessage(ChatColor.RED + result.getMessage());
+        } else if (result.hasSanityPenalty()) {
+            player.sendMessage(ChatColor.GREEN + ability.getName() + ChatColor.GRAY + " увімкнена, але з наслідками");
+        } else {
+            player.sendMessage(ChatColor.GREEN + ability.getName() + ChatColor.GRAY + " увімкнена.");
         }
-
-        beyonderService.updateBeyonder(beyonder);
     }
 
     /**

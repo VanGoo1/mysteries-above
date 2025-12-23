@@ -19,6 +19,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.RayTraceResult;
+import org.bukkit.util.Vector;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -34,7 +35,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     private final AbilityLockManager lockManager;
     private final GlowingEntities glowingEntities;
     private final EffectManager effectManager;
-    private static final Logger LOGGER = Logger.getLogger(BukkitAbilityContext.class.getName());
+    private final Logger LOGGER;
     // Cache for performance (valid only during single ability execution)
     private final Map<UUID, Entity> entityCache = new HashMap<>();
 
@@ -53,6 +54,7 @@ public class BukkitAbilityContext implements IAbilityContext {
         this.lockManager = lockManager;
         this.glowingEntities = glowingEntities;
         this.effectManager = effectManager;
+        this.LOGGER = plugin.getLogger();
     }
 
     // ==========================================
@@ -487,7 +489,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     }
 
     @Override
-    public void playConeEffect(Location apex, org.bukkit.util.Vector direction, double angle, double length, Particle particle, int durationTicks) {
+    public void playConeEffect(Location apex, Vector direction, double angle, double length, Particle particle, int durationTicks) {
         ConeEffect effect = new ConeEffect(effectManager);
         effect.setLocation(apex);
         effect.particle = particle;
