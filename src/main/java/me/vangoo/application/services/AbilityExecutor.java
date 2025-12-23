@@ -1,11 +1,11 @@
 package me.vangoo.application.services;
 
-import me.vangoo.MysteriesAbovePlugin;
 import me.vangoo.application.abilities.AbilityExecutionResult;
 import me.vangoo.application.abilities.SanityLossCheckResult;
 import me.vangoo.application.abilities.SanityPenalty;
 import me.vangoo.domain.abilities.core.*;
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.valueobjects.SanityLoss;
 import org.bukkit.entity.Player;
 
@@ -19,13 +19,12 @@ public class AbilityExecutor {
     private final BeyonderService beyonderService;
     private final AbilityLockManager abilityLockManager;
     private final RampageEffectsHandler rampageEffectsHandler;
-
     private final PassiveAbilityManager passiveAbilityManager;
     private final AbilityContextFactory abilityContextFactory;
 
-
     public AbilityExecutor(BeyonderService beyonderService, AbilityLockManager abilityLockManager,
-                           RampageEffectsHandler rampageEffectsHandler, PassiveAbilityManager passiveAbilityManager, AbilityContextFactory abilityContextFactory) {
+                           RampageEffectsHandler rampageEffectsHandler, PassiveAbilityManager passiveAbilityManager,
+                           AbilityContextFactory abilityContextFactory) {
         this.beyonderService = beyonderService;
         this.abilityLockManager = abilityLockManager;
         this.rampageEffectsHandler = rampageEffectsHandler;
@@ -39,22 +38,29 @@ public class AbilityExecutor {
             return AbilityExecutionResult.failure("Player not found");
         }
 
-        // Check if abilities are locked (BEFORE creating context)
+        // Check if abilities are locked
         if (abilityLockManager.isLocked(beyonder.getPlayerId())) {
             return AbilityExecutionResult.failure("Здібності заблоковані!");
         }
 
         IAbilityContext context = abilityContextFactory.createContext(player);
 
-        AbilityResult abilityResult = beyonder.useAbility(ability, context);
+        // *** Check cooldown BEFORE sanity check to prevent penalty spam ***
+        if (ability.getType() == AbilityType.ACTIVE && context.hasCooldown(ability)) {
+            return AbilityExecutionResult.failure(
+                    "Cooldown: " + context.getRemainingCooldownSeconds(ability) + "с"
+            );
+        }
 
-        if (abilityResult.isCooldownFailure())
-            return AbilityExecutionResult.failure(abilityResult.getMessage());
-
-        // Check sanity loss BEFORE execution
-        SanityLossCheckResult sanityCheck = checkSanityLoss(beyonder.getSanityLoss());
+        // *** Check sanity loss BEFORE executing ability ***
+        SanityLossCheckResult sanityCheck = checkSanityLoss(beyonder);
         if (!sanityCheck.canExecuteAbility()) {
-            // Apply penalty to beyonder
+            // *** Set cooldown even on sanity failure to prevent spam ***
+            if (ability.getType() == AbilityType.ACTIVE) {
+                context.setCooldown(ability, ability.getCooldown());
+            }
+
+            // Apply penalty
             rampageEffectsHandler.showSanityLossEffects(player, beyonder, sanityCheck);
             beyonderService.updateBeyonder(beyonder);
 
@@ -62,6 +68,13 @@ public class AbilityExecutor {
                     sanityCheck.message(),
                     sanityCheck
             );
+        }
+
+        // Execute ability normally
+        AbilityResult abilityResult = beyonder.useAbility(ability, context);
+
+        if (abilityResult.isCooldownFailure()) {
+            return AbilityExecutionResult.failure(abilityResult.getMessage());
         }
 
         beyonderService.updateBeyonder(beyonder);
@@ -80,22 +93,24 @@ public class AbilityExecutor {
 
     /**
      * Check if sanity loss causes ability failure
-     * Uses domain calculation (SanityLoss.calculateFailureChance)
      */
-    private SanityLossCheckResult checkSanityLoss(SanityLoss sanityLoss) {
-        int scale = sanityLoss.scale();
+    private SanityLossCheckResult checkSanityLoss(Beyonder beyonder) {
+        SanityLoss sanityLoss = beyonder.getSanityLoss();
+
         if (sanityLoss.isNegligible()) {
             return SanityLossCheckResult.passed(sanityLoss);
         }
 
         double failureChance = sanityLoss.calculateFailureChance();
+
+        // Roll for failure
         if (random.nextDouble() >= failureChance) {
             return SanityLossCheckResult.passed(sanityLoss);
         }
 
-        // Failed check - determine penalty and message
+        // Failed check - determine penalty
         String message = getSanityLossMessage(sanityLoss);
-        SanityPenalty penalty = calculatePenalty(sanityLoss);
+        SanityPenalty penalty = calculatePenalty(beyonder);
 
         return SanityLossCheckResult.failed(sanityLoss, penalty, message);
     }
@@ -107,24 +122,80 @@ public class AbilityExecutor {
             return "Ваші сили відмовляються слухатися!";
         } else if (sanityLoss.isSerious()) {
             return "Хаос у вашій свідомості блокує здібності!";
+        } else if (sanityLoss.isSevere()) {
+            return "Втрата контролю посилюється!";
         } else if (sanityLoss.isCritical()) {
             return "Божевільний шепіт заважає зосередитися!";
         } else if (sanityLoss.isExtreme()) {
             return "ХАОС ПОГЛИНАЄ ВАШУ СВІДОМІСТЬ!";
         }
-        return "";
+        return "Щось не так...";
     }
 
-    private SanityPenalty calculatePenalty(SanityLoss sanityLoss) {
+    private SanityPenalty calculatePenalty(Beyonder beyonder) {
+        SanityLoss sanityLoss = beyonder.getSanityLoss();
+        int sequence = beyonder.getSequenceLevel();
+
+        // EXTREME: 96-100 → Death
         if (sanityLoss.isExtreme()) {
             return SanityPenalty.extreme();
-        } else if (sanityLoss.isCritical()) {
-            int spiritualityLoss = random.nextInt(10) + 5; // 5-14
-            return SanityPenalty.spiritualityLoss(spiritualityLoss);
-        } else if (sanityLoss.isSerious()) {
-            int damage = 1 + (sanityLoss.scale() - 60) / 10; // 1-3
-            return SanityPenalty.damage(damage);
         }
+
+        // CRITICAL: 81-95 → Large penalties
+        if (sanityLoss.isCritical()) {
+            if (random.nextBoolean()) {
+                // Spirituality loss
+                int spiritualityLoss = SequenceScaler.scaleSpiritualityLoss(
+                        beyonder.getMaxSpirituality(),
+                        sequence
+                );
+                return SanityPenalty.spiritualityLoss(spiritualityLoss);
+            } else {
+                // Damage
+                int damage = SequenceScaler.scaleDamagePenalty(sequence);
+                return SanityPenalty.damage(damage);
+            }
+        }
+
+        if (sanityLoss.isSevere()) {
+            if (random.nextBoolean()) {
+                // Medium spirituality loss
+                int spiritualityLoss = SequenceScaler.scaleSpiritualityLoss(
+                        beyonder.getMaxSpirituality(),
+                        sequence
+                ) * 2 / 3; // 66% of full penalty
+                return SanityPenalty.spiritualityLoss(Math.max(5, spiritualityLoss));
+            } else {
+                // Damage
+                int damage = SequenceScaler.scaleDamagePenalty(sequence);
+                return SanityPenalty.damage(damage);
+            }
+        }
+
+        // SERIOUS: 41-60 → Small penalties
+        if (sanityLoss.isSerious()) {
+            if (random.nextDouble() < 0.7) { // 70% damage
+                int damage = SequenceScaler.scaleDamagePenalty(sequence);
+                return SanityPenalty.damage(Math.max(1, damage / 2)); // Half damage
+            } else { // 30% spirituality loss
+                int spiritualityLoss = SequenceScaler.scaleSpiritualityLoss(
+                        beyonder.getMaxSpirituality(),
+                        sequence
+                ) / 3; // 33% of full penalty
+                return SanityPenalty.spiritualityLoss(Math.max(3, spiritualityLoss));
+            }
+        }
+
+        // MODERATE: 21-40 → Rare minor damage
+        if (sanityLoss.isModerate()) {
+            if (random.nextDouble() < 0.3) { // 30% chance
+                return SanityPenalty.damage(1);
+            }
+        }
+
+        // MINOR: 11-20 → No penalty (just blocks ability)
+        // NEGLIGIBLE: 0-10 → Never fails
+
         return SanityPenalty.none();
     }
 }

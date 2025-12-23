@@ -44,13 +44,18 @@ public record SanityLoss(int scale) {
         return none();
     }
 
+    /**
+     * Calculate failure chance based on sanity loss scale
+     * Updated with more balanced progression
+     */
     public double calculateFailureChance() {
-        if (scale <= 10) return 0;
-        else if (scale <= 20) return 0.1 + (scale - 10) * 0.01;
-        else if (scale <= 40) return 0.25 + (scale - 20) * 0.01;
-        else if (scale <= 60) return 0.50 + (scale - 40) * 0.01;
-        else if (scale <= 80) return 0.75 + (scale - 60) * 0.005;
-        else return Math.min(0.95, 0.90 + (scale - 80) * 0.0025);
+        if (scale <= 10) return 0.0;           // 0-10: No failure (Negligible)
+        else if (scale <= 20) return 0.05;     // 11-20: 5% (Minor)
+        else if (scale <= 40) return 0.15;     // 21-40: 15% (Moderate)
+        else if (scale <= 60) return 0.35;     // 41-60: 35% (Serious)
+        else if (scale <= 80) return 0.60;     // 61-80: 60% (Severe)
+        else if (scale <= 95) return 0.85;     // 81-95: 85% (Critical)
+        else return 1.0;                       // 96-100: 100% (Extreme - always fails)
     }
 
     public boolean isNegligible() {

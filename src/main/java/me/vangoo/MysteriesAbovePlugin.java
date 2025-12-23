@@ -130,12 +130,14 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     private void registerCommands() {
         PathwayCommand pathwayCommand = new PathwayCommand(beyonderService, pathwayManager, abilityMenu, abilityItemFactory);
         SequencePotionCommand sequencePotionCommand = new SequencePotionCommand(potionManager);
+        RampagerCommand rampagerCommand = new RampagerCommand(beyonderService);
         getCommand("pathway").setExecutor(pathwayCommand);
         getCommand("pathway").setTabCompleter(pathwayCommand);
         getCommand("potion").setExecutor(sequencePotionCommand);
         getCommand("potion").setTabCompleter(sequencePotionCommand);
         getCommand("mastery").setExecutor(new MasteryCommand(beyonderService));
-        getCommand("rampager").setExecutor(new RampagerCommand(beyonderService));
+        getCommand("rampager").setExecutor(rampagerCommand);
+        getCommand("rampager").setTabCompleter(rampagerCommand);
     }
 
     private void startSchedulers() {

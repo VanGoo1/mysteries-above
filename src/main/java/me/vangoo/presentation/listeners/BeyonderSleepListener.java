@@ -2,8 +2,6 @@ package me.vangoo.presentation.listeners;
 
 import me.vangoo.application.services.BeyonderService;
 import me.vangoo.domain.entities.Beyonder;
-import me.vangoo.domain.valueobjects.Spirituality;
-import org.bukkit.ChatColor;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -11,13 +9,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerBedLeaveEvent;
 
-/**
- * Presentation: Listener for sleep recovery mechanics
- * <p>
- * Triggered when player wakes up from bed:
- * - Restores spirituality to 50% (if lower)
- * - Reduces sanity loss by 5
- */
 public class BeyonderSleepListener implements Listener {
     private final BeyonderService beyonderService;
 
@@ -31,7 +22,7 @@ public class BeyonderSleepListener implements Listener {
         Beyonder beyonder = beyonderService.getBeyonder(player.getUniqueId());
 
         if (beyonder == null) {
-            return; // Not a beyonder
+            return;
         }
 
         // Check if player actually slept (not just got out of bed)
@@ -40,49 +31,12 @@ public class BeyonderSleepListener implements Listener {
             return; // Didn't complete sleep
         }
 
-        // Store values before recovery
-        int oldSpirituality = beyonder.getSpiritualityValue();
-        int oldSanityLoss = beyonder.getSanityLossScale();
-
         // Apply rest recovery
-        beyonder.decreaseSanityLoss(5);
-        Spirituality spirituality = Spirituality.of(beyonder.getMaxSpirituality() / 2, beyonder.getMaxSpirituality());
-        beyonder.setSpirituality(spirituality);
+        beyonder.restoreAfterSleep();
         beyonderService.updateBeyonder(beyonder);
-
-        // Calculate changes
-        int spiritualityGained = beyonder.getSpiritualityValue() - oldSpirituality;
-        int sanityLossReduced = oldSanityLoss - beyonder.getSanityLossScale();
 
         // Show recovery effects
         showRecoveryEffects(player);
-
-        // Notify player
-        StringBuilder message = new StringBuilder(ChatColor.GREEN + "✦ Відпочинок відновив вас!");
-
-        if (spiritualityGained > 0) {
-            message.append("\n")
-                    .append(ChatColor.AQUA)
-                    .append("  • Духовність: +")
-                    .append(spiritualityGained)
-                    .append(" (→ ")
-                    .append(beyonder.getSpiritualityValue())
-                    .append("/")
-                    .append(beyonder.getMaxSpirituality())
-                    .append(")");
-        }
-
-        if (sanityLossReduced > 0) {
-            message.append("\n")
-                    .append(ChatColor.LIGHT_PURPLE)
-                    .append("  • Втрата контролю: -")
-                    .append(sanityLossReduced)
-                    .append(" (→ ")
-                    .append(beyonder.getSanityLossScale())
-                    .append("/100)");
-        }
-
-        player.sendMessage(message.toString());
     }
 
     /**

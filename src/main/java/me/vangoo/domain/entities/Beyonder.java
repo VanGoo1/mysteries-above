@@ -185,6 +185,12 @@ public class Beyonder {
         return result;
     }
 
+    public void restoreAfterSleep(){
+        decreaseSanityLoss(5);
+        if (spirituality.current() < getMaxSpirituality())
+            spirituality = Spirituality.of(getMaxSpirituality() / 2, getMaxSpirituality());
+    }
+
     public void regenerateSpirituality() {
         if (!spirituality.isFull()) {
             int regenRate = spiritualityCalculator.calculateRegenerationRate(sequence, mastery);
