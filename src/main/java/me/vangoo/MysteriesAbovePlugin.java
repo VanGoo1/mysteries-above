@@ -3,6 +3,7 @@ package me.vangoo;
 import de.slikey.effectlib.EffectManager;
 import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.application.services.*;
+import me.vangoo.infrastructure.items.PotionItemFactory;
 import me.vangoo.infrastructure.schedulers.MasteryRegenerationScheduler;
 import me.vangoo.infrastructure.schedulers.PassiveAbilityScheduler;
 import me.vangoo.presentation.commands.RampagerCommand;
@@ -40,6 +41,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     MasteryRegenerationScheduler masteryRegenerationScheduler;
     BeyonderSleepListener beyonderSleepListener;
     AbilityContextFactory abilityContextFactory;
+    PotionItemFactory potionItemFactory;
 
     @Override
     public void onEnable() {
@@ -95,7 +97,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 abilityContextFactory
         );
 
-        this.potionManager = new PotionManager(pathwayManager, this);
+        this.potionItemFactory = new PotionItemFactory();
+        this.potionManager = new PotionManager(pathwayManager, potionItemFactory);
 
         this.passiveAbilityScheduler = new PassiveAbilityScheduler(
                 this,
@@ -126,6 +129,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(pathwayPotionListener, this);
         getServer().getPluginManager().registerEvents(passiveAbilityLifecycleListener, this);
         getServer().getPluginManager().registerEvents(beyonderSleepListener, this);
+        getServer().getPluginManager().registerEvents(new PotionCauldronListener(this), this);
     }
 
 
@@ -150,7 +154,6 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 20L
         );
 
-        // NEW: Start passive ability scheduler
         passiveAbilityScheduler.start();
         masteryRegenerationScheduler.start();
     }
@@ -159,6 +162,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         if (passiveAbilityScheduler != null) {
             passiveAbilityScheduler.stop();
         }
-        masteryRegenerationScheduler.stop();
+        if (masteryRegenerationScheduler != null) {
+            masteryRegenerationScheduler.stop();
+        }
     }
 }

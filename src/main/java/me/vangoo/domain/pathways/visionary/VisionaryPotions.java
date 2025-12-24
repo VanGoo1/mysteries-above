@@ -11,8 +11,7 @@ import java.util.List;
 
 public class VisionaryPotions extends PathwayPotions {
     public VisionaryPotions(Pathway pathway, Color potionColor) {
-        super(pathway, potionColor, ChatColor.GRAY, List.of("Шлях: "+pathway.getName()));
+        super(pathway, potionColor, ChatColor.GRAY, List.of());
         addMainSupplementaryRecipe(9, new ItemStack(Material.BONE), new ItemStack(Material.COBBLESTONE));
-       
     }
 }

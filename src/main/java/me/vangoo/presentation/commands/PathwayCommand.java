@@ -105,15 +105,6 @@ public class PathwayCommand implements CommandExecutor, TabCompleter {
         beyonderService.removeBeyonder(target.getUniqueId());
     }
 
-    private void givePotion(Player player, PathwayPotions pathwayPotions, int sequence) {
-        ItemStack potion = pathwayPotions.returnPotionForSequence(sequence);
-        if (player.getInventory().firstEmpty() == -1) {
-            player.getWorld().dropItem(player.getLocation(), potion);
-        } else {
-            player.getInventory().addItem(potion);
-        }
-    }
-
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
