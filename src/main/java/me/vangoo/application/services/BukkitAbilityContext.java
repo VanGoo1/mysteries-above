@@ -5,7 +5,6 @@ import de.slikey.effectlib.EffectManager;
 import de.slikey.effectlib.effect.*;
 import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.MysteriesAbovePlugin;
-import me.vangoo.application.services.rampager.RampageManager;
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.entities.Beyonder;

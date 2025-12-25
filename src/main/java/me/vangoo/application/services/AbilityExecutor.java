@@ -1,8 +1,8 @@
 package me.vangoo.application.services;
 
-import me.vangoo.application.services.rampager.RampageEffectsHandler;
 import me.vangoo.domain.abilities.core.*;
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.domain.valueobjects.SanityPenalty;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
@@ -11,18 +11,20 @@ import static org.bukkit.Bukkit.getPlayer;
 public class AbilityExecutor {
     private final BeyonderService beyonderService;
     private final AbilityLockManager abilityLockManager;
-    private final RampageEffectsHandler rampageEffectsHandler;
+    private final RampageManager rampageManager;
     private final PassiveAbilityManager passiveAbilityManager;
     private final AbilityContextFactory abilityContextFactory;
+    private final SanityPenaltyHandler sanityPenaltyHandler;
 
     public AbilityExecutor(BeyonderService beyonderService, AbilityLockManager abilityLockManager,
-                           RampageEffectsHandler rampageEffectsHandler, PassiveAbilityManager passiveAbilityManager,
-                           AbilityContextFactory abilityContextFactory) {
+                           RampageManager rampageManager, PassiveAbilityManager passiveAbilityManager,
+                           AbilityContextFactory abilityContextFactory, SanityPenaltyHandler sanityPenaltyHandler) {
         this.beyonderService = beyonderService;
         this.abilityLockManager = abilityLockManager;
-        this.rampageEffectsHandler = rampageEffectsHandler;
+        this.rampageManager = rampageManager;
         this.passiveAbilityManager = passiveAbilityManager;
         this.abilityContextFactory = abilityContextFactory;
+        this.sanityPenaltyHandler = sanityPenaltyHandler;
     }
 
     public AbilityResult execute(Beyonder beyonder, Ability ability) {
@@ -68,11 +70,37 @@ public class AbilityExecutor {
 
         // Apply visual effects if there's a penalty
         if (result.hasSanityPenalty()) {
-            rampageEffectsHandler.applySanityPenalty(player, beyonder, result.getSanityPenalty());
+            handleSanityPenalty(player, beyonder, result.getSanityPenalty());
         }
 
         // Update and return domain result directly
         beyonderService.updateBeyonder(beyonder);
         return result;
+    }
+
+    /**
+     * Обробити штраф за втрату здорового глузду
+     */
+    private void handleSanityPenalty(Player player, Beyonder beyonder, SanityPenalty penalty) {
+        switch (penalty.type()) {
+            case DAMAGE, SPIRITUALITY_LOSS -> {
+                // Прості штрафи - застосувати негайно
+                sanityPenaltyHandler.applySimplePenalty(player, beyonder, penalty);
+            }
+            case EXTREME -> {
+                // Екстремальний штраф - запустити rampage трансформацію
+                boolean started = rampageManager.startRampage(
+                        player.getUniqueId(),
+                        beyonder,
+                        20 // 20 секунд до трансформації
+                );
+
+                if (!started) {
+                    // Гравець вже в rampage - показати повідомлення
+                    player.sendMessage(ChatColor.DARK_RED +
+                            "Хаос вже поглинає вашу свідомість!");
+                }
+            }
+        }
     }
 }

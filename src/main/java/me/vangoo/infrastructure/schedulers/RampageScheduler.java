@@ -1,11 +1,12 @@
 package me.vangoo.infrastructure.schedulers;
 
-import me.vangoo.application.services.rampager.RampageManager;
+import me.vangoo.application.services.RampageManager;
 import me.vangoo.domain.valueobjects.RampageState;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -21,23 +22,22 @@ import java.util.logging.Logger;
  * <p>
  * Responsibilities:
  * - Update rampage states every tick
- * - Display visual feedback to players
- * - Play sounds and particles
+ * - Display continuous visual feedback (action bar, particles)
+ * - Call RampageManager.updateRampage() - manager handles logic
  */
 public class RampageScheduler {
-    private final Logger LOGGER;
+    private static final Logger LOGGER = Logger.getLogger(RampageScheduler.class.getName());
 
     private final Plugin plugin;
     private final RampageManager rampageManager;
 
     private BukkitTask updateTask;
 
-    private static final long TICK_INTERVAL = 1L; // Every tick
+    private static final long TICK_INTERVAL = 1L;
 
     public RampageScheduler(Plugin plugin, RampageManager rampageManager) {
         this.plugin = plugin;
         this.rampageManager = rampageManager;
-        this.LOGGER = plugin.getLogger();
     }
 
     /**
@@ -45,13 +45,13 @@ public class RampageScheduler {
      */
     public void start() {
         if (updateTask != null && !updateTask.isCancelled()) {
-            return; // Already running
+            return;
         }
 
         updateTask = Bukkit.getScheduler().runTaskTimer(
                 plugin,
                 this::tickAllRampages,
-                0L, // Start immediately
+                0L,
                 TICK_INTERVAL
         );
 
@@ -91,39 +91,42 @@ public class RampageScheduler {
             return;
         }
 
-        // Update state
+        // Update state through manager (manager handles business logic & events)
         RampageState state = rampageManager.updateRampage(playerId);
 
         if (state == null) {
             return; // No longer in rampage
         }
 
-        // Show visual feedback every second
-        if (state.getElapsedSeconds() > 0 &&
-                System.currentTimeMillis() % 1000 < 50) { // ~every second
-            showRampageProgress(player, state);
-        }
-
-        // Continuous visual effects
-        showContinuousEffects(player, state);
+        // Show continuous visual feedback (UI concern - belongs in scheduler)
+        showProgressUI(player, state);
+        showContinuousParticles(player, state);
     }
 
+    // ==========================================
+    // UI/VISUAL FEEDBACK (Scheduler responsibility)
+    // ==========================================
+
     /**
-     * Show rampage progress to player
+     * Show rampage progress in action bar
      */
-    private void showRampageProgress(Player player, RampageState state) {
-        int remaining = state.getRemainingSeconds();
+    private void showProgressUI(Player player, RampageState state) {
+        // Update every second
+        if (state.getElapsedSeconds() > 0 &&
+                System.currentTimeMillis() % 1000 < 50) {
 
-        // Action bar countdown
-        String message = formatCountdownMessage(remaining, state);
-        player.spigot().sendMessage(
-                ChatMessageType.ACTION_BAR,
-                new TextComponent(message)
-        );
+            int remaining = state.getRemainingSeconds();
+            String message = formatCountdownMessage(remaining, state);
 
-        // Sound warnings at specific intervals
-        if (remaining == 15 || remaining == 10 || remaining == 5 || remaining <= 3) {
-            playWarningSound(player, remaining);
+            player.spigot().sendMessage(
+                    ChatMessageType.ACTION_BAR,
+                    new TextComponent(message)
+            );
+
+            // Play warning sounds at intervals
+            if (remaining == 15 || remaining == 10 || remaining == 5 || remaining <= 3) {
+                playWarningSound(player, remaining);
+            }
         }
     }
 
@@ -157,15 +160,12 @@ public class RampageScheduler {
      */
     private void playWarningSound(Player player, int remaining) {
         if (remaining <= 3) {
-            // Final countdown - loud
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 2.0f, 2.0f);
             player.playSound(player.getLocation(), Sound.ENTITY_WARDEN_HEARTBEAT, 1.5f, 1.0f);
         } else if (remaining <= 10) {
-            // Critical phase
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.5f);
             player.playSound(player.getLocation(), Sound.ENTITY_WARDEN_TENDRIL_CLICKS, 0.7f, 0.8f);
         } else {
-            // Warning phase
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.5f, 0.5f);
         }
     }
@@ -173,45 +173,21 @@ public class RampageScheduler {
     /**
      * Show continuous particle effects
      */
-    private void showContinuousEffects(Player player, RampageState state) {
+    private void showContinuousParticles(Player player, RampageState state) {
         // Show effects every 10 ticks (0.5 seconds)
         if (System.currentTimeMillis() % 500 > 50) {
             return;
         }
 
-        Particle particle;
-        int count;
-        double spread;
+        Location loc = player.getLocation().add(0, 1, 0);
 
         if (state.isCritical()) {
             // Critical phase - intense effects
-            particle = Particle.SOUL_FIRE_FLAME;
-            count = 5;
-            spread = 0.5;
+            player.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, loc, 5, 0.5, 0.5, 0.5, 0.01);
+            player.getWorld().spawnParticle(Particle.SQUID_INK, loc, 2, 0.3, 0.5, 0.3, 0);
         } else {
             // Building up - moderate effects
-            particle = Particle.SMOKE;
-            count = 3;
-            spread = 0.3;
-        }
-
-        player.getWorld().spawnParticle(
-                particle,
-                player.getLocation().add(0, 1, 0),
-                count,
-                spread, spread, spread,
-                0.01
-        );
-
-        // Add dark particles for critical phase
-        if (state.isCritical()) {
-            player.getWorld().spawnParticle(
-                    Particle.SQUID_INK,
-                    player.getLocation().add(0, 1, 0),
-                    2,
-                    0.3, 0.5, 0.3,
-                    0
-            );
+            player.getWorld().spawnParticle(Particle.SMOKE, loc, 3, 0.3, 0.3, 0.3, 0.01);
         }
     }
 

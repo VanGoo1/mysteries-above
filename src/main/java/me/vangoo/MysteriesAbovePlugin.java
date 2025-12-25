@@ -3,9 +3,9 @@ package me.vangoo;
 import de.slikey.effectlib.EffectManager;
 import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.application.services.*;
-import me.vangoo.application.services.rampager.RampageEffectsHandler;
-import me.vangoo.application.services.rampager.RampageManager;
+import me.vangoo.application.services.RampageManager;
 import me.vangoo.infrastructure.items.PotionItemFactory;
+import me.vangoo.infrastructure.listeners.RampageEventListener;
 import me.vangoo.infrastructure.schedulers.MasteryRegenerationScheduler;
 import me.vangoo.infrastructure.schedulers.PassiveAbilityScheduler;
 import me.vangoo.infrastructure.schedulers.RampageScheduler;
@@ -37,7 +37,6 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     AbilityExecutor abilityExecutor;
     EffectManager effectManager;
     IBeyonderRepository beyonderStorage;
-    RampageEffectsHandler rampageEffectsHandler;
     AbilityItemFactory abilityItemFactory;
     PassiveAbilityManager passiveAbilityManager;
     PassiveAbilityScheduler passiveAbilityScheduler;
@@ -47,6 +46,10 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     RampageManager rampageManager;
     AbilityContextFactory abilityContextFactory;
     PotionItemFactory potionItemFactory;
+    DomainEventPublisher eventPublisher;
+    SanityPenaltyHandler sanityPenaltyHandler;
+    RampageEventListener rampageEventListener;
+
 
     @Override
     public void onEnable() {
@@ -74,15 +77,17 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
     private void initializeManagers() {
         NBTBuilder.setPlugin(this);
-        this.rampageManager = new RampageManager(pluginLogger);
+        this.eventPublisher = new DomainEventPublisher();
+        this.rampageManager = new RampageManager(eventPublisher);
+        this.sanityPenaltyHandler = new SanityPenaltyHandler();
         this.cooldownManager = new CooldownManager();
         this.rampageScheduler = new RampageScheduler(this, rampageManager);
         this.abilityItemFactory = new AbilityItemFactory();
         this.abilityMenu = new AbilityMenu(this, abilityItemFactory);
 
         this.pathwayManager = new PathwayManager();
-        this.rampageEffectsHandler = new RampageEffectsHandler(rampageManager);
-        rampageManager.addListener(rampageEffectsHandler);
+        this.rampageEventListener = new RampageEventListener();
+        eventPublisher.subscribe(rampageEventListener::handle);
 
         this.beyonderStorage =
                 new JSONBeyonderRepository(
@@ -98,9 +103,10 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         this.abilityExecutor = new AbilityExecutor(
                 beyonderService,
                 lockManager,
-                rampageEffectsHandler,
+                rampageManager,
                 passiveAbilityManager,
-                abilityContextFactory
+                abilityContextFactory,
+                sanityPenaltyHandler
         );
 
         this.potionItemFactory = new PotionItemFactory();

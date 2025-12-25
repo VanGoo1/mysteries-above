@@ -3,7 +3,6 @@ package me.vangoo.application.services;
 import de.slikey.effectlib.EffectManager;
 import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.MysteriesAbovePlugin;
-import me.vangoo.application.services.rampager.RampageManager;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import org.bukkit.entity.Player;
 
