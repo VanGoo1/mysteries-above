@@ -1,6 +1,6 @@
 package me.vangoo.domain.abilities.core;
 
-import me.vangoo.application.abilities.SanityPenalty;
+import me.vangoo.domain.valueobjects.SanityPenalty;
 import me.vangoo.domain.valueobjects.SequenceBasedSuccessChance;
 
 import javax.annotation.Nullable;

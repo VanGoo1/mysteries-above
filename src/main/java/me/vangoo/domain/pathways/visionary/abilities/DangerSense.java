@@ -1,6 +1,7 @@
 package me.vangoo.domain.pathways.visionary.abilities;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.abilities.core.ToggleablePassiveAbility;
+import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -40,7 +41,7 @@ public class DangerSense extends ToggleablePassiveAbility {
     }
 
     @Override
-    public String getDescription() {
+    public String getDescription(Sequence userSequence) {
         return "Дозволяє відчути небезпечні наміри. Якщо перебувати поруч із гравцем ("
                 + RANGE + "б) протягом " + (OBSERVE_TIME_TICKS / 20) + "с, ви дізнаєтесь про зброю в його інвентарі.";
     }

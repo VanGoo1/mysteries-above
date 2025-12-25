@@ -3,6 +3,7 @@ package me.vangoo.infrastructure.abilities;
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.AbilityType;
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -14,7 +15,7 @@ import java.util.List;
 
 public class AbilityItemFactory {
 
-    public ItemStack getItemFromAbility(Ability ability) {
+    public ItemStack getItemFromAbility(Ability ability, Sequence userSequence) {
         ItemStack item = new ItemStack(Material.PAPER);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
@@ -23,13 +24,13 @@ public class AbilityItemFactory {
                     ChatColor.GRAY + "--------------------------------------------"
             ));
 
-            List<String> descriptionLines = splitTextIntoLines(ability.getDescription(), 60);
+            List<String> descriptionLines = splitTextIntoLines(ability.getDescription(userSequence), 60);
             for (String line : descriptionLines) {
                 lore.add(ChatColor.GRAY + line);
             }
 
             if (ability.getType() == AbilityType.ACTIVE) {
-                lore.add(ChatColor.GRAY + "Кулдаун: " + ChatColor.BLUE + ability.getCooldown() + "c");
+                lore.add(ChatColor.GRAY + "Кулдаун: " + ChatColor.BLUE + ability.getCooldown(userSequence) + "c");
                 lore.add(ChatColor.GRAY + "Вартість: " + ChatColor.BLUE + ability.getSpiritualityCost());
             }
 //            additionalStatsLore.forEach((key, value) -> {

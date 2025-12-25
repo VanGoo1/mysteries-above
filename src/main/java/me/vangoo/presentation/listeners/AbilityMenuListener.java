@@ -164,10 +164,8 @@ public class AbilityMenuListener implements Listener {
         logger.info(result.toString());
         if (!result.isSuccess()) {
             player.sendMessage(ChatColor.RED + result.getMessage());
-        } else if (result.hasSanityPenalty()) {
-            player.sendMessage(ChatColor.GREEN + ability.getName() + ChatColor.GRAY + " увімкнена, але з наслідками");
         } else {
-            player.sendMessage(ChatColor.GREEN + ability.getName() + ChatColor.GRAY + " увімкнена.");
+            player.sendMessage(result.getMessage());
         }
     }
 

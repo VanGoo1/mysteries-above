@@ -39,6 +39,8 @@ public interface IAbilityContext {
 
     Optional<Player> getTargetedPlayer(double maxRange);
 
+    boolean rescueFromRampage(UUID casterId, UUID targetId);
+
     // ==================== EFFECTS (Bukkit types!) ====================
     void spawnParticle(Particle type, Location loc, int count);
 

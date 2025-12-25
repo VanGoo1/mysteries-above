@@ -1,6 +1,6 @@
 package me.vangoo.domain.entities;
 
-import me.vangoo.application.abilities.SanityPenalty;
+import me.vangoo.domain.valueobjects.SanityPenalty;
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.AbilityType;
@@ -174,6 +174,8 @@ public class Beyonder {
             if (spirituality.isCritical()) {
                 increaseSanityLoss(2);
             }
+        }else {
+            return AbilityResult.success();
         }
 
         SanityPenalty penalty = checkAndCalculateSanityPenalty();
@@ -285,7 +287,7 @@ public class Beyonder {
         return "Щось не так...";
     }
 
-    public void restoreAfterSleep(){
+    public void restoreAfterSleep() {
         decreaseSanityLoss(5);
         if (spirituality.current() < getMaxSpirituality())
             spirituality = Spirituality.of(getMaxSpirituality() / 2, getMaxSpirituality());

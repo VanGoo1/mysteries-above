@@ -1,7 +1,9 @@
 package me.vangoo.application.services;
 
+import me.vangoo.application.services.rampager.RampageEffectsHandler;
 import me.vangoo.domain.abilities.core.*;
 import me.vangoo.domain.entities.Beyonder;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import static org.bukkit.Bukkit.getPlayer;
@@ -48,16 +50,20 @@ public class AbilityExecutor {
 
         // Set cooldown if ability succeeded
         if (ability.getType() == AbilityType.ACTIVE && result.isSuccess()) {
-            context.setCooldown(ability, ability.getCooldown());
+            context.setCooldown(ability, ability.getCooldown(beyonder.getSequence()));
         }
 
         // Handle toggleable passives
         if (ability.getType() == AbilityType.TOGGLEABLE_PASSIVE && result.isSuccess()) {
-            passiveAbilityManager.toggleAbility(
+            boolean isEnabled = passiveAbilityManager.toggleAbility(
                     beyonder.getPlayerId(),
                     (ToggleablePassiveAbility) ability,
                     context
             );
+            String message = isEnabled
+                    ? ChatColor.GREEN + ability.getName() + ChatColor.GRAY + " увімкнена."
+                    : ChatColor.YELLOW + ability.getName() + ChatColor.GRAY + " вимкнена.";
+            return AbilityResult.successWithMessage(message);
         }
 
         // Apply visual effects if there's a penalty

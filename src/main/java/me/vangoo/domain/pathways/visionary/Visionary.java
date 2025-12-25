@@ -3,6 +3,7 @@ package me.vangoo.domain.pathways.visionary;
 import me.vangoo.domain.pathways.visionary.abilities.*;
 import me.vangoo.domain.entities.Pathway;
 import me.vangoo.domain.entities.PathwayGroup;
+import me.vangoo.domain.valueobjects.Sequence;
 
 import java.util.List;
 

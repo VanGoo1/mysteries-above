@@ -25,7 +25,7 @@ public class SequenceScaler {
         }
     }
 
-    private static double calculateMultiplier(int sequence, ScalingStrategy strategy) {
+    public static double calculateMultiplier(int sequence, ScalingStrategy strategy) {
         int powerLevel = 9 - sequence; // Seq 9 = 0, Seq 0 = 9
         return 1.0 + (powerLevel * strategy.getPercentPerLevel() / 100.0);
     }

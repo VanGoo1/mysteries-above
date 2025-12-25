@@ -1,6 +1,8 @@
 package me.vangoo.domain.abilities.core;
 
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.domain.services.SequenceScaler;
+import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.domain.valueobjects.SequenceBasedSuccessChance;
 import org.bukkit.entity.LivingEntity;
 
@@ -11,14 +13,14 @@ import java.util.Optional;
 public abstract class Ability {
     public abstract String getName();
 
-    public abstract String getDescription();
+    public abstract String getDescription(Sequence userSequence);
 
     public abstract int getSpiritualityCost();
 
     /**
      * Cooldown in seconds
      */
-    public abstract int getCooldown();
+    public abstract int getCooldown(Sequence userSequence);
 
     public abstract AbilityType getType();
 
@@ -33,11 +35,11 @@ public abstract class Ability {
         preExecution(context);
 
         // SEQUENCE-BASED SUCCESS CHECK (Optional)
-        AbilityResult sequenceCheckResult  = performSequenceBasedSuccessCheck(context);
-        if (sequenceCheckResult  != null) {
+        AbilityResult sequenceCheckResult = performSequenceBasedSuccessCheck(context);
+        if (sequenceCheckResult != null) {
             // Ability uses sequence-based success and check failed
-            context.setCooldown(this, getCooldown());
-            return sequenceCheckResult ;
+            context.setCooldown(this, getCooldown(context.getCasterBeyonder().getSequence()));
+            return sequenceCheckResult;
         }
 
         // MAIN EXECUTION
@@ -46,10 +48,19 @@ public abstract class Ability {
         if (result.isSuccess()) {
             postExecution(context);
             if (getType() == AbilityType.ACTIVE) {
-                context.setCooldown(this, getCooldown());
+                context.setCooldown(this, getCooldown(context.getCasterBeyonder().getSequence()));
             }
         }
         return result;
+    }
+
+    protected int scaleValue(int baseValue, Sequence userSequence,
+                             SequenceScaler.ScalingStrategy strategy) {
+        double multiplier = SequenceScaler.calculateMultiplier(
+                userSequence.level(),
+                strategy
+        );
+        return (int) Math.ceil(baseValue * multiplier);
     }
 
     protected boolean canExecute(IAbilityContext context) {
@@ -74,7 +85,7 @@ public abstract class Ability {
      *
      * @param context Ability context
      * @return Optional with target entity if this ability should check sequence-based success,
-     *         empty Optional if ability doesn't use sequence-based success
+     * empty Optional if ability doesn't use sequence-based success
      */
     @Nullable
     private AbilityResult performSequenceBasedSuccessCheck(IAbilityContext context) {

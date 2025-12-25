@@ -4,6 +4,7 @@ import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.AbilityResult;
+import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -22,7 +23,7 @@ public class FractureOfRealitiesAbility extends ActiveAbility {
     }
 
     @Override
-    public String getDescription() {
+    public String getDescription(Sequence userSequence) {
         return "Створює аномалію навколо, що спотворює реальність для всіх в радіусі " + RADIUS + " блоків";
     }
 
@@ -70,7 +71,7 @@ public class FractureOfRealitiesAbility extends ActiveAbility {
     }
 
     @Override
-    public int getCooldown() {
+    public int getCooldown(Sequence userSequence) {
         return 6;
     }
 

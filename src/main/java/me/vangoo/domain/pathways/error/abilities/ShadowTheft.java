@@ -3,6 +3,7 @@ package me.vangoo.domain.pathways.error.abilities;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.*;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LivingEntity;
@@ -28,7 +29,7 @@ public class ShadowTheft extends ActiveAbility {
     }
 
     @Override
-    public String getDescription() {
+    public String getDescription(Sequence userSequence) {
         return "Телепортує за спину ворога, викрадає випадковий предмет та дарує невидимість на 3с.";
     }
 
@@ -38,7 +39,7 @@ public class ShadowTheft extends ActiveAbility {
     }
 
     @Override
-    public int getCooldown() {
+    public int getCooldown(Sequence sequence) {
         return COOLDOWN_SECONDS;
     }
 

@@ -3,9 +3,12 @@ package me.vangoo;
 import de.slikey.effectlib.EffectManager;
 import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.application.services.*;
+import me.vangoo.application.services.rampager.RampageEffectsHandler;
+import me.vangoo.application.services.rampager.RampageManager;
 import me.vangoo.infrastructure.items.PotionItemFactory;
 import me.vangoo.infrastructure.schedulers.MasteryRegenerationScheduler;
 import me.vangoo.infrastructure.schedulers.PassiveAbilityScheduler;
+import me.vangoo.infrastructure.schedulers.RampageScheduler;
 import me.vangoo.presentation.commands.RampagerCommand;
 import me.vangoo.presentation.commands.SequencePotionCommand;
 import me.vangoo.infrastructure.IBeyonderRepository;
@@ -39,7 +42,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     PassiveAbilityManager passiveAbilityManager;
     PassiveAbilityScheduler passiveAbilityScheduler;
     MasteryRegenerationScheduler masteryRegenerationScheduler;
+    RampageScheduler rampageScheduler;
     BeyonderSleepListener beyonderSleepListener;
+    RampageManager rampageManager;
     AbilityContextFactory abilityContextFactory;
     PotionItemFactory potionItemFactory;
 
@@ -69,14 +74,15 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
     private void initializeManagers() {
         NBTBuilder.setPlugin(this);
-
+        this.rampageManager = new RampageManager(pluginLogger);
         this.cooldownManager = new CooldownManager();
-
+        this.rampageScheduler = new RampageScheduler(this, rampageManager);
         this.abilityItemFactory = new AbilityItemFactory();
         this.abilityMenu = new AbilityMenu(this, abilityItemFactory);
 
         this.pathwayManager = new PathwayManager();
-        this.rampageEffectsHandler = new RampageEffectsHandler();
+        this.rampageEffectsHandler = new RampageEffectsHandler(rampageManager);
+        rampageManager.addListener(rampageEffectsHandler);
 
         this.beyonderStorage =
                 new JSONBeyonderRepository(
@@ -88,7 +94,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         this.lockManager = new AbilityLockManager();
         this.passiveAbilityManager = new PassiveAbilityManager();
         this.effectManager = new EffectManager(this);
-        this.abilityContextFactory = new AbilityContextFactory(this, cooldownManager, beyonderService, lockManager, glowingEntities, effectManager);
+        this.abilityContextFactory = new AbilityContextFactory(this, cooldownManager, beyonderService, lockManager, glowingEntities, effectManager, rampageManager);
         this.abilityExecutor = new AbilityExecutor(
                 beyonderService,
                 lockManager,
@@ -153,7 +159,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 20L,
                 20L
         );
-
+        rampageScheduler.start();
         passiveAbilityScheduler.start();
         masteryRegenerationScheduler.start();
     }
@@ -164,6 +170,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         }
         if (masteryRegenerationScheduler != null) {
             masteryRegenerationScheduler.stop();
+        }
+        if (rampageScheduler != null) {
+            rampageScheduler.stop();
         }
     }
 }

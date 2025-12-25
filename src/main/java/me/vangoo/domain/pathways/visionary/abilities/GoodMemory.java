@@ -1,6 +1,7 @@
 package me.vangoo.domain.pathways.visionary.abilities;
 
 import me.vangoo.domain.abilities.core.*;
+import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.ChatColor;
 import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
@@ -98,7 +99,7 @@ public class GoodMemory extends ToggleablePassiveAbility {
     }
 
     @Override
-    public String getDescription() {
+    public String getDescription(Sequence userSequence) {
         return String.format(
                 "Після %.1fс спостереження за мобом чи гравцем — ціль підсвічується на %dс в радіусі %d блоків. " +
                         "Увімкніть/вимкніть правою кнопкою миші.",
@@ -131,11 +132,6 @@ public class GoodMemory extends ToggleablePassiveAbility {
         UUID casterId = context.getCasterId();
         removeAllMarks(casterId, context);
         observations.remove(casterId);
-
-        context.sendMessageToCaster(
-                ChatColor.YELLOW + "Хороша пам'ять " +
-                        ChatColor.GRAY + "вимкнена."
-        );
     }
 
     /**

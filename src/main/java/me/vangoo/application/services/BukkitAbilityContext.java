@@ -5,6 +5,7 @@ import de.slikey.effectlib.EffectManager;
 import de.slikey.effectlib.effect.*;
 import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.MysteriesAbovePlugin;
+import me.vangoo.application.services.rampager.RampageManager;
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.entities.Beyonder;
@@ -36,6 +37,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     private final GlowingEntities glowingEntities;
     private final EffectManager effectManager;
     private final Logger LOGGER;
+    private final RampageManager rampageManager;
     // Cache for performance (valid only during single ability execution)
     private final Map<UUID, Entity> entityCache = new HashMap<>();
 
@@ -44,7 +46,7 @@ public class BukkitAbilityContext implements IAbilityContext {
             MysteriesAbovePlugin plugin,
             CooldownManager cooldownManager,
             BeyonderService beyonderService,
-            AbilityLockManager lockManager, GlowingEntities glowingEntities, EffectManager effectManager
+            AbilityLockManager lockManager, GlowingEntities glowingEntities, EffectManager effectManager, RampageManager rampageManager
     ) {
         this.caster = caster;
         this.world = caster.getWorld();
@@ -55,6 +57,7 @@ public class BukkitAbilityContext implements IAbilityContext {
         this.glowingEntities = glowingEntities;
         this.effectManager = effectManager;
         this.LOGGER = plugin.getLogger();
+        this.rampageManager = rampageManager;
     }
 
     // ==========================================
@@ -153,6 +156,14 @@ public class BukkitAbilityContext implements IAbilityContext {
         }
 
         return Optional.empty();
+    }
+
+    @Override
+    public boolean rescueFromRampage(UUID casterId, UUID targetId) {
+        if (rampageManager.isInRampage(targetId)) {
+            return rampageManager.rescueFromRampage(targetId, casterId);
+        }
+        return false;
     }
 
     // ==========================================
@@ -257,12 +268,12 @@ public class BukkitAbilityContext implements IAbilityContext {
 
     @Override
     public boolean hasCooldown(Ability ability) {
-        return cooldownManager.isOnCooldown(caster.getUniqueId(), ability);
+        return cooldownManager.isOnCooldown(getCasterBeyonder(), ability);
     }
 
     @Override
     public long getRemainingCooldownSeconds(Ability ability) {
-        return cooldownManager.getRemainingCooldown(caster.getUniqueId(), ability);
+        return cooldownManager.getRemainingCooldown(getCasterBeyonder(), ability);
     }
 
     @Override

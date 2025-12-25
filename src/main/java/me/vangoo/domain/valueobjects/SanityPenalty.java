@@ -1,4 +1,4 @@
-package me.vangoo.application.abilities;
+package me.vangoo.domain.valueobjects;
 
 public record SanityPenalty(PenaltyType type, int amount) {
 

@@ -4,6 +4,7 @@ import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.ChatColor;
 import org.bukkit.Particle;
 import org.bukkit.entity.Player;
@@ -16,13 +17,14 @@ public class SurgeOfInsanity extends ActiveAbility {
     private static final int SANITY_INCREASE = 15;
     private static final int ABILITY_LOCK_SECONDS = 10;
 
+
     @Override
     public String getName() {
         return "Всплеск божевілля";
     }
 
     @Override
-    public String getDescription() {
+    public String getDescription(Sequence userSequence) {
         return "В радіусі " + RANGE + " блоків на інших гравців накладається слабкість 1 і сліпота 1. " +
                 "Потойбічні в цьому радіусі також проявляють ознаки втрати контролю (+" + SANITY_INCREASE +
                 " втрати контролю, здібності блокуються на " + ABILITY_LOCK_SECONDS + "с).";
@@ -107,7 +109,7 @@ public class SurgeOfInsanity extends ActiveAbility {
     }
 
     @Override
-    public int getCooldown() {
+    public int getCooldown(Sequence userSequence) {
         return COOLDOWN;
     }
 }

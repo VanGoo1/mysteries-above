@@ -3,6 +3,7 @@ package me.vangoo.application.services;
 import de.slikey.effectlib.EffectManager;
 import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.MysteriesAbovePlugin;
+import me.vangoo.application.services.rampager.RampageManager;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import org.bukkit.entity.Player;
 
@@ -16,6 +17,7 @@ public class AbilityContextFactory {
     private final AbilityLockManager lockManager;
     private final GlowingEntities glowingEntities;
     private final EffectManager effectManager;
+    private final RampageManager rampageManager;
 
     public AbilityContextFactory(
             MysteriesAbovePlugin plugin,
@@ -23,7 +25,8 @@ public class AbilityContextFactory {
             BeyonderService beyonderService,
             AbilityLockManager lockManager,
             GlowingEntities glowingEntities,
-            EffectManager effectManager
+            EffectManager effectManager,
+            RampageManager rampageManager
     ) {
         this.plugin = Objects.requireNonNull(plugin, "Plugin cannot be null");
         this.cooldownManager = Objects.requireNonNull(cooldownManager, "CooldownManager cannot be null");
@@ -31,6 +34,7 @@ public class AbilityContextFactory {
         this.lockManager = Objects.requireNonNull(lockManager, "AbilityLockManager cannot be null");
         this.glowingEntities = Objects.requireNonNull(glowingEntities, "GlowingEntities cannot be null");
         this.effectManager = Objects.requireNonNull(effectManager, "EffectManager cannot be null");
+        this.rampageManager = rampageManager;
     }
 
 
@@ -42,7 +46,8 @@ public class AbilityContextFactory {
                 beyonderService,
                 lockManager,
                 glowingEntities,
-                effectManager
+                effectManager,
+                rampageManager
         );
     }
 }

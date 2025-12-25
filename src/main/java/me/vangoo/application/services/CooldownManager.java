@@ -2,6 +2,7 @@ package me.vangoo.application.services;
 
 
 import me.vangoo.domain.abilities.core.Ability;
+import me.vangoo.domain.entities.Beyonder;
 
 import java.util.Map;
 import java.util.UUID;
@@ -18,23 +19,23 @@ public class CooldownManager {
         playerCooldowns.computeIfAbsent(playerId, k -> new ConcurrentHashMap<>()).put(ability, System.currentTimeMillis());
     }
 
-    public boolean isOnCooldown(UUID playerId, Ability ability) {
-        Map<Ability, Long> cooldowns = playerCooldowns.get(playerId);
+    public boolean isOnCooldown(Beyonder beyonder, Ability ability) {
+        Map<Ability, Long> cooldowns = playerCooldowns.get(beyonder.getPlayerId());
         if (cooldowns == null) return false;
         Long lastUse = cooldowns.get(ability);
         if (lastUse == null) return false;
 
-        return System.currentTimeMillis() - lastUse < ability.getCooldown() * 1000L;
+        return System.currentTimeMillis() - lastUse < ability.getCooldown(beyonder.getSequence()) * 1000L;
     }
 
-    public int getRemainingCooldown(UUID playerId, Ability ability) {
-        Map<Ability, Long> cooldowns = playerCooldowns.get(playerId);
+    public int getRemainingCooldown(Beyonder beyonder, Ability ability) {
+        Map<Ability, Long> cooldowns = playerCooldowns.get(beyonder.getPlayerId());
         if (cooldowns == null) return 0;
         Long lastUse = cooldowns.get(ability);
         if (lastUse == null) return 0;
 
         long timePassed = System.currentTimeMillis() - lastUse;
-        long cooldownDuration = ability.getCooldown() * 1000L;
+        long cooldownDuration = ability.getCooldown(beyonder.getSequence()) * 1000L;
         if (timePassed >= cooldownDuration) {
             return 0;
         }

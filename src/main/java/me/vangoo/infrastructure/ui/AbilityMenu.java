@@ -3,6 +3,7 @@ package me.vangoo.infrastructure.ui;
 import me.vangoo.MysteriesAbovePlugin;
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.infrastructure.abilities.AbilityItemFactory;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -50,17 +51,17 @@ public class AbilityMenu {
         if (beyonder == null) {
             return;
         }
-        Inventory menu = createMenu(beyonder.getAbilities());
+        Inventory menu = createMenu(beyonder.getAbilities(), beyonder.getSequence());
         Bukkit.getScheduler().runTask(plugin, () -> {
             player.openInventory(menu);
         });
     }
 
-    private Inventory createMenu(List<Ability> availableAbilities) {
+    private Inventory createMenu(List<Ability> availableAbilities, Sequence userSequence) {
         Inventory menu = createInventory(null, MENU_SIZE, MENU_TITLE);
 
         for (int i = 0; i < availableAbilities.size(); i++) {
-            ItemStack item = abilityItemFactory.getItemFromAbility(availableAbilities.get(i));
+            ItemStack item = abilityItemFactory.getItemFromAbility(availableAbilities.get(i), userSequence);
             NBTBuilder nbtBuilder = new NBTBuilder(item);
             item = nbtBuilder.setBoolean("isInAbilityMenu", true).build();
             menu.setItem(i, item);

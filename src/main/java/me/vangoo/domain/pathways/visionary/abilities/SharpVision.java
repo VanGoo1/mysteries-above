@@ -1,9 +1,11 @@
 package me.vangoo.domain.pathways.visionary.abilities;
 
-import me.vangoo.domain.abilities.core.Ability;
+
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.services.SequenceScaler;
+import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.ChatColor;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -24,8 +26,10 @@ public class SharpVision extends ActiveAbility {
     }
 
     @Override
-    public String getDescription() {
-        return "Дає нічне бачення та підсвічування на.";
+    public String getDescription(Sequence userSequence) {
+        int duration = scaleValue(DURATION_SECONDS, userSequence,
+                SequenceScaler.ScalingStrategy.MODERATE);
+        return String.format("Дає нічне бачення та підсвічування на %d c.", duration);
     }
 
     @Override
@@ -34,8 +38,13 @@ public class SharpVision extends ActiveAbility {
     }
 
     @Override
-    public int getCooldown() {
-        return 30;
+    public int getCooldown(Sequence userSequence) {
+        int baseCooldown = 40;
+        double reduction = SequenceScaler.calculateMultiplier(
+                userSequence.level(),
+                SequenceScaler.ScalingStrategy.WEAK
+        );
+        return (int) Math.ceil(baseCooldown / reduction);
     }
 
     @Override
@@ -53,16 +62,25 @@ public class SharpVision extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
+        Sequence userSequence = context.getCasterBeyonder().getSequence();
+
+        int range = scaleValue(RANGE, userSequence,
+                SequenceScaler.ScalingStrategy.WEAK);
+        int durationSeconds = scaleValue(DURATION_SECONDS, userSequence,
+                SequenceScaler.ScalingStrategy.MODERATE);
+        int durationTicks = durationSeconds * 20;
+
+        int nightVisionAmplifier = Math.min(2, (9 - userSequence.level()) / 3);
         // 1. Apply night vision to caster
         context.applyEffect(
                 context.getCasterId(),
                 PotionEffectType.NIGHT_VISION,
-                DURATION_TICKS,
-                0
+                durationTicks,
+                nightVisionAmplifier
         );
 
         // 2. Get all nearby living entities
-        List<LivingEntity> nearbyEntities = context.getNearbyEntities(RANGE);
+        List<LivingEntity> nearbyEntities = context.getNearbyEntities(range);
 
         if (nearbyEntities.isEmpty()) {
             context.sendMessageToCaster(
@@ -77,12 +95,12 @@ public class SharpVision extends ActiveAbility {
                 .collect(Collectors.toList());
 
         // 4. Set all entities glowing with white color
-        context.setMultipleGlowing(entityIds, ChatColor.WHITE, DURATION_TICKS);
+        context.setMultipleGlowing(entityIds, ChatColor.WHITE, durationTicks);
 
         // 5. Success message
         context.sendMessageToCaster(
                 ChatColor.GREEN + "Гострий зір активовано! Підсвічено " +
-                        nearbyEntities.size() + " сутностей на " + DURATION_SECONDS + " секунд."
+                        nearbyEntities.size() + " сутностей на " + durationSeconds + " секунд."
         );
 
         return AbilityResult.success();

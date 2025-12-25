@@ -12,6 +12,6 @@ import java.util.List;
 public class ErrorPotions extends PathwayPotions {
     public ErrorPotions(Pathway pathway, Color potionColor) {
         super(pathway, potionColor, ChatColor.RED, List.of());
-        addMainSupplementaryRecipe(9, new ItemStack(Material.DIAMOND_SWORD), new ItemStack(Material.ANVIL));
+        addIngredientsRecipe(9, new ItemStack(Material.DIAMOND_SWORD), new ItemStack(Material.ANVIL));
     }
 }

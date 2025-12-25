@@ -1,5 +1,7 @@
 package me.vangoo.domain.abilities.core;
 
+import me.vangoo.domain.valueobjects.Sequence;
+
 public abstract class ToggleablePassiveAbility extends Ability {
     @Override
     public final AbilityType getType() {
@@ -12,7 +14,7 @@ public abstract class ToggleablePassiveAbility extends Ability {
     }
 
     @Override
-    public final int getCooldown() {
+    public final int getCooldown(Sequence userSequence) {
         return 0; // No cooldown for toggling
     }
 
