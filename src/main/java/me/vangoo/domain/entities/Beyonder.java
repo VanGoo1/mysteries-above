@@ -1,5 +1,6 @@
 package me.vangoo.domain.entities;
 
+import me.vangoo.domain.services.MasteryProgressionCalculator;
 import me.vangoo.domain.valueobjects.SanityPenalty;
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.AbilityResult;
@@ -167,14 +168,15 @@ public class Beyonder {
             int cost = ability.getSpiritualityCost();
             spirituality = spirituality.decrement(cost);
 
-            double masteryGainRatio = (double) cost / getMaxSpirituality();
-            int masteryGain = (int) Math.ceil(masteryGainRatio * 100);
-            mastery = mastery.increment(masteryGain);
+            int masteryGain = MasteryProgressionCalculator.calculateMasteryGain(cost, sequence);
+            if (masteryGain > 0) {
+                mastery = mastery.increment(masteryGain);
+            }
 
             if (spirituality.isCritical()) {
                 increaseSanityLoss(2);
             }
-        }else {
+        } else {
             return AbilityResult.success();
         }
 
