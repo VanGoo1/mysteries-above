@@ -2,6 +2,7 @@ package me.vangoo.domain.abilities.core;
 
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.services.SequenceScaler;
+import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.domain.valueobjects.SequenceBasedSuccessChance;
 import org.bukkit.entity.LivingEntity;
@@ -23,6 +24,28 @@ public abstract class Ability {
     public abstract int getCooldown(Sequence userSequence);
 
     public abstract AbilityType getType();
+
+    /**
+     * Get the unique identity of this ability.
+     * Abilities with the same identity are considered the same conceptual ability
+     * across different sequences (e.g., ScanGaze active and ScanGaze passive).
+     *
+     * @return Unique identity for this ability
+     */
+    public AbilityIdentity getIdentity() {
+        return AbilityIdentity.of(getName());
+    }
+
+    /**
+     * Check if this ability can replace another ability.
+     * Used during sequence advancement to replace old versions with new ones.
+     *
+     * @param other Other ability
+     * @return true if this ability should replace the other
+     */
+    public boolean canReplace(Ability other) {
+        return getIdentity().canReplace(other.getIdentity());
+    }
 
     public final AbilityResult execute(IAbilityContext context) {
         if (getType() == AbilityType.ACTIVE && context.hasCooldown(this)) {

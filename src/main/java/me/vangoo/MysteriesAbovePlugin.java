@@ -132,7 +132,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 new BeyonderPlayerListener(beyonderService, new BossBarUtil(), abilityExecutor, abilityItemFactory, pluginLogger);
 
         PathwayPotionListener pathwayPotionListener =
-                new PathwayPotionListener(potionManager, beyonderService);
+                new PathwayPotionListener(potionManager, beyonderService, passiveAbilityScheduler);
 
         PassiveAbilityLifecycleListener passiveAbilityLifecycleListener =
                 new PassiveAbilityLifecycleListener(this.passiveAbilityScheduler);

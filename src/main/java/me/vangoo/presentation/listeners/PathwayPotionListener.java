@@ -6,6 +6,7 @@ import me.vangoo.domain.entities.Pathway;
 
 import me.vangoo.application.services.PotionManager;
 import me.vangoo.domain.valueobjects.Sequence;
+import me.vangoo.infrastructure.schedulers.PassiveAbilityScheduler;
 import org.bukkit.ChatColor;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -26,10 +27,12 @@ import java.util.Optional;
 public class PathwayPotionListener implements Listener {
     private final PotionManager potionManager;
     private final BeyonderService beyonderService;
+    private final PassiveAbilityScheduler passiveAbilityScheduler;
 
-    public PathwayPotionListener(PotionManager potionManager, BeyonderService beyonderService) {
+    public PathwayPotionListener(PotionManager potionManager, BeyonderService beyonderService, PassiveAbilityScheduler passiveAbilityScheduler) {
         this.potionManager = potionManager;
         this.beyonderService = beyonderService;
+        this.passiveAbilityScheduler = passiveAbilityScheduler;
     }
 
     @EventHandler
@@ -118,6 +121,7 @@ public class PathwayPotionListener implements Listener {
 
         // Advance beyonder
         beyonder.advance();
+        passiveAbilityScheduler.refreshPlayer(player);
         beyonderService.updateBeyonder(beyonder);
 
         // Show advancement message

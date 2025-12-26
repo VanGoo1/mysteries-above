@@ -5,6 +5,7 @@ import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.ChatColor;
 import org.bukkit.attribute.Attribute;
@@ -27,6 +28,11 @@ public class ScanGaze extends ActiveAbility {
     public String getDescription(Sequence userSequence) {
         return "При натисканні на гравця показує його HP, голод та броню. " +
                 "Для послідовностей вище за 9: показує додаткову інформацію (насичення, активні ефекти).";
+    }
+
+    @Override
+    public AbilityIdentity getIdentity() {
+        return AbilityIdentity.of("scan_gaze");
     }
 
     @Override

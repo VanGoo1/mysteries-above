@@ -719,7 +719,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     public Location getBedSpawnLocation(UUID targetId) {
         Entity entity = getEntity(targetId);
         if (entity instanceof Player p) {
-            return p.getBedSpawnLocation();
+            return p.getRespawnLocation();
         }
         return null;
     }

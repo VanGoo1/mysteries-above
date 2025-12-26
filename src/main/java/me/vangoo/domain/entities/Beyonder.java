@@ -1,5 +1,6 @@
 package me.vangoo.domain.entities;
 
+import me.vangoo.domain.services.AbilityTransformer;
 import me.vangoo.domain.services.MasteryProgressionCalculator;
 import me.vangoo.domain.valueobjects.SanityPenalty;
 import me.vangoo.domain.abilities.core.Ability;
@@ -25,6 +26,7 @@ public class Beyonder {
     private transient Random random;
     private transient List<Ability> abilities;
     private transient SpiritualityCalculator spiritualityCalculator;
+    private transient AbilityTransformer abilityTransformer;
 
     public Beyonder(UUID playerId, Sequence sequence, Pathway pathway) {
         if (playerId == null) {
@@ -44,6 +46,7 @@ public class Beyonder {
         this.sanityLoss = SanityLoss.none();
         this.abilities = new ArrayList<>();
         this.spiritualityCalculator = new SpiritualityCalculator();
+        this.abilityTransformer = new AbilityTransformer();
         this.random = new Random();
         // Calculate initial spirituality
         updateMaximumSpirituality();
@@ -63,11 +66,19 @@ public class Beyonder {
         }
     }
 
-    private void loadAbilities() {
-        abilities = new ArrayList<>();
+    private List<Ability> collectAllAbilitiesForCurrentSequence() {
+        List<Ability> collected = new ArrayList<>();
         for (int seq : sequence.getAllSequencesUpToCurrent()) {
-            abilities.addAll(pathway.GetAbilitiesForSequence(seq));
+            collected.addAll(pathway.GetAbilitiesForSequence(seq));
         }
+        return collected;
+    }
+
+    private void loadAbilities() {
+        List<Ability> rawAbilities = collectAllAbilitiesForCurrentSequence();
+
+        // Transform with empty current list (initialization case)
+        abilities = abilityTransformer.transform(new ArrayList<>(), rawAbilities);
     }
 
     /**
@@ -79,6 +90,9 @@ public class Beyonder {
         }
         if (random == null) {
             random = new Random();
+        }
+        if (abilityTransformer == null) {
+            abilityTransformer = new AbilityTransformer();
         }
         if (abilities == null || abilities.isEmpty()) {
             loadAbilities();
@@ -136,11 +150,15 @@ public class Beyonder {
             throw new IllegalStateException(
                     "Cannot advance: sequence=" + sequence + ", mastery=" + mastery);
         }
+        List<Ability> oldAbilities = new ArrayList<>(abilities);
 
         sequence = sequence.advance();
         mastery = mastery.reset();
         updateMaximumSpirituality();
-        loadAbilities();
+
+        List<Ability> newSequenceAbilities = collectAllAbilitiesForCurrentSequence();
+
+        abilities = abilityTransformer.transform(oldAbilities, newSequenceAbilities);
     }
 
     public AbilityResult useAbility(Ability ability, IAbilityContext context) {
