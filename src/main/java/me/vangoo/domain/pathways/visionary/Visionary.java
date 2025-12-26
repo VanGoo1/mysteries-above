@@ -16,6 +16,6 @@ public class Visionary extends Pathway {
     protected void initializeAbilities() {
         sequenceAbilities.put(9, List.of(new GoodMemory(), new ScanGaze(), new SharpVision()));
         sequenceAbilities.put(8, List.of(new DangerSense(), new IntentReader()));
-        sequenceAbilities.put(7, List.of(new SurgeOfInsanity(), new Appeasement(), new Telepathy(), new PsychologistPhysique(), new ScanGazePassive()));
+        sequenceAbilities.put(7, List.of(new SurgeOfInsanity(), new Appeasement(), new Telepathy(), new PsychologistPhysique(), new ScanGazePassive(), new PsychicCue()));
     }
 }

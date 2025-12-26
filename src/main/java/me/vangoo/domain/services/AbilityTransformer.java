@@ -16,8 +16,6 @@ import java.util.logging.Logger;
  * - Deduplicate abilities by identity (keeps latest version)
  */
 public class AbilityTransformer {
-    private static final Logger LOGGER = Logger.getLogger(AbilityTransformer.class.getName());
-
     /**
      * Transform abilities list by replacing old versions with new ones.
      * Preserves abilities that don't have replacements.
@@ -39,11 +37,6 @@ public class AbilityTransformer {
             // If duplicate identity, log and keep the last one (assumed to be from higher sequence)
             if (newAbilitiesByIdentity.containsKey(identity)) {
                 Ability existing = newAbilitiesByIdentity.get(identity);
-                LOGGER.fine(String.format(
-                        "Duplicate identity found: %s - keeping last version (%s)",
-                        identity,
-                        ability.getName()
-                ));
             }
 
             newAbilitiesByIdentity.put(identity, ability);
@@ -62,13 +55,6 @@ public class AbilityTransformer {
 
                 // Only replace if it's actually different
                 if (!replacement.equals(current)) {
-                    LOGGER.info(String.format(
-                            "Transforming ability: %s [%s] → %s [%s]",
-                            current.getName(),
-                            current.getType(),
-                            replacement.getName(),
-                            replacement.getType()
-                    ));
                     result.add(replacement);
                 } else {
                     // Same ability, keep it
@@ -89,11 +75,6 @@ public class AbilityTransformer {
             Ability newAbility = entry.getValue();
 
             if (!processedIdentities.contains(identity)) {
-                LOGGER.info(String.format(
-                        "Adding new ability: %s [%s]",
-                        newAbility.getName(),
-                        newAbility.getType()
-                ));
                 result.add(newAbility);
                 processedIdentities.add(identity);
             }

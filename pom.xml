@@ -92,5 +92,10 @@
             <version>10.2</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>dev.triumphteam</groupId>
+            <artifactId>triumph-gui</artifactId>
+            <version>3.1.7</version>
+        </dependency>
     </dependencies>
 </project>

@@ -12,7 +12,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
+import org.bukkit.event.Event;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
 
@@ -43,7 +46,9 @@ public interface IAbilityContext {
     boolean isSneaking(UUID targetId);
 
     boolean hasItem(Material material, int amount);
+
     void consumeItem(Material material, int amount);
+
     Map<String, String> getTargetAnalysis(UUID targetId);
 
     // ==================== EFFECTS (Bukkit types!) ====================
@@ -116,16 +121,24 @@ public interface IAbilityContext {
 
     // ==================== SURFACE DATA ====================
     Location getBedSpawnLocation(UUID targetId);
+
     long getPlayTimeHours(UUID targetId);
+
     String getMainHandItemName(UUID targetId);
+
     int getDeathsStatistic(UUID targetId);
 
     // ==================== DEEP DATA ====================
     List<String> getEnderChestContents(UUID targetId, int limit);
+
     int getPlayerKills(UUID targetId);
+
     int getVillagerKills(UUID targetId);
+
     Location getLastDeathLocation(UUID targetId);
+
     int getExperienceLevel(UUID targetId);
+
     int getBeyonderMastery(UUID targetId);
 
     // ==========================================
@@ -248,15 +261,34 @@ public interface IAbilityContext {
 
     /**
      * Стежить за гравцем протягом певного часу.
-     * @param targetId кого перевіряємо
+     *
+     * @param targetId      кого перевіряємо
      * @param durationTicks скільки часу чекаємо (в тіках)
-     * @param callback викликається з true, якщо гравець присів, і false, якщо час вийшов
+     * @param callback      викликається з true, якщо гравець присів, і false, якщо час вийшов
      */
     void monitorSneaking(UUID targetId, int durationTicks, Consumer<Boolean> callback);
 
     /**
-     * Аналізує економічну поведінку гравця через статистику видобутку та використання ресурсів
-     * @return форматований рядок з аналізом "жадібності", або null якщо дані відсутні
+     * Відкрити GUI вибору
      */
-    String analyzeGreed(UUID targetId);
+    <T> void openChoiceMenu(
+            String title,
+            List<T> choices,
+            Function<T, ItemStack> itemMapper,
+            Consumer<T> onSelect
+    );
+
+    /**
+     * Підписатися на тимчасову подію
+     */
+    <T extends Event> void subscribeToEvent(
+            Class<T> eventClass,
+            Predicate<T> filter,
+            Consumer<T> handler,
+            int durationTicks
+    );
+
+    int getMinedAmount(UUID targetId, Material oreType);
+
+    int getUsedAmount(UUID targetId, Material itemType);
 }

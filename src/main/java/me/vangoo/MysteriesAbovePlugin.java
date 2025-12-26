@@ -49,7 +49,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     DomainEventPublisher eventPublisher;
     SanityPenaltyHandler sanityPenaltyHandler;
     RampageEventListener rampageEventListener;
-
+    TemporaryEventManager temporaryEventManager;
 
     @Override
     public void onEnable() {
@@ -77,6 +77,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
     private void initializeManagers() {
         NBTBuilder.setPlugin(this);
+        this.temporaryEventManager = new TemporaryEventManager(this);
         this.eventPublisher = new DomainEventPublisher();
         this.rampageManager = new RampageManager(eventPublisher);
         this.sanityPenaltyHandler = new SanityPenaltyHandler();
@@ -96,7 +97,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         this.beyonderService = new BeyonderService(beyonderStorage, new BossBarUtil());
         this.lockManager = new AbilityLockManager();
         this.effectManager = new EffectManager(this);
-        this.abilityContextFactory = new AbilityContextFactory(this, cooldownManager, beyonderService, lockManager, glowingEntities, effectManager, rampageManager);
+        this.abilityContextFactory = new AbilityContextFactory(this, cooldownManager, beyonderService, lockManager, glowingEntities, effectManager, rampageManager, temporaryEventManager);
 
         this.passiveAbilityManager = new PassiveAbilityManager();
         this.passiveAbilityScheduler = new PassiveAbilityScheduler(

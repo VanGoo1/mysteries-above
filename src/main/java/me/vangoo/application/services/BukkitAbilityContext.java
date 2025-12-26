@@ -8,9 +8,11 @@ import me.vangoo.MysteriesAbovePlugin;
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.infrastructure.ui.ChoiceMenuFactory;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
+import org.bukkit.event.Event;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -21,8 +23,9 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.function.Consumer;
 
 
@@ -37,6 +40,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     private final EffectManager effectManager;
     private final Logger LOGGER;
     private final RampageManager rampageManager;
+    private final TemporaryEventManager eventManager;
     // Cache for performance (valid only during single ability execution)
     private final Map<UUID, Entity> entityCache = new HashMap<>();
 
@@ -45,7 +49,7 @@ public class BukkitAbilityContext implements IAbilityContext {
             MysteriesAbovePlugin plugin,
             CooldownManager cooldownManager,
             BeyonderService beyonderService,
-            AbilityLockManager lockManager, GlowingEntities glowingEntities, EffectManager effectManager, RampageManager rampageManager
+            AbilityLockManager lockManager, GlowingEntities glowingEntities, EffectManager effectManager, RampageManager rampageManager, TemporaryEventManager eventManager
     ) {
         this.caster = caster;
         this.world = caster.getWorld();
@@ -57,6 +61,7 @@ public class BukkitAbilityContext implements IAbilityContext {
         this.effectManager = effectManager;
         this.LOGGER = plugin.getLogger();
         this.rampageManager = rampageManager;
+        this.eventManager = eventManager;
     }
 
     // ==========================================
@@ -785,10 +790,12 @@ public class BukkitAbilityContext implements IAbilityContext {
         }
         return result;
     }
+
     private String formatMaterialName(Material material) {
         String name = material.name().toLowerCase().replace("_", " ");
         return name.substring(0, 1).toUpperCase() + name.substring(1);
     }
+
     @Override
     public int getPlayerKills(UUID targetId) {
         Entity entity = getEntity(targetId);
@@ -850,178 +857,56 @@ public class BukkitAbilityContext implements IAbilityContext {
             }
         }.runTaskTimer(plugin, 0L, 5L); // Запуск таймера: перевірка кожні 5 тіків
     }
+
     @Override
-    public String analyzeGreed(UUID targetId) {
+    public int getMinedAmount(UUID targetId, Material oreType) {
         Entity entity = getEntity(targetId);
-        if (!(entity instanceof Player p)) return null;
-
-        // Структура для аналізу ресурсів
-        class ResourceData {
-            String name;
-            ChatColor color;
-            int mined;
-            int used;
-            double value; // базова "цінність" для порівняння
-
-            ResourceData(String name, ChatColor color, Material oreType, List<Material> usageItems, double value) {
-                this.name = name;
-                this.color = color;
-                this.value = value;
-
-                // Підраховуємо видобуто
-                try {
-                    this.mined = p.getStatistic(Statistic.MINE_BLOCK, oreType);
-                } catch (Exception e) {
-                    this.mined = 0;
-                }
-
-                // Підраховуємо витрачено (сума використання всіх предметів)
-                this.used = 0;
-                for (Material item : usageItems) {
-                    try {
-                        this.used += p.getStatistic(Statistic.USE_ITEM, item);
-                    } catch (Exception e) {
-                        // Ігноруємо помилки
-                    }
-                }
-            }
-
-            int getBalance() {
-                return mined - used;
-            }
-
-            double getHoardingScore() {
-                if (mined == 0) return 0;
-                // Чим більший баланс відносно видобутку - тим більше "жадібність"
-                return (double) getBalance() / mined * value;
-            }
+        if (!(entity instanceof Player p)) return 0;
+        try {
+            return p.getStatistic(Statistic.MINE_BLOCK, oreType);
+        } catch (Exception e) {
+            return 0;
         }
-
-        // Визначаємо всі ресурси для аналізу
-        List<ResourceData> resources = new ArrayList<>();
-
-        // Незерит (найцінніший)
-        resources.add(new ResourceData(
-                "Незерит",
-                ChatColor.DARK_PURPLE,
-                Material.ANCIENT_DEBRIS,
-                Arrays.asList(
-                        Material.NETHERITE_SWORD, Material.NETHERITE_PICKAXE,
-                        Material.NETHERITE_AXE, Material.NETHERITE_SHOVEL,
-                        Material.NETHERITE_HOE, Material.NETHERITE_HELMET,
-                        Material.NETHERITE_CHESTPLATE, Material.NETHERITE_LEGGINGS,
-                        Material.NETHERITE_BOOTS, Material.NETHERITE_BLOCK
-                ),
-                10.0
-        ));
-
-        // Алмази
-        resources.add(new ResourceData(
-                "Алмази",
-                ChatColor.AQUA,
-                Material.DIAMOND_ORE,
-                Arrays.asList(
-                        Material.DIAMOND_SWORD, Material.DIAMOND_PICKAXE,
-                        Material.DIAMOND_AXE, Material.DIAMOND_SHOVEL,
-                        Material.DIAMOND_HOE, Material.DIAMOND_HELMET,
-                        Material.DIAMOND_CHESTPLATE, Material.DIAMOND_LEGGINGS,
-                        Material.DIAMOND_BOOTS, Material.DIAMOND_BLOCK,
-                        Material.ENCHANTING_TABLE, Material.JUKEBOX
-                ),
-                5.0
-        ));
-
-        // Емеральди
-        resources.add(new ResourceData(
-                "Емеральди",
-                ChatColor.GREEN,
-                Material.EMERALD_ORE,
-                Arrays.asList(Material.EMERALD_BLOCK),
-                7.0
-        ));
-
-        // Золото
-        resources.add(new ResourceData(
-                "Золото",
-                ChatColor.GOLD,
-                Material.GOLD_ORE,
-                Arrays.asList(
-                        Material.GOLDEN_SWORD, Material.GOLDEN_PICKAXE,
-                        Material.GOLDEN_AXE, Material.GOLDEN_SHOVEL,
-                        Material.GOLDEN_HOE, Material.GOLDEN_HELMET,
-                        Material.GOLDEN_CHESTPLATE, Material.GOLDEN_LEGGINGS,
-                        Material.GOLDEN_BOOTS, Material.GOLD_BLOCK,
-                        Material.GOLDEN_APPLE, Material.CLOCK,
-                        Material.POWERED_RAIL
-                ),
-                3.0
-        ));
-
-        // Залізо
-        resources.add(new ResourceData(
-                "Залізо",
-                ChatColor.WHITE,
-                Material.IRON_ORE,
-                Arrays.asList(
-                        Material.IRON_SWORD, Material.IRON_PICKAXE,
-                        Material.IRON_AXE, Material.IRON_SHOVEL,
-                        Material.IRON_HOE, Material.IRON_HELMET,
-                        Material.IRON_CHESTPLATE, Material.IRON_LEGGINGS,
-                        Material.IRON_BOOTS, Material.IRON_BLOCK,
-                        Material.BUCKET, Material.SHEARS,
-                        Material.FLINT_AND_STEEL, Material.IRON_DOOR,
-                        Material.IRON_TRAPDOOR, Material.CAULDRON,
-                        Material.HOPPER, Material.MINECART,
-                        Material.RAIL, Material.ANVIL
-                ),
-                1.0
-        ));
-
-        // Фільтруємо ресурси з нульовим видобутком
-        resources.removeIf(r -> r.mined == 0);
-
-        if (resources.isEmpty()) {
-            return null;
-        }
-
-        // Знаходимо ресурс з найвищим показником накопичення
-        ResourceData mostHoarded = resources.stream()
-                .max(Comparator.comparingDouble(ResourceData::getHoardingScore))
-                .orElse(null);
-
-        if (mostHoarded == null) {
-            return null;
-        }
-
-        // Формуємо повідомлення на основі балансу
-        int balance = mostHoarded.getBalance();
-        String behavior;
-        ChatColor behaviorColor;
-
-        if (balance > mostHoarded.mined * 0.7) {
-            // Більше 70% накопичено
-            behavior = "Скнара";
-            behaviorColor = ChatColor.DARK_RED;
-        } else if (balance > mostHoarded.mined * 0.3) {
-            // 30-70% накопичено
-            behavior = "Економний";
-            behaviorColor = ChatColor.YELLOW;
-        } else if (balance >= 0) {
-            // Баланс позитивний але малий
-            behavior = "Раціональний";
-            behaviorColor = ChatColor.GREEN;
-        } else {
-            // Від'ємний баланс (витратив більше ніж видобув - торгівля?)
-            behavior = "Марнотратний";
-            behaviorColor = ChatColor.RED;
-        }
-
-        return ChatColor.GOLD + "💰 Економічний профіль: " + behaviorColor + behavior +
-                ChatColor.GRAY + "\n   └─ " + mostHoarded.color + mostHoarded.name +
-                ChatColor.GRAY + ": знайдено " + ChatColor.WHITE + mostHoarded.mined +
-                ChatColor.GRAY + ", витрачено " + ChatColor.WHITE + mostHoarded.used +
-                ChatColor.GRAY + " (баланс: " + (balance >= 0 ? ChatColor.GREEN + "+" : ChatColor.RED) +
-                balance + ChatColor.GRAY + ")";
     }
 
+    @Override
+    public int getUsedAmount(UUID targetId, Material itemType) {
+        Entity entity = getEntity(targetId);
+        if (!(entity instanceof Player p)) return 0;
+
+        int crafted = 0;
+        int used = 0;
+
+        try {
+            crafted = p.getStatistic(Statistic.CRAFT_ITEM, itemType);
+        } catch (Exception ignored) {
+        }
+
+        try {
+            used = p.getStatistic(Statistic.USE_ITEM, itemType);
+        } catch (Exception ignored) {
+        }
+
+        return crafted + used;
+    }
+
+    @Override
+    public <T> void openChoiceMenu(
+            String title,
+            List<T> choices,
+            Function<T, ItemStack> itemMapper,
+            Consumer<T> onSelect
+    ) {
+        ChoiceMenuFactory.openChoiceMenu(caster, title, choices, itemMapper, onSelect);
+    }
+
+    @Override
+    public <T extends Event> void subscribeToEvent(
+            Class<T> eventClass,
+            Predicate<T> filter,
+            Consumer<T> handler,
+            int durationTicks
+    ) {
+        eventManager.subscribe(getCasterId(), eventClass, filter, handler, durationTicks);
+    }
 }

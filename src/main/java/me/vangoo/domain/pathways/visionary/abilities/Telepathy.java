@@ -24,7 +24,9 @@ public class Telepathy extends ActiveAbility {
     private static final Material REAGENT = Material.GLOWSTONE_DUST;
 
     @Override
-    public String getName() { return "Телепатія"; }
+    public String getName() {
+        return "Телепатія";
+    }
 
     @Override
     public String getDescription(Sequence userSequence) {
@@ -36,7 +38,9 @@ public class Telepathy extends ActiveAbility {
     }
 
     @Override
-    public int getSpiritualityCost() { return BASE_COST; }
+    public int getSpiritualityCost() {
+        return BASE_COST;
+    }
 
     @Override
     public int getCooldown(Sequence userSequence) {
@@ -208,8 +212,8 @@ public class Telepathy extends ActiveAbility {
         secrets.add(ChatColor.GOLD + "Засвоєння : " + ctx.getBeyonderMastery(tId));
         secrets.add(ChatColor.RED + "Вбито гравців: " + ctx.getPlayerKills(tId));
 
-        // Прихована жадібність
-        String greedAnalysis = ctx.analyzeGreed(tId);
+        // Прихована жадібність — тепер вся логіка тут
+        String greedAnalysis = buildGreedAnalysis(ctx, tId);
         if (greedAnalysis != null && !greedAnalysis.isEmpty()) {
             secrets.add(greedAnalysis);
         } else {
@@ -233,8 +237,169 @@ public class Telepathy extends ActiveAbility {
         return secrets;
     }
 
+
     private String formatLoc(org.bukkit.Location loc) {
         if (loc == null) return "Невідомо";
         return loc.getWorld().getName() + " [" + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ() + "]";
+    }
+
+    private static class ResourceData {
+        final String name;
+        final ChatColor color;
+        final Material oreType;
+        final List<Material> usageItems;
+        final double value;
+
+        int mined;
+        int used;
+
+        ResourceData(String name, ChatColor color, Material oreType, List<Material> usageItems, double value) {
+            this.name = name;
+            this.color = color;
+            this.oreType = oreType;
+            this.usageItems = usageItems;
+            this.value = value;
+            this.mined = 0;
+            this.used = 0;
+        }
+
+        int getBalance() {
+            return mined - used;
+        }
+
+        double getHoardingScore() {
+            if (mined == 0) return 0.0;
+            return (double) getBalance() / (double) mined * value;
+        }
+    }
+
+    private String buildGreedAnalysis(IAbilityContext ctx, UUID tId) {
+        // Визначення ресурсів — та сама логіка як раніше
+        List<ResourceData> resources = new ArrayList<>();
+
+        resources.add(new ResourceData(
+                "Незерит",
+                ChatColor.DARK_PURPLE,
+                Material.ANCIENT_DEBRIS,
+                Arrays.asList(
+                        Material.NETHERITE_SWORD, Material.NETHERITE_PICKAXE,
+                        Material.NETHERITE_AXE, Material.NETHERITE_SHOVEL,
+                        Material.NETHERITE_HOE, Material.NETHERITE_HELMET,
+                        Material.NETHERITE_CHESTPLATE, Material.NETHERITE_LEGGINGS,
+                        Material.NETHERITE_BOOTS, Material.NETHERITE_BLOCK
+                ),
+                10.0
+        ));
+
+        resources.add(new ResourceData(
+                "Алмази",
+                ChatColor.AQUA,
+                Material.DIAMOND_ORE,
+                Arrays.asList(
+                        Material.DIAMOND_SWORD, Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_AXE, Material.DIAMOND_SHOVEL,
+                        Material.DIAMOND_HOE, Material.DIAMOND_HELMET,
+                        Material.DIAMOND_CHESTPLATE, Material.DIAMOND_LEGGINGS,
+                        Material.DIAMOND_BOOTS, Material.DIAMOND_BLOCK,
+                        Material.ENCHANTING_TABLE, Material.JUKEBOX
+                ),
+                5.0
+        ));
+
+        resources.add(new ResourceData(
+                "Емеральди",
+                ChatColor.GREEN,
+                Material.EMERALD_ORE,
+                Arrays.asList(Material.EMERALD_BLOCK),
+                7.0
+        ));
+
+        resources.add(new ResourceData(
+                "Золото",
+                ChatColor.GOLD,
+                Material.GOLD_ORE,
+                Arrays.asList(
+                        Material.GOLDEN_SWORD, Material.GOLDEN_PICKAXE,
+                        Material.GOLDEN_AXE, Material.GOLDEN_SHOVEL,
+                        Material.GOLDEN_HOE, Material.GOLDEN_HELMET,
+                        Material.GOLDEN_CHESTPLATE, Material.GOLDEN_LEGGINGS,
+                        Material.GOLDEN_BOOTS, Material.GOLD_BLOCK,
+                        Material.GOLDEN_APPLE, Material.CLOCK,
+                        Material.POWERED_RAIL
+                ),
+                3.0
+        ));
+
+        resources.add(new ResourceData(
+                "Залізо",
+                ChatColor.WHITE,
+                Material.IRON_ORE,
+                Arrays.asList(
+                        Material.IRON_SWORD, Material.IRON_PICKAXE,
+                        Material.IRON_AXE, Material.IRON_SHOVEL,
+                        Material.IRON_HOE, Material.IRON_HELMET,
+                        Material.IRON_CHESTPLATE, Material.IRON_LEGGINGS,
+                        Material.IRON_BOOTS, Material.IRON_BLOCK,
+                        Material.BUCKET, Material.SHEARS,
+                        Material.FLINT_AND_STEEL, Material.IRON_DOOR,
+                        Material.IRON_TRAPDOOR, Material.CAULDRON,
+                        Material.HOPPER, Material.MINECART,
+                        Material.RAIL, Material.ANVIL
+                ),
+                1.0
+        ));
+
+        // Заповнюємо mined/used через контекст (викликом базових методів)
+        for (ResourceData r : resources) {
+            int mined = 0;
+            try {
+                mined = ctx.getMinedAmount(tId, r.oreType);
+            } catch (Exception ignored) {
+                mined = 0;
+            }
+            r.mined = Math.max(0, mined);
+
+            int usedSum = 0;
+            for (Material item : r.usageItems) {
+                try {
+                    usedSum += ctx.getUsedAmount(tId, item);
+                } catch (Exception ignored) { /* skip */ }
+            }
+            r.used = Math.max(0, usedSum);
+        }
+
+        // Видаляємо ресурси без видобутку
+        resources.removeIf(r -> r.mined == 0);
+        if (resources.isEmpty()) return null;
+
+        ResourceData most = resources.stream()
+                .max(Comparator.comparingDouble(ResourceData::getHoardingScore))
+                .orElse(null);
+        if (most == null) return null;
+
+        int balance = most.getBalance();
+        String behavior;
+        ChatColor behaviorColor;
+
+        if (balance > most.mined * 0.7) {
+            behavior = "Скнара";
+            behaviorColor = ChatColor.DARK_RED;
+        } else if (balance > most.mined * 0.3) {
+            behavior = "Економний";
+            behaviorColor = ChatColor.YELLOW;
+        } else if (balance >= 0) {
+            behavior = "Раціональний";
+            behaviorColor = ChatColor.GREEN;
+        } else {
+            behavior = "Марнотратний";
+            behaviorColor = ChatColor.RED;
+        }
+
+        return ChatColor.GOLD + "💰 Економічний профіль: " + behaviorColor + behavior +
+                ChatColor.GRAY + "\n   └─ " + most.color + most.name +
+                ChatColor.GRAY + ": знайдено " + ChatColor.WHITE + most.mined +
+                ChatColor.GRAY + ", витрачено " + ChatColor.WHITE + most.used +
+                ChatColor.GRAY + " (баланс: " + (balance >= 0 ? ChatColor.GREEN + "+" : ChatColor.RED) +
+                balance + ChatColor.GRAY + ")";
     }
 }
