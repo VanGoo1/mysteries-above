@@ -86,8 +86,6 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         this.abilityMenu = new AbilityMenu(this, abilityItemFactory);
 
         this.pathwayManager = new PathwayManager();
-        this.rampageEventListener = new RampageEventListener();
-        eventPublisher.subscribe(rampageEventListener::handle);
 
         this.beyonderStorage =
                 new JSONBeyonderRepository(
@@ -97,9 +95,19 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
         this.beyonderService = new BeyonderService(beyonderStorage, new BossBarUtil());
         this.lockManager = new AbilityLockManager();
-        this.passiveAbilityManager = new PassiveAbilityManager();
         this.effectManager = new EffectManager(this);
         this.abilityContextFactory = new AbilityContextFactory(this, cooldownManager, beyonderService, lockManager, glowingEntities, effectManager, rampageManager);
+
+        this.passiveAbilityManager = new PassiveAbilityManager();
+        this.passiveAbilityScheduler = new PassiveAbilityScheduler(
+                this,
+                passiveAbilityManager,
+                beyonderService,
+                abilityContextFactory
+        );
+        this.rampageEventListener = new RampageEventListener(passiveAbilityScheduler, beyonderService);
+        eventPublisher.subscribe(rampageEventListener::handle);
+
         this.abilityExecutor = new AbilityExecutor(
                 beyonderService,
                 lockManager,
@@ -111,13 +119,6 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
         this.potionItemFactory = new PotionItemFactory();
         this.potionManager = new PotionManager(pathwayManager, potionItemFactory);
-
-        this.passiveAbilityScheduler = new PassiveAbilityScheduler(
-                this,
-                passiveAbilityManager,
-                beyonderService,
-                abilityContextFactory
-        );
 
         this.masteryRegenerationScheduler = new MasteryRegenerationScheduler(this, beyonderService);
         this.beyonderSleepListener = new BeyonderSleepListener(beyonderService);

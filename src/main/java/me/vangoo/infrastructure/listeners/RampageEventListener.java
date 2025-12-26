@@ -1,6 +1,8 @@
 package me.vangoo.infrastructure.listeners;
 
+import me.vangoo.application.services.BeyonderService;
 import me.vangoo.domain.events.RampageDomainEvent;
+import me.vangoo.infrastructure.schedulers.PassiveAbilityScheduler;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
@@ -16,15 +18,23 @@ import java.util.UUID;
 
 /**
  * Infrastructure: Слухає rampage події та обробляє їх
- *
+ * <p>
  * Відповідальності:
  * - Слухати доменні події rampage
  * - Показувати візуальні ефекти (частинки, звуки, повідомлення)
  * - Виконувати трансформацію (спавн Warden, вбивство гравця)
- *
+ * <p>
  * Це ЄДИНЕ місце для всіх rampage візуалів та трансформації.
  */
 public class RampageEventListener {
+
+    private final PassiveAbilityScheduler passiveAbilityScheduler;
+    private final BeyonderService beyonderService;
+
+    public RampageEventListener(PassiveAbilityScheduler passiveAbilityScheduler, BeyonderService beyonderService) {
+        this.passiveAbilityScheduler = passiveAbilityScheduler;
+        this.beyonderService = beyonderService;
+    }
 
     /**
      * Обробити доменну подію
@@ -198,7 +208,8 @@ public class RampageEventListener {
                 location.add(0, 1, 0),
                 50, 2.0, 2.0, 2.0, 0.1
         );
-
+        passiveAbilityScheduler.unregisterPlayer(player);
+        beyonderService.removeBeyonder(player.getUniqueId());
         // Вбити гравця
         player.setHealth(0.0);
     }

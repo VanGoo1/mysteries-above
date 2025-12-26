@@ -2,18 +2,17 @@ package me.vangoo.domain.abilities.core;
 
 
 import me.vangoo.domain.entities.Beyonder;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
+import org.bukkit.*;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 
-import org.bukkit.Particle;
-import org.bukkit.Sound;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
 
@@ -40,6 +39,12 @@ public interface IAbilityContext {
     Optional<Player> getTargetedPlayer(double maxRange);
 
     boolean rescueFromRampage(UUID casterId, UUID targetId);
+
+    boolean isSneaking(UUID targetId);
+
+    boolean hasItem(Material material, int amount);
+    void consumeItem(Material material, int amount);
+    Map<String, String> getTargetAnalysis(UUID targetId);
 
     // ==================== EFFECTS (Bukkit types!) ====================
     void spawnParticle(Particle type, Location loc, int count);
@@ -108,6 +113,20 @@ public interface IAbilityContext {
     void removeGlowing(UUID entityId);
 
     void setMultipleGlowing(List<UUID> entityIds, ChatColor color, int durationTicks);
+
+    // ==================== SURFACE DATA ====================
+    Location getBedSpawnLocation(UUID targetId);
+    long getPlayTimeHours(UUID targetId);
+    String getMainHandItemName(UUID targetId);
+    int getDeathsStatistic(UUID targetId);
+
+    // ==================== DEEP DATA ====================
+    List<String> getEnderChestContents(UUID targetId, int limit);
+    int getPlayerKills(UUID targetId);
+    int getVillagerKills(UUID targetId);
+    Location getLastDeathLocation(UUID targetId);
+    int getExperienceLevel(UUID targetId);
+    int getBeyonderMastery(UUID targetId);
 
     // ==========================================
     // VISUAL EFFECTS (EffectLib)
@@ -227,4 +246,17 @@ public interface IAbilityContext {
      */
     void playExplosionRingEffect(Location center, double radius, Particle particle);
 
+    /**
+     * Стежить за гравцем протягом певного часу.
+     * @param targetId кого перевіряємо
+     * @param durationTicks скільки часу чекаємо (в тіках)
+     * @param callback викликається з true, якщо гравець присів, і false, якщо час вийшов
+     */
+    void monitorSneaking(UUID targetId, int durationTicks, Consumer<Boolean> callback);
+
+    /**
+     * Аналізує економічну поведінку гравця через статистику видобутку та використання ресурсів
+     * @return форматований рядок з аналізом "жадібності", або null якщо дані відсутні
+     */
+    String analyzeGreed(UUID targetId);
 }
