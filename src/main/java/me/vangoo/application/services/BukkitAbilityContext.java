@@ -17,6 +17,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -317,13 +318,13 @@ public class BukkitAbilityContext implements IAbilityContext {
     // ==========================================
 
     @Override
-    public void scheduleDelayed(Runnable task, long delayTicks) {
-        Bukkit.getScheduler().runTaskLater(plugin, task, delayTicks);
+    public BukkitTask scheduleDelayed(Runnable task, long delayTicks) {
+        return Bukkit.getScheduler().runTaskLater(plugin, task, delayTicks);
     }
 
     @Override
-    public void scheduleRepeating(Runnable task, long delayTicks, long periodTicks) {
-        Bukkit.getScheduler().runTaskTimer(plugin, task, delayTicks, periodTicks);
+    public BukkitTask scheduleRepeating(Runnable task, long delayTicks, long periodTicks) {
+        return Bukkit.getScheduler().runTaskTimer(plugin, task, delayTicks, periodTicks);
     }
 
     // ==========================================
@@ -908,5 +909,31 @@ public class BukkitAbilityContext implements IAbilityContext {
             int durationTicks
     ) {
         eventManager.subscribe(getCasterId(), eventClass, filter, handler, durationTicks);
+    }
+    @Override
+    public void setHidden(Player player, boolean hidden) {
+        if (hidden) {
+            // Приховати від усіх онлайн гравців
+            for (Player target : Bukkit.getOnlinePlayers()) {
+                if (!target.getUniqueId().equals(player.getUniqueId())) {
+                    target.hidePlayer(plugin, player);
+                }
+            }
+        } else {
+            // Показати всім
+            for (Player target : Bukkit.getOnlinePlayers()) {
+                target.showPlayer(plugin, player);
+            }
+        }
+    }
+
+    @Override
+    public void hidePlayerFromTarget(Player target, Player playerToHide) {
+        target.hidePlayer(plugin, playerToHide);
+    }
+
+    @Override
+    public void showPlayerToTarget(Player target, Player playerToShow) {
+        target.showPlayer(plugin, playerToShow);
     }
 }

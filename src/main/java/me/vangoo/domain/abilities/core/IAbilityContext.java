@@ -18,6 +18,7 @@ import java.util.function.Predicate;
 import org.bukkit.event.Event;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitTask;
 
 import javax.annotation.Nullable;
 
@@ -75,9 +76,9 @@ public interface IAbilityContext {
     void heal(UUID entityId, double amount);
 
     // ==================== SCHEDULING ====================
-    void scheduleDelayed(Runnable task, long delayTicks);
+    BukkitTask scheduleDelayed(Runnable task, long delayTicks);
 
-    void scheduleRepeating(Runnable task, long delayTicks, long periodTicks);
+    BukkitTask scheduleRepeating(Runnable task, long delayTicks, long periodTicks);
 
     // ==================== COOLDOWN ====================
     boolean hasCooldown(Ability ability);
@@ -291,4 +292,10 @@ public interface IAbilityContext {
     int getMinedAmount(UUID targetId, Material oreType);
 
     int getUsedAmount(UUID targetId, Material itemType);
+
+    void showPlayerToTarget(Player target, Player playerToShow);
+
+    void hidePlayerFromTarget(Player target, Player playerToHide);
+
+    void setHidden(Player player, boolean hidden);
 }
