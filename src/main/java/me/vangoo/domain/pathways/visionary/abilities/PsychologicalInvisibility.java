@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PsychologicalInvisibility extends ActiveAbility {
 
-    private static final int COST_PER_SECOND = 20;
+    private static final int COST_PER_SECOND = 16;
     private static final int COOLDOWN_SECONDS = 5;
 
     private static final Map<UUID, Runnable> activeCancellers = new ConcurrentHashMap<>();

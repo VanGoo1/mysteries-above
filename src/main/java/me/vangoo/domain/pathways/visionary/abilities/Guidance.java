@@ -1,0 +1,190 @@
+package me.vangoo.domain.pathways.visionary.abilities;
+
+import me.vangoo.domain.abilities.core.AbilityResult;
+import me.vangoo.domain.abilities.core.ActiveAbility;
+import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.valueobjects.Sequence;
+import org.bukkit.*;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.util.Vector;
+import org.bukkit.event.vehicle.VehicleEnterEvent;
+
+import java.util.Optional;
+import java.util.UUID;
+
+public class Guidance extends ActiveAbility {
+
+    private static final int MAX_DISTANCE = 10; // Радіус "повідця"
+    private static final int DURATION_SECONDS = 300; // 5 хвилин
+    private static final int CAST_RANGE = 10; // Дистанція до сплячого для активації
+    private static final int COST = 400; // Вартість духовності
+    private static final int COOLDOWN = 600; // Кулдаун 10 хвилин
+
+    @Override
+    public String getName() {
+        return "Керівництво";
+    }
+
+    @Override
+    public String getDescription(Sequence userSequence) {
+        return "Ви проникаєте у підсвідомість сплячого, встановлюючи ментальний зв'язок. " +
+                "Протягом 5 хвилин ціль не зможе відійти від вас далі ніж на 10 блоків.";
+    }
+
+    @Override
+    public int getSpiritualityCost() {
+        return COST;
+    }
+
+    @Override
+    public int getCooldown(Sequence userSequence) {
+        return COOLDOWN;
+    }
+
+    @Override
+    protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
+        return context.getTargetedEntity(CAST_RANGE);
+    }
+
+    @Override
+    protected AbilityResult performExecution(IAbilityContext context) {
+        Optional<LivingEntity> targetOpt = context.getTargetedEntity(CAST_RANGE);
+
+        if (targetOpt.isEmpty() || !(targetOpt.get() instanceof Player target)) {
+            return AbilityResult.failure("Ціль має бути гравцем.");
+        }
+
+        // Перевірка: чи спить ціль?
+        if (!target.isSleeping()) {
+            return AbilityResult.failure("Ціль повинна спати, щоб встановити зв'язок.");
+        }
+
+        UUID targetId = target.getUniqueId();
+        UUID casterId = context.getCasterId();
+        // Візуальні ефекти успіху
+        context.sendMessageToCaster(ChatColor.AQUA + "Ви встановили ментальний контроль над " + target.getName());
+        context.sendMessage(targetId, ChatColor.GRAY + "Ви відчуваєте дивний сон, ніби хтось веде вас за руку...");
+
+        context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 1f, 1.5f);
+        context.spawnParticle(Particle.HAPPY_VILLAGER, target.getLocation().add(0, 1, 0), 20, 0.5, 0.5, 0.5);
+
+        // Блокуємо посадку в транспорт
+        context.subscribeToEvent(
+                VehicleEnterEvent.class,
+                e -> e.getEntered().getUniqueId().equals(targetId),
+                e -> {
+                    e.setCancelled(true);
+                    context.sendMessage(targetId, ChatColor.RED + "Ментальний контроль не дозволяє вам тут сховатись!");
+                },
+                DURATION_SECONDS * 20
+        );
+
+        // Головна логіка моніторингу відстані
+        startDistanceMonitoring(context, casterId, targetId);
+        return AbilityResult.success();
+    }
+
+    /**
+     * Моніторинг відстані через context.scheduleRepeating
+     */
+    private void startDistanceMonitoring(IAbilityContext context, UUID casterId, UUID targetId) {
+        final long startTime = System.currentTimeMillis();
+        final long endTime = startTime + (DURATION_SECONDS * 1000L);
+        final long[] lastMessageTime = {0}; // Трекер для уникнення спаму
+
+        context.scheduleRepeating(new Runnable() {
+            @Override
+            public void run() {
+                long now = System.currentTimeMillis();
+
+                // Перевірка закінчення часу
+                if (now >= endTime) {
+                    // Повідомлення про завершення
+                    context.sendMessage(targetId, ChatColor.GREEN + "Ви відчуваєте полегшення. Ментальний поводок зник.");
+                    context.sendMessage(casterId, ChatColor.GREEN + "Дія 'Керівництва' завершилась.");
+                    return; // Scheduler автоматично зупиниться після return
+                }
+
+                Player target = getPlayerSafely(context, targetId);
+                Player caster = getPlayerSafely(context, casterId);
+
+                // Валідація: чи онлайн обидва гравці
+                if (target == null || caster == null) {
+                    return; // Продовжуємо чекати (можливо тимчасово офлайн)
+                }
+
+                // Перевірка світів
+                if (!target.getWorld().equals(caster.getWorld())) {
+                    context.damage(targetId, 2.0);
+                    context.sendMessage(targetId, ChatColor.RED + "Зв'язок розірвано через зміну виміру!");
+                    context.sendMessage(casterId, ChatColor.YELLOW + "Зв'язок з ціллю розірвано (інший світ)");
+                    return; // Зупиняємо
+                }
+
+                // ГОЛОВНА ЛОГІКА: Перевірка відстані
+                Location targetLoc = target.getLocation();
+                Location casterLoc = caster.getLocation();
+                double distance = targetLoc.distance(casterLoc);
+
+                if (distance > MAX_DISTANCE) {
+                    applyRestraint(context, targetId, casterId, targetLoc, casterLoc, now, lastMessageTime);
+                }
+            }
+        }, 0L, 10L); // Кожні 0.5 секунди
+    }
+
+    /**
+     * Безпечне отримання гравця (повертає null якщо офлайн)
+     */
+    private Player getPlayerSafely(IAbilityContext context, UUID playerId) {
+        // Використовуємо context для отримання caster
+        if (playerId.equals(context.getCasterId())) {
+            return context.getCaster();
+        }
+
+        // Для інших гравців використовуємо Bukkit (це OK в цьому місці)
+        Player player = org.bukkit.Bukkit.getPlayer(playerId);
+        return (player != null && player.isOnline()) ? player : null;
+    }
+
+    /**
+     * Застосування "повідця" - відштовхування назад до кастера
+     */
+    private void applyRestraint(IAbilityContext context, UUID targetId, UUID casterId,
+                                Location targetLoc, Location casterLoc,
+                                long now, long[] lastMessageTime) {
+
+        // Вектор від цілі до кастера
+        Vector direction = casterLoc.toVector().subtract(targetLoc.toVector());
+        direction.normalize();
+
+        // Динамічна сила залежно від відстані
+        double distance = targetLoc.distance(casterLoc);
+        double strength = 0.5 + ((distance - MAX_DISTANCE) * 0.05);
+        strength = Math.min(strength, 2.5); // Ліміт
+
+        direction.multiply(strength).setY(0.3); // Трохи підкидаємо
+
+        // Застосовуємо velocity
+        Player target = getPlayerSafely(context, targetId);
+        if (target != null) {
+            target.setVelocity(direction);
+        }
+
+        // Ефекти
+        context.playSound(targetLoc, Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 0.5f);
+        context.spawnParticle(Particle.REVERSE_PORTAL, targetLoc, 15, 0.5, 1, 0.5);
+
+        // Повідомлення (без спаму - раз на 3 секунди)
+        if (now - lastMessageTime[0] > 3000) {
+            context.sendMessage(targetId, ChatColor.DARK_PURPLE + "Незрима сила тягне вас назад!");
+            lastMessageTime[0] = now;
+        }
+    }
+
+    @Override
+    public void cleanUp() {
+        // Нічого не треба чистити - scheduler tasks автоматично зупиняються
+    }
+}
