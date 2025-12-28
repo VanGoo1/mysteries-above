@@ -18,7 +18,7 @@ import org.bukkit.util.RayTraceResult;
 
 public class BattleHypnotism extends ActiveAbility {
 
-    private static final int BASE_COST = 50;
+    private static final int BASE_COST = 100;
     private static final int BASE_RANGE = 15;
     private static final int BASE_COOLDOWN = 25;
     private static final int EFFECT_DURATION_SECONDS = 10;

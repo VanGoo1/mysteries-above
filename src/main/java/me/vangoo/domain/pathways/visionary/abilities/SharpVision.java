@@ -28,7 +28,7 @@ public class SharpVision extends ActiveAbility {
     @Override
     public String getDescription(Sequence userSequence) {
         int duration = scaleValue(DURATION_SECONDS, userSequence,
-                SequenceScaler.ScalingStrategy.MODERATE);
+                SequenceScaler.ScalingStrategy.WEAK);
         return String.format("Дає нічне бачення та підсвічування на %d c.", duration);
     }
 
@@ -42,7 +42,7 @@ public class SharpVision extends ActiveAbility {
         int baseCooldown = 40;
         double reduction = SequenceScaler.calculateMultiplier(
                 userSequence.level(),
-                SequenceScaler.ScalingStrategy.WEAK
+                SequenceScaler.ScalingStrategy.STRONG
         );
         return (int) Math.ceil(baseCooldown / reduction);
     }

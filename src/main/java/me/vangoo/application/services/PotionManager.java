@@ -2,6 +2,7 @@ package me.vangoo.application.services;
 
 import me.vangoo.MysteriesAbovePlugin;
 import me.vangoo.domain.PathwayPotions;
+import me.vangoo.domain.pathways.door.DoorPotions;
 import me.vangoo.domain.pathways.error.ErrorPotions;
 import me.vangoo.domain.pathways.visionary.VisionaryPotions;
 import me.vangoo.domain.valueobjects.Sequence;
@@ -28,6 +29,7 @@ public class PotionManager {
     private void initializePotions() {
         potions.add(new ErrorPotions(pathwayManager.getPathway("Error"), Color.fromRGB(26, 0, 181)));
         potions.add(new VisionaryPotions(pathwayManager.getPathway("Visionary"), Color.fromRGB(128, 128, 128)));
+        potions.add(new DoorPotions(pathwayManager.getPathway("Door"), Color.fromRGB(0, 0, 128)));
     }
 
     public Optional<PathwayPotions> getPotionsPathway(String pathwayName) {

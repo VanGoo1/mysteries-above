@@ -2,6 +2,7 @@ package me.vangoo.application.services;
 
 import me.vangoo.domain.entities.Pathway;
 import me.vangoo.domain.entities.PathwayGroup;
+import me.vangoo.domain.pathways.door.Door;
 import me.vangoo.domain.pathways.error.Error;
 import me.vangoo.domain.pathways.visionary.Visionary;
 
@@ -25,6 +26,9 @@ public class PathwayManager {
         pathways.put("Visionary", new Visionary(PathwayGroup.GodAlmighty,
                 List.of("Visionary", "Author", "Discerner", "Dream Weaver", "Manipulator", "Dreamwalker", "Hypnotist",
                         "Psychiatrist", "Telepathist", "Spectator")));
+        pathways.put("Door", new Door(PathwayGroup.LordOfMysteries,
+                List.of("Door", "Key of Stars", "Planeswalker", "Wanderer", "Secrets Sorcerer", "Traveler", "Scribe",
+                        "Astrologer", "Trickmaster", "Apprentice")));
     }
 
     public Pathway getPathway(String name) {
