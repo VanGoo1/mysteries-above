@@ -4,25 +4,27 @@ import de.slikey.effectlib.EffectManager;
 import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.application.services.*;
 import me.vangoo.application.services.RampageManager;
+import me.vangoo.domain.valueobjects.CustomItem;
+import me.vangoo.infrastructure.items.CustomItemConfigLoader;
+import me.vangoo.infrastructure.items.CustomItemFactory;
+import me.vangoo.infrastructure.items.CustomItemRegistry;
 import me.vangoo.infrastructure.items.PotionItemFactory;
 import me.vangoo.infrastructure.listeners.RampageEventListener;
 import me.vangoo.infrastructure.schedulers.MasteryRegenerationScheduler;
 import me.vangoo.infrastructure.schedulers.PassiveAbilityScheduler;
 import me.vangoo.infrastructure.schedulers.RampageScheduler;
-import me.vangoo.presentation.commands.RampagerCommand;
-import me.vangoo.presentation.commands.SequencePotionCommand;
+import me.vangoo.presentation.commands.*;
 import me.vangoo.infrastructure.IBeyonderRepository;
 import me.vangoo.infrastructure.JSONBeyonderRepository;
 import me.vangoo.infrastructure.abilities.AbilityItemFactory;
 import me.vangoo.presentation.listeners.*;
-import me.vangoo.presentation.commands.PathwayCommand;
-import me.vangoo.presentation.commands.MasteryCommand;
 import me.vangoo.infrastructure.ui.AbilityMenu;
 import me.vangoo.infrastructure.ui.BossBarUtil;
 import me.vangoo.infrastructure.ui.NBTBuilder;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class MysteriesAbovePlugin extends JavaPlugin {
@@ -50,12 +52,14 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     SanityPenaltyHandler sanityPenaltyHandler;
     RampageEventListener rampageEventListener;
     TemporaryEventManager temporaryEventManager;
+    CustomItemFactory customItemFactory;
+    CustomItemRegistry customItemRegistry;
+    CustomItemService customItemService;
 
     @Override
     public void onEnable() {
         this.pluginLogger = this.getLogger();
         glowingEntities = new GlowingEntities(this);
-        saveDefaultConfig();
         initializeManagers();
         registerEvents();
         registerCommands();
@@ -77,6 +81,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
     private void initializeManagers() {
         NBTBuilder.setPlugin(this);
+        initializeCustomItems();
         this.temporaryEventManager = new TemporaryEventManager(this);
         this.eventPublisher = new DomainEventPublisher();
         this.rampageManager = new RampageManager(eventPublisher);
@@ -125,6 +130,18 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         this.beyonderSleepListener = new BeyonderSleepListener(beyonderService);
     }
 
+    private void initializeCustomItems() {
+        this.customItemFactory = new CustomItemFactory();
+        this.customItemRegistry = new CustomItemRegistry(customItemFactory);
+        CustomItemConfigLoader configLoader = new CustomItemConfigLoader(this);
+        Map<String, CustomItem> items = configLoader.loadItems();
+        customItemRegistry.registerAll(items);
+        this.customItemService = new CustomItemService(customItemRegistry);
+        Map<String, Object> stats = customItemService.getStatistics();
+        pluginLogger.info("Custom items system initialized:");
+        pluginLogger.info("  Total items: " + stats.get("totalItems"));
+    }
+
     private void registerEvents() {
         AbilityMenuListener abilityMenuListener =
                 new AbilityMenuListener(abilityMenu, beyonderService, abilityExecutor, abilityItemFactory, pluginLogger);
@@ -151,6 +168,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         PathwayCommand pathwayCommand = new PathwayCommand(beyonderService, pathwayManager, abilityMenu, abilityItemFactory);
         SequencePotionCommand sequencePotionCommand = new SequencePotionCommand(potionManager);
         RampagerCommand rampagerCommand = new RampagerCommand(beyonderService);
+        CustomItemCommand customItemCommand = new CustomItemCommand(customItemService);
         getCommand("pathway").setExecutor(pathwayCommand);
         getCommand("pathway").setTabCompleter(pathwayCommand);
         getCommand("potion").setExecutor(sequencePotionCommand);
@@ -158,6 +176,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getCommand("mastery").setExecutor(new MasteryCommand(beyonderService));
         getCommand("rampager").setExecutor(rampagerCommand);
         getCommand("rampager").setTabCompleter(rampagerCommand);
+        getCommand("custom-items").setExecutor(customItemCommand);
+        getCommand("custom-items").setTabCompleter(customItemCommand);
     }
 
     private void startSchedulers() {
