@@ -73,26 +73,31 @@ public class BeyonderPlayerListener implements Listener {
                 return;
         }
 
-        ItemStack item = event.getItem();
-        if (item == null || !item.hasItemMeta()) {
-            return;
-        }
-
         Player player = event.getPlayer();
         Beyonder beyonder = beyonderService.getBeyonder(player.getUniqueId());
         if (beyonder == null) {
             return;
         }
 
-        // Get ability from item
-        Ability ability = abilityItemFactory.getAbilityFromItem(item, beyonder);
+        ItemStack mainHandItem = player.getInventory().getItemInMainHand();
+        ItemStack offHandItem = player.getInventory().getItemInOffHand();
+
+        Ability ability = null;
+
+        if (mainHandItem.hasItemMeta()) {
+            ability = abilityItemFactory.getAbilityFromItem(mainHandItem, beyonder);
+        }
+
+        if (ability == null && offHandItem.hasItemMeta()) {
+            ability = abilityItemFactory.getAbilityFromItem(offHandItem, beyonder);
+        }
+
         if (ability == null) {
             return;
         }
 
         event.setCancelled(true);
 
-        // Execute ability through application service
         AbilityResult result = abilityExecutor.execute(beyonder, ability);
 
         showResultToPlayer(player, result);
@@ -103,7 +108,7 @@ public class BeyonderPlayerListener implements Listener {
         if (result.isSuccess()) {
             // Success cases
             if (result.hasSanityPenalty()) {
-                // Success with penalty - effects already applied
+                // Success with penalty
                 player.spigot().sendMessage(ChatMessageType.ACTION_BAR,
                         new TextComponent(ChatColor.YELLOW + "⚠ Здібність виконана, але з наслідками"));
             }

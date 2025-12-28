@@ -22,7 +22,9 @@ import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
-
+import org.bukkit.entity.ItemFrame;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import java.util.logging.Logger;
 
 
@@ -214,16 +216,27 @@ public class AbilityMenuListener implements Listener {
             return;
         }
 
-        if (!abilityItemFactory.isAbilityItem(cursor, beyonder)) {
+        boolean isAbilityItem = abilityItemFactory.isAbilityItem(cursor, beyonder);
+        boolean isMenuitem = abilityMenu.isAbilityMenu(cursor);
+
+        if (!isAbilityItem && !isMenuitem) {
             return;
         }
 
         InventoryAction action = event.getAction();
+
+        // Заборона розміщення в crafting слоти
         if (action == InventoryAction.PLACE_ALL ||
                 action == InventoryAction.PLACE_ONE ||
                 action == InventoryAction.PLACE_SOME) {
 
             if (event.getSlotType() == InventoryType.SlotType.CRAFTING) {
+                event.setCancelled(true);
+                return;
+            }
+
+            // Заборона в offhand (slot 40)
+            if (event.getSlot() == 40) {
                 event.setCancelled(true);
             }
         }
@@ -281,6 +294,132 @@ public class AbilityMenuListener implements Listener {
 
         if (beyonder.getSequenceLevel() != -1) {
             abilityMenu.giveAbilityMenuItemToPlayer(player);
+        }
+    }
+
+    @EventHandler
+    public void onSwapHandItems(PlayerSwapHandItemsEvent event) {
+        Player player = event.getPlayer();
+        Beyonder beyonder = beyonderService.getBeyonder(player.getUniqueId());
+
+        if (beyonder == null) {
+            return;
+        }
+
+        ItemStack mainHand = event.getMainHandItem();
+        ItemStack offHand = event.getOffHandItem();
+
+        // Перевіряємо чи це ability item або menu item
+        boolean mainIsAbility = mainHand != null &&
+                (abilityItemFactory.isAbilityItem(mainHand, beyonder) || abilityMenu.isAbilityMenu(mainHand));
+        boolean offIsAbility = offHand != null &&
+                (abilityItemFactory.isAbilityItem(offHand, beyonder) || abilityMenu.isAbilityMenu(offHand));
+
+        if (!mainIsAbility && !offIsAbility) {
+            return;
+        }
+
+        if (player.getOpenInventory().getTopInventory().getType() != InventoryType.CRAFTING) {
+            event.setCancelled(true);
+        }
+    }
+
+    /**
+     * Заборона розміщення ability items в рамки
+     */
+    @EventHandler
+    public void onPlaceInItemFrame(PlayerInteractEntityEvent event) {
+        if (!(event.getRightClicked() instanceof ItemFrame itemFrame)) {
+            return;
+        }
+
+        Player player = event.getPlayer();
+        Beyonder beyonder = beyonderService.getBeyonder(player.getUniqueId());
+
+        if (beyonder == null) {
+            return;
+        }
+
+        itemFrame.getItem();
+        if (itemFrame.getItem().getType() != Material.AIR) {
+            return;
+        }
+
+        ItemStack offHandItem = player.getInventory().getItemInOffHand();
+        ItemStack mainHandItem = player.getInventory().getItemInMainHand();
+
+        if (offHandItem.getType() != Material.AIR) {
+            if (abilityItemFactory.isAbilityItem(offHandItem, beyonder)) {
+                event.setCancelled(true);
+                return;
+            }
+
+            if (abilityMenu.isAbilityMenu(offHandItem)) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+
+        if (mainHandItem.getType() != Material.AIR) {
+            if (abilityItemFactory.isAbilityItem(mainHandItem, beyonder)) {
+                event.setCancelled(true);
+                return;
+            }
+
+            if (abilityMenu.isAbilityMenu(mainHandItem)) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    /**
+     * Розширена заборона переміщення через hotbar swap (цифри)
+     */
+    @EventHandler
+    public void onHotbarSwap(InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player)) {
+            return;
+        }
+
+        Beyonder beyonder = beyonderService.getBeyonder(player.getUniqueId());
+        if (beyonder == null) {
+            return;
+        }
+
+        // Заборона SWAP_OFFHAND для ability items
+        if (event.getAction() == InventoryAction.SWAP_WITH_CURSOR) {
+            ItemStack cursor = event.getCursor();
+            if (cursor != null && abilityItemFactory.isAbilityItem(cursor, beyonder)) {
+                if (event.getSlot() == 40) { // 40 = offhand slot
+                    event.setCancelled(true);
+                    player.sendMessage(ChatColor.RED + "Не можна переміщувати здібності в ліву руку");
+                }
+            }
+        }
+
+        // Заборона hotbar swap (натискання цифр) для ability items в non-player інвентарях
+        if (event.getAction() == InventoryAction.HOTBAR_SWAP ||
+                event.getAction() == InventoryAction.HOTBAR_MOVE_AND_READD) {
+
+            int hotbarButton = event.getHotbarButton();
+            if (hotbarButton != -1) {
+                ItemStack hotbarItem = player.getInventory().getItem(hotbarButton);
+
+                // Заборона swap ability item через hotbar в не-player інвентарі
+                if (hotbarItem != null && abilityItemFactory.isAbilityItem(hotbarItem, beyonder)) {
+                    if (event.getView().getTopInventory().getType() != InventoryType.CRAFTING) {
+                        event.setCancelled(true);
+                        return;
+                    }
+                }
+
+                // Заборона swap menu item через hotbar
+                if (hotbarItem != null && abilityMenu.isAbilityMenu(hotbarItem)) {
+                    if (event.getView().getTopInventory().getType() != InventoryType.CRAFTING) {
+                        event.setCancelled(true);
+                    }
+                }
+            }
         }
     }
 }
