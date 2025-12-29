@@ -1,8 +1,6 @@
 package me.vangoo.domain.pathways.door;
 
 import me.vangoo.domain.pathways.door.abilities.DoorOpening;
-import me.vangoo.domain.pathways.error.abilities.FractureOfRealitiesAbility;
-import me.vangoo.domain.pathways.error.abilities.ShadowTheft;
 import me.vangoo.domain.entities.Pathway;
 import me.vangoo.domain.entities.PathwayGroup;
 
