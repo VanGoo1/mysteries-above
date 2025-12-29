@@ -5,7 +5,6 @@ import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.application.services.*;
 import me.vangoo.application.services.RampageManager;
 import me.vangoo.domain.valueobjects.CustomItem;
-import me.vangoo.domain.valueobjects.Structure;
 import me.vangoo.infrastructure.items.CustomItemConfigLoader;
 import me.vangoo.infrastructure.items.CustomItemFactory;
 import me.vangoo.infrastructure.items.CustomItemRegistry;
@@ -14,9 +13,9 @@ import me.vangoo.infrastructure.listeners.RampageEventListener;
 import me.vangoo.infrastructure.schedulers.MasteryRegenerationScheduler;
 import me.vangoo.infrastructure.schedulers.PassiveAbilityScheduler;
 import me.vangoo.infrastructure.schedulers.RampageScheduler;
-import me.vangoo.infrastructure.structures.NBTStructureLoader;
-import me.vangoo.infrastructure.structures.StructureConfigLoader;
-import me.vangoo.infrastructure.structures.StructureGenerator;
+import me.vangoo.infrastructure.structures.LootGenerationService;
+import me.vangoo.infrastructure.structures.NBTStructureConfigLoader;
+import me.vangoo.infrastructure.structures.StructurePopulator;
 import me.vangoo.presentation.commands.*;
 import me.vangoo.infrastructure.IBeyonderRepository;
 import me.vangoo.infrastructure.JSONBeyonderRepository;
@@ -61,17 +60,16 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     CustomItemFactory customItemFactory;
     CustomItemRegistry customItemRegistry;
     CustomItemService customItemService;
-    StructureService structureService;
-    NBTStructureLoader nbtStructureLoader;
-    StructureGenerator structureGenerator;
-    LootGenerationService lootGenerationService;
+    NBTStructureConfigLoader configLoader;
+    LootGenerationService lootService;
+    StructurePopulator structurePopulator;
 
     @Override
     public void onEnable() {
         this.pluginLogger = this.getLogger();
         glowingEntities = new GlowingEntities(this);
         initializeManagers();
-        initializeStructures();
+//        initializeStructures();
         registerEvents();
         registerCommands();
 
@@ -93,6 +91,12 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     private void initializeManagers() {
         NBTBuilder.setPlugin(this);
         initializeCustomItems();
+        configLoader = new NBTStructureConfigLoader(this);
+        lootService = new LootGenerationService(this, customItemService);
+        structurePopulator = new StructurePopulator(this, configLoader, lootService);
+        for (World world : Bukkit.getWorlds()) {
+            world.getPopulators().add(structurePopulator);
+        }
         this.temporaryEventManager = new TemporaryEventManager(this);
         this.eventPublisher = new DomainEventPublisher();
         this.rampageManager = new RampageManager(eventPublisher);
@@ -189,9 +193,11 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getCommand("rampager").setTabCompleter(rampagerCommand);
         getCommand("custom-items").setExecutor(customItemCommand);
         getCommand("custom-items").setTabCompleter(customItemCommand);
-        StructureCommand structureCommand = new StructureCommand(this, structureService, lootGenerationService, structureGenerator.getLootTagKey());
+        StructureCommand structureCommand = new StructureCommand(structurePopulator, lootService);
         getCommand("structure").setExecutor(structureCommand);
         getCommand("structure").setTabCompleter(structureCommand);
+        getLogger().info("Structure system initialized: " +
+                structurePopulator.getStructureIds().size() + " structures");
     }
 
     private void startSchedulers() {
@@ -218,34 +224,34 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         }
     }
 
-    private void initializeStructures() {
-        // NBT loader (using Bukkit native API - no WorldEdit needed!)
-        File structuresDir = new File(getDataFolder(), "structures");
-        this.nbtStructureLoader = new NBTStructureLoader(this, structuresDir);
-
-        // Loot generation
-        lootGenerationService = new LootGenerationService(customItemService);
-
-        // Structure service
-        this.structureService = new StructureService(nbtStructureLoader);
-
-        // Load structures from config
-        StructureConfigLoader configLoader = new StructureConfigLoader(this);
-        Map<String, Structure> structures = configLoader.loadStructures();
-        structureService.registerAll(structures);
-
-        // Register world populator
-        this.structureGenerator = new StructureGenerator(
-                this,
-                structureService,
-                lootGenerationService
-        );
-
-        for (World world : Bukkit.getWorlds()) {
-            world.getPopulators().add(structureGenerator);
-        }
-
-        pluginLogger.info("Structure system initialized:");
-        pluginLogger.info("  Total structures: " + structures.size());
-    }
+//    private void initializeStructures() {
+//        // NBT loader (using Bukkit native API - no WorldEdit needed!)
+//        File structuresDir = new File(getDataFolder(), "structures");
+//        this.nbtStructureLoader = new NBTStructureLoader(this, structuresDir);
+//
+//        // Loot generation
+//        lootGenerationService = new LootGenerationService(customItemService);
+//
+//        // Structure service
+//        this.structureService = new StructureService(nbtStructureLoader);
+//
+//        // Load structures from config
+//        StructureConfigLoader configLoader = new StructureConfigLoader(this);
+//        Map<String, Structure> structures = configLoader.loadStructures();
+//        structureService.registerAll(structures);
+//
+//        // Register world populator
+//        this.structureGenerator = new StructureGenerator(
+//                this,
+//                structureService,
+//                lootGenerationService
+//        );
+//
+//        for (World world : Bukkit.getWorlds()) {
+//            world.getPopulators().add(structureGenerator);
+//        }
+//
+//        pluginLogger.info("Structure system initialized:");
+//        pluginLogger.info("  Total structures: " + structures.size());
+//    }
 }
