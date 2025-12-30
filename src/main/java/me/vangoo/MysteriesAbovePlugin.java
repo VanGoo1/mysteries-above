@@ -97,14 +97,6 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     private void initializeManagers() {
         NBTBuilder.setPlugin(this);
         initializeCustomItems();
-        configLoader = new NBTStructureConfigLoader(this);
-        lootService = new LootGenerationService(this, customItemService);
-        structurePopulator = new StructurePopulator(this, configLoader, lootService);
-        for (World world : Bukkit.getWorlds()) {
-            world.getPopulators().add(structurePopulator);
-        }
-        getLogger().info("Structure system initialized: " +
-                structurePopulator.getStructureIds().size() + " structures");
         this.temporaryEventManager = new TemporaryEventManager(this);
         this.eventPublisher = new DomainEventPublisher();
         this.rampageManager = new RampageManager(eventPublisher);
@@ -148,10 +140,17 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
         this.potionItemFactory = new PotionItemFactory();
         this.potionManager = new PotionManager(pathwayManager, potionItemFactory, customItemService);
-
+        initializeRecipeSystem();
+        configLoader = new NBTStructureConfigLoader(this);
+        lootService = new LootGenerationService(this, customItemService, potionManager, recipeBookFactory);
+        structurePopulator = new StructurePopulator(this, configLoader, lootService);
+        for (World world : Bukkit.getWorlds()) {
+            world.getPopulators().add(structurePopulator);
+        }
+        getLogger().info("Structure system initialized: " +
+                structurePopulator.getStructureIds().size() + " structures");
         this.masteryRegenerationScheduler = new MasteryRegenerationScheduler(this, beyonderService);
         this.beyonderSleepListener = new BeyonderSleepListener(beyonderService);
-        initializeRecipeSystem();
     }
 
     private void registerEvents() {

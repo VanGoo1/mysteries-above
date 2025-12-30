@@ -119,28 +119,49 @@ public class NBTStructureConfigLoader {
                 continue;
             }
 
-            // Читаємо chest_tag - це тег, який буде на сундуку
             String chestTag = tableSection.getString("chest_tag");
             if (chestTag == null || chestTag.isEmpty()) {
                 plugin.getLogger().warning("Missing 'chest_tag' for loot table '" + tableKey + "' in structure: " + structureId);
                 continue;
             }
 
-            // Парсимо предмети
             List<LootItem> items = parseLootItems(tableSection.getConfigurationSection("items"), structureId, tableKey);
-
             if (items.isEmpty()) {
                 plugin.getLogger().warning("Loot table '" + tableKey + "' in structure '" + structureId + "' has no valid items");
                 continue;
             }
 
-            // Зберігаємо loot table за chest_tag
-            lootTables.put(chestTag, new LootTableData(items));
-            plugin.getLogger().info("Loaded loot table '" + tableKey + "' with tag '" + chestTag + "' (" + items.size() + " items)");
+            // Read min/max items — підтримуємо різні стилі ключів
+            Integer minItems = null;
+            Integer maxItems = null;
+
+            if (tableSection.isInt("min_items")) minItems = tableSection.getInt("min_items");
+            else if (tableSection.isInt("minItems")) minItems = tableSection.getInt("minItems");
+            else if (tableSection.isInt("Min")) minItems = tableSection.getInt("Min");
+
+            if (tableSection.isInt("max_items")) maxItems = tableSection.getInt("max_items");
+            else if (tableSection.isInt("maxItems")) maxItems = tableSection.getInt("maxItems");
+            else if (tableSection.isInt("Max")) maxItems = tableSection.getInt("Max");
+
+            LootTableData lootTable;
+            if (minItems == null && maxItems == null) {
+                // Нічого не задано — використовуємо конструктор з дефолтами (3..8)
+                lootTable = new LootTableData(items);
+                plugin.getLogger().info("Loaded loot table '" + tableKey + "' (tag='" + chestTag + "') using default min/max (3..8). Items: " + items.size());
+            } else {
+                // Якщо одне значення відсутнє — підставляємо зрозумілі дефолти
+                int min = (minItems != null) ? Math.max(0, minItems) : 3;
+                int max = (maxItems != null) ? Math.max(min, maxItems) : Math.max(min, 8);
+                lootTable = new LootTableData(items, min, max);
+                plugin.getLogger().info("Loaded loot table '" + tableKey + "' (tag='" + chestTag + "') min=" + min + " max=" + max + " Items: " + items.size());
+            }
+
+            lootTables.put(chestTag, lootTable);
         }
 
         return lootTables;
     }
+
 
     private File saveDefaultStructureIfNotExists(String fileName) throws IOException {
         File structureFolder = new File(plugin.getDataFolder(), "structures");

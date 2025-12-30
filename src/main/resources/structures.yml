@@ -1,10 +1,20 @@
+# structures.yml
+# ----------------
+# Top-level map of named structures. Each structure defines:
+#  - file:   name of the .nbt file (inside plugin dataFolder/structures or resources)
+#  - spawn:  where and how often the structure can spawn
+#  - loot_tables: optional named loot tables mapped by chest_tag
+#
+# Notes:
+#  - Keys are case-sensitive when read by code; we support common variants for min/max (see parser notes).
+#  - Keep item keys (e.g. silver_clover) as simple identifiers for readability only.
 structures:
   fontaine:
     file: "fontaine.nbt"
     spawn:
-      biomes: [PLAINS]
-      chance: 0.01
-      min_distance: 500
+      biomes: [PLAINS]        # List of biomes where this structure can spawn (use Bukkit Biome names)
+      chance: 0.01            # Spawn probability (0.0 < chance <= 1.0). Small decimals for rare structures.
+      min_distance: 500       # Minimum distance (in blocks) between two spawned instances
 
   roflan:
     file: "roflan.nbt"
@@ -14,18 +24,19 @@ structures:
       min_distance: 500
     loot_tables:
       loot:
-        chest_tag: "loot"
+        chest_tag: "loot"     # chest_tag is written to the chest PDC and maps this loot table to that chest
+        # items: list of item entries for this table
         items:
           silver_clover:
-            item_id: "silver_four_leaf_clover"
-            weight: 10
-            amount_min: 1
-            amount_max: 3
+            item_id: "silver_four_leaf_clover"  # custom item id (resolved by CustomItemService)
+            weight: 10                          # relative chance weight for selecting this item
+            amount_min: 1                       # min units to place in a single ItemStack (clamped/split)
+            amount_max: 3                       # max units to place in a single ItemStack
           aqua_crystal:
             item_id: "stellar_aqua_crystal"
             weight: 20
-            amount_min: 5
-            amount_max: 10
+            amount_min: 1
+            amount_max: 2
 
   strh:
     file: "strh.nbt"
@@ -60,3 +71,55 @@ structures:
             weight: 20
             amount_min: 5
             amount_max: 10
+
+  statue:
+    file: "statue.nbt"
+    spawn:
+      biomes: [PLAINS, FOREST]
+      chance: 0.01
+      min_distance: 500
+    loot_tables:
+      mixed_loot:
+        chest_tag: "topchest"
+        items:
+          door_potion:
+            item_id: "potion:Door:9"   # special formats:
+              #  - potion:<pathway>:<sequence>  (e.g. potion:Visionary:9)
+              #  - recipe:<pathway>:<sequence>  (e.g. recipe:Error:9)
+            #  - custom or plain id resolves via CustomItemService
+            weight: 10
+            amount_min: 1
+            amount_max: 1
+          error_recipe:
+            item_id: "recipe:Error:9"
+            weight: 8
+            amount_min: 1
+            amount_max: 1
+          demon_throat:
+            item_id: "demon_throat_honeyguide"
+            weight: 15
+            amount_min: 1
+            amount_max: 2
+          gold_mint:
+            item_id: "gold_mint_leaves"
+            weight: 25
+            amount_min: 3
+            amount_max: 7
+      mixed_loot_two:
+        chest_tag: "underchest"
+        # Use min_items/max_items to control how many slots are filled from this loot table
+        # If omitted, the loader falls back to a default range (currently 3..8).
+        # Supported keys by the parser: min_items, minItems, Min (and same for max).
+        min_items: 1     # minimum number of slots to populate from this table (use 1 to force a single item)
+        max_items: 1     # maximum number of slots to populate (use same as min to guarantee fixed count)
+        items:
+          visionary_potion:
+            item_id: "potion:Visionary:9"
+            weight: 5
+            amount_min: 1
+            amount_max: 1
+          visionary_recipe:
+            item_id: "recipe:Visionary:9"
+            weight: 8
+            amount_min: 1
+            amount_max: 1
