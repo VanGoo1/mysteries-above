@@ -1,6 +1,5 @@
 package me.vangoo.application.services;
 
-import me.vangoo.MysteriesAbovePlugin;
 import me.vangoo.domain.PathwayPotions;
 import me.vangoo.domain.pathways.door.DoorPotions;
 import me.vangoo.domain.pathways.error.ErrorPotions;
@@ -14,22 +13,44 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Application Service: Manages pathway potions
+ * Updated to support custom items in recipes
+ */
 public class PotionManager {
     private final List<PathwayPotions> potions;
     private final PathwayManager pathwayManager;
     private final PotionItemFactory potionItemFactory;
 
-    public PotionManager(PathwayManager pathwayManager, PotionItemFactory potionItemFactory) {
+    public PotionManager(
+            PathwayManager pathwayManager,
+            PotionItemFactory potionItemFactory,
+            CustomItemService customItemService) {
         this.pathwayManager = pathwayManager;
         this.potionItemFactory = potionItemFactory;
         this.potions = new ArrayList<>();
-        initializePotions();
+        initializePotions(customItemService);
     }
 
-    private void initializePotions() {
-        potions.add(new ErrorPotions(pathwayManager.getPathway("Error"), Color.fromRGB(26, 0, 181)));
-        potions.add(new VisionaryPotions(pathwayManager.getPathway("Visionary"), Color.fromRGB(128, 128, 128)));
-        potions.add(new DoorPotions(pathwayManager.getPathway("Door"), Color.fromRGB(0, 0, 128)));
+    private void initializePotions(CustomItemService customItemService) {
+        // Initialize pathway potions with custom item service
+        potions.add(new ErrorPotions(
+                pathwayManager.getPathway("Error"),
+                Color.fromRGB(26, 0, 181),
+                customItemService
+        ));
+
+        potions.add(new VisionaryPotions(
+                pathwayManager.getPathway("Visionary"),
+                Color.fromRGB(128, 128, 128),
+                customItemService
+        ));
+
+        potions.add(new DoorPotions(
+                pathwayManager.getPathway("Door"),
+                Color.fromRGB(0, 0, 128),
+                customItemService
+        ));
     }
 
     public Optional<PathwayPotions> getPotionsPathway(String pathwayName) {
@@ -44,7 +65,6 @@ public class PotionManager {
     public ItemStack createPotionItem(String pathwayName, Sequence sequence) {
         PathwayPotions pathwayPotions = getPotionsPathway(pathwayName)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown pathway: " + pathwayName));
-
 
         return potionItemFactory.createSequencePotion(pathwayPotions, sequence);
     }
@@ -89,5 +109,4 @@ public class PotionManager {
     public List<PathwayPotions> getPotions() {
         return List.copyOf(potions);
     }
-
 }

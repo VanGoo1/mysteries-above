@@ -22,3 +22,6 @@ commands:
   structure:
     description: Generate structures with custom loot
     usage: /structure <spawn|list> ...
+  recipe:
+    description: Manage recipe books and unlocks
+    usage: /recipe <give|list> ...

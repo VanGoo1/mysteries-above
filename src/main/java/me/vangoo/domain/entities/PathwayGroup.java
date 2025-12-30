@@ -1,9 +1,9 @@
 package me.vangoo.domain.entities;
 
 public enum PathwayGroup {
-    LordOfMysteries("Lord of Mysteries"),
-    DemonOfKnowledge("Demon of Knowledge"),
-    GodAlmighty("God Almighty");
+    LordOfMysteries("Володар Таємниць"),
+    DemonOfKnowledge("Демон Знання"),
+    GodAlmighty("Бог Всемогутній");
 
     private final String displayName;
 

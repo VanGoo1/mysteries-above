@@ -1,5 +1,6 @@
 package me.vangoo.application.services;
 
+import me.vangoo.domain.IItemResolver;
 import me.vangoo.domain.valueobjects.CustomItem;
 import me.vangoo.infrastructure.items.CustomItemRegistry;
 import org.bukkit.inventory.ItemStack;
@@ -11,7 +12,7 @@ import java.util.Optional;
 /**
  * Application Service: Manages custom items
  */
-public class CustomItemService {
+public class CustomItemService implements IItemResolver {
     private final CustomItemRegistry registry;
 
     public CustomItemService(CustomItemRegistry registry) {

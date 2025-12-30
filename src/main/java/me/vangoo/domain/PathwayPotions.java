@@ -16,7 +16,7 @@ public abstract class PathwayPotions {
     private final ChatColor nameColor;
     private final List<String> description;
 
-    public PathwayPotions(Pathway pathway, Color potionColor, ChatColor nameColor, List<String> description) {
+    public PathwayPotions(Pathway pathway, Color potionColor, ChatColor nameColor, List<String> description, IItemResolver itemResolver) {
         this.potionColor = potionColor;
         this.pathway = pathway;
         this.nameColor = nameColor;
@@ -26,6 +26,10 @@ public abstract class PathwayPotions {
 
     protected void addIngredientsRecipe(int sequence, ItemStack... ingredients) {
         ingredientsPerSequence.put(sequence, ingredients);
+    }
+
+    public ItemStack[] getIngredients(int sequence) {
+        return ingredientsPerSequence.get(sequence);
     }
 
     public Pathway getPathway() {

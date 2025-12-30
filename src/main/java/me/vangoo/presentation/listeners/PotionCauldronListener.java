@@ -182,7 +182,6 @@ public class PotionCauldronListener implements Listener {
 
         // Message to player
         player.sendMessage("§d✦ §5Алхімічний верстак активовано!");
-        player.sendMessage("§8Кидайте інгредієнти у котел для створення зілль");
 
         // Start continuous particle effects
         startContinuousEffects(cauldron);
