@@ -52,7 +52,6 @@ public class DangerSense extends ToggleablePassiveAbility {
         observationProgress.put(casterId, new ConcurrentHashMap<>());
         targetCooldowns.putIfAbsent(casterId, new ConcurrentHashMap<>());
 
-        context.sendMessageToCaster(ChatColor.GREEN + "⭐ Відчуття небезпеки активоване.");
         context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 1.5f);
     }
 
@@ -62,7 +61,6 @@ public class DangerSense extends ToggleablePassiveAbility {
         observationProgress.remove(casterId);
         // Кулдауни зазвичай краще залишати до рестарту або очищувати окремо,
         // щоб не аб'юзити вимкненням/увімкненням.
-        context.sendMessageToCaster(ChatColor.YELLOW + "⭐ Відчуття небезпеки вимкнене.");
         context.playSoundToCaster(Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 0.5f);
     }
 

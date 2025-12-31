@@ -104,7 +104,6 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         this.cooldownManager = new CooldownManager();
         this.rampageScheduler = new RampageScheduler(this, rampageManager);
         this.abilityItemFactory = new AbilityItemFactory();
-        this.abilityMenu = new AbilityMenu(this, abilityItemFactory);
 
         this.pathwayManager = new PathwayManager();
 
@@ -141,6 +140,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         this.potionItemFactory = new PotionItemFactory();
         this.potionManager = new PotionManager(pathwayManager, potionItemFactory, customItemService);
         initializeRecipeSystem();
+        this.abilityMenu = new AbilityMenu(this, abilityItemFactory, recipeUnlockService, potionManager, abilityExecutor);
         configLoader = new NBTStructureConfigLoader(this);
         lootService = new LootGenerationService(this, customItemService, potionManager, recipeBookFactory);
         structurePopulator = new StructurePopulator(this, configLoader, lootService);
