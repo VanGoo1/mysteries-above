@@ -5,6 +5,7 @@ import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.ChatColor;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -19,24 +20,8 @@ public class IntentReader extends ActiveAbility {
 
     private static final int DURATION_SECONDS = 20;
     private static final int RADIUS = 15;
-    private static final int SPIRITUALITY_COST = 70;
+    private static final int COST = 70;
     private static final int COOLDOWN = 30;
-
-    // Enum для визначення стану
-    private enum IntentType {
-        AGGRESSIVE(ChatColor.RED, Particle.CRIMSON_SPORE),         // Червоний
-        OBSERVING(ChatColor.BLUE, Particle.SOUL_FIRE_FLAME),  // Синій
-        FLEEING(ChatColor.YELLOW, Particle.WAX_ON),           // Жовтий
-        NEUTRAL(ChatColor.WHITE, Particle.END_ROD);           // Білий
-
-        final ChatColor chatColor;
-        final Particle particle;
-
-        IntentType(ChatColor chatColor, Particle particle) {
-            this.chatColor = chatColor;
-            this.particle = particle;
-        }
-    }
 
     @Override
     public String getName() {
@@ -51,7 +36,7 @@ public class IntentReader extends ActiveAbility {
 
     @Override
     public int getSpiritualityCost() {
-        return SPIRITUALITY_COST;
+        return COST;
     }
 
     @Override
@@ -64,10 +49,8 @@ public class IntentReader extends ActiveAbility {
         context.sendMessageToCaster(ChatColor.AQUA + "👁 Ви бачите справжні наміри істот (" + DURATION_SECONDS + "с)...");
         context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 1.5f);
 
-        // Зберігаємо попередній стан, щоб писати в чат тільки про зміни
-        final Map<UUID, IntentType> lastIntents = new HashMap<>();
+        final Map<UUID, IntentState> lastIntents = new HashMap<>();
 
-        // Запускаємо цикл перевірки (кожні 0.5 сек / 10 тіків)
         context.scheduleRepeating(new Runnable() {
             int ticksPassed = 0;
             final int maxTicks = DURATION_SECONDS * 20;
@@ -82,97 +65,120 @@ public class IntentReader extends ActiveAbility {
                 for (LivingEntity entity : nearby) {
                     if (entity.getUniqueId().equals(context.getCasterId())) continue;
 
-                    // 1. Аналіз наміру
-                    IntentType currentIntent = analyzeIntent(entity, context.getCaster());
-                    IntentType previousIntent = lastIntents.getOrDefault(entity.getUniqueId(), IntentType.NEUTRAL);
+                    IntentState currentIntent = analyzeIntent(entity, context);
+                    IntentState previousIntent = lastIntents.getOrDefault(entity.getUniqueId(), IntentState.NEUTRAL);
 
-                    // 2. Візуалізація (Партикли)
-                    playIntentParticles(context, entity, currentIntent);
+                    visualizeIntent(context, entity, currentIntent);
 
-                    // 3. Сповіщення в чат при зміні на критичний стан
                     if (currentIntent != previousIntent) {
-                        if (currentIntent == IntentType.AGGRESSIVE) {
-                            context.sendMessageToCaster(ChatColor.RED + "⚠ " + entity.getName() + " готується до атаки!");
-                            context.playSoundToCaster(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 0.5f);
-                        } else if (currentIntent == IntentType.FLEEING && previousIntent == IntentType.AGGRESSIVE) {
-                            context.sendMessageToCaster(ChatColor.YELLOW + "⬇ " + entity.getName() + " відступає.");
-                        }
+                        notifyIntentChange(context, entity, currentIntent, previousIntent);
                     }
 
                     lastIntents.put(entity.getUniqueId(), currentIntent);
                 }
 
-                // Очищення кешу для тих, хто зник
-                lastIntents.keySet().removeIf(uuid -> nearby.stream().noneMatch(e -> e.getUniqueId().equals(uuid)));
+                lastIntents.keySet().removeIf(uuid ->
+                        nearby.stream().noneMatch(e -> e.getUniqueId().equals(uuid))
+                );
             }
         }, 0, 10);
 
         return AbilityResult.success();
     }
 
-    // --- ЛОГІКА ВИЗНАЧЕННЯ НАМІРІВ ---
-
-    private IntentType analyzeIntent(LivingEntity suspect, Player caster) {
-        // Вектор від цілі до кастера
+    private IntentState analyzeIntent(LivingEntity suspect, IAbilityContext context) {
+        Player caster = context.getCaster();
         Vector toCaster = caster.getLocation().toVector().subtract(suspect.getLocation().toVector());
         double distance = toCaster.length();
         toCaster.normalize();
 
-        // Куди дивиться ціль
         Vector direction = suspect.getEyeLocation().getDirection();
         double dotProduct = direction.dot(toCaster);
-        // dotProduct: 1.0 = дивиться прямо на кастера, -1.0 = дивиться спиною до кастера
 
-        // --- 1. ПЕРЕВІРКА НА АГРЕСІЮ (ЧЕРВОНИЙ) ---
+        // АГРЕСІЯ
         if (suspect instanceof Mob mob) {
             LivingEntity target = mob.getTarget();
             if (target != null && target.getUniqueId().equals(caster.getUniqueId())) {
-                return IntentType.AGGRESSIVE;
+                return IntentState.AGGRESSIVE;
             }
         }
         if (suspect instanceof Player p) {
-            // Якщо гравець дивиться на вас (кут < 30 град) І тримає зброю
             if (dotProduct > 0.85 && isHoldingWeapon(p)) {
-                return IntentType.AGGRESSIVE;
+                return IntentState.AGGRESSIVE;
             }
         }
 
-        // --- 2. ПЕРЕВІРКА НА ВТЕЧУ (ЖОВТИЙ) ---
-        // Якщо дивиться в протилежний бік (кут > 90 град) І (спринтує АБО здоров'я мало)
+        // ВТЕЧА
         boolean lowHealth = (suspect.getHealth() / suspect.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue()) < 0.3;
         if (dotProduct < -0.5) {
-            if (suspect instanceof Player p && p.isSprinting()) return IntentType.FLEEING;
-            if (lowHealth) return IntentType.FLEEING;
+            if (suspect instanceof Player p && p.isSprinting()) return IntentState.FLEEING;
+            if (lowHealth) return IntentState.FLEEING;
         }
 
-        // --- 3. ПЕРЕВІРКА НА СПОСТЕРЕЖЕННЯ (СИНІЙ) ---
-        // Якщо просто дивиться на вас, але не атакує і не тікає
+        // СПОСТЕРЕЖЕННЯ
         if (dotProduct > 0.7) {
-            return IntentType.OBSERVING;
+            return IntentState.OBSERVING;
         }
 
-        // --- 4. НЕЙТРАЛЬНИЙ (БІЛИЙ) ---
-        return IntentType.NEUTRAL;
+        return IntentState.NEUTRAL;
     }
 
-    private void playIntentParticles(IAbilityContext context, LivingEntity target, IntentType intent) {
-        Location headLoc = target.getEyeLocation().add(0, 0.5, 0);
+    private void visualizeIntent(IAbilityContext context, LivingEntity entity, IntentState intent) {
+        Location headLoc = entity.getEyeLocation().add(0, 0.5, 0);
+        Location bodyLoc = entity.getLocation().add(0, 1.0, 0);
 
-        // Використовуємо різні типи партиклів для різних кольорів,
-        // оскільки IAbilityContext може не підтримувати RGB DustOptions напряму.
+        switch (intent) {
+            case AGGRESSIVE:
+                // Червона пульсуюча аура - використовуємоWorld API напряму
+                Particle.DustOptions redDust = new Particle.DustOptions(Color.fromRGB(220, 20, 20), 1.2f);
+                entity.getWorld().spawnParticle(Particle.DUST, headLoc, 8, 0.25, 0.25, 0.25, 0, redDust);
+                context.spawnParticle(Particle.CRIMSON_SPORE, headLoc, 3, 0.2, 0.2, 0.2);
+                break;
 
-        context.spawnParticle(
-                intent.particle,
-                headLoc,
-                5,      // Кількість
-                0.15,   // Кучність X
-                0.15,   // Кучність Y
-                0.15    // Кучність Z
-        );
+            case OBSERVING:
+                // Синя спокійна аура
+                Particle.DustOptions blueDust = new Particle.DustOptions(Color.fromRGB(50, 120, 255), 1.0f);
+                entity.getWorld().spawnParticle(Particle.DUST, headLoc, 6, 0.2, 0.2, 0.2, 0, blueDust);
+                context.spawnParticle(Particle.SOUL_FIRE_FLAME, headLoc, 2, 0.15, 0.15, 0.15);
+                break;
+
+            case FLEEING:
+                // Жовта тривожна аура
+                Particle.DustOptions yellowDust = new Particle.DustOptions(Color.fromRGB(255, 220, 50), 1.0f);
+                entity.getWorld().spawnParticle(Particle.DUST, headLoc, 6, 0.25, 0.25, 0.25, 0, yellowDust);
+                context.spawnParticle(Particle.WAX_ON, headLoc, 4, 0.2, 0.2, 0.2);
+                break;
+
+            case NEUTRAL:
+                // Біла ледь помітна аура
+                Particle.DustOptions whiteDust = new Particle.DustOptions(Color.fromRGB(240, 240, 240), 0.8f);
+                entity.getWorld().spawnParticle(Particle.DUST, headLoc, 4, 0.15, 0.15, 0.15, 0, whiteDust);
+                break;
+        }
+    }
+
+    private void notifyIntentChange(IAbilityContext context, LivingEntity entity,
+                                    IntentState current, IntentState previous) {
+        String entityName = entity instanceof Player ? entity.getName() : entity.getType().name();
+
+        if (current == IntentState.AGGRESSIVE) {
+            context.sendMessageToCaster(ChatColor.RED + "⚠ " + entityName + " готується до атаки!");
+            context.playSoundToCaster(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 0.5f);
+        } else if (current == IntentState.FLEEING && previous == IntentState.AGGRESSIVE) {
+            context.sendMessageToCaster(ChatColor.YELLOW + "⬇ " + entityName + " відступає.");
+        }
     }
 
     private boolean isHoldingWeapon(Player p) {
         String type = p.getInventory().getItemInMainHand().getType().name();
-        return type.contains("SWORD") || type.contains("AXE") || type.contains("BOW") || type.contains("TRIDENT");
+        return type.contains("SWORD") || type.contains("AXE") ||
+                type.contains("BOW") || type.contains("TRIDENT");
+    }
+
+    private enum IntentState {
+        AGGRESSIVE,
+        OBSERVING,
+        FLEEING,
+        NEUTRAL
     }
 }

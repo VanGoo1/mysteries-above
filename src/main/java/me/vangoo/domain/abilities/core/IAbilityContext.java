@@ -2,6 +2,7 @@ package me.vangoo.domain.abilities.core;
 
 
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.domain.valueobjects.AbilityIdentity;
 import org.bukkit.*;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LivingEntity;
@@ -298,4 +299,7 @@ public interface IAbilityContext {
     void hidePlayerFromTarget(Player target, Player playerToHide);
 
     void setHidden(Player player, boolean hidden);
+
+    boolean isAbilityActivated(UUID entityId, AbilityIdentity abilityIdentity);
+
 }
