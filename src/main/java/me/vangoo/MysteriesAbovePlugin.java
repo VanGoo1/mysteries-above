@@ -5,14 +5,16 @@ import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.application.services.*;
 import me.vangoo.application.services.RampageManager;
 import me.vangoo.domain.valueobjects.CustomItem;
-import me.vangoo.infrastructure.items.CustomItemConfigLoader;
-import me.vangoo.infrastructure.items.CustomItemFactory;
-import me.vangoo.infrastructure.items.CustomItemRegistry;
-import me.vangoo.infrastructure.items.PotionItemFactory;
+import me.vangoo.infrastructure.IRecipeUnlockRepository;
+import me.vangoo.infrastructure.JSONRecipeUnlockRepository;
+import me.vangoo.infrastructure.items.*;
 import me.vangoo.infrastructure.listeners.RampageEventListener;
 import me.vangoo.infrastructure.schedulers.MasteryRegenerationScheduler;
 import me.vangoo.infrastructure.schedulers.PassiveAbilityScheduler;
 import me.vangoo.infrastructure.schedulers.RampageScheduler;
+import me.vangoo.infrastructure.structures.LootGenerationService;
+import me.vangoo.infrastructure.structures.NBTStructureConfigLoader;
+import me.vangoo.infrastructure.structures.StructurePopulator;
 import me.vangoo.presentation.commands.*;
 import me.vangoo.infrastructure.IBeyonderRepository;
 import me.vangoo.infrastructure.JSONBeyonderRepository;
@@ -21,6 +23,8 @@ import me.vangoo.presentation.listeners.*;
 import me.vangoo.infrastructure.ui.AbilityMenu;
 import me.vangoo.infrastructure.ui.BossBarUtil;
 import me.vangoo.infrastructure.ui.NBTBuilder;
+import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -55,12 +59,20 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     CustomItemFactory customItemFactory;
     CustomItemRegistry customItemRegistry;
     CustomItemService customItemService;
+    NBTStructureConfigLoader configLoader;
+    LootGenerationService lootService;
+    StructurePopulator structurePopulator;
+    RecipeBookFactory recipeBookFactory;
+    IRecipeUnlockRepository recipeUnlockRepository;
+    RecipeUnlockService recipeUnlockService;
+    PotionCraftingService potionCraftingService;
 
     @Override
     public void onEnable() {
         this.pluginLogger = this.getLogger();
         glowingEntities = new GlowingEntities(this);
         initializeManagers();
+//        initializeStructures();
         registerEvents();
         registerCommands();
 
@@ -76,6 +88,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         glowingEntities.disable();
         beyonderStorage.saveAll();
         beyonderStorage.getAll().forEach(((uuid, beyonder) -> beyonder.cleanUpAbilities()));
+        if (recipeUnlockRepository != null) {
+            recipeUnlockRepository.saveAll();
+        }
         super.onDisable();
     }
 
@@ -89,7 +104,6 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         this.cooldownManager = new CooldownManager();
         this.rampageScheduler = new RampageScheduler(this, rampageManager);
         this.abilityItemFactory = new AbilityItemFactory();
-        this.abilityMenu = new AbilityMenu(this, abilityItemFactory);
 
         this.pathwayManager = new PathwayManager();
 
@@ -126,22 +140,19 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         );
 
         this.potionItemFactory = new PotionItemFactory();
-        this.potionManager = new PotionManager(pathwayManager, potionItemFactory);
-
+        this.potionManager = new PotionManager(pathwayManager, potionItemFactory, customItemService);
+        initializeRecipeSystem();
+        this.abilityMenu = new AbilityMenu(this, abilityItemFactory, recipeUnlockService, potionManager, abilityExecutor);
+        configLoader = new NBTStructureConfigLoader(this);
+        lootService = new LootGenerationService(this, customItemService, potionManager, recipeBookFactory);
+        structurePopulator = new StructurePopulator(this, configLoader, lootService);
+        for (World world : Bukkit.getWorlds()) {
+            world.getPopulators().add(structurePopulator);
+        }
+        getLogger().info("Structure system initialized: " +
+                structurePopulator.getStructureIds().size() + " structures");
         this.masteryRegenerationScheduler = new MasteryRegenerationScheduler(this, beyonderService);
         this.beyonderSleepListener = new BeyonderSleepListener(beyonderService);
-    }
-
-    private void initializeCustomItems() {
-        this.customItemFactory = new CustomItemFactory();
-        this.customItemRegistry = new CustomItemRegistry(customItemFactory);
-        CustomItemConfigLoader configLoader = new CustomItemConfigLoader(this);
-        Map<String, CustomItem> items = configLoader.loadItems();
-        customItemRegistry.registerAll(items);
-        this.customItemService = new CustomItemService(customItemRegistry);
-        Map<String, Object> stats = customItemService.getStatistics();
-        pluginLogger.info("Custom items system initialized:");
-        pluginLogger.info("  Total items: " + stats.get("totalItems"));
     }
 
     private void registerEvents() {
@@ -157,20 +168,32 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         PassiveAbilityLifecycleListener passiveAbilityLifecycleListener =
                 new PassiveAbilityLifecycleListener(this.passiveAbilityScheduler);
 
+        RecipeBookInteractionListener recipeBookListener =
+                new RecipeBookInteractionListener(recipeBookFactory, recipeUnlockService);
+
+        PotionCraftingListener potionCraftingListener =
+                new PotionCraftingListener(this, potionCraftingService);
+
         getServer().getPluginManager().registerEvents(abilityMenuListener, this);
         getServer().getPluginManager().registerEvents(beyonderPlayerListener, this);
         getServer().getPluginManager().registerEvents(pathwayPotionListener, this);
         getServer().getPluginManager().registerEvents(passiveAbilityLifecycleListener, this);
         getServer().getPluginManager().registerEvents(beyonderSleepListener, this);
         getServer().getPluginManager().registerEvents(new PotionCauldronListener(this), this);
+        getServer().getPluginManager().registerEvents(recipeBookListener, this);
+        getServer().getPluginManager().registerEvents(potionCraftingListener, this);
     }
-
 
     private void registerCommands() {
         PathwayCommand pathwayCommand = new PathwayCommand(beyonderService, pathwayManager, abilityMenu, abilityItemFactory);
         SequencePotionCommand sequencePotionCommand = new SequencePotionCommand(potionManager);
         RampagerCommand rampagerCommand = new RampagerCommand(beyonderService);
         CustomItemCommand customItemCommand = new CustomItemCommand(customItemService);
+        RecipeBookCommand recipeBookCommand = new RecipeBookCommand(
+                recipeBookFactory,
+                potionManager,
+                recipeUnlockService
+        );
         getCommand("pathway").setExecutor(pathwayCommand);
         getCommand("pathway").setTabCompleter(pathwayCommand);
         getCommand("potion").setExecutor(sequencePotionCommand);
@@ -180,6 +203,11 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getCommand("rampager").setTabCompleter(rampagerCommand);
         getCommand("custom-items").setExecutor(customItemCommand);
         getCommand("custom-items").setTabCompleter(customItemCommand);
+        StructureCommand structureCommand = new StructureCommand(structurePopulator, lootService);
+        getCommand("structure").setExecutor(structureCommand);
+        getCommand("structure").setTabCompleter(structureCommand);
+        getCommand("recipe").setExecutor(recipeBookCommand);
+        getCommand("recipe").setTabCompleter(recipeBookCommand);
     }
 
     private void startSchedulers() {
@@ -204,5 +232,38 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         if (rampageScheduler != null) {
             rampageScheduler.stop();
         }
+    }
+
+    private void initializeCustomItems() {
+        this.customItemFactory = new CustomItemFactory();
+        this.customItemRegistry = new CustomItemRegistry(customItemFactory);
+        CustomItemConfigLoader configLoader = new CustomItemConfigLoader(this);
+        Map<String, CustomItem> items = configLoader.loadItems();
+        customItemRegistry.registerAll(items);
+        this.customItemService = new CustomItemService(customItemRegistry);
+        Map<String, Object> stats = customItemService.getStatistics();
+        pluginLogger.info("Custom items system initialized:");
+        pluginLogger.info("  Total items: " + stats.get("totalItems"));
+    }
+
+    private void initializeRecipeSystem() {
+        // Recipe book factory
+        this.recipeBookFactory = new RecipeBookFactory();
+
+        // Recipe unlock repository
+        String recipeUnlocksPath = this.getDataFolder() + File.separator + "recipe_unlocks.json";
+        this.recipeUnlockRepository = new JSONRecipeUnlockRepository(recipeUnlocksPath);
+
+        // Recipe unlock service
+        this.recipeUnlockService = new RecipeUnlockService(recipeUnlockRepository);
+
+        // Potion crafting service
+        this.potionCraftingService = new PotionCraftingService(
+                potionManager,
+                recipeUnlockService,
+                customItemService
+        );
+
+        pluginLogger.info("Recipe and crafting system initialized");
     }
 }

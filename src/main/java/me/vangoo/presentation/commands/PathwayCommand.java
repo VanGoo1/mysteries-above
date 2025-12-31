@@ -68,7 +68,7 @@ public class PathwayCommand implements CommandExecutor, TabCompleter {
                 int sequence = Integer.parseInt(args[3]);
                 Beyonder beyonder = new Beyonder(target.getUniqueId(), Sequence.of(sequence), path);
                 beyonderService.createBeyonder(beyonder);
-                abilityMenu.giveAbilityMenuItemToPlayer(target);
+                abilityMenu.giveAbilityMenuItemToPlayer(target, beyonder);
                 sender.sendMessage(PREFIX + ChatColor.GREEN + "Шлях для " + target.getName() + " встановлено.");
             }
             case "remove" -> {

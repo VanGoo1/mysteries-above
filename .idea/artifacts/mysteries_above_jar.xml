@@ -1,22 +1,22 @@
 <component name="ArtifactManager">
   <artifact type="jar" build-on-make="true" name="mysteries-above:jar">
-    <output-path>$USER_HOME$/Desktop/DEV SERVER/plugins</output-path>
+    <output-path>$USER_HOME$/Desktop/dev server/plugins</output-path>
     <root id="archive" name="mysteries-above.jar">
       <element id="module-output" name="mysteries-above" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/net/kyori/examination-string/1.3.0/examination-string-1.3.0.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/fr/skytasul/glowingentities/1.4.7/glowingentities-1.4.7.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/elmakers/mine/bukkit/EffectLib/10.2/EffectLib-10.2.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/dev/triumphteam/triumph-gui/3.1.7/triumph-gui-3.1.7.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/net/kyori/examination-api/1.3.0/examination-api-1.3.0.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/fr/skytasul/reflection-remapper/2.0.0/reflection-remapper-2.0.0.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/net/kyori/adventure-key/4.14.0/adventure-key-4.14.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/fr/skytasul/glowingentities/1.4.7/glowingentities-1.4.7.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/net/kyori/adventure-text-serializer-legacy/4.14.0/adventure-text-serializer-legacy-4.14.0.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/net/kyori/adventure-text-serializer-gson/4.14.0/adventure-text-serializer-gson-4.14.0.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/net/kyori/adventure-text-serializer-json/4.14.0/adventure-text-serializer-json-4.14.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/fr/skytasul/reflection-remapper/2.0.0/reflection-remapper-2.0.0.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/google/code/gson/gson/2.11.0/gson-2.11.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/net/kyori/examination-api/1.3.0/examination-api-1.3.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/elmakers/mine/bukkit/EffectLib/10.2/EffectLib-10.2.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/jetbrains/annotations/24.0.1/annotations-24.0.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/dev/triumphteam/triumph-gui/3.1.7/triumph-gui-3.1.7.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/net/kyori/adventure-text-serializer-json/4.14.0/adventure-text-serializer-json-4.14.0.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/google/errorprone/error_prone_annotations/2.28.0/error_prone_annotations-2.28.0.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/net/kyori/adventure-api/4.14.0/adventure-api-4.14.0.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/net/kyori/adventure-text-serializer-legacy/4.14.0/adventure-text-serializer-legacy-4.14.0.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/jetbrains/annotations/24.0.1/annotations-24.0.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/net/kyori/examination-string/1.3.0/examination-string-1.3.0.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>

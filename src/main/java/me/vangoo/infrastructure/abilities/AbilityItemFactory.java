@@ -8,6 +8,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.components.CustomModelDataComponent;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -33,9 +34,18 @@ public class AbilityItemFactory {
                 lore.add(ChatColor.GRAY + "Кулдаун: " + ChatColor.BLUE + ability.getCooldown(userSequence) + "c");
                 lore.add(ChatColor.GRAY + "Вартість: " + ChatColor.BLUE + ability.getSpiritualityCost());
             }
-//            additionalStatsLore.forEach((key, value) -> {
-//                lore.add(ChatColor.GRAY + key + ": " + ChatColor.BLUE + value);
-//            });
+
+            try {
+                CustomModelDataComponent comp = meta.getCustomModelDataComponent();
+                String modelKey = switch (ability.getType()) {
+                    case ACTIVE -> "active";
+                    case TOGGLEABLE_PASSIVE -> "passive";
+                    case PERMANENT_PASSIVE -> "permanent_passive";
+                };
+                comp.setStrings(java.util.List.of(modelKey));
+                meta.setCustomModelDataComponent(comp);
+            } catch (Throwable ignored) {
+            }
 
             meta.setLore(lore);
             item.setItemMeta(meta);

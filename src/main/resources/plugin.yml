@@ -19,3 +19,9 @@ commands:
   custom-items:
     description: custom item info
     usage: /custom-items give <player> <item_id> [quantity]
+  structure:
+    description: Generate structures with custom loot
+    usage: /structure <spawn|list> ...
+  recipe:
+    description: Manage recipe books and unlocks
+    usage: /recipe <give|list> ...
