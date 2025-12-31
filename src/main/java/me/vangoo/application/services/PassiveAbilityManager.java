@@ -2,6 +2,7 @@ package me.vangoo.application.services;
 
 import me.vangoo.domain.abilities.core.*;
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.domain.valueobjects.AbilityIdentity;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,7 +18,7 @@ import java.util.stream.Collectors;
  */
 public class PassiveAbilityManager {
     // Track enabled toggleable abilities per player {playerId -> Set<abilityName>}
-    private final Map<UUID, Set<String>> enabledToggleableAbilities;
+    private final Map<UUID, Set<AbilityIdentity>> enabledToggleableAbilities;
 
     public PassiveAbilityManager() {
         this.enabledToggleableAbilities = new ConcurrentHashMap<>();
@@ -50,19 +51,19 @@ public class PassiveAbilityManager {
      * @return true if now enabled, false if now disabled
      */
     public boolean toggleAbility(UUID playerId, ToggleablePassiveAbility ability, IAbilityContext context) {
-        Set<String> enabled = enabledToggleableAbilities.computeIfAbsent(playerId, k -> ConcurrentHashMap.newKeySet());
+        Set<AbilityIdentity> enabled = enabledToggleableAbilities.computeIfAbsent(playerId, k -> ConcurrentHashMap.newKeySet());
 
-        String abilityName = ability.getName();
-        boolean wasEnabled = enabled.contains(abilityName);
+        AbilityIdentity abilityIdentity = ability.getIdentity();
+        boolean wasEnabled = enabled.contains(abilityIdentity);
 
         if (wasEnabled) {
             // Disable
-            enabled.remove(abilityName);
+            enabled.remove(abilityIdentity);
             ability.onDisable(context);
             return false;
         } else {
             // Enable
-            enabled.add(abilityName);
+            enabled.add(abilityIdentity);
             ability.onEnable(context);
             return true;
         }
@@ -72,19 +73,19 @@ public class PassiveAbilityManager {
      * Check if a toggleable ability is enabled for a player
      *
      * @param playerId Player UUID
-     * @param abilityName Ability name
+     * @param abilityIdentity Ability name
      * @return true if enabled, false otherwise
      */
-    public boolean isToggleableEnabled(UUID playerId, String abilityName) {
-        Set<String> enabled = enabledToggleableAbilities.get(playerId);
-        return enabled != null && enabled.contains(abilityName);
+    public boolean isToggleableEnabled(UUID playerId, AbilityIdentity abilityIdentity) {
+        Set<AbilityIdentity> enabled = enabledToggleableAbilities.get(playerId);
+        return enabled != null && enabled.contains(abilityIdentity);
     }
 
     /**
      * Get all toggleable passives that should tick for this player
      */
     public List<ToggleablePassiveAbility> getActiveToggleables(Beyonder beyonder) {
-        Set<String> enabled = enabledToggleableAbilities.get(beyonder.getPlayerId());
+        Set<AbilityIdentity> enabled = enabledToggleableAbilities.get(beyonder.getPlayerId());
         if (enabled == null || enabled.isEmpty()) {
             return Collections.emptyList();
         }
@@ -92,7 +93,7 @@ public class PassiveAbilityManager {
         return beyonder.getAbilities().stream()
                 .filter(ability -> ability instanceof ToggleablePassiveAbility)
                 .map(ability -> (ToggleablePassiveAbility) ability)
-                .filter(ability -> enabled.contains(ability.getName()))
+                .filter(ability -> enabled.contains(ability.getIdentity()))
                 .collect(Collectors.toList());
     }
 
@@ -192,7 +193,7 @@ public class PassiveAbilityManager {
      */
     public void disableAllToggleables(Beyonder beyonder, IAbilityContext context) {
         UUID playerId = beyonder.getPlayerId();
-        Set<String> enabled = enabledToggleableAbilities.get(playerId);
+        Set<AbilityIdentity> enabled = enabledToggleableAbilities.get(playerId);
         if (enabled == null || enabled.isEmpty()) {
             return;
         }
@@ -201,7 +202,7 @@ public class PassiveAbilityManager {
         List<ToggleablePassiveAbility> toDisable = beyonder.getAbilities().stream()
                 .filter(ability -> ability instanceof ToggleablePassiveAbility)
                 .map(ability -> (ToggleablePassiveAbility) ability)
-                .filter(ability -> enabled.contains(ability.getName()))
+                .filter(ability -> enabled.contains(ability.getIdentity()))
                 .toList();
 
         // Call onDisable for each

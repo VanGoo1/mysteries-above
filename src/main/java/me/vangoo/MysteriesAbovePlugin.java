@@ -116,9 +116,11 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         this.beyonderService = new BeyonderService(beyonderStorage, new BossBarUtil());
         this.lockManager = new AbilityLockManager();
         this.effectManager = new EffectManager(this);
-        this.abilityContextFactory = new AbilityContextFactory(this, cooldownManager, beyonderService, lockManager, glowingEntities, effectManager, rampageManager, temporaryEventManager);
-
         this.passiveAbilityManager = new PassiveAbilityManager();
+
+        this.abilityContextFactory = new AbilityContextFactory(this, cooldownManager, beyonderService, lockManager,
+                glowingEntities, effectManager, rampageManager, temporaryEventManager,passiveAbilityManager);
+
         this.passiveAbilityScheduler = new PassiveAbilityScheduler(
                 this,
                 passiveAbilityManager,

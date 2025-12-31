@@ -8,6 +8,7 @@ import me.vangoo.MysteriesAbovePlugin;
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.infrastructure.ui.ChoiceMenuFactory;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -44,14 +45,16 @@ public class BukkitAbilityContext implements IAbilityContext {
     private final TemporaryEventManager eventManager;
     // Cache for performance (valid only during single ability execution)
     private final Map<UUID, Entity> entityCache = new HashMap<>();
+    private final PassiveAbilityManager passiveAbilityManager;
 
     public BukkitAbilityContext(
             Player caster,
             MysteriesAbovePlugin plugin,
             CooldownManager cooldownManager,
             BeyonderService beyonderService,
-            AbilityLockManager lockManager, GlowingEntities glowingEntities, EffectManager effectManager, RampageManager rampageManager, TemporaryEventManager eventManager
-    ) {
+            AbilityLockManager lockManager, GlowingEntities glowingEntities, EffectManager effectManager,
+            RampageManager rampageManager, TemporaryEventManager eventManager, PassiveAbilityManager passiveAbilityManager
+            ) {
         this.caster = caster;
         this.world = caster.getWorld();
         this.plugin = plugin;
@@ -63,6 +66,7 @@ public class BukkitAbilityContext implements IAbilityContext {
         this.LOGGER = plugin.getLogger();
         this.rampageManager = rampageManager;
         this.eventManager = eventManager;
+        this.passiveAbilityManager = passiveAbilityManager;
     }
 
     // ==========================================
@@ -910,6 +914,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     ) {
         eventManager.subscribe(getCasterId(), eventClass, filter, handler, durationTicks);
     }
+
     @Override
     public void setHidden(Player player, boolean hidden) {
         if (hidden) {
@@ -936,4 +941,10 @@ public class BukkitAbilityContext implements IAbilityContext {
     public void showPlayerToTarget(Player target, Player playerToShow) {
         target.showPlayer(plugin, playerToShow);
     }
+
+    @Override
+    public boolean isAbilityActivated(UUID entityId, AbilityIdentity abilityIdentity) {
+        return passiveAbilityManager.isToggleableEnabled(entityId, abilityIdentity);
+    }
+
 }

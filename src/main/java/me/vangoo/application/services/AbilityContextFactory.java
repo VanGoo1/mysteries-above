@@ -18,6 +18,7 @@ public class AbilityContextFactory {
     private final EffectManager effectManager;
     private final RampageManager rampageManager;
     private final TemporaryEventManager temporaryEventManager;
+    private final PassiveAbilityManager passiveAbilityManager;
 
     public AbilityContextFactory(
             MysteriesAbovePlugin plugin,
@@ -27,7 +28,7 @@ public class AbilityContextFactory {
             GlowingEntities glowingEntities,
             EffectManager effectManager,
             RampageManager rampageManager,
-            TemporaryEventManager temporaryEventManager
+            TemporaryEventManager temporaryEventManager, PassiveAbilityManager passiveAbilityManager
     ) {
         this.plugin = Objects.requireNonNull(plugin, "Plugin cannot be null");
         this.cooldownManager = Objects.requireNonNull(cooldownManager, "CooldownManager cannot be null");
@@ -37,6 +38,7 @@ public class AbilityContextFactory {
         this.effectManager = Objects.requireNonNull(effectManager, "EffectManager cannot be null");
         this.rampageManager = rampageManager;
         this.temporaryEventManager = temporaryEventManager;
+        this.passiveAbilityManager = passiveAbilityManager;
     }
 
 
@@ -50,7 +52,9 @@ public class AbilityContextFactory {
                 glowingEntities,
                 effectManager,
                 rampageManager,
-                temporaryEventManager
+                temporaryEventManager,
+                passiveAbilityManager
+                
         );
     }
 }
