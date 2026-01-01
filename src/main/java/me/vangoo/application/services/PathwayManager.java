@@ -21,7 +21,7 @@ public class PathwayManager {
 
     private void initializePathways() {
         pathways.put("Error", new Error(PathwayGroup.LordOfMysteries,
-                List.of("Error (Bug)", "Worm of Time", "Fate Stealer", "Mentor of Deceit", "Parasite", "Dream Stealer",
+                List.of("Error", "Worm of Time", "Fate Stealer", "Mentor of Deceit", "Parasite", "Dream Stealer",
                         "Prometheus", "Cryptologist", "Swindler", "Marauder")));
         pathways.put("Visionary", new Visionary(PathwayGroup.GodAlmighty,
                 List.of("Visionary", "Author", "Discerner", "Dream Weaver", "Manipulator", "Dreamwalker", "Hypnotist",

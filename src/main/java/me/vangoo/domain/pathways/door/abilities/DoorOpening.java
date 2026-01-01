@@ -9,17 +9,29 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.util.Vector;
 import org.bukkit.Location;
+import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 public class DoorOpening extends ActiveAbility {
 
-    private static final int MAX_THICKNESS = 10; // Максимальна товщина стіни
-    private static final int ACTIVATION_RANGE = 2; // Як близько треба стояти до стіни
+    private static final int MAX_THICKNESS = 10;
+    private static final int ACTIVATION_RANGE = 2;
     private static final int COST = 50;
     private static final int COOLDOWN = 15;
+
+    // Для колективного порталу
+    private static final int PORTAL_DURATION_TICKS = 100; // 5 секунд
+    private static final double PORTAL_ACTIVATION_RADIUS = 3;
+
+    // Зберігаємо активні портали: entry location -> exit location
+    private static final Set<PortalData> activePortals = new HashSet<>();
 
     @Override
     public String getName() {
@@ -28,8 +40,14 @@ public class DoorOpening extends ActiveAbility {
 
     @Override
     public String getDescription(Sequence userSequence) {
-        return "Створіть примарні двері на перешкоді перед вами та пройдіть крізь стіну товщиною до "
-                + MAX_THICKNESS + " блоків.";
+        if (userSequence.level() <= 7) {
+            return "Створіть примарні двері на перешкоді перед вами та пройдіть крізь стіну товщиною до "
+                    + MAX_THICKNESS + " блоків. З 7 послідовності портал стає доступним для всіх гравців поблизу.";
+        } else {
+            return "Створіть примарні двері на перешкоді перед вами. Портал залишається відкритим "
+                    + (PORTAL_DURATION_TICKS / 20) + " секунд і дозволяє будь-якому гравцю поблизу пройти крізь стіну товщиною до "
+                    + MAX_THICKNESS + " блоків.";
+        }
     }
 
     @Override
@@ -45,47 +63,100 @@ public class DoorOpening extends ActiveAbility {
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
         Location playerLoc = context.getCasterLocation();
-        Vector dir = playerLoc.getDirection().setY(0).normalize(); // ігноруємо вертикаль
+        Vector dir = playerLoc.getDirection().setY(0).normalize();
+        int sequenceLevel = context.getCasterBeyonder().getSequenceLevel();
 
         // 1) Знайти блок-стіну перед гравцем
         Block entry = findWallInFront(playerLoc, dir);
         if (entry == null) {
-            return AbilityResult.failure("Ви повинні стояти впритул до стіни.");
+            return AbilityResult.failure("Ви повинні стояти близько до стіни.");
         }
 
         // 2) Знайти безпечну локацію за стіною
         Location exit = findExitLocation(entry, dir);
         if (exit == null) {
-            // звук/повідомлення через контекст
             context.playSoundToCaster(Sound.BLOCK_CHEST_LOCKED, 1.0f, 0.5f);
             return AbilityResult.failure("Ця стіна занадто товста або за нею немає місця.");
         }
+
         Location entryCenter = entry.getLocation().add(0.5, 0, 0.5);
-        long seed = Objects.hash(entry.getX(), entry.getY(), entry.getZ(), 12345);
-        // 3) Візуальні/звукові ефекти (через методи контексту)
+        long seed = Objects.hash(entry.getX(), entry.getY(), entry.getZ(), System.currentTimeMillis());
+
+        // 3) Візуальні ефекти
         playPhantomDoorEffect(context, entryCenter, dir, seed);
-        playPhantomDoorEffect(context, exit.clone().add(0, 0, 0), dir, seed);
+        playPhantomDoorEffect(context, exit.clone(), dir, seed);
 
-        // 4) Невелика затримка — потім телепортуємо гравця і робимо фінальні ефекти
-        context.scheduleDelayed(() -> {
-            context.playSound(exit, Sound.BLOCK_IRON_DOOR_OPEN, 1.0f, 1.5f);
-            context.playSound(exit, Sound.BLOCK_IRON_DOOR_CLOSE, 1.0f, 1.5f);
-
-            context.teleport(context.getCasterId(), exit);
-
-            // слабкий партикл виходу
-            context.spawnParticle(Particle.FIREWORK, exit.clone().add(0, 1, 0), 10, 0.3, 0.5, 0.3);
-            // невеликий кубічний ефект для "примарної рами"
-        }, 2L); // 2 тіки для плавності
+        // 4) Перевірка послідовності для колективного використання
+        if (sequenceLevel <= 7) {
+            // Покращена версія - створюємо портал для всіх
+            createSharedPortal(context, entryCenter, exit, dir, seed);
+            context.sendMessageToCaster(ChatColor.AQUA + "Портал створено! Інші гравці можуть пройти через нього");
+        } else {
+            // Стара версія - тільки для кастера
+            context.scheduleDelayed(() -> {
+                context.playSound(exit, Sound.BLOCK_IRON_DOOR_OPEN, 1.0f, 1.5f);
+                context.playSound(exit, Sound.BLOCK_IRON_DOOR_CLOSE, 1.0f, 1.5f);
+                context.teleport(context.getCasterId(), exit);
+                context.spawnParticle(Particle.FIREWORK, exit.clone().add(0, 1, 0), 10, 0.3, 0.5, 0.3);
+            }, 2L);
+        }
 
         return AbilityResult.success();
     }
 
     /**
-     * Простий пошук першого твердого блоку в напрямку погляду в межах ACTIVATION_RANGE.
+     * Створює портал, доступний для всіх гравців поблизу
      */
+    private void createSharedPortal(IAbilityContext context, Location entry, Location exit, Vector direction, long seed) {
+        PortalData portal = new PortalData(entry, exit, direction);
+        activePortals.add(portal);
+
+        // Миттєво телепортуємо кастера
+        context.scheduleDelayed(() -> {
+            context.playSound(exit, Sound.BLOCK_IRON_DOOR_OPEN, 1.0f, 1.5f);
+            context.teleport(context.getCasterId(), exit);
+            context.spawnParticle(Particle.FIREWORK, exit.clone().add(0, 1, 0), 10, 0.3, 0.5, 0.3);
+        }, 2L);
+
+        // Моніторинг гравців поблизу порталу
+        BukkitTask monitorTask = context.scheduleRepeating(() -> {
+            List<Player> nearbyPlayers = context.getNearbyPlayers(PORTAL_ACTIVATION_RADIUS);
+
+            for (Player player : nearbyPlayers) {
+                // Перевіряємо чи гравець близько до входу порталу
+                if (player.getLocation().distance(entry) <= PORTAL_ACTIVATION_RADIUS) {
+                    // Перевіряємо чи гравець ще не був телепортований цим порталом
+                    if (!portal.hasTeleported(player.getUniqueId())) {
+                        // Телепортуємо гравця
+                        Location playerExit = exit.clone();
+                        playerExit.setYaw(player.getLocation().getYaw());
+                        playerExit.setPitch(player.getLocation().getPitch());
+
+                        player.teleport(playerExit);
+                        player.playSound(playerExit, Sound.BLOCK_IRON_DOOR_OPEN, 1.0f, 1.5f);
+                        player.spawnParticle(Particle.FIREWORK, playerExit.clone().add(0, 1, 0), 10, 0.3, 0.5, 0.3);
+                        player.sendMessage(ChatColor.AQUA + "Ви пройшли через примарні двері!");
+
+                        portal.markTeleported(player.getUniqueId());
+                    }
+                }
+            }
+        }, 0L, 5L); // Перевіряємо кожні 5 тіків
+
+        // Закриваємо портал після закінчення часу
+        context.scheduleDelayed(() -> {
+            activePortals.remove(portal);
+            monitorTask.cancel();
+
+            // Фінальні ефекти закриття
+            context.playSound(entry, Sound.BLOCK_IRON_DOOR_CLOSE, 1.0f, 0.8f);
+            context.playSound(exit, Sound.BLOCK_IRON_DOOR_CLOSE, 1.0f, 0.8f);
+            context.spawnParticle(Particle.SMOKE, entry, 20, 0.5, 1.0, 0.5);
+            context.spawnParticle(Particle.SMOKE, exit, 20, 0.5, 1.0, 0.5);
+        }, PORTAL_DURATION_TICKS);
+    }
+
     private Block findWallInFront(Location start, Vector dir) {
-        // починаємо з 1 блока перед гравцем
         for (int i = 1; i <= ACTIVATION_RANGE; i++) {
             Location probe = start.clone().add(dir.clone().multiply(i));
             Block b = probe.getBlock();
@@ -94,10 +165,6 @@ public class DoorOpening extends ActiveAbility {
         return null;
     }
 
-    /**
-     * Просканувати крізь стіну (до MAX_THICKNESS) і знайти перший двоблоковий простір (ноги + голова).
-     * Повертає центр блока (y - рівень ніг) з напрямком гляду встановленим на те ж direction.
-     */
     private Location findExitLocation(Block entryBlock, Vector direction) {
         Location center = entryBlock.getLocation().add(0.5, 0, 0.5);
 
@@ -140,11 +207,9 @@ public class DoorOpening extends ActiveAbility {
         final double actualStepX = w / stepsX;
         final double actualStepY = height / stepsY;
 
-        // Попередні звуки
         context.playSoundToCaster(Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1.0f, 1.0f);
         context.playSoundToCaster(Sound.BLOCK_IRON_DOOR_OPEN, 1.0f, 0.9f);
 
-        // Підготовка позицій частинок сітки (для повторного використання)
         List<Location> particlePositions = new ArrayList<>();
         for (int layer = 0; layer < depthLayers; layer++) {
             double layerFrac = (depthLayers == 1) ? 0.5 : ((double) layer / (depthLayers - 1));
@@ -168,7 +233,6 @@ public class DoorOpening extends ActiveAbility {
             }
         }
 
-        // Повторюване завдання через контекст
         context.scheduleRepeating(new Runnable() {
             int ticksLeft = durationTicks;
 
@@ -176,7 +240,6 @@ public class DoorOpening extends ActiveAbility {
             public void run() {
                 if (ticksLeft-- <= 0) return;
 
-                // Рамка дверей
                 Location leftBottom = planeCenter.clone().add(right.clone().multiply(-halfWidth));
                 Location rightBottom = planeCenter.clone().add(right.clone().multiply(halfWidth));
                 Location leftTop = leftBottom.clone().add(0, height, 0);
@@ -187,7 +250,6 @@ public class DoorOpening extends ActiveAbility {
                 context.playLineEffect(leftTop, rightTop, Particle.END_ROD);
                 context.playLineEffect(leftBottom, rightBottom, Particle.END_ROD);
 
-                // Частинки сітки
                 World world = center.getWorld();
                 if (world == null) return;
 
@@ -207,5 +269,43 @@ public class DoorOpening extends ActiveAbility {
                 }
             }
         }, 0L, 1L);
+    }
+
+    /**
+     * Клас для зберігання даних активного порталу
+     */
+    private static class PortalData {
+        private final Location entry;
+        private final Location exit;
+        private final Vector direction;
+        private final Set<UUID> teleportedPlayers;
+
+        public PortalData(Location entry, Location exit, Vector direction) {
+            this.entry = entry;
+            this.exit = exit;
+            this.direction = direction;
+            this.teleportedPlayers = new HashSet<>();
+        }
+
+        public boolean hasTeleported(UUID playerId) {
+            return teleportedPlayers.contains(playerId);
+        }
+
+        public void markTeleported(UUID playerId) {
+            teleportedPlayers.add(playerId);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            PortalData that = (PortalData) o;
+            return Objects.equals(entry, that.entry);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(entry);
+        }
     }
 }

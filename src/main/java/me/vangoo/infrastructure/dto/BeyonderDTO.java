@@ -2,6 +2,8 @@ package me.vangoo.infrastructure.dto;
 
 import com.google.gson.annotations.Expose;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class BeyonderDTO {
@@ -23,8 +25,12 @@ public class BeyonderDTO {
     @Expose
     private int sanityLossScale;
 
+    @Expose
+    private List<String> offPathwayAbilities;
+
     // Default constructor for GSON
     public BeyonderDTO() {
+        this.offPathwayAbilities = new ArrayList<>();
     }
 
     public BeyonderDTO(
@@ -33,7 +39,8 @@ public class BeyonderDTO {
             int sequence,
             int mastery,
             int spirituality,
-            int sanityLossScale
+            int sanityLossScale,
+            List<String> offPathwayAbilities
     ) {
         this.playerId = playerId;
         this.pathwayName = pathwayName;
@@ -41,6 +48,7 @@ public class BeyonderDTO {
         this.mastery = mastery;
         this.spirituality = spirituality;
         this.sanityLossScale = sanityLossScale;
+        this.offPathwayAbilities = offPathwayAbilities != null ? offPathwayAbilities : new ArrayList<>();
     }
 
     // Getters and setters
@@ -90,5 +98,13 @@ public class BeyonderDTO {
 
     public void setSanityLossScale(int sanityLossScale) {
         this.sanityLossScale = sanityLossScale;
+    }
+
+    public List<String> getOffPathwayAbilities() {
+        return offPathwayAbilities;
+    }
+
+    public void setOffPathwayAbilities(List<String> offPathwayAbilities) {
+        this.offPathwayAbilities = offPathwayAbilities;
     }
 }

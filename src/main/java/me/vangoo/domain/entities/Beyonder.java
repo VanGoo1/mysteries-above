@@ -1,18 +1,11 @@
 package me.vangoo.domain.entities;
 
+import me.vangoo.domain.abilities.core.*;
 import me.vangoo.domain.services.AbilityTransformer;
 import me.vangoo.domain.services.MasteryProgressionCalculator;
-import me.vangoo.domain.valueobjects.SanityPenalty;
-import me.vangoo.domain.abilities.core.Ability;
-import me.vangoo.domain.abilities.core.AbilityResult;
-import me.vangoo.domain.abilities.core.AbilityType;
-import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.valueobjects.*;
 import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.services.SpiritualityCalculator;
-import me.vangoo.domain.valueobjects.Mastery;
-import me.vangoo.domain.valueobjects.SanityLoss;
-import me.vangoo.domain.valueobjects.Sequence;
-import me.vangoo.domain.valueobjects.Spirituality;
 
 import java.util.*;
 
@@ -27,6 +20,7 @@ public class Beyonder {
     private transient List<Ability> abilities;
     private transient SpiritualityCalculator spiritualityCalculator;
     private transient AbilityTransformer abilityTransformer;
+    private transient Set<AbilityIdentity> offPathwayActiveAbilities;
 
     public Beyonder(UUID playerId, Sequence sequence, Pathway pathway) {
         if (playerId == null) {
@@ -45,6 +39,7 @@ public class Beyonder {
         this.mastery = Mastery.zero();
         this.sanityLoss = SanityLoss.none();
         this.abilities = new ArrayList<>();
+        this.offPathwayActiveAbilities = new HashSet<>();
         this.spiritualityCalculator = new SpiritualityCalculator();
         this.abilityTransformer = new AbilityTransformer();
         this.random = new Random();
@@ -97,6 +92,9 @@ public class Beyonder {
         if (abilities == null || abilities.isEmpty()) {
             loadAbilities();
         }
+        if (offPathwayActiveAbilities == null || offPathwayActiveAbilities.isEmpty()) {
+            offPathwayActiveAbilities = new HashSet<>();
+        }
     }
 
     /**
@@ -108,15 +106,67 @@ public class Beyonder {
             Sequence sequence,
             Mastery mastery,
             int currentSpirituality,
-            SanityLoss sanityLoss) {
+            SanityLoss sanityLoss,
+            Set<AbilityIdentity> offPathwayAbilities) {
         Beyonder beyonder = new Beyonder(playerId, sequence, pathway);
         beyonder.mastery = mastery;
         beyonder.sanityLoss = sanityLoss;
+        beyonder.offPathwayActiveAbilities = offPathwayAbilities != null ? offPathwayAbilities : new HashSet<>();
         beyonder.updateMaximumSpirituality();
         beyonder.spirituality = Spirituality.of(
                 Math.min(currentSpirituality, beyonder.spirituality.maximum()),
                 beyonder.spirituality.maximum());
         return beyonder;
+    }
+
+    public boolean addOffPathwayAbility(Ability ability) {
+        if (ability == null) {
+            throw new IllegalArgumentException("Ability cannot be null");
+        }
+
+        AbilityIdentity identity = ability.getIdentity();
+
+        // Check if ability with this identity already exists
+        if (offPathwayActiveAbilities.contains(identity)) {
+            return false;
+        }
+
+        // Add to custom abilities set
+        offPathwayActiveAbilities.add(identity);
+
+        return true;
+    }
+
+    public boolean removeAbility(AbilityIdentity identity) {
+        if (identity == null) {
+            throw new IllegalArgumentException("AbilityIdentity cannot be null");
+        }
+
+        // Remove from off-pathway abilities
+        boolean removedFromCustom = offPathwayActiveAbilities.remove(identity);
+
+        // Remove from main abilities list
+        boolean removedFromActive = abilities.removeIf(
+                ability -> ability.getIdentity().equals(identity)
+        );
+
+        return removedFromCustom || removedFromActive;
+    }
+
+    /**
+     * Get all custom ability identities (for persistence)
+     * @return Set of custom ability IDs
+     */
+    public Set<AbilityIdentity> getOffPathwayActiveAbilities() {
+        return new HashSet<>(offPathwayActiveAbilities);
+    }
+
+    /**
+     * Clear all custom abilities
+     */
+    public void clearCustomAbilities() {
+        abilities.removeIf(ability -> offPathwayActiveAbilities.contains(ability.getIdentity()));
+        offPathwayActiveAbilities.clear();
     }
 
     public boolean canAdvance() {
