@@ -167,30 +167,23 @@ public class DivinationArts extends ActiveAbility {
 
     private boolean rollDivinationAgainstTarget(IAbilityContext ctx, UUID targetId) {
         // КРОК 1: Визначення статусу Anti-Divination
-        // Перевіряємо різні варіанти написання ID, щоб точно знайти здібність
         boolean active1 = ctx.isAbilityActivated(targetId, AbilityIdentity.of("Anti Divination"));
         boolean active2 = ctx.isAbilityActivated(targetId, AbilityIdentity.of("Anti-Divination"));
         boolean active3 = ctx.isAbilityActivated(targetId, AbilityIdentity.of("anti_divination"));
         boolean active4 = ctx.isAbilityActivated(targetId, AbilityIdentity.of("AntiDivination"));
 
         boolean isAntiToggledOn = active1 || active2 || active3 || active4;
-
-        // Отримуємо рівень цілі
         int targetSeq = ctx.getEntitySequenceLevel(targetId).orElse(9);
-
-        // Перевіряємо, чи дозволяє рівень мати цей захист (Seq 7 і нижче, тобто 7, 6... 0)
         boolean isLevelAppropriate = targetSeq <= ANTI_DIVINATION_UNLOCK_SEQUENCE;
-
-        // Фінальний статус: ЗАХИСТ АКТИВНИЙ ТІЛЬКИ ЯКЩО (УВІМКНЕНО + РІВЕНЬ ДОЗВОЛЯЄ)
         boolean hasResistance = isAntiToggledOn && isLevelAppropriate;
 
-        // ЛОГІКА 1: Якщо захист ВИМКНЕНО (або недоступний) -> 100% Успіху
+        // ЛОГІКА 1: Якщо захист ВИМКНЕНО → 100% Успіху
         if (!hasResistance) {
             ctx.sendMessageToCaster(ChatColor.GRAY + "Шанс успіху гадання: " + ChatColor.AQUA + "100%");
             return true;
         }
 
-        // ЛОГІКА 2: Якщо захист УВІМКНЕНО -> Розрахунок шансів
+        // ЛОГІКА 2: Якщо захист УВІМКНЕНО → Розрахунок шансів
         UUID casterId = ctx.getCasterId();
         int casterSeq = ctx.getEntitySequenceLevel(casterId).orElse(9);
 
@@ -199,30 +192,42 @@ public class DivinationArts extends ActiveAbility {
         double finalChance = baseChance;
 
         int diff = seqChance.getSequenceDifference();
-        boolean casterAdv = seqChance.isCasterAdvantaged();
+        boolean casterAdvantaged = seqChance.isCasterAdvantaged();
 
-        // Застосовуємо додаткові штрафи від Anti-Divination
-        if (casterAdv) {
-            // Кастер сильніший, але ціль пручається
-            double dynamic = 1.0 - 0.12 * diff;
-            finalChance = baseChance * Math.max(0.15, dynamic);
-        } else {
-            // Ціль сильніша + має захист.
+        // ===== ВИПРАВЛЕННЯ ПОЧИНАЄТЬСЯ ТУТ =====
+
+        // ВИПАДОК 1: Кастер СИЛЬНІШИЙ (нижча послідовність)
+        // Seq 0 проти Seq 5 — base = 100%, захист майже не працює
+        if (casterAdvantaged) {
+            // Різниця на користь кастера — захист має МІНІМАЛЬНИЙ вплив
+            // Формула: базовий шанс * (100% - малий штраф)
+            // Seq 0 vs Seq 5 (diff=5): 100% * (1.0 - 0.05*5) = 100% * 0.75 = 75% (приклад)
+            // Але це все одно занадто жорстко. Давайте зробимо ще м'якше:
+
+            double penalty = Math.min(0.2, diff * 0.03); // Максимум 20% штрафу
+            finalChance = baseChance * (1.0 - penalty);
+
+            // Для Seq 0 vs Seq 5: 100% * (1.0 - 0.15) = 85% мінімум
+            finalChance = Math.max(0.75, finalChance); // Ніколи не нижче 75% для сильнішого
+        }
+        // ВИПАДОК 2: Кастер СЛАБШИЙ або РІВНИЙ
+        else {
+            // Тут ціль сильніша + має захист — повна логіка опору
             double dynamic = 1.0 - 0.35 * diff;
             finalChance = baseChance * Math.max(0.05, dynamic);
-        }
 
-        if (seqChance.isLargeDifference()) {
-            finalChance = Math.min(finalChance, 0.5 * baseChance);
+            if (seqChance.isLargeDifference()) {
+                finalChance = Math.min(finalChance, 0.5 * baseChance);
+            }
         }
 
         finalChance = Math.max(0.0, Math.min(1.0, finalChance));
 
-        ctx.sendMessageToCaster(ChatColor.GRAY + "Шанс успіху гадання: " + ChatColor.AQUA + String.format("%.0f%%", finalChance * 100));
+        ctx.sendMessageToCaster(ChatColor.GRAY + "Шанс успіху гадання: " +
+                ChatColor.AQUA + String.format("%.0f%%", finalChance * 100));
 
         return chanceRng.nextDouble() < finalChance;
     }
-
     // ========== 1. КРИШТАЛЕВА КУЛЯ ==========
 
     private void performCrystalBallDivination(IAbilityContext ctx) {
