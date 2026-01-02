@@ -66,7 +66,7 @@ public class Telepathy extends ActiveAbility {
         }
 
         if (!context.hasItem(CATALYST, 1) || !context.hasItem(REAGENT, 1)) {
-            return AbilityResult.failure("Немає інгредієнтів (Свічка + Світлопил).");
+            return AbilityResult.failure("Немає інгредієнтів (Свічка + Світлопил + Ферментоване око).");
         }
 
         // ВИПРАВЛЕННЯ: витрачаємо обидва інгредієнти

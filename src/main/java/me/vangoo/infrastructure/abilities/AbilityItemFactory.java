@@ -67,7 +67,15 @@ public class AbilityItemFactory {
 
         String displayName = ChatColor.stripColor(meta.getDisplayName()).toLowerCase();
 
+        // Search in main abilities
         for (Ability ability : beyonder.getAbilities()) {
+            if (ability.getName().equalsIgnoreCase(displayName)) {
+                return ability;
+            }
+        }
+
+        // Search in off-pathway abilities
+        for (Ability ability : beyonder.getOffPathwayActiveAbilities()) {
             if (ability.getName().equalsIgnoreCase(displayName)) {
                 return ability;
             }

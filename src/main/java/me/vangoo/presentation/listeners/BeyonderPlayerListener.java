@@ -98,7 +98,31 @@ public class BeyonderPlayerListener implements Listener {
 
         event.setCancelled(true);
 
+        // Check if this is a one-time use ability BEFORE execution
+        boolean isOneTimeAbility = ability instanceof me.vangoo.domain.abilities.core.OneTimeUseAbility;
+        // Remember which hand had the ability item
+        boolean wasInMainHand = mainHandItem.hasItemMeta() &&
+                                abilityItemFactory.getAbilityFromItem(mainHandItem, beyonder) != null;
+        boolean wasInOffHand = !wasInMainHand && offHandItem.hasItemMeta() &&
+                              abilityItemFactory.getAbilityFromItem(offHandItem, beyonder) != null;
+
         AbilityResult result = abilityExecutor.execute(beyonder, ability);
+
+        // If it was a one-time ability and execution was successful, check if it's been removed
+        // (it removes itself when all uses are consumed)
+        if (isOneTimeAbility && result.isSuccess()) {
+            // Check if the ability still exists in the beyonder's abilities
+            boolean abilityStillExists = beyonder.getAbilityByName(ability.getName()).isPresent();
+
+            // Only remove item if the ability was removed (all uses consumed)
+            if (!abilityStillExists) {
+                if (wasInMainHand) {
+                    player.getInventory().setItemInMainHand(null);
+                } else if (wasInOffHand) {
+                    player.getInventory().setItemInOffHand(null);
+                }
+            }
+        }
 
         showResultToPlayer(player, result);
         logger.info(result.toString());

@@ -2,6 +2,7 @@ package me.vangoo.domain.abilities.core;
 
 
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.domain.events.AbilityDomainEvent;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
 import org.bukkit.*;
 import org.bukkit.entity.HumanEntity;
@@ -301,5 +302,16 @@ public interface IAbilityContext {
     void setHidden(Player player, boolean hidden);
 
     boolean isAbilityActivated(UUID entityId, AbilityIdentity abilityIdentity);
+
+    void removeOffPathwayAbility(AbilityIdentity identity);
+
+    void subscribeToAbilityEvents(Consumer<AbilityDomainEvent> handler);
+
+    void subscribeToAbilityEvents(
+            Function<AbilityDomainEvent, Boolean> handler,
+            int durationTicks
+    );
+    Optional<AbilityDomainEvent> getLastAbilityEvent(UUID casterId, int maxAgeSeconds);
+    List<AbilityDomainEvent> getAbilityEventHistory(UUID casterId, int maxAgeSeconds);
 
 }

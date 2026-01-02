@@ -1,5 +1,8 @@
 package me.vangoo.infrastructure.mappers;
 
+import me.vangoo.domain.abilities.core.Ability;
+import me.vangoo.domain.abilities.core.ActiveAbility;
+import me.vangoo.domain.abilities.core.OneTimeUseAbility;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.entities.Pathway;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
@@ -16,6 +19,7 @@ import java.util.stream.Collectors;
 
 public class BeyonderMapper {
 
+    private static final String ONE_TIME_PREFIX = "onetime:";
     private final PathwayManager pathwayManager;
 
     public BeyonderMapper(PathwayManager pathwayManager) {
@@ -27,7 +31,7 @@ public class BeyonderMapper {
      */
     public BeyonderDTO toDTO(Beyonder beyonder) {
         List<String> offPathwayAbilityIds = beyonder.getOffPathwayActiveAbilities().stream()
-                .map(AbilityIdentity::id)
+                .map(a -> a.getIdentity().id())
                 .toList();
         return new BeyonderDTO(
                 beyonder.getPlayerId(),
@@ -48,10 +52,10 @@ public class BeyonderMapper {
         if (pathway == null) {
             throw new IllegalArgumentException("Unknown pathway: " + dto.getPathwayName());
         }
-        Set<AbilityIdentity> offPathwayAbilityIds = new HashSet<>();
+        Set<Ability> offPathwayAbilityIds = new HashSet<>();
         if (dto.getOffPathwayAbilities() != null) {
             offPathwayAbilityIds = dto.getOffPathwayAbilities().stream()
-                    .map(AbilityIdentity::of)
+                    .map(this::resolveAbility)
                     .collect(Collectors.toSet());
         }
         Beyonder beyonder = Beyonder.restore(
@@ -67,5 +71,31 @@ public class BeyonderMapper {
         beyonder.initializeTransientFields();
 
         return beyonder;
+    }
+
+    private Ability resolveAbility(String abilityId) {
+        boolean isOneTime = abilityId.startsWith(ONE_TIME_PREFIX);
+        String searchId = abilityId;
+
+        if (isOneTime) {
+            searchId = abilityId.substring(ONE_TIME_PREFIX.length());
+        }
+
+        Ability baseAbility = pathwayManager.findAbilityInAllPathways(AbilityIdentity.of(searchId));
+        if (baseAbility == null) {
+            System.err.println("Warning: Could not restore off-pathway ability with ID: " + searchId);
+            return null;
+        }
+
+        if (isOneTime) {
+            if (baseAbility instanceof ActiveAbility) {
+                return new OneTimeUseAbility((ActiveAbility) baseAbility);
+            } else {
+                System.err.println("Error: OneTimeUse wrapper cannot apply to non-active ability: " + searchId);
+                return null;
+            }
+        }
+
+        return baseAbility;
     }
 }

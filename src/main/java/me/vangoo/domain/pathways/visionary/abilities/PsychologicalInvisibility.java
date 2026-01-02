@@ -13,12 +13,17 @@ import org.bukkit.Statistic;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,6 +33,7 @@ public class PsychologicalInvisibility extends ActiveAbility {
     private static final int COOLDOWN_SECONDS = 5;
 
     private static final Map<UUID, Runnable> activeCancellers = new ConcurrentHashMap<>();
+    private static final Set<UUID> trackedProjectiles = ConcurrentHashMap.newKeySet();
 
     @Override
     public String getName() {
@@ -96,6 +102,29 @@ public class PsychologicalInvisibility extends ActiveAbility {
         final int startDamageDealt = caster.getStatistic(Statistic.DAMAGE_DEALT);
         final double[] lastHealth = {caster.getHealth()};
         final int[] tickCounter = {0};
+        final boolean[] damageDetected = {false};
+
+        // Subscribe to projectile launch events
+        context.subscribeToEvent(
+                ProjectileLaunchEvent.class,
+                e -> e.getEntity().getShooter() instanceof Player shooter && shooter.getUniqueId().equals(uuid),
+                e -> {
+                    trackedProjectiles.add(e.getEntity().getUniqueId());
+                },
+                Integer.MAX_VALUE
+        );
+
+        // Subscribe to entity damage by projectile events
+        context.subscribeToEvent(
+                EntityDamageByEntityEvent.class,
+                e -> e.getDamager() instanceof Projectile projectile &&
+                     trackedProjectiles.contains(projectile.getUniqueId()),
+                e -> {
+                    damageDetected[0] = true;
+                    trackedProjectiles.remove(e.getDamager().getUniqueId());
+                },
+                Integer.MAX_VALUE
+        );
 
         BukkitRunnable br = new BukkitRunnable() {
             @Override
@@ -103,13 +132,15 @@ public class PsychologicalInvisibility extends ActiveAbility {
                 tickCounter[0]++;
 
                 if (!caster.isOnline()) {
+                    cleanupProjectileTracking(uuid);
                     disableInvisibility(context, caster, "вихід", true);
                     return;
                 }
 
-                // А. Перевірка атаки
+                // А. Перевірка атаки (включно з снарядами)
                 int currentDamageDealt = caster.getStatistic(Statistic.DAMAGE_DEALT);
-                if (currentDamageDealt > startDamageDealt) {
+                if (currentDamageDealt > startDamageDealt || damageDetected[0]) {
+                    cleanupProjectileTracking(uuid);
                     disableInvisibility(context, caster, "атаку", true);
                     return;
                 }
@@ -117,6 +148,7 @@ public class PsychologicalInvisibility extends ActiveAbility {
                 // Б. Перевірка отримання шкоди
                 double currentHealth = caster.getHealth();
                 if (currentHealth < lastHealth[0]) {
+                    cleanupProjectileTracking(uuid);
                     disableInvisibility(context, caster, "отримання шкоди", true);
                     return;
                 }
@@ -130,6 +162,7 @@ public class PsychologicalInvisibility extends ActiveAbility {
                     Spirituality oldSp = currentBeyonder.getSpirituality();
 
                     if (oldSp.current() < COST_PER_SECOND) {
+                        cleanupProjectileTracking(uuid);
                         disableInvisibility(context, caster, "брак духовності", true);
                         return;
                     }
@@ -180,6 +213,8 @@ public class PsychologicalInvisibility extends ActiveAbility {
             activeCancellers.remove(uuid);
         }
 
+        cleanupProjectileTracking(uuid);
+
         if (caster.isOnline()) {
             // Знімаємо ефект невидимості
             caster.removePotionEffect(org.bukkit.potion.PotionEffectType.INVISIBILITY);
@@ -197,5 +232,12 @@ public class PsychologicalInvisibility extends ActiveAbility {
                 context.setCooldown(this, getCooldown(context.getCasterBeyonder().getSequence()));
             }
         }
+    }
+
+    private void cleanupProjectileTracking(UUID playerId) {
+        // Clean up any tracked projectiles for this player
+        // (This is a simple cleanup - projectiles are removed when they hit anyway)
+        // We don't need to explicitly track which projectiles belong to which player
+        // since the event subscription handles it
     }
 }

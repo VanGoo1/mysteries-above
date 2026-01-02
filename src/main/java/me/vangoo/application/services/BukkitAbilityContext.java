@@ -8,6 +8,7 @@ import me.vangoo.MysteriesAbovePlugin;
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.domain.events.AbilityDomainEvent;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.infrastructure.ui.ChoiceMenuFactory;
 import org.bukkit.*;
@@ -46,6 +47,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     // Cache for performance (valid only during single ability execution)
     private final Map<UUID, Entity> entityCache = new HashMap<>();
     private final PassiveAbilityManager passiveAbilityManager;
+    private final DomainEventPublisher eventPublisher;
 
     public BukkitAbilityContext(
             Player caster,
@@ -53,8 +55,8 @@ public class BukkitAbilityContext implements IAbilityContext {
             CooldownManager cooldownManager,
             BeyonderService beyonderService,
             AbilityLockManager lockManager, GlowingEntities glowingEntities, EffectManager effectManager,
-            RampageManager rampageManager, TemporaryEventManager eventManager, PassiveAbilityManager passiveAbilityManager
-            ) {
+            RampageManager rampageManager, TemporaryEventManager eventManager, PassiveAbilityManager passiveAbilityManager, DomainEventPublisher eventPublisher
+    ) {
         this.caster = caster;
         this.world = caster.getWorld();
         this.plugin = plugin;
@@ -67,6 +69,7 @@ public class BukkitAbilityContext implements IAbilityContext {
         this.rampageManager = rampageManager;
         this.eventManager = eventManager;
         this.passiveAbilityManager = passiveAbilityManager;
+        this.eventPublisher = eventPublisher;
     }
 
     // ==========================================
@@ -946,5 +949,52 @@ public class BukkitAbilityContext implements IAbilityContext {
     public boolean isAbilityActivated(UUID entityId, AbilityIdentity abilityIdentity) {
         return passiveAbilityManager.isToggleableEnabled(entityId, abilityIdentity);
     }
+    @Override
+    public void removeOffPathwayAbility(AbilityIdentity identity) {
+        Beyonder beyonder = beyonderService.getBeyonder(caster.getUniqueId());
+        if (beyonder != null) {
+            beyonder.removeAbility(identity);
+            beyonderService.updateBeyonder(beyonder);
+        }
+    }
+
+    @Override
+    public void subscribeToAbilityEvents(Consumer<AbilityDomainEvent> handler) {
+        eventPublisher.subscribeToAbility(handler);
+    }
+
+    @Override
+    public void subscribeToAbilityEvents(
+            Function<AbilityDomainEvent, Boolean> handler,
+            int durationTicks
+    ) {
+        // Wrapper для автоматичного відписування
+        Consumer<AbilityDomainEvent> wrapper = new Consumer<AbilityDomainEvent>() {
+            @Override
+            public void accept(AbilityDomainEvent event) {
+                boolean shouldUnsubscribe = handler.apply(event);
+                if (shouldUnsubscribe) {
+                    eventPublisher.unsubscribeFromAbility(this);
+                }
+            }
+        };
+
+        eventPublisher.subscribeToAbility(wrapper);
+
+        // Автоматичне відписування після timeout
+        scheduleDelayed(() -> {
+            eventPublisher.unsubscribeFromAbility(wrapper);
+        }, durationTicks);
+    }
+    @Override
+    public Optional<AbilityDomainEvent> getLastAbilityEvent(UUID casterId, int maxAgeSeconds) {
+        return eventPublisher.getLastAbilityEvent(casterId, maxAgeSeconds);
+    }
+
+    @Override
+    public List<AbilityDomainEvent> getAbilityEventHistory(UUID casterId, int maxAgeSeconds) {
+        return eventPublisher.getAbilityEventHistory(casterId, maxAgeSeconds);
+    }
+
 
 }

@@ -159,9 +159,10 @@ public class AbilityMenu {
                 gui.updateItem(row, col, new ItemStack(Material.AIR));
             }
         }
-
+        // 1. Get all abilities (getAbilities() already merges pathway + off-pathway)
+        List<Ability> allAbilities = new ArrayList<>(beyonder.getAbilities());
         // Фільтруємо здібності
-        List<Ability> filteredAbilities = filterAbilities(beyonder.getAbilities(), currentFilter);
+        List<Ability> filteredAbilities = filterAbilities(allAbilities, currentFilter);
 
         // Додаємо здібності до GUI (слоти 2-5 rows, 2-8 cols)
         int slot = 0;
@@ -342,25 +343,39 @@ public class AbilityMenu {
     private boolean hasAbilityItem(Player player, Ability ability, Beyonder beyonder) {
         for (ItemStack item : player.getInventory().getContents()) {
             if (item != null && abilityItemFactory.getAbilityFromItem(item, beyonder) != null) {
-                if (abilityItemFactory.getAbilityFromItem(item, beyonder).equals(ability)) {
+                if (abilityItemFactory.getAbilityFromItem(item, beyonder).getIdentity().equals(ability.getIdentity())) {
                     return true;
                 }
             }
         }
         return false;
     }
-
     /**
      * Обробляє клік по здібності
      */
     private void handleAbilityClick(Player player, Beyonder beyonder, Ability ability) {
         switch (ability.getType()) {
             case ACTIVE -> {
+                // Check if player already has this ability item
+                if (hasAbilityItem(player, ability, beyonder)) {
+                    player.sendMessage(ChatColor.RED + "Ця здібність вже є у вашому інвентарі!");
+                    player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                    return;
+                }
+
+                // Check if inventory is full
+                if (player.getInventory().firstEmpty() == -1) {
+                    player.sendMessage(ChatColor.RED + "У вашому інвентарі немає вільного місця!");
+                    player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                    return;
+                }
+
+                // Give the ability item
                 ItemStack abilityItem = abilityItemFactory.getItemFromAbility(
                         ability, beyonder.getSequence());
-
                 player.getInventory().addItem(abilityItem);
                 player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 1.5f);
+                player.sendMessage(ChatColor.GREEN + "Ви отримали предмет здібності: " + ability.getName());
             }
             case TOGGLEABLE_PASSIVE -> {
                 AbilityResult result = abilityExecutor.execute(beyonder, ability);
