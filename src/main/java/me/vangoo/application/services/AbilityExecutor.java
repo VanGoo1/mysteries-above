@@ -2,7 +2,9 @@ package me.vangoo.application.services;
 
 import me.vangoo.domain.abilities.core.*;
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.domain.events.AbilityDomainEvent;
 import me.vangoo.domain.valueobjects.SanityPenalty;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
@@ -15,17 +17,20 @@ public class AbilityExecutor {
     private final PassiveAbilityManager passiveAbilityManager;
     private final AbilityContextFactory abilityContextFactory;
     private final SanityPenaltyHandler sanityPenaltyHandler;
+    private final DomainEventPublisher EventPublisher;
 
     public AbilityExecutor(BeyonderService beyonderService, AbilityLockManager abilityLockManager,
                            RampageManager rampageManager, PassiveAbilityManager passiveAbilityManager,
-                           AbilityContextFactory abilityContextFactory, SanityPenaltyHandler sanityPenaltyHandler) {
+                           AbilityContextFactory abilityContextFactory, SanityPenaltyHandler sanityPenaltyHandler, DomainEventPublisher eventPublisher) {
         this.beyonderService = beyonderService;
         this.abilityLockManager = abilityLockManager;
         this.rampageManager = rampageManager;
         this.passiveAbilityManager = passiveAbilityManager;
         this.abilityContextFactory = abilityContextFactory;
         this.sanityPenaltyHandler = sanityPenaltyHandler;
+        EventPublisher = eventPublisher;
     }
+
 
     public AbilityResult execute(Beyonder beyonder, Ability ability) {
         Player player = getPlayer(beyonder.getPlayerId());
@@ -53,6 +58,18 @@ public class AbilityExecutor {
         // Set cooldown if ability succeeded
         if (ability.getType() == AbilityType.ACTIVE && result.isSuccess()) {
             context.setCooldown(ability, ability.getCooldown(beyonder.getSequence()));
+            boolean isOffPathway = beyonder.getOffPathwayActiveAbilities()
+                    .contains(ability.getIdentity());
+
+            EventPublisher.publishAbility(
+                    new AbilityDomainEvent.AbilityUsed(
+                            beyonder.getPlayerId(),
+                            ability.getName(),
+                            beyonder.getPathway().getName(),
+                            beyonder.getSequenceLevel(),
+                            isOffPathway
+                    )
+            );
         }
 
         // Handle toggleable passives

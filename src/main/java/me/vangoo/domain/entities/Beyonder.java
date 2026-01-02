@@ -20,7 +20,7 @@ public class Beyonder {
     private transient List<Ability> abilities;
     private transient SpiritualityCalculator spiritualityCalculator;
     private transient AbilityTransformer abilityTransformer;
-    private transient Set<AbilityIdentity> offPathwayActiveAbilities;
+    private transient Set<Ability> offPathwayActiveAbilities;
 
     public Beyonder(UUID playerId, Sequence sequence, Pathway pathway) {
         if (playerId == null) {
@@ -107,7 +107,7 @@ public class Beyonder {
             Mastery mastery,
             int currentSpirituality,
             SanityLoss sanityLoss,
-            Set<AbilityIdentity> offPathwayAbilities) {
+            Set<Ability> offPathwayAbilities) {
         Beyonder beyonder = new Beyonder(playerId, sequence, pathway);
         beyonder.mastery = mastery;
         beyonder.sanityLoss = sanityLoss;
@@ -127,12 +127,12 @@ public class Beyonder {
         AbilityIdentity identity = ability.getIdentity();
 
         // Check if ability with this identity already exists
-        if (offPathwayActiveAbilities.contains(identity)) {
+        if (offPathwayActiveAbilities.stream().anyMatch(a->a.getIdentity().equals(identity))) {
             return false;
         }
 
         // Add to custom abilities set
-        offPathwayActiveAbilities.add(identity);
+        offPathwayActiveAbilities.add(ability);
 
         return true;
     }
@@ -143,7 +143,9 @@ public class Beyonder {
         }
 
         // Remove from off-pathway abilities
-        boolean removedFromCustom = offPathwayActiveAbilities.remove(identity);
+        boolean removedFromCustom = offPathwayActiveAbilities.removeIf(
+                ability -> ability.getIdentity().equals(identity)
+        );
 
         // Remove from main abilities list
         boolean removedFromActive = abilities.removeIf(
@@ -157,7 +159,7 @@ public class Beyonder {
      * Get all custom ability identities (for persistence)
      * @return Set of custom ability IDs
      */
-    public Set<AbilityIdentity> getOffPathwayActiveAbilities() {
+    public Set<Ability> getOffPathwayActiveAbilities() {
         return new HashSet<>(offPathwayActiveAbilities);
     }
 
@@ -165,7 +167,7 @@ public class Beyonder {
      * Clear all custom abilities
      */
     public void clearCustomAbilities() {
-        abilities.removeIf(ability -> offPathwayActiveAbilities.contains(ability.getIdentity()));
+        abilities.removeIf(ability -> offPathwayActiveAbilities.contains(ability));
         offPathwayActiveAbilities.clear();
     }
 
@@ -432,18 +434,46 @@ public class Beyonder {
     }
 
     public List<Ability> getAbilities() {
-        return abilities != null ? Collections.unmodifiableList(abilities) : Collections.emptyList();
+        if (abilities == null) {
+            return Collections.emptyList();
+        }
+
+        // Merge pathway abilities with off-pathway abilities
+        List<Ability> allAbilities = new ArrayList<>(abilities);
+        if (offPathwayActiveAbilities != null) {
+            allAbilities.addAll(offPathwayActiveAbilities);
+        }
+
+        return Collections.unmodifiableList(allAbilities);
     }
 
     private boolean hasAbility(Ability ability) {
-        return abilities != null && abilities.contains(ability);
+        if (abilities != null && abilities.contains(ability)) {
+            return true;
+        }
+        // Also check off-pathway abilities
+        return offPathwayActiveAbilities != null && offPathwayActiveAbilities.contains(ability);
     }
 
     public Optional<Ability> getAbilityByName(String name) {
         if (abilities == null) return Optional.empty();
 
-        return abilities.stream()
+        // Search in pathway abilities
+        Optional<Ability> found = abilities.stream()
                 .filter(a -> a.getName().equals(name))
                 .findFirst();
+
+        if (found.isPresent()) {
+            return found;
+        }
+
+        // Search in off-pathway abilities
+        if (offPathwayActiveAbilities != null) {
+            return offPathwayActiveAbilities.stream()
+                    .filter(a -> a.getName().equals(name))
+                    .findFirst();
+        }
+
+        return Optional.empty();
     }
 }

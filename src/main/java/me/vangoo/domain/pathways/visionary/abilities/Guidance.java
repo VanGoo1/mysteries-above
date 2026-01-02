@@ -10,8 +10,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Guidance extends ActiveAbility {
 
@@ -21,6 +23,9 @@ public class Guidance extends ActiveAbility {
     private static final int COST = 400; // Вартість духовності
     private static final int COOLDOWN = 600; // Кулдаун 10 хвилин
 
+    // Track active guidance sessions (caster UUID -> hasEnded flag)
+    private static final Map<UUID, boolean[]> activeGuidanceSessions = new ConcurrentHashMap<>();
+
     @Override
     public String getName() {
         return "Керівництво";
@@ -29,7 +34,8 @@ public class Guidance extends ActiveAbility {
     @Override
     public String getDescription(Sequence userSequence) {
         return "Ви проникаєте у підсвідомість сплячого, встановлюючи ментальний зв'язок. " +
-                "Протягом 5 хвилин ціль не зможе відійти від вас далі ніж на 10 блоків.";
+                "Протягом 5 хвилин ціль не зможе відійти від вас далі ніж на 10 блоків.\n" +
+                ChatColor.GRAY + "Використайте здібність знову, щоб достроково розірвати зв'язок.";
     }
 
     @Override
@@ -49,6 +55,20 @@ public class Guidance extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
+        UUID casterId = context.getCasterId();
+
+        // Check if caster already has an active Guidance session
+        if (activeGuidanceSessions.containsKey(casterId)) {
+            // Manual cancel
+            boolean[] hasEnded = activeGuidanceSessions.get(casterId);
+            hasEnded[0] = true;
+            activeGuidanceSessions.remove(casterId);
+
+            context.sendMessageToCaster(ChatColor.YELLOW + "Ви розірвали ментальний зв'язок.");
+            context.playSoundToCaster(Sound.BLOCK_BEACON_DEACTIVATE, 1f, 1.2f);
+            return AbilityResult.success();
+        }
+
         Optional<LivingEntity> targetOpt = context.getTargetedEntity(CAST_RANGE);
 
         if (targetOpt.isEmpty() || !(targetOpt.get() instanceof Player target)) {
@@ -61,7 +81,6 @@ public class Guidance extends ActiveAbility {
         }
 
         UUID targetId = target.getUniqueId();
-        UUID casterId = context.getCasterId();
         // Візуальні ефекти успіху
         context.sendMessageToCaster(ChatColor.AQUA + "Ви встановили ментальний контроль над " + target.getName());
         context.sendMessage(targetId, ChatColor.GRAY + "Ви відчуваєте дивний сон, ніби хтось веде вас за руку...");
@@ -92,18 +111,30 @@ public class Guidance extends ActiveAbility {
         final long startTime = System.currentTimeMillis();
         final long endTime = startTime + (DURATION_SECONDS * 1000L);
         final long[] lastMessageTime = {0}; // Трекер для уникнення спаму
+        final boolean[] hasEnded = {false}; // Flag to prevent spam
+
+        // Register this session
+        activeGuidanceSessions.put(casterId, hasEnded);
 
         context.scheduleRepeating(new Runnable() {
             @Override
             public void run() {
+                // Check if already ended - prevent spam
+                if (hasEnded[0]) {
+                    activeGuidanceSessions.remove(casterId);
+                    return;
+                }
+
                 long now = System.currentTimeMillis();
 
                 // Перевірка закінчення часу
                 if (now >= endTime) {
+                    hasEnded[0] = true;
+                    activeGuidanceSessions.remove(casterId);
                     // Повідомлення про завершення
                     context.sendMessage(targetId, ChatColor.GREEN + "Ви відчуваєте полегшення. Ментальний поводок зник.");
                     context.sendMessage(casterId, ChatColor.GREEN + "Дія 'Керівництва' завершилась.");
-                    return; // Scheduler автоматично зупиниться після return
+                    return;
                 }
 
                 Player target = getPlayerSafely(context, targetId);
@@ -116,10 +147,12 @@ public class Guidance extends ActiveAbility {
 
                 // Перевірка світів
                 if (!target.getWorld().equals(caster.getWorld())) {
+                    hasEnded[0] = true;
+                    activeGuidanceSessions.remove(casterId);
                     context.damage(targetId, 2.0);
                     context.sendMessage(targetId, ChatColor.RED + "Зв'язок розірвано через зміну виміру!");
                     context.sendMessage(casterId, ChatColor.YELLOW + "Зв'язок з ціллю розірвано (інший світ)");
-                    return; // Зупиняємо
+                    return;
                 }
 
                 // ГОЛОВНА ЛОГІКА: Перевірка відстані

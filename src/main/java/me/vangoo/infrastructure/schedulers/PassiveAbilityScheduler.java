@@ -134,9 +134,7 @@ public class PassiveAbilityScheduler {
 
         // Register with passive ability manager
         passiveAbilityManager.registerPlayer(playerId, beyonder.getAbilities());
-
-        // Pre-create context
-        getOrCreateContext(player);
+        passiveAbilityManager.activatePermanentPassives(beyonder, getOrCreateContext(player));
 
         plugin.getLogger().info("Registered player " + player.getName() + " for passive abilities");
     }

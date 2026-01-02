@@ -1,15 +1,14 @@
 package me.vangoo.application.services;
 
+import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.entities.Pathway;
 import me.vangoo.domain.entities.PathwayGroup;
 import me.vangoo.domain.pathways.door.Door;
 import me.vangoo.domain.pathways.error.Error;
 import me.vangoo.domain.pathways.visionary.Visionary;
+import me.vangoo.domain.valueobjects.AbilityIdentity;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class PathwayManager {
     private final Map<String, Pathway> pathways;
@@ -41,5 +40,21 @@ public class PathwayManager {
 
     public Collection<String> getAllPathwayNames() {
         return pathways.keySet();
+    }
+
+    public Ability findAbilityInAllPathways(AbilityIdentity abilityIdentity) {
+        Collection<Pathway> allPathways = pathways.values();
+
+        for (Pathway pathway : allPathways) {
+            for (int i = 0; i <= 9; i++) {
+                List<Ability> abilities = pathway.GetAbilitiesForSequence(i);
+                for (Ability ability : abilities) {
+                    if (Objects.equals(ability.getIdentity().id(), abilityIdentity.id())) {
+                        return ability;
+                    }
+                }
+            }
+        }
+        return null;
     }
 }

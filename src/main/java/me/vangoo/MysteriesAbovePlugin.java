@@ -77,6 +77,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         registerCommands();
 
         startSchedulers();
+        eventPublisher.subscribeToAbility(ev -> {
+            getLogger().info("[GLOBAL-SUB] Got ability event: " + ev.abilityName() + " from " + ev.casterId());
+        });
     }
 
     @Override
@@ -119,7 +122,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         this.passiveAbilityManager = new PassiveAbilityManager();
 
         this.abilityContextFactory = new AbilityContextFactory(this, cooldownManager, beyonderService, lockManager,
-                glowingEntities, effectManager, rampageManager, temporaryEventManager,passiveAbilityManager);
+                glowingEntities, effectManager, rampageManager, temporaryEventManager,passiveAbilityManager,eventPublisher);
 
         this.passiveAbilityScheduler = new PassiveAbilityScheduler(
                 this,
@@ -128,7 +131,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 abilityContextFactory
         );
         this.rampageEventListener = new RampageEventListener(passiveAbilityScheduler, beyonderService);
-        eventPublisher.subscribe(rampageEventListener::handle);
+        eventPublisher.subscribeToRampage(rampageEventListener::handle);
 
         this.abilityExecutor = new AbilityExecutor(
                 beyonderService,
@@ -136,7 +139,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 rampageManager,
                 passiveAbilityManager,
                 abilityContextFactory,
-                sanityPenaltyHandler
+                sanityPenaltyHandler,
+                eventPublisher
         );
 
         this.potionItemFactory = new PotionItemFactory();

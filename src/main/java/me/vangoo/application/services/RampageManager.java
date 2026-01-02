@@ -48,7 +48,9 @@ public class RampageManager {
         rampageStates.put(playerId, state);
 
         // Publish domain event
-        eventPublisher.publish(new RampageDomainEvent.RampageStarted(playerId, beyonder, durationSeconds));
+        RampageDomainEvent event = new RampageDomainEvent.RampageStarted(playerId, beyonder.getSequenceLevel(), beyonder.getSanityLoss().scale(), durationSeconds, System.currentTimeMillis());
+        eventPublisher.publishRampage(event);
+
 
         LOGGER.info("Started rampage for player " + playerId + " (duration: " + durationSeconds + "s)");
         return true;
@@ -72,7 +74,9 @@ public class RampageManager {
         rampageStates.remove(playerId);
 
         // Publish domain event
-        eventPublisher.publish(new RampageDomainEvent.RampageRescued(playerId, rescuerId, state));
+        RampageDomainEvent event = new RampageDomainEvent.RampageRescued(playerId, rescuerId, state.getRemainingSeconds(), System.currentTimeMillis());
+
+        eventPublisher.publishRampage(event);
 
         LOGGER.info("Player " + playerId + " rescued from rampage by " + rescuerId);
         return true;
@@ -93,7 +97,9 @@ public class RampageManager {
 
         // Check for phase changes
         if (updatedState.phase() != state.phase()) {
-            eventPublisher.publish(new RampageDomainEvent.PhaseChanged(playerId, state, updatedState));
+            RampageDomainEvent event = new RampageDomainEvent.PhaseChanged(playerId, state, updatedState);
+
+            eventPublisher.publishRampage(event);
         }
 
         // Update stored state
@@ -114,7 +120,8 @@ public class RampageManager {
         rampageStates.remove(playerId);
 
         // Publish domain event
-        eventPublisher.publish(new RampageDomainEvent.TransformationCompleted(playerId));
+        RampageDomainEvent event = new RampageDomainEvent.TransformationCompleted(playerId, System.currentTimeMillis());
+        eventPublisher.publishRampage(event);
 
         LOGGER.info("Player " + playerId + " completed rampage transformation");
     }
@@ -148,7 +155,8 @@ public class RampageManager {
         RampageState state = rampageStates.remove(playerId);
 
         if (state != null) {
-            eventPublisher.publish(new RampageDomainEvent.RampageCancelled(playerId));
+            RampageDomainEvent event = new RampageDomainEvent.RampageCancelled(playerId, System.currentTimeMillis());
+            eventPublisher.publishRampage(event);
             LOGGER.info("Rampage cancelled for player " + playerId);
             return true;
         }
