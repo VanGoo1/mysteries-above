@@ -1,400 +1,301 @@
-custom-items:
-  lavos_squid_blood:
-    display-name: "§5Lavos Squid's Blood"
-    material: PAPER
-    lore:
-      - "§710 мілілітрів крові кальмара Лавос"
-    glow: false
-    custom-model-data: "lavos_squid_blood"
+# ============================================
+# 9 VISIONARY
+# ============================================
 
-  stellar_aqua_crystal:
-    display-name: "§bStellar Aqua Crystal"
-    material: PAPER
-    lore:
-      - "§750 грамів зоряного водного кристалу."
-    glow: true
-    custom-model-data: "stellar_aqua_crystal"
+manhal_fish_eyeball:
+  display-name: "§fОко риби Манхал"
+  material: PAPER
+  lore:
+    - ""
+  glow: true
+  custom-model-data: "manhal_fish_eyeball"
 
-  night_vanilla_liquid:
-    display-name: "§dNight Vanilla Liquids"
-    material: PAPER
-    lore:
-      - "§713 крапель рідини нічної ванілі. Допоміжний інгредієнт для заспокоєння нервів."
-    glow: false
-    custom-model-data: "night_vanilla_liquid"
+goat_horned_blackfish_blood:
+  display-name: "§7Кров чорної риби з козлячим рогом"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "goat_horned_blackfish_blood"
 
-  gold_mint_leaves:
-    display-name: "§eGold Mint Leaves"
-    material: PAPER
-    lore:
-      - "§77 листків золотої м'яти. Використовується для ясності розуму."
-    glow: false
-    custom-model-data: "gold_mint_leaves"
+autumn_crocus_essence:
+  display-name: "§7Осіння есенція крокуса"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "autumn_crocus_essence"
 
-  poison_hemlock:
-    display-name: "§2Poison Hemlock"
-    material: PAPER
-    lore:
-      - "§73 краплі отруйного болиголова. Допомагає відокремити фізичне від духовного."
-    glow: false
-    custom-model-data: "poison_hemlock"
+elf_flower_petals:
+  display-name: "§7Пелюстки квітів ельфів"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "elf_flower_petals"
 
-  dragon_blood_grass:
-    display-name: "§4Dragon Blood Grass Powder"
-    material: PAPER
-    lore:
-      - "§79 грамів порошку трави драконячої крові. Енергетичний стабілізатор."
-    glow: false
-    custom-model-data: "dragon_blood_grass"
+# ============================================
+# 8 VISIONARY
+# ============================================
 
-  hornacis_goat_horn:
-    display-name: "§7Hornacis Gray Mountain Goat Horn"
-    material: PAPER
-    lore:
-      - "§7Кристал рогу сірого гірського козла Горнаціс."
-    glow: true
-    custom-model-data: "hornacis_goat_horn"
+crystalline_moon_orchid:
+  display-name: "§7Кришталева Місячна Орхідея"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "crystalline_moon_orchid"
 
-  human_faced_rose:
-    display-name: "§cHuman-Faced Rose Stalk"
-    material: PAPER
-    lore:
-      - "§7Ціле стебло людськоликої троянди."
-    glow: true
-    custom-model-data: "human_faced_rose"
+thought_essence:
+  display-name: "§7Есенція Думки"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "thought_essence"
 
-  gem_devouring_worm:
-    display-name: "§5Gem-devouring Worm"
-    material: PAPER
-    lore:
-      - "§7Черв'як-дорогоцвітоїд."
-    glow: true
-    custom-model-data: "gem_devouring_worm"
+iridescent_pearl_dust:
+  display-name: "§7Райдужний Перлинний Пил"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "iridescent_pearl_dust"
 
-  illusion_crystal:
-    display-name: "§bIllusion Crystal"
-    material: PAPER
-    lore:
-      - "§7Кристал ілюзій. Користується для створення просторових викривлень."
-    glow: true
-    custom-model-data: "illusion_crystal"
 
-  soul_devourer_stomach:
-    display-name: "§8Soul Devourer's Stomach"
-    material: PAPER
-    lore:
-      - "§7Шлунок пожирача душ."
-    glow: true
-    custom-model-data: "soul_devourer_stomach"
+# ============================================
+# 7 VISIONARY
+# ============================================
 
-  meteor_crystal:
-    display-name: "§fMeteor Crystal"
-    material: PAPER
-    lore:
-      - "§7Метеорний кристал."
-    glow: true
-    custom-model-data: "meteor_crystal"
+tree_of_elders_fruit:
+  display-name: "§7Плоди Дерева Бузини"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "tree_of_elders_fruit"
 
-  lavar_octopus_crystal:
-    display-name: "§5Lavar Octopus Blood Crystal"
-    material: PAPER
-    lore:
-      - "§7Кристал крові восьминога Лавара."
-    glow: true
-    custom-model-data: "lavar_octopus_crystal"
+mirror_dragon_eyes:
+  display-name: "§7Очі Дзеркального Дракона"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "mirror_dragon_eyes"
 
-  black_mosquito:
-    display-name: "§8Blood-Speckled Black Mosquito"
-    material: PAPER
-    lore:
-      - "§7Криваво-плямистий чорний комар."
-    glow: true
-    custom-model-data: "black_mosquito"
+mirror_dragon_blood:
+  display-name: "§7Кров Дзеркального Дракона"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "mirror_dragon_blood"
 
-  candle_devourer_core:
-    display-name: "§eCore of a Candle Devourer"
-    material: PAPER
-    lore:
-      - "§7Ядро пожирача свічок."
-    glow: true
-    custom-model-data: "candle_devourer_core"
+# ============================================
+# 6 VISIONARY
+# ============================================
 
-  soul_confusing_insect_larvae:
-    display-name: "§dLarvae of a Soul-Confusing Insect Swarm"
-    material: PAPER
-    lore:
-      - "§7Личинка рою комах, що заплутують душу."
-    glow: true
-    custom-model-data: "soul_confusing_insect_larvae"
+black_hunting_lizard_spinal_fluid:
+  display-name: "§7Спинномозкова Рідина Чорної Ящірки"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "black_hunting_lizard_spinal_fluid"
 
-  sphinx_brain:
-    display-name: "§7Sphinx Brain"
-    material: PAPER
-    lore:
-      - "§7Мозок сфінкса."
-    glow: true
-    custom-model-data: "sphinx_brain"
+illusory_chime_tree_fruit:
+  display-name: "§7Плоди Ілюзорного Дерева Дзвіночків"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "illusory_chime_tree_fruit"
 
-  crystal_threadworm:
-    display-name: "§bCrystal Threadworm"
-    material: PAPER
-    lore:
-      - "§7Кристалічний ниткоподібний черв'як."
-    glow: true
-    custom-model-data: "crystal_threadworm"
+mind_crystal_powder:
+  display-name: "§7Кристалічний Порошок Розуму"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "mind_crystal_powder"
 
-  shadow_poison_flower:
-    display-name: "§5Shadow Poison Flower"
-    material: PAPER
-    lore:
-      - "§7Тіньова отруйна квітка."
-    glow: true
-    custom-model-data: "shadow_poison_flower"
+split_personality_essence:
+  display-name: "§7Есенція Роздвоєння Особистості"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "split_personality_essence"
 
-  serpent_bird_feather:
-    display-name: "§8Serpent-Bodied Bird Feather"
-    material: PAPER
-    lore:
-      - "§7Пір'я змієтілої птахи. Надає додаткову спритність."
-    glow: true
-    custom-model-data: "serpent_bird_feather"
+# ============================================
+# 5 VISIONARY
+# ============================================
 
-  demon_throat_honeyguide:
-    display-name: "§cDemon Throat Honeyguide Syrinx"
-    material: PAPER
-    lore:
-      - "§7Сирінкс медовказчика-демоноглота."
-    glow: true
-    custom-model-data: "demon_throat_honeyguide"
+dream_catcher_heart:
+  display-name: "§7Серце Ловця Снів"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "dream_catcher_heart"
 
-  agate_peacock_egg:
-    display-name: "§dAgate Peacock Egg"
-    material: PAPER
-    lore:
-      - "§7Агатове яйце павича. Сприяє містичній привабливості."
-    glow: true
-    custom-model-data: "agate_peacock_egg"
+mind_illusion_crystal:
+  display-name: "§7Кристал Ілюзії Розуму"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "mind_illusion_crystal"
 
-  succubus_hair:
-    display-name: "§5Remnants of Succubus Hair"
-    material: PAPER
-    lore:
-      - "§7Залишки волосся сукуба. Використовується в різних зіллях."
-    glow: false
-    custom-model-data: "succubus_hair"
+adult_mind_dragon_blood:
+  display-name: "§7Кров Дорослого Розумового Дракона"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "adult_mind_dragon_blood"
 
-  mummy_ashes:
-    display-name: "§7Real Mummy Ashes"
-    material: PAPER
-    lore:
-      - "§7Порох справжньої мумії. Служить стабілізатором."
-    glow: false
-    custom-model-data: "mummy_ashes"
+#
+#
+#
+#
 
-  plague_serpent_bile:
-    display-name: "§2Plague Mother Serpent's Bile"
-    material: PAPER
-    lore:
-      - "§7Жовч змії-матері чуми."
-    glow: true
-    custom-model-data: "plague_serpent_bile"
+# ============================================
+# 9 DOOR
+# ============================================
 
-  mirror_god_fragment:
-    display-name: "§bMirror God Fragment"
-    material: PAPER
-    lore:
-      - "§7Фрагмент бога дзеркал."
-    glow: true
-    custom-model-data: "mirror_god_fragment"
+dimensional_wanderer_eye:
+  display-name: "§7Око Вимірного Мандрівника"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "dimensional_wanderer_eye"
 
-  manhal_fish_eyeball:
-    display-name: "§fManhal Fish's Eyeball"
-    material: PAPER
-    lore:
-      - "§7Око риби Манхал. Надає здатність до спостереження."
-    glow: true
-    custom-model-data: "manhal_fish_eyeball"
+ever_shifting_lotus:
+  display-name: "§7Вічно Мінливий Лотос"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "ever_shifting_lotus"
 
-  blackfish_blood:
-    display-name: "§8Goat-Horned Blackfish Blood"
-    material: PAPER
-    lore:
-      - "§7Кров козорогої чорної риби."
-    glow: true
-    custom-model-data: "blackfish_blood"
+# ============================================
+# 8 DOOR
+# ============================================
 
-  phantom_netherdrake_pituitary:
-    display-name: "§5Phantom Netherdrake Pituitary Gland"
-    material: PAPER
-    lore:
-      - "§7Гіпофіз фантомного дракона безодні."
-    glow: true
-    custom-model-data: "phantom_netherdrake_pituitary"
+spirit_eater_pouch:
+  display-name: "§7Мішечок Пожирача Духів"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "spirit_eater_pouch"
 
-  farsman_rabbit_fluid:
-    display-name: "§7Farsman Rabbit's Spinal Fluid"
-    material: PAPER
-    lore:
-      - "§7Спинномозкова рідина кролика Фарсмана."
-    glow: true
-    custom-model-data: "farsman_rabbit_fluid"
+deep_sea_marlin_blood:
+  display-name: "§7Кров Глибоководного Марліна"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "deep_sea_marlin_blood"
 
-  singing_black_mushroom:
-    display-name: "§8Singing Black Mushroom"
-    material: PAPER
-    lore:
-      - "§7Співаючий чорний гриб."
-    glow: true
-    custom-model-data: "singing_black_mushroom"
+string_grass_powder:
+  display-name: "§7Порошок Трави Стручкової"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "string_grass_powder"
 
-  black_cat_misfortune_ear:
-    display-name: "§0Ear of a Black Cat of Misfortune"
-    material: PAPER
-    lore:
-      - "§7Вухо чорного кота нещастя. Допомагає чути шепіт богів."
-    glow: true
-    custom-model-data: "black_cat_misfortune_ear"
+red_chestnut_flower:
+  display-name: "§7Квітка Червоного Каштана"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "red_chestnut_flower"
 
-  shadow_worm:
-    display-name: "§8Shadow Worm"
-    material: PAPER
-    lore:
-      - "§7Тіньовий черв'як."
-    glow: true
-    custom-model-data: "shadow_worm"
+# ============================================
+# 7 DOOR
+# ============================================
 
-  immortal_flesh_fungus:
-    display-name: "§4Immortal Flesh Fungus"
-    material: PAPER
-    lore:
-      - "§7Гриб безсмертної плоті."
-    glow: true
-    custom-model-data: "immortal_flesh_fungus"
+meteorite_crystal:
+  display-name: "§7Метеоритний Кристал"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "meteorite_crystal"
 
-  bloody_scarecrow_straw:
-    display-name: "§cBloody Scarecrow Straw"
-    material: PAPER
-    lore:
-      - "§7Солома кривавого опудала."
-    glow: true
-    custom-model-data: "bloody_scarecrow_straw"
+lavos_squid_blood:
+  display-name: "§Кров Кальмара Лавос"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "lavos_squid_blood"
 
-  griegel_shadow_traces:
-    display-name: "§8Shadow Traces of a Griegel"
-    material: PAPER
-    lore:
-      - "§7Тіньові сліди Грігеля."
-    glow: true
-    custom-model-data: "griegel_shadow_traces"
+starfaced_stone:
+  display-name: "§Камінь Зірки"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "starfaced_stone"
 
-  golden_gorilla_brain:
-    display-name: "§eBrain of a Golden Gorilla"
-    material: PAPER
-    lore:
-      - "§7Мозок золотої горили. Основний інгредієнт."
-    glow: true
-    custom-model-data: "golden_gorilla_brain"
+# ============================================
+# 6 DOOR
+# ============================================
 
-  blessed_poplar_bark:
-    display-name: "§2Green Bark of Blessed Poplar"
-    material: PAPER
-    lore:
-      - "§7Зелена кора благословенної тополі. Використовується у лікувальних рецептах."
-    glow: true
-    custom-model-data: "blessed_poplar_bark"
+asmann_complete_brain:
+  display-name: "§Цілий Мозок Асманна"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "asmann_complete_brain"
 
-  harvest_giant_kidney:
-    display-name: "§cKidney of a Harvest Giant"
-    material: PAPER
-    lore:
-      - "§7Нирка гіганта врожаю."
-    glow: true
-    custom-model-data: "harvest_giant_kidney"
+cursed_wraith_artifact:
+  display-name: "§Артефакт Проклятого Привида"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "cursed_wraith_artifact"
 
-  dark_treant_heart:
-    display-name: "§8Heart of the Dark Treant"
-    material: PAPER
-    lore:
-      - "§7Серце темного треанта."
-    glow: true
-    custom-model-data: "dark_treant_heart"
+imbued_ink_sac:
+  display-name: "§Наповнений Чорнильний Мішок"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "imbued_ink_sac"
 
-  flying_unicorn_horn:
-    display-name: "§fHorn of an Adult Flying Unicorn"
-    material: PAPER
-    lore:
-      - "§7Ріг дорослого летючого єдинорога. Використовується в еліксирах."
-    glow: true
-    custom-model-data: "flying_unicorn_horn"
+# ============================================
+# 5 DOOR
+# ============================================
 
-  spring_of_elves_crystal:
-    display-name: "§bSpring of the Elves Marrow Crystal"
-    material: PAPER
-    lore:
-      - "§7Кристал мозку джерела ельфів."
-    glow: true
-    custom-model-data: "spring_of_elves_crystal"
+void_drifter_heart:
+  display-name: "§Серце Мандрівника Порожнечі"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "void_drifter_heart"
 
-  elder_bat_wing:
-    display-name: "§7Wings of an Elder Bat"
-    material: PAPER
-    lore:
-      - "§7Крила стародавнього кажана."
-    glow: true
-    custom-model-data: "elder_bat_wing"
+astral_mist_essence:
+  display-name: "§Есенція Астрального Туману"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "astral_mist_essence"
 
-  moonflower_essential_oil:
-    display-name: "§dMoonflower Essential Oil"
-    material: PAPER
-    lore:
-      - "§7Ефірна олія місячної квітки. Допоміжний інгредієнт."
-    glow: false
-    custom-model-data: "moonflower_essential_oil"
-
-  colorful_carp_tail:
-    display-name: "§dTail of a Colorful Carp"
-    material: PAPER
-    lore:
-      - "§7Хвіст різнобарвного коропа."
-    glow: true
-    custom-model-data: "colorful_carp_tail"
-
-  silver_four_leaf_clover:
-    display-name: "§7Silver Four-leaf Clover"
-    material: PAPER
-    lore:
-      - "§7Срібна чотирилиста конюшина. Символ удачі."
-    glow: true
-    custom-model-data: "silver_four_leaf_clover"
-
-  young_unicorn_crystal:
-    display-name: "§fCrystal of a Young Unicorn"
-    material: PAPER
-    lore:
-      - "§7Кристал молодого єдинорога."
-    glow: true
-    custom-model-data: "young_unicorn_crystal"
-
-  silver_eyed_serpent_eyeball:
-    display-name: "§bEyeball of a Silver-eyed Serpent"
-    material: PAPER
-    lore:
-      - "§7Око срібноокої змії."
-    glow: true
-    custom-model-data: "silver_eyed_serpent_eyeball"
-
-  misfortune_white_snake_gall:
-    display-name: "§0Gall of a Misfortune White Snake"
-    material: PAPER
-    lore:
-      - "§7Жовч білої змії нещастя."
-    glow: true
-    custom-model-data: "misfortune_white_snake_gall"
-
-  mercury_phoenix_core:
-    display-name: "§7Crystal Core of a Mercury Phoenix"
-    material: PAPER
-    lore:
-      - "§7Кристалічне ядро ртутного фенікса."
-    glow: true
-    custom-model-data: "mercury_phoenix_core"
+wayfinder_tree_root:
+  display-name: "§Корінь Дерева-Знахідника"
+  material: PAPER
+  lore:
+    - ""
+  glow: false
+  custom-model-data: "wayfinder_tree_root"
