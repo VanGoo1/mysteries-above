@@ -1,301 +1,314 @@
+custom-items:
+  # Recipe Book - Opens crafting recipes menu
+  master_recipe_book:
+    display-name: "§5§lКнижка Рецептів"
+    material: ENCHANTED_BOOK
+    lore:
+      - ""
+      - "§7Містична книга, що зберігає"
+      - "§7всі ваші відкриті рецепти"
+      - ""
+      - "§eКлацніть правою кнопкою щоб відкрити"
+      - ""
+    glow: true
+    custom-model-data: "master_recipe_book"
 # ============================================
 # 9 VISIONARY
 # ============================================
+  manhal_fish_eyeball:
+    display-name: "§fОко риби Манхал"
+    material: PAPER
+    lore:
+      - ""
+    glow: true
+    custom-model-data: "manhal_fish_eyeball"
 
-manhal_fish_eyeball:
-  display-name: "§fОко риби Манхал"
-  material: PAPER
-  lore:
-    - ""
-  glow: true
-  custom-model-data: "manhal_fish_eyeball"
+  goat_horned_blackfish_blood:
+    display-name: "§7Кров чорної риби з козлячим рогом"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "goat_horned_blackfish_blood"
 
-goat_horned_blackfish_blood:
-  display-name: "§7Кров чорної риби з козлячим рогом"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "goat_horned_blackfish_blood"
+  autumn_crocus_essence:
+    display-name: "§7Осіння есенція крокуса"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "autumn_crocus_essence"
 
-autumn_crocus_essence:
-  display-name: "§7Осіння есенція крокуса"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "autumn_crocus_essence"
+  elf_flower_petals:
+    display-name: "§7Пелюстки квітів ельфів"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "elf_flower_petals"
 
-elf_flower_petals:
-  display-name: "§7Пелюстки квітів ельфів"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "elf_flower_petals"
+  # ============================================
+  # 8 VISIONARY
+  # ============================================
 
-# ============================================
-# 8 VISIONARY
-# ============================================
+  crystalline_moon_orchid:
+    display-name: "§7Кришталева Місячна Орхідея"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "crystalline_moon_orchid"
 
-crystalline_moon_orchid:
-  display-name: "§7Кришталева Місячна Орхідея"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "crystalline_moon_orchid"
+  thought_essence:
+    display-name: "§7Есенція Думки"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "thought_essence"
 
-thought_essence:
-  display-name: "§7Есенція Думки"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "thought_essence"
-
-iridescent_pearl_dust:
-  display-name: "§7Райдужний Перлинний Пил"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "iridescent_pearl_dust"
+  iridescent_pearl_dust:
+    display-name: "§7Райдужний Перлинний Пил"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "iridescent_pearl_dust"
 
 
-# ============================================
-# 7 VISIONARY
-# ============================================
+  # ============================================
+  # 7 VISIONARY
+  # ============================================
 
-tree_of_elders_fruit:
-  display-name: "§7Плоди Дерева Бузини"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "tree_of_elders_fruit"
+  tree_of_elders_fruit:
+    display-name: "§7Плоди Дерева Бузини"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "tree_of_elders_fruit"
 
-mirror_dragon_eyes:
-  display-name: "§7Очі Дзеркального Дракона"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "mirror_dragon_eyes"
+  mirror_dragon_eyes:
+    display-name: "§7Очі Дзеркального Дракона"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "mirror_dragon_eyes"
 
-mirror_dragon_blood:
-  display-name: "§7Кров Дзеркального Дракона"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "mirror_dragon_blood"
+  mirror_dragon_blood:
+    display-name: "§7Кров Дзеркального Дракона"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "mirror_dragon_blood"
 
-# ============================================
-# 6 VISIONARY
-# ============================================
+  # ============================================
+  # 6 VISIONARY
+  # ============================================
 
-black_hunting_lizard_spinal_fluid:
-  display-name: "§7Спинномозкова Рідина Чорної Ящірки"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "black_hunting_lizard_spinal_fluid"
+  black_hunting_lizard_spinal_fluid:
+    display-name: "§7Спинномозкова Рідина Чорної Ящірки"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "black_hunting_lizard_spinal_fluid"
 
-illusory_chime_tree_fruit:
-  display-name: "§7Плоди Ілюзорного Дерева Дзвіночків"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "illusory_chime_tree_fruit"
+  illusory_chime_tree_fruit:
+    display-name: "§7Плоди Ілюзорного Дерева Дзвіночків"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "illusory_chime_tree_fruit"
 
-mind_crystal_powder:
-  display-name: "§7Кристалічний Порошок Розуму"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "mind_crystal_powder"
+  mind_crystal_powder:
+    display-name: "§7Кристалічний Порошок Розуму"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "mind_crystal_powder"
 
-split_personality_essence:
-  display-name: "§7Есенція Роздвоєння Особистості"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "split_personality_essence"
+  split_personality_essence:
+    display-name: "§7Есенція Роздвоєння Особистості"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "split_personality_essence"
 
-# ============================================
-# 5 VISIONARY
-# ============================================
+  # ============================================
+  # 5 VISIONARY
+  # ============================================
 
-dream_catcher_heart:
-  display-name: "§7Серце Ловця Снів"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "dream_catcher_heart"
+  dream_catcher_heart:
+    display-name: "§7Серце Ловця Снів"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "dream_catcher_heart"
 
-mind_illusion_crystal:
-  display-name: "§7Кристал Ілюзії Розуму"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "mind_illusion_crystal"
+  mind_illusion_crystal:
+    display-name: "§7Кристал Ілюзії Розуму"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "mind_illusion_crystal"
 
-adult_mind_dragon_blood:
-  display-name: "§7Кров Дорослого Розумового Дракона"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "adult_mind_dragon_blood"
+  adult_mind_dragon_blood:
+    display-name: "§7Кров Дорослого Розумового Дракона"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "adult_mind_dragon_blood"
 
-#
-#
-#
-#
+  #
+  #
+  #
+  #
 
-# ============================================
-# 9 DOOR
-# ============================================
+  # ============================================
+  # 9 DOOR
+  # ============================================
 
-dimensional_wanderer_eye:
-  display-name: "§7Око Вимірного Мандрівника"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "dimensional_wanderer_eye"
+  dimensional_wanderer_eye:
+    display-name: "§7Око Вимірного Мандрівника"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "dimensional_wanderer_eye"
 
-ever_shifting_lotus:
-  display-name: "§7Вічно Мінливий Лотос"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "ever_shifting_lotus"
+  ever_shifting_lotus:
+    display-name: "§7Вічно Мінливий Лотос"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "ever_shifting_lotus"
 
-# ============================================
-# 8 DOOR
-# ============================================
+  # ============================================
+  # 8 DOOR
+  # ============================================
 
-spirit_eater_pouch:
-  display-name: "§7Мішечок Пожирача Духів"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "spirit_eater_pouch"
+  spirit_eater_pouch:
+    display-name: "§7Мішечок Пожирача Духів"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "spirit_eater_pouch"
 
-deep_sea_marlin_blood:
-  display-name: "§7Кров Глибоководного Марліна"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "deep_sea_marlin_blood"
+  deep_sea_marlin_blood:
+    display-name: "§7Кров Глибоководного Марліна"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "deep_sea_marlin_blood"
 
-string_grass_powder:
-  display-name: "§7Порошок Трави Стручкової"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "string_grass_powder"
+  string_grass_powder:
+    display-name: "§7Порошок Трави Стручкової"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "string_grass_powder"
 
-red_chestnut_flower:
-  display-name: "§7Квітка Червоного Каштана"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "red_chestnut_flower"
+  red_chestnut_flower:
+    display-name: "§7Квітка Червоного Каштана"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "red_chestnut_flower"
 
-# ============================================
-# 7 DOOR
-# ============================================
+  # ============================================
+  # 7 DOOR
+  # ============================================
 
-meteorite_crystal:
-  display-name: "§7Метеоритний Кристал"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "meteorite_crystal"
+  meteorite_crystal:
+    display-name: "§7Метеоритний Кристал"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "meteorite_crystal"
 
-lavos_squid_blood:
-  display-name: "§Кров Кальмара Лавос"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "lavos_squid_blood"
+  lavos_squid_blood:
+    display-name: "§Кров Кальмара Лавос"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "lavos_squid_blood"
 
-starfaced_stone:
-  display-name: "§Камінь Зірки"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "starfaced_stone"
+  starfaced_stone:
+    display-name: "§Камінь Зірки"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "starfaced_stone"
 
-# ============================================
-# 6 DOOR
-# ============================================
+  # ============================================
+  # 6 DOOR
+  # ============================================
 
-asmann_complete_brain:
-  display-name: "§Цілий Мозок Асманна"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "asmann_complete_brain"
+  asmann_complete_brain:
+    display-name: "§Цілий Мозок Асманна"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "asmann_complete_brain"
 
-cursed_wraith_artifact:
-  display-name: "§Артефакт Проклятого Привида"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "cursed_wraith_artifact"
+  cursed_wraith_artifact:
+    display-name: "§Артефакт Проклятого Привида"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "cursed_wraith_artifact"
 
-imbued_ink_sac:
-  display-name: "§Наповнений Чорнильний Мішок"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "imbued_ink_sac"
+  imbued_ink_sac:
+    display-name: "§Наповнений Чорнильний Мішок"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "imbued_ink_sac"
 
-# ============================================
-# 5 DOOR
-# ============================================
+  # ============================================
+  # 5 DOOR
+  # ============================================
 
-void_drifter_heart:
-  display-name: "§Серце Мандрівника Порожнечі"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "void_drifter_heart"
+  void_drifter_heart:
+    display-name: "§Серце Мандрівника Порожнечі"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "void_drifter_heart"
 
-astral_mist_essence:
-  display-name: "§Есенція Астрального Туману"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "astral_mist_essence"
+  astral_mist_essence:
+    display-name: "§Есенція Астрального Туману"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "astral_mist_essence"
 
-wayfinder_tree_root:
-  display-name: "§Корінь Дерева-Знахідника"
-  material: PAPER
-  lore:
-    - ""
-  glow: false
-  custom-model-data: "wayfinder_tree_root"
+  wayfinder_tree_root:
+    display-name: "§Корінь Дерева-Знахідника"
+    material: PAPER
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "wayfinder_tree_root"

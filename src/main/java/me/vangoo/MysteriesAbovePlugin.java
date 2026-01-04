@@ -9,6 +9,7 @@ import me.vangoo.infrastructure.IRecipeUnlockRepository;
 import me.vangoo.infrastructure.JSONRecipeUnlockRepository;
 import me.vangoo.infrastructure.items.*;
 import me.vangoo.infrastructure.listeners.RampageEventListener;
+import me.vangoo.infrastructure.recipes.RecipeBookCraftingRecipe;
 import me.vangoo.infrastructure.schedulers.MasteryRegenerationScheduler;
 import me.vangoo.infrastructure.schedulers.PassiveAbilityScheduler;
 import me.vangoo.infrastructure.schedulers.RampageScheduler;
@@ -66,6 +67,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     IRecipeUnlockRepository recipeUnlockRepository;
     RecipeUnlockService recipeUnlockService;
     PotionCraftingService potionCraftingService;
+    private RecipeBookCraftingRecipe recipeBookCraftingRecipe;
 
     @Override
     public void onEnable() {
@@ -122,7 +124,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         this.passiveAbilityManager = new PassiveAbilityManager();
 
         this.abilityContextFactory = new AbilityContextFactory(this, cooldownManager, beyonderService, lockManager,
-                glowingEntities, effectManager, rampageManager, temporaryEventManager,passiveAbilityManager,eventPublisher);
+                glowingEntities, effectManager, rampageManager, temporaryEventManager, passiveAbilityManager, eventPublisher);
 
         this.passiveAbilityScheduler = new PassiveAbilityScheduler(
                 this,
@@ -147,6 +149,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         this.potionManager = new PotionManager(pathwayManager, potionItemFactory, customItemService);
         initializeRecipeSystem();
         this.abilityMenu = new AbilityMenu(this, abilityItemFactory, recipeUnlockService, potionManager, abilityExecutor);
+        this.recipeBookCraftingRecipe = new RecipeBookCraftingRecipe(this, customItemService);
+        this.recipeBookCraftingRecipe.registerRecipe();
         configLoader = new NBTStructureConfigLoader(this);
         lootService = new LootGenerationService(this, customItemService, potionManager, recipeBookFactory);
         structurePopulator = new StructurePopulator(this, configLoader, lootService);
@@ -178,6 +182,13 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         PotionCraftingListener potionCraftingListener =
                 new PotionCraftingListener(this, potionCraftingService);
 
+        MasterRecipeBookListener masterRecipeBookListener = new MasterRecipeBookListener(
+                this,
+                customItemService,
+                recipeUnlockService,
+                potionManager,
+                abilityMenu
+        );
         getServer().getPluginManager().registerEvents(abilityMenuListener, this);
         getServer().getPluginManager().registerEvents(beyonderPlayerListener, this);
         getServer().getPluginManager().registerEvents(pathwayPotionListener, this);
@@ -186,6 +197,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PotionCauldronListener(this), this);
         getServer().getPluginManager().registerEvents(recipeBookListener, this);
         getServer().getPluginManager().registerEvents(potionCraftingListener, this);
+        getServer().getPluginManager().registerEvents(masterRecipeBookListener, this);
     }
 
     private void registerCommands() {

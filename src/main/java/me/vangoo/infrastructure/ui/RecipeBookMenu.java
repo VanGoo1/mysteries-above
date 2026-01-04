@@ -20,12 +20,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.Plugin;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class RecipeBookMenu {
-    private final MysteriesAbovePlugin plugin;
+    private final Plugin plugin;
     private final RecipeUnlockService recipeUnlockService;
     private final PotionManager potionManager;
     private final AbilityMenu abilityMenu;
@@ -33,7 +34,7 @@ public class RecipeBookMenu {
     private static final Material BORDER_MATERIAL = Material.PURPLE_STAINED_GLASS_PANE;
     private static final Material BACK_BUTTON_MATERIAL = Material.BARRIER;
 
-    public RecipeBookMenu(MysteriesAbovePlugin plugin,
+    public RecipeBookMenu(Plugin plugin,
                           RecipeUnlockService recipeUnlockService,
                           PotionManager potionManager,
                           AbilityMenu abilityMenu) {
