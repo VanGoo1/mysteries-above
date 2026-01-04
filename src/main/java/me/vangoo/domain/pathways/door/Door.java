@@ -18,5 +18,7 @@ public class Door extends Pathway {
         sequenceAbilities.put(8, List.of(new Flash(), new EscapeTrick(), new Burning(), new ElectricShock()));
         sequenceAbilities.put(7, List.of(new DivinationArts(), new SpiritualVision(), new SpiritualIntuition(), new AntiDivination()));
         sequenceAbilities.put(6, List.of(new Record(), new DecryptPatterns()));
+        sequenceAbilities.put(5, List.of(new TravellersDoor(), new Blink()));
+
     }
 }
