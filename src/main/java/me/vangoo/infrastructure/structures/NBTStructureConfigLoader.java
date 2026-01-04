@@ -3,6 +3,7 @@ package me.vangoo.infrastructure.structures;
 import me.vangoo.domain.valueobjects.LootItem;
 import me.vangoo.domain.valueobjects.LootTableData;
 import me.vangoo.domain.valueobjects.StructureData;
+import me.vangoo.domain.valueobjects.StructurePlacementType;
 import org.bukkit.Bukkit;
 import org.bukkit.block.Biome;
 import org.bukkit.configuration.ConfigurationSection;
@@ -85,10 +86,31 @@ public class NBTStructureConfigLoader {
             chance = 0.01;
         }
 
+        // Читаємо min_distance
+        int minDistance = spawnSection.getInt("min_distance", 500);
+        if (minDistance < 0) {
+            plugin.getLogger().warning("Structure '" + id + "' has invalid min_distance: " + minDistance + ". Using default 500");
+            minDistance = 500;
+        }
+
+        // Читаємо placement_type
+        String placementTypeStr = spawnSection.getString("placement_type", "SURFACE");
+        StructurePlacementType placementType;
+        try {
+            placementType = StructurePlacementType.valueOf(placementTypeStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            plugin.getLogger().warning("Structure '" + id + "' has invalid placement_type: " + placementTypeStr + ". Using SURFACE");
+            placementType = StructurePlacementType.SURFACE;
+        }
+
         // Читаємо loot tables
         Map<String, LootTableData> lootTables = parseLootTables(section, id);
 
-        return new StructureData(id, structure, biomes, chance, lootTables);
+        plugin.getLogger().info("  Structure '" + id + "' config: chance=" + chance +
+                ", minDistance=" + minDistance + ", placementType=" + placementType +
+                ", lootTables=" + lootTables.size());
+
+        return new StructureData(id, structure, biomes, chance, minDistance, placementType, lootTables);
     }
 
     private Structure loadStructureFromFile(File nbtFile) throws IOException {
@@ -131,29 +153,24 @@ public class NBTStructureConfigLoader {
                 continue;
             }
 
-            // Read min/max items — підтримуємо різні стилі ключів
             Integer minItems = null;
             Integer maxItems = null;
 
             if (tableSection.isInt("min_items")) minItems = tableSection.getInt("min_items");
             else if (tableSection.isInt("minItems")) minItems = tableSection.getInt("minItems");
-            else if (tableSection.isInt("Min")) minItems = tableSection.getInt("Min");
 
             if (tableSection.isInt("max_items")) maxItems = tableSection.getInt("max_items");
             else if (tableSection.isInt("maxItems")) maxItems = tableSection.getInt("maxItems");
-            else if (tableSection.isInt("Max")) maxItems = tableSection.getInt("Max");
 
             LootTableData lootTable;
             if (minItems == null && maxItems == null) {
-                // Нічого не задано — використовуємо конструктор з дефолтами (3..8)
                 lootTable = new LootTableData(items);
-                plugin.getLogger().info("Loaded loot table '" + tableKey + "' (tag='" + chestTag + "') using default min/max (3..8). Items: " + items.size());
+                plugin.getLogger().info("  Loot table '" + tableKey + "' (tag='" + chestTag + "') using default min/max (3..8). Items: " + items.size());
             } else {
-                // Якщо одне значення відсутнє — підставляємо зрозумілі дефолти
                 int min = (minItems != null) ? Math.max(0, minItems) : 3;
                 int max = (maxItems != null) ? Math.max(min, maxItems) : Math.max(min, 8);
                 lootTable = new LootTableData(items, min, max);
-                plugin.getLogger().info("Loaded loot table '" + tableKey + "' (tag='" + chestTag + "') min=" + min + " max=" + max + " Items: " + items.size());
+                plugin.getLogger().info("  Loot table '" + tableKey + "' (tag='" + chestTag + "') min=" + min + " max=" + max + " Items: " + items.size());
             }
 
             lootTables.put(chestTag, lootTable);
@@ -161,7 +178,6 @@ public class NBTStructureConfigLoader {
 
         return lootTables;
     }
-
 
     private File saveDefaultStructureIfNotExists(String fileName) throws IOException {
         File structureFolder = new File(plugin.getDataFolder(), "structures");
@@ -229,7 +245,6 @@ public class NBTStructureConfigLoader {
             int amountMin = itemSection.getInt("amount_min", 1);
             int amountMax = itemSection.getInt("amount_max", 1);
 
-            // Валідація
             if (weight <= 0) {
                 plugin.getLogger().warning("Invalid weight for item '" + key + "': " + weight + ". Using 1");
                 weight = 1;

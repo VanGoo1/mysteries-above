@@ -213,6 +213,19 @@ public class Beyonder {
         abilities = abilityTransformer.transform(oldAbilities, newSequenceAbilities);
     }
 
+    public void advanceWithPathwayChange(Pathway newPathway) {
+        if (newPathway == null) {
+            throw new IllegalArgumentException("New pathway cannot be null");
+        }
+        if (newPathway.getGroup() != pathway.getGroup()) {
+            throw new IllegalArgumentException(
+                    "New pathway must be from the same group: current=" +
+                            pathway.getGroup() + ", new=" + newPathway.getGroup());
+        }
+        pathway = newPathway;
+        advance();
+    }
+
     public AbilityResult useAbility(Ability ability, IAbilityContext context) {
         if (!hasAbility(ability)) {
             return AbilityResult.failure("У вас немає цієї здібності");

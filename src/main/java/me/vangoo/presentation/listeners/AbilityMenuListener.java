@@ -31,20 +31,17 @@ import java.util.logging.Logger;
 public class AbilityMenuListener implements Listener {
     private final AbilityMenu abilityMenu;
     private final BeyonderService beyonderService;
-    private final AbilityExecutor abilityExecutor;
     private final AbilityItemFactory abilityItemFactory;
     private final Logger logger;
 
     public AbilityMenuListener(
             AbilityMenu abilityMenu,
             BeyonderService beyonderService,
-            AbilityExecutor abilityExecutor,
             AbilityItemFactory abilityItemFactory,
             Logger logger
     ) {
         this.abilityMenu = abilityMenu;
         this.beyonderService = beyonderService;
-        this.abilityExecutor = abilityExecutor;
         this.abilityItemFactory = abilityItemFactory;
         this.logger = logger;
     }

@@ -1,125 +1,164 @@
-# structures.yml
-# ----------------
-# Top-level map of named structures. Each structure defines:
-#  - file:   name of the .nbt file (inside plugin dataFolder/structures or resources)
-#  - spawn:  where and how often the structure can spawn
-#  - loot_tables: optional named loot tables mapped by chest_tag
-#
-# Notes:
-#  - Keys are case-sensitive when read by code; we support common variants for min/max (see parser notes).
-#  - Keep item keys (e.g. silver_clover) as simple identifiers for readability only.
 structures:
-  fontaine:
-    file: "fontaine.nbt"
-    spawn:
-      biomes: [PLAINS]        # List of biomes where this structure can spawn (use Bukkit Biome names)
-      chance: 0.01            # Spawn probability (0.0 < chance <= 1.0). Small decimals for rare structures.
-      min_distance: 500       # Minimum distance (in blocks) between two spawned instances
-
-  roflan:
-    file: "roflan.nbt"
-    spawn:
-      biomes: [PLAINS]
-      chance: 0.01
-      min_distance: 500
-    loot_tables:
-      loot:
-        chest_tag: "loot"     # chest_tag is written to the chest PDC and maps this loot table to that chest
-        # items: list of item entries for this table
-        items:
-          silver_clover:
-            item_id: "silver_four_leaf_clover"  # custom item id (resolved by CustomItemService)
-            weight: 10                          # relative chance weight for selecting this item
-            amount_min: 1                       # min units to place in a single ItemStack (clamped/split)
-            amount_max: 3                       # max units to place in a single ItemStack
-          aqua_crystal:
-            item_id: "stellar_aqua_crystal"
-            weight: 20
-            amount_min: 1
-            amount_max: 2
-
-  strh:
-    file: "strh.nbt"
-    spawn:
-      biomes: [PLAINS]
-      chance: 0.05
-      min_distance: 500
-    loot_tables:
-      loot:
-        chest_tag: "loot"
-        items:
-          silver_clover:
-            item_id: "silver_four_leaf_clover"
-            weight: 10
-            amount_min: 1
-            amount_max: 3
-          aqua_crystal:
-            item_id: "stellar_aqua_crystal"
-            weight: 20
-            amount_min: 5
-            amount_max: 10
-      bigloot:
-        chest_tag: "bigloot"
-        items:
-          phoenix_core:
-            item_id: "mercury_phoenix_core"
-            weight: 10
-            amount_min: 1
-            amount_max: 3
-          unicorn_crystal:
-            item_id: "young_unicorn_crystal"
-            weight: 20
-            amount_min: 5
-            amount_max: 10
-
-  statue:
-    file: "statue.nbt"
+  birch_library:
+    file: "birch_lib.nbt"
     spawn:
       biomes: [PLAINS, FOREST]
-      chance: 0.01
-      min_distance: 500
+      chance: 0.03                    # 3% шанс в кожному валідному регіоні (8x8 чанків)
+      min_distance: 1000              # Мінімальна відстань між спавнами (в блоках)
+      placement_type: SURFACE         # SURFACE, LIQUID_SURFACE, або SKY
     loot_tables:
-      mixed_loot:
-        chest_tag: "topchest"
+      stairs:
+        chest_tag: "stairs"
+        min_items: 2
+        max_items: 3
         items:
-          door_potion:
-            item_id: "potion:Door:9"   # special formats:
-              #  - potion:<pathway>:<sequence>  (e.g. potion:Visionary:9)
-              #  - recipe:<pathway>:<sequence>  (e.g. recipe:Error:9)
-            #  - custom or plain id resolves via CustomItemService
-            weight: 10
-            amount_min: 1
-            amount_max: 1
-          error_recipe:
-            item_id: "recipe:Error:9"
-            weight: 8
-            amount_min: 1
-            amount_max: 1
-          demon_throat:
-            item_id: "demon_throat_honeyguide"
-            weight: 15
+          night_vanilla:
+            item_id: "night_vanilla_liquid"
+            weight: 30
             amount_min: 1
             amount_max: 2
           gold_mint:
             item_id: "gold_mint_leaves"
             weight: 25
-            amount_min: 3
-            amount_max: 7
-      mixed_loot_two:
-        chest_tag: "underchest"
-        # Use min_items/max_items to control how many slots are filled from this loot table
-        # If omitted, the loader falls back to a default range (currently 3..8).
-        # Supported keys by the parser: min_items, minItems, Min (and same for max).
-        min_items: 1     # minimum number of slots to populate from this table (use 1 to force a single item)
-        max_items: 1     # maximum number of slots to populate (use same as min to guarantee fixed count)
+            amount_min: 1
+            amount_max: 2
+          succubus_hair:
+            item_id: "succubus_hair"
+            weight: 20
+            amount_min: 1
+            amount_max: 2
+          mummy_ashes:
+            item_id: "mummy_ashes"
+            weight: 15
+            amount_min: 1
+            amount_max: 2
+      shelf1:
+        chest_tag: "shelf1"
+        min_items: 2
+        max_items: 3
         items:
-          visionary_potion:
-            item_id: "potion:Visionary:9"
-            weight: 5
+          poison_hemlock:
+            item_id: "poison_hemlock"
+            weight: 25
+            amount_min: 1
+            amount_max: 2
+          dragon_grass:
+            item_id: "dragon_blood_grass"
+            weight: 25
+            amount_min: 1
+            amount_max: 2
+          moonflower_oil:
+            item_id: "moonflower_essential_oil"
+            weight: 20
+            amount_min: 1
+            amount_max: 2
+          singing_mushroom:
+            item_id: "singing_black_mushroom"
+            weight: 15
+            amount_min: 1
+            amount_max: 2
+      shelf2:
+        chest_tag: "shelf2"
+        min_items: 1
+        max_items: 2
+        items:
+          silver_clover:
+            item_id: "silver_four_leaf_clover"
+            weight: 25
+            amount_min: 1
+            amount_max: 2
+          serpent_feather:
+            item_id: "serpent_bird_feather"
+            weight: 20
+            amount_min: 1
+            amount_max: 2
+          crystal_threadworm:
+            item_id: "crystal_threadworm"
+            weight: 15
+            amount_min: 1
+            amount_max: 2
+          door_recipe:
+            item_id: "recipe:Door:9"
+            weight: 1
             amount_min: 1
             amount_max: 1
+      shelf3:
+        chest_tag: "shelf3"
+        min_items: 1
+        max_items: 2
+        items:
+          illusion_crystal:
+            item_id: "illusion_crystal"
+            weight: 20
+            amount_min: 1
+            amount_max: 2
+          hornacis_horn:
+            item_id: "hornacis_goat_horn"
+            weight: 15
+            amount_min: 1
+            amount_max: 2
+          human_rose:
+            item_id: "human_faced_rose"
+            weight: 15
+            amount_min: 1
+            amount_max: 2
           visionary_recipe:
             item_id: "recipe:Visionary:9"
-            weight: 8
+            weight: 3
+            amount_min: 1
+            amount_max: 1
+      upper_stairs:
+        chest_tag: "upper_stairs"
+        min_items: 1
+        max_items: 1
+        items:
+          gem_worm:
+            item_id: "gem_devouring_worm"
+            weight: 20
+            amount_min: 1
+            amount_max: 2
+          soul_larvae:
+            item_id: "soul_confusing_insect_larvae"
+            weight: 15
+            amount_min: 1
+            amount_max: 2
+          mirror_fragment:
+            item_id: "mirror_god_fragment"
+            weight: 10
+            amount_min: 1
+            amount_max: 1
+          door_recipe:
+            item_id: "recipe:Door:9"
+            weight: 2
+            amount_min: 1
+            amount_max: 1
+      final:
+        chest_tag: "final"
+        min_items: 1
+        max_items: 1
+        items:
+          sphinx_brain:
+            item_id: "sphinx_brain"
+            weight: 60
+            amount_min: 1
+            amount_max: 1
+          dark_treant_heart:
+            item_id: "dark_treant_heart"
+            weight: 15
+            amount_min: 1
+            amount_max: 1
+          mirror_fragment:
+            item_id: "mirror_god_fragment"
+            weight: 10
+            amount_min: 1
+            amount_max: 1
+          door_potion:
+            item_id: "recipe:Door:8"
+            weight: 1
+            amount_min: 1
+            amount_max: 1
+          visionary_potion:
+            item_id: "potion:Visionary:9"
+            weight: 1
             amount_min: 1
             amount_max: 1

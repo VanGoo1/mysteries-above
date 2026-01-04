@@ -41,56 +41,91 @@ public class LootGenerationService {
     }
 
     public void processStructureLoot(StructureData data, Location center) {
-        if (data.lootTables().isEmpty()) return;
+        if (data.lootTables().isEmpty()) {
+            plugin.getLogger().warning("No loot tables for structure " + data.id());
+            return;
+        }
 
         World world = center.getWorld();
-        int radius = 32;
+        if (world == null) {
+            plugin.getLogger().warning("World is null for structure " + data.id());
+            return;
+        }
+
+        int radius = 64; // Збільшено радіус пошуку
+        int chestsFound = 0;
+        int chestsFilled = 0;
+
+        plugin.getLogger().info("Searching for chests in structure " + data.id() +
+                " around " + center.getBlockX() + ", " + center.getBlockY() + ", " + center.getBlockZ());
 
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {
                 for (int z = -radius; z <= radius; z++) {
-                    assert world != null;
                     Block block = world.getBlockAt(
                             center.getBlockX() + x,
                             center.getBlockY() + y,
                             center.getBlockZ() + z
                     );
 
-                    if (block.getState() instanceof Chest chest) {
-                        fillChestIfTagged(chest, data);
+                    if (block.getType() == Material.CHEST || block.getType() == Material.TRAPPED_CHEST) {
+                        chestsFound++;
+                        if (block.getState() instanceof Chest chest) {
+                            if (fillChestIfTagged(chest, data)) {
+                                chestsFilled++;
+                            }
+                        }
                     }
                 }
             }
         }
+
+        plugin.getLogger().info("Structure " + data.id() + ": found " + chestsFound +
+                " chests, filled " + chestsFilled + " with loot");
+
+        if (chestsFilled == 0 && chestsFound > 0) {
+            plugin.getLogger().warning("Found chests but none were filled! Check NBT tags in structure file.");
+        }
     }
 
-    private void fillChestIfTagged(Chest chest, StructureData data) {
+    private boolean fillChestIfTagged(Chest chest, StructureData data) {
         var container = chest.getPersistentDataContainer();
 
         if (!container.has(lootTagKey, PersistentDataType.STRING)) {
-            return;
+            // Логуємо якщо сундук без тегу
+            plugin.getLogger().fine("Chest at " + chest.getLocation() + " has no tag");
+            return false;
         }
 
         String tag = container.get(lootTagKey, PersistentDataType.STRING);
+        plugin.getLogger().info("Found chest with tag: '" + tag + "' at " + chest.getLocation());
+
         LootTableData lootTable = data.lootTables().get(tag);
 
         if (lootTable == null) {
             plugin.getLogger().warning("No loot table found for tag: '" + tag + "' in structure: " + data.id());
-            return;
+            plugin.getLogger().warning("Available tags: " + data.lootTables().keySet());
+            return false;
         }
 
+        // Видаляємо тег
         container.remove(lootTagKey);
         chest.update();
+
+        // Очищаємо інвентар
         chest.getInventory().clear();
 
+        // Заповнюємо лутом
         populateInventory(chest, lootTable);
+
+        plugin.getLogger().info("Successfully filled chest with tag '" + tag + "'");
+        return true;
     }
 
     private void populateInventory(Chest chest, LootTableData lootTable) {
         int totalWeight = lootTable.items().stream().mapToInt(LootItem::weight).sum();
         int inventorySize = chest.getInventory().getSize();
 
-        // Використовуємо min/max з lootTable, якщо вони є
         int minItems = lootTable.minItems();
         int maxItems = lootTable.maxItems();
 
@@ -99,6 +134,8 @@ public class LootGenerationService {
                 : (minItems + random.nextInt(maxItems - minItems + 1));
         itemCount = Math.min(itemCount, inventorySize);
 
+        plugin.getLogger().info("  Filling with " + itemCount + " items (min=" + minItems + ", max=" + maxItems + ")");
+
         List<Integer> availableSlots = new ArrayList<>();
         for (int i = 0; i < inventorySize; i++) availableSlots.add(i);
         Collections.shuffle(availableSlots, random);
@@ -106,24 +143,23 @@ public class LootGenerationService {
         Set<String> addedItems = new HashSet<>();
         int successfullyAdded = 0;
         int attempts = 0;
-        int maxAttempts = Math.max(itemCount * 5, 50); // захист від зациклення
+        int maxAttempts = Math.max(itemCount * 10, 100);
 
-        while (successfullyAdded < itemCount && attempts < maxAttempts) {
+        while (successfullyAdded < itemCount && attempts < maxAttempts && !availableSlots.isEmpty()) {
             attempts++;
 
-            // Якщо сумарна вага 0 — нічого не крутити
             if (totalWeight <= 0) break;
 
             LootItem selectedItem = rollItem(lootTable, totalWeight);
             if (selectedItem == null) continue;
 
-            // уникати дублювань поки є альтернативи
+            // Уникаємо дублювань поки є альтернативи
             if (addedItems.contains(selectedItem.itemId()) && addedItems.size() < lootTable.items().size()) {
                 continue;
             }
 
             ItemStack itemStack = createItemFromId(selectedItem.itemId());
-            if (itemStack != null) {
+            if (itemStack != null && itemStack.getType() != Material.BARRIER) {
                 int amountMin = selectedItem.minAmount();
                 int amountMax = selectedItem.maxAmount();
                 int amount = (amountMin == amountMax)
@@ -131,16 +167,20 @@ public class LootGenerationService {
                         : (amountMin + random.nextInt(amountMax - amountMin + 1));
                 itemStack.setAmount(Math.max(1, amount));
 
-                if (availableSlots.isEmpty()) break;
                 int slot = availableSlots.remove(0);
                 chest.getInventory().setItem(slot, itemStack);
 
                 addedItems.add(selectedItem.itemId());
                 successfullyAdded++;
+
+                plugin.getLogger().info("    Added: " + selectedItem.itemId() + " x" + amount + " to slot " + slot);
+            } else {
+                plugin.getLogger().warning("    Failed to create item: " + selectedItem.itemId());
             }
         }
-    }
 
+        plugin.getLogger().info("  Total items added: " + successfullyAdded + " (attempts: " + attempts + ")");
+    }
 
     private LootItem rollItem(LootTableData lootTable, int totalWeight) {
         int roll = random.nextInt(totalWeight);
@@ -155,12 +195,6 @@ public class LootGenerationService {
         return null;
     }
 
-    /**
-     * Create item from ID with support for:
-     * - Custom items: "item_id" or "custom:item_id"
-     * - Potions: "potion:pathway:sequence"
-     * - Recipe books: "recipe:pathway:sequence"
-     */
     private ItemStack createItemFromId(String itemId) {
         if (itemId.startsWith("potion:")) {
             return createPotion(itemId);
@@ -236,6 +270,7 @@ public class LootGenerationService {
     public void setChestTag(Chest chest, String tag) {
         chest.getPersistentDataContainer().set(lootTagKey, PersistentDataType.STRING, tag);
         chest.update();
+        plugin.getLogger().info("Set chest tag '" + tag + "' at " + chest.getLocation());
     }
 
     public String getChestTag(Chest chest) {

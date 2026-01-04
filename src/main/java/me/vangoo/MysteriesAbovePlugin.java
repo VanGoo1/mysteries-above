@@ -161,7 +161,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
     private void registerEvents() {
         AbilityMenuListener abilityMenuListener =
-                new AbilityMenuListener(abilityMenu, beyonderService, abilityExecutor, abilityItemFactory, pluginLogger);
+                new AbilityMenuListener(abilityMenu, beyonderService, abilityItemFactory, pluginLogger);
 
         BeyonderPlayerListener beyonderPlayerListener =
                 new BeyonderPlayerListener(beyonderService, new BossBarUtil(), abilityExecutor, abilityItemFactory, pluginLogger);

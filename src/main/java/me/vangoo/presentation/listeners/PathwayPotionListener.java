@@ -119,8 +119,16 @@ public class PathwayPotionListener implements Listener {
             return;
         }
 
-        // Advance beyonder
-        beyonder.advance();
+        // Check if pathway is changing
+        boolean isPathwayChange = !beyonder.getPathway().getName().equals(pathway.getName());
+
+        // Advance beyonder (with or without pathway change)
+        if (isPathwayChange) {
+            beyonder.advanceWithPathwayChange(pathway);
+        } else {
+            beyonder.advance();
+        }
+
         passiveAbilityScheduler.refreshPlayer(player);
         beyonderService.updateBeyonder(beyonder);
 
