@@ -19,6 +19,7 @@ import java.util.*;
 public class NBTStructureConfigLoader {
 
     private final Plugin plugin;
+    private LootTableData globalLootTable;
 
     public NBTStructureConfigLoader(Plugin plugin) {
         this.plugin = plugin;
@@ -33,6 +34,10 @@ public class NBTStructureConfigLoader {
         }
 
         YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+
+        // Спочатку завантажуємо глобальну loot table
+        loadGlobalLootTable(config);
+
         ConfigurationSection structuresSection = config.getConfigurationSection("structures");
 
         if (structuresSection == null) {
@@ -53,6 +58,30 @@ public class NBTStructureConfigLoader {
 
         plugin.getLogger().info("Loaded " + structures.size() + " structures total");
         return structures;
+    }
+
+    private void loadGlobalLootTable(YamlConfiguration config) {
+        ConfigurationSection globalSection = config.getConfigurationSection("global_loot");
+
+        if (globalSection == null) {
+            plugin.getLogger().warning("No 'global_loot' section found in structures.yml. Using empty loot table.");
+            globalLootTable = new LootTableData(new ArrayList<>(), 3, 8);
+            return;
+        }
+
+        ConfigurationSection itemsSection = globalSection.getConfigurationSection("items");
+        List<LootItem> items = parseLootItems(itemsSection, "global_loot");
+
+        int minItems = globalSection.getInt("min_items", 3);
+        int maxItems = globalSection.getInt("max_items", 8);
+
+        if (minItems < 0) minItems = 0;
+        if (maxItems < minItems) maxItems = minItems;
+
+        globalLootTable = new LootTableData(items, minItems, maxItems);
+
+        plugin.getLogger().info("Loaded global loot table with " + items.size() +
+                " items (min=" + minItems + ", max=" + maxItems + ")");
     }
 
     private StructureData loadStructureData(String id, ConfigurationSection section) throws Exception {
@@ -86,14 +115,12 @@ public class NBTStructureConfigLoader {
             chance = 0.01;
         }
 
-        // Читаємо min_distance
         int minDistance = spawnSection.getInt("min_distance", 500);
         if (minDistance < 0) {
             plugin.getLogger().warning("Structure '" + id + "' has invalid min_distance: " + minDistance + ". Using default 500");
             minDistance = 500;
         }
 
-        // Читаємо placement_type
         String placementTypeStr = spawnSection.getString("placement_type", "SURFACE");
         StructurePlacementType placementType;
         try {
@@ -103,14 +130,52 @@ public class NBTStructureConfigLoader {
             placementType = StructurePlacementType.SURFACE;
         }
 
-        // Читаємо loot tables
-        Map<String, LootTableData> lootTables = parseLootTables(section, id);
+        // Читаємо налаштування лута (можна перевизначити глобальні)
+        LootTableData lootTable = parseLootConfig(section, id);
 
         plugin.getLogger().info("  Structure '" + id + "' config: chance=" + chance +
                 ", minDistance=" + minDistance + ", placementType=" + placementType +
-                ", lootTables=" + lootTables.size());
+                ", lootItems=" + lootTable.items().size());
 
-        return new StructureData(id, structure, biomes, chance, minDistance, placementType, lootTables);
+        return new StructureData(id, structure, biomes, chance, minDistance, placementType, lootTable);
+    }
+
+    private LootTableData parseLootConfig(ConfigurationSection section, String structureId) {
+        ConfigurationSection lootSection = section.getConfigurationSection("loot");
+
+        if (lootSection == null) {
+            // Використовуємо глобальну таблицю
+            plugin.getLogger().info("Structure '" + structureId + "' using global loot table");
+            return globalLootTable;
+        }
+
+        // Якщо є custom items для цієї структури
+        ConfigurationSection itemsSection = lootSection.getConfigurationSection("items");
+        List<LootItem> items;
+
+        if (itemsSection != null) {
+            // Використовуємо кастомні items
+            items = parseLootItems(itemsSection, structureId);
+            plugin.getLogger().info("Structure '" + structureId + "' using custom loot table with " + items.size() + " items");
+        } else {
+            // Використовуємо items з глобальної таблиці
+            items = globalLootTable.items();
+            plugin.getLogger().info("Structure '" + structureId + "' using global loot items");
+        }
+
+        // Читаємо min/max items (можуть бути перевизначені)
+        Integer minItems = lootSection.isSet("min_items") ? lootSection.getInt("min_items") : null;
+        Integer maxItems = lootSection.isSet("max_items") ? lootSection.getInt("max_items") : null;
+
+        if (minItems == null && maxItems == null) {
+            // Використовуємо значення з глобальної таблиці
+            return new LootTableData(items, globalLootTable.minItems(), globalLootTable.maxItems());
+        }
+
+        int min = minItems != null ? Math.max(0, minItems) : globalLootTable.minItems();
+        int max = maxItems != null ? Math.max(min, maxItems) : globalLootTable.maxItems();
+
+        return new LootTableData(items, min, max);
     }
 
     private Structure loadStructureFromFile(File nbtFile) throws IOException {
@@ -123,60 +188,6 @@ public class NBTStructureConfigLoader {
         } catch (IOException e) {
             throw new IOException("Failed to load structure from file " + nbtFile.getName() + ": " + e.getMessage(), e);
         }
-    }
-
-    private Map<String, LootTableData> parseLootTables(ConfigurationSection section, String structureId) {
-        Map<String, LootTableData> lootTables = new HashMap<>();
-        ConfigurationSection lootSection = section.getConfigurationSection("loot_tables");
-
-        if (lootSection == null) {
-            plugin.getLogger().info("Structure '" + structureId + "' has no loot tables configured");
-            return lootTables;
-        }
-
-        for (String tableKey : lootSection.getKeys(false)) {
-            ConfigurationSection tableSection = lootSection.getConfigurationSection(tableKey);
-            if (tableSection == null) {
-                plugin.getLogger().warning("Invalid loot table section: " + tableKey + " in structure: " + structureId);
-                continue;
-            }
-
-            String chestTag = tableSection.getString("chest_tag");
-            if (chestTag == null || chestTag.isEmpty()) {
-                plugin.getLogger().warning("Missing 'chest_tag' for loot table '" + tableKey + "' in structure: " + structureId);
-                continue;
-            }
-
-            List<LootItem> items = parseLootItems(tableSection.getConfigurationSection("items"), structureId, tableKey);
-            if (items.isEmpty()) {
-                plugin.getLogger().warning("Loot table '" + tableKey + "' in structure '" + structureId + "' has no valid items");
-                continue;
-            }
-
-            Integer minItems = null;
-            Integer maxItems = null;
-
-            if (tableSection.isInt("min_items")) minItems = tableSection.getInt("min_items");
-            else if (tableSection.isInt("minItems")) minItems = tableSection.getInt("minItems");
-
-            if (tableSection.isInt("max_items")) maxItems = tableSection.getInt("max_items");
-            else if (tableSection.isInt("maxItems")) maxItems = tableSection.getInt("maxItems");
-
-            LootTableData lootTable;
-            if (minItems == null && maxItems == null) {
-                lootTable = new LootTableData(items);
-                plugin.getLogger().info("  Loot table '" + tableKey + "' (tag='" + chestTag + "') using default min/max (3..8). Items: " + items.size());
-            } else {
-                int min = (minItems != null) ? Math.max(0, minItems) : 3;
-                int max = (maxItems != null) ? Math.max(min, maxItems) : Math.max(min, 8);
-                lootTable = new LootTableData(items, min, max);
-                plugin.getLogger().info("  Loot table '" + tableKey + "' (tag='" + chestTag + "') min=" + min + " max=" + max + " Items: " + items.size());
-            }
-
-            lootTables.put(chestTag, lootTable);
-        }
-
-        return lootTables;
     }
 
     private File saveDefaultStructureIfNotExists(String fileName) throws IOException {
@@ -220,11 +231,11 @@ public class NBTStructureConfigLoader {
         return biomes;
     }
 
-    private List<LootItem> parseLootItems(ConfigurationSection section, String structureId, String tableKey) {
+    private List<LootItem> parseLootItems(ConfigurationSection section, String tableKey) {
         List<LootItem> items = new ArrayList<>();
 
         if (section == null) {
-            plugin.getLogger().warning("No 'items' section for loot table '" + tableKey + "' in structure: " + structureId);
+            plugin.getLogger().warning("No 'items' section for loot table: " + tableKey);
             return items;
         }
 

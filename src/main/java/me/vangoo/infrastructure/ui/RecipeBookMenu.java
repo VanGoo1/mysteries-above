@@ -2,7 +2,6 @@ package me.vangoo.infrastructure.ui;
 
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
-import me.vangoo.MysteriesAbovePlugin;
 import me.vangoo.application.services.PotionManager;
 import me.vangoo.application.services.RecipeUnlockService;
 import me.vangoo.domain.PathwayPotions;
@@ -113,7 +112,7 @@ public class RecipeBookMenu {
     }
 
     /**
-     * Створює GUI рецептів шляху (1-indexed!)
+     * Створює GUI рецептів шляху
      */
     private Gui createPathwayRecipesGui(Player player, String pathwayName,
                                         List<UnlockedRecipe> recipes) {
@@ -182,7 +181,7 @@ public class RecipeBookMenu {
     }
 
     /**
-     * Додає декоративні рамки (1-indexed!)
+     * Додає декоративні рамки
      */
     private void addBorders(Gui gui) {
         ItemStack border = new ItemStack(BORDER_MATERIAL);
@@ -432,8 +431,7 @@ public class RecipeBookMenu {
 
             // Повертаємося до меню здібностей
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                // Тут потрібно отримати beyonder через BeyonderService
-                // Але ми не маємо до нього прямого доступу
+//                abilityMenu.openMenu(player, );
             }, 1L);
         });
 

@@ -23,7 +23,7 @@ public class StructureCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage("§5[Structure] §f/structure <place|list|tag|checktag|stats|clear>");
+            sender.sendMessage("§5[Structure] §f/structure <place|list|stats|clear>");
             return true;
         }
 
@@ -48,40 +48,6 @@ public class StructureCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage("§6=== Структури ===");
                 structurePopulator.getStructureIds().forEach(id ->
                         sender.sendMessage("§e• " + id));
-            }
-            case "tag" -> {
-                if (!(sender instanceof Player p)) {
-                    sender.sendMessage("§cТільки для гравців");
-                    return true;
-                }
-                if (args.length < 2) {
-                    sender.sendMessage("§c/structure tag <назва>");
-                    return true;
-                }
-                Block block = p.getTargetBlockExact(6);
-                if (block != null && block.getState() instanceof Chest chest) {
-                    lootService.setChestTag(chest, args[1]);
-                    sender.sendMessage("§aТег встановлено: §e" + args[1]);
-                } else {
-                    sender.sendMessage("§cДивіться на скриню!");
-                }
-            }
-            case "checktag" -> {
-                if (!(sender instanceof Player p)) {
-                    sender.sendMessage("§cТільки для гравців");
-                    return true;
-                }
-                Block block = p.getTargetBlockExact(6);
-                if (block != null && block.getState() instanceof Chest chest) {
-                    String tag = lootService.getChestTag(chest);
-                    if (tag != null) {
-                        sender.sendMessage("§aТег: §e" + tag);
-                    } else {
-                        sender.sendMessage("§eНемає тегу");
-                    }
-                } else {
-                    sender.sendMessage("§cДивіться на скриню!");
-                }
             }
             // === НОВІ КОМАНДИ ===
             case "stats" -> {
@@ -128,7 +94,7 @@ public class StructureCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command cmd, String alias, String[] args) {
         if (args.length == 1) {
-            return Arrays.asList("place", "list", "tag", "checktag", "stats", "clear")
+            return Arrays.asList("place", "list", "stats", "clear")
                     .stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());

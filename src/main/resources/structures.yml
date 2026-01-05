@@ -1,411 +1,342 @@
+# Глобальна таблиця лута для всіх структур
+global_loot:
+  # Мінімальна та максимальна кількість ЗАПОВНЕНИХ СЛОТІВ предметів у сундуку (можна перевизначити для кожної структури)
+  min_items: 1
+  max_items: 3
+  
+  # Всі можливі предмети з їх вагами
+  items:
+    # ============================================
+    # VISIONARY PATHWAY - Sequence 9
+    # ============================================
+    manhal_fish_eyeball:
+      item_id: "manhal_fish_eyeball"
+      weight: 30
+      amount_min: 1
+      amount_max: 2
+    
+    goat_horned_blackfish_blood:
+      item_id: "goat_horned_blackfish_blood"
+      weight: 28
+      amount_min: 1
+      amount_max: 2
+    
+    autumn_crocus_essence:
+      item_id: "autumn_crocus_essence"
+      weight: 26
+      amount_min: 1
+      amount_max: 2
+    
+    elf_flower_petals:
+      item_id: "elf_flower_petals"
+      weight: 28
+      amount_min: 1
+      amount_max: 2
+    
+    # ============================================
+    # VISIONARY PATHWAY - Sequence 8
+    # ============================================
+    crystalline_moon_orchid:
+      item_id: "crystalline_moon_orchid"
+      weight: 24
+      amount_min: 1
+      amount_max: 2
+    
+    thought_essence:
+      item_id: "thought_essence"
+      weight: 22
+      amount_min: 1
+      amount_max: 2
+    
+    iridescent_pearl_dust:
+      item_id: "iridescent_pearl_dust"
+      weight: 20
+      amount_min: 1
+      amount_max: 2
+    
+    # ============================================
+    # VISIONARY PATHWAY - Sequence 7
+    # ============================================
+    tree_of_elders_fruit:
+      item_id: "tree_of_elders_fruit"
+      weight: 18
+      amount_min: 1
+      amount_max: 1
+    
+    mirror_dragon_eyes:
+      item_id: "mirror_dragon_eyes"
+      weight: 16
+      amount_min: 1
+      amount_max: 1
+    
+    mirror_dragon_blood:
+      item_id: "mirror_dragon_blood"
+      weight: 16
+      amount_min: 1
+      amount_max: 1
+    
+    # ============================================
+    # VISIONARY PATHWAY - Sequence 6
+    # ============================================
+    black_hunting_lizard_spinal_fluid:
+      item_id: "black_hunting_lizard_spinal_fluid"
+      weight: 14
+      amount_min: 1
+      amount_max: 1
+    
+    illusory_chime_tree_fruit:
+      item_id: "illusory_chime_tree_fruit"
+      weight: 14
+      amount_min: 1
+      amount_max: 1
+    
+    mind_crystal_powder:
+      item_id: "mind_crystal_powder"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+    
+    split_personality_essence:
+      item_id: "split_personality_essence"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+    
+    # ============================================
+    # VISIONARY PATHWAY - Sequence 5
+    # ============================================
+    dream_catcher_heart:
+      item_id: "dream_catcher_heart"
+      weight: 10
+      amount_min: 1
+      amount_max: 1
+    
+    mind_illusion_crystal:
+      item_id: "mind_illusion_crystal"
+      weight: 8
+      amount_min: 1
+      amount_max: 1
+    
+    adult_mind_dragon_blood:
+      item_id: "adult_mind_dragon_blood"
+      weight: 6
+      amount_min: 1
+      amount_max: 1
+    
+    # ============================================
+    # DOOR PATHWAY - Sequence 9
+    # ============================================
+    dimensional_wanderer_eye:
+      item_id: "dimensional_wanderer_eye"
+      weight: 26
+      amount_min: 1
+      amount_max: 1
+    
+    ever_shifting_lotus:
+      item_id: "ever_shifting_lotus"
+      weight: 24
+      amount_min: 1
+      amount_max: 1
+    
+    # ============================================
+    # DOOR PATHWAY - Sequence 8
+    # ============================================
+    spirit_eater_pouch:
+      item_id: "spirit_eater_pouch"
+      weight: 28
+      amount_min: 1
+      amount_max: 2
+    
+    deep_sea_marlin_blood:
+      item_id: "deep_sea_marlin_blood"
+      weight: 26
+      amount_min: 1
+      amount_max: 2
+    
+    string_grass_powder:
+      item_id: "string_grass_powder"
+      weight: 24
+      amount_min: 1
+      amount_max: 2
+    
+    red_chestnut_flower:
+      item_id: "red_chestnut_flower"
+      weight: 24
+      amount_min: 1
+      amount_max: 2
+    
+    # ============================================
+    # DOOR PATHWAY - Sequence 7
+    # ============================================
+    meteorite_crystal:
+      item_id: "meteorite_crystal"
+      weight: 20
+      amount_min: 1
+      amount_max: 1
+    
+    lavos_squid_blood:
+      item_id: "lavos_squid_blood"
+      weight: 18
+      amount_min: 1
+      amount_max: 1
+    
+    starfaced_stone:
+      item_id: "starfaced_stone"
+      weight: 16
+      amount_min: 1
+      amount_max: 1
+    
+    # ============================================
+    # DOOR PATHWAY - Sequence 6
+    # ============================================
+    asmann_complete_brain:
+      item_id: "asmann_complete_brain"
+      weight: 14
+      amount_min: 1
+      amount_max: 1
+    
+    cursed_wraith_artifact:
+      item_id: "cursed_wraith_artifact"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+    
+    imbued_ink_sac:
+      item_id: "imbued_ink_sac"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+    
+    # ============================================
+    # DOOR PATHWAY - Sequence 5
+    # ============================================
+    void_drifter_heart:
+      item_id: "void_drifter_heart"
+      weight: 10
+      amount_min: 1
+      amount_max: 1
+    
+    astral_mist_essence:
+      item_id: "astral_mist_essence"
+      weight: 8
+      amount_min: 1
+      amount_max: 1
+    
+    wayfinder_tree_root:
+      item_id: "wayfinder_tree_root"
+      weight: 6
+      amount_min: 1
+      amount_max: 1
+    
+    # ============================================
+    # RECIPE BOOKS - Рідкісні
+    # ============================================
+    visionary_recipe_9:
+      item_id: "recipe:Visionary:9"
+      weight: 2
+      amount_min: 1
+      amount_max: 1
+    
+    visionary_recipe_8:
+      item_id: "recipe:Visionary:8"
+      weight: 2
+      amount_min: 1
+      amount_max: 1
+    
+    visionary_recipe_7:
+      item_id: "recipe:Visionary:7"
+      weight: 1
+      amount_min: 1
+      amount_max: 1
+    
+    door_recipe_9:
+      item_id: "recipe:Door:9"
+      weight: 2
+      amount_min: 1
+      amount_max: 1
+    
+    door_recipe_8:
+      item_id: "recipe:Door:8"
+      weight: 2
+      amount_min: 1
+      amount_max: 1
+    
+    door_recipe_7:
+      item_id: "recipe:Door:7"
+      weight: 2
+      amount_min: 1
+      amount_max: 1
+    
+    # ============================================
+    # POTIONS - Дуже рідкісні
+    # ============================================
+    visionary_potion_9:
+      item_id: "potion:Visionary:9"
+      weight: 1
+      amount_min: 1
+      amount_max: 1
+    
+    visionary_potion_8:
+      item_id: "potion:Visionary:8"
+      weight: 1
+      amount_min: 1
+      amount_max: 1
+    
+    door_potion_8:
+      item_id: "potion:Door:8"
+      weight: 1
+      amount_min: 1
+      amount_max: 1
+    
+    door_potion_7:
+      item_id: "potion:Door:7"
+      weight: 1
+      amount_min: 1
+      amount_max: 1
+
+# ============================================
+# КОНФІГУРАЦІЯ СТРУКТУР
+# ============================================
 structures:
+  # Березова бібліотека - часто зустрічається
   birch_library:
     file: "birch_lib.nbt"
     spawn:
-      biomes: [PLAINS, BIRCH_FOREST, FOREST]
+      biomes: [PLAINS, BIRCH_FOREST, FOREST, MEADOW]
       chance: 0.025
       min_distance: 1200
       placement_type: SURFACE
-    loot_tables:
-      stairs:
-        chest_tag: "stairs"
-        min_items: 2
-        max_items: 3
-        items:
-          manhal_fish_eyeball:
-            item_id: "manhal_fish_eyeball"
-            weight: 30
-            amount_min: 1
-            amount_max: 2
-          goat_horned_blackfish_blood:
-            item_id: "goat_horned_blackfish_blood"
-            weight: 25
-            amount_min: 1
-            amount_max: 2
-          autumn_crocus_essence:
-            item_id: "autumn_crocus_essence"
-            weight: 20
-            amount_min: 1
-            amount_max: 2
-      shelf1:
-        chest_tag: "shelf1"
-        min_items: 2
-        max_items: 3
-        items:
-          elf_flower_petals:
-            item_id: "elf_flower_petals"
-            weight: 28
-            amount_min: 1
-            amount_max: 2
-          crystalline_moon_orchid:
-            item_id: "crystalline_moon_orchid"
-            weight: 22
-            amount_min: 1
-            amount_max: 2
-          thought_essence:
-            item_id: "thought_essence"
-            weight: 18
-            amount_min: 1
-            amount_max: 2
-      shelf2:
-        chest_tag: "shelf2"
-        min_items: 1
-        max_items: 2
-        items:
-          iridescent_pearl_dust:
-            item_id: "iridescent_pearl_dust"
-            weight: 20
-            amount_min: 1
-            amount_max: 2
-          tree_of_elders_fruit:
-            item_id: "tree_of_elders_fruit"
-            weight: 15
-            amount_min: 1
-            amount_max: 1
-          visionary_recipe:
-            item_id: "recipe:Visionary:9"
-            weight: 2
-            amount_min: 1
-            amount_max: 1
-      shelf3:
-        chest_tag: "shelf3"
-        min_items: 1
-        max_items: 2
-        items:
-          mirror_dragon_eyes:
-            item_id: "mirror_dragon_eyes"
-            weight: 18
-            amount_min: 1
-            amount_max: 2
-          mirror_dragon_blood:
-            item_id: "mirror_dragon_blood"
-            weight: 15
-            amount_min: 1
-            amount_max: 1
-          black_hunting_lizard_spinal_fluid:
-            item_id: "black_hunting_lizard_spinal_fluid"
-            weight: 12
-            amount_min: 1
-            amount_max: 1
-      upper_stairs:
-        chest_tag: "upper_stairs"
-        min_items: 1
-        max_items: 1
-        items:
-          illusory_chime_tree_fruit:
-            item_id: "illusory_chime_tree_fruit"
-            weight: 25
-            amount_min: 1
-            amount_max: 1
-          mind_crystal_powder:
-            item_id: "mind_crystal_powder"
-            weight: 15
-            amount_min: 1
-            amount_max: 1
-          visionary_recipe_8:
-            item_id: "recipe:Visionary:8"
-            weight: 2
-            amount_min: 1
-            amount_max: 1
-      final:
-        chest_tag: "final"
-        min_items: 1
-        max_items: 1
-        items:
-          split_personality_essence:
-            item_id: "split_personality_essence"
-            weight: 50
-            amount_min: 1
-            amount_max: 1
-          dream_catcher_heart:
-            item_id: "dream_catcher_heart"
-            weight: 20
-            amount_min: 1
-            amount_max: 1
-          mind_illusion_crystal:
-            item_id: "mind_illusion_crystal"
-            weight: 15
-            amount_min: 1
-            amount_max: 1
-          visionary_potion_8:
-            item_id: "potion:Visionary:8"
-            weight: 1
-            amount_min: 1
-            amount_max: 1
+    # Всі сундуки в структурі будуть заповнюватися з глобальної таблиці
+    # можна перевизначити параметри (опціонально)
+    loot:
+      min_items: 1
+      max_items: 4
 
+  # Бліда бібліотека - рідкісна
   pale_library:
     file: "pale_lib.nbt"
     spawn:
-      biomes: [TAIGA, SNOWY_TAIGA, SNOWY_PLAINS]
+      biomes: [TAIGA, SNOWY_TAIGA, SNOWY_PLAINS, MEADOW]
       chance: 0.02
       min_distance: 1400
       placement_type: SURFACE
-    loot_tables:
-      stairs:
-        chest_tag: "stairs"
-        min_items: 2
-        max_items: 3
-        items:
-          dimensional_wanderer_eye:
-            item_id: "dimensional_wanderer_eye"
-            weight: 25
-            amount_min: 1
-            amount_max: 1
-          ever_shifting_lotus:
-            item_id: "ever_shifting_lotus"
-            weight: 20
-            amount_min: 1
-            amount_max: 1
-          spirit_eater_pouch:
-            item_id: "spirit_eater_pouch"
-            weight: 30
-            amount_min: 1
-            amount_max: 2
-      shelf1:
-        chest_tag: "shelf1"
-        min_items: 2
-        max_items: 3
-        items:
-          deep_sea_marlin_blood:
-            item_id: "deep_sea_marlin_blood"
-            weight: 28
-            amount_min: 1
-            amount_max: 2
-          string_grass_powder:
-            item_id: "string_grass_powder"
-            weight: 25
-            amount_min: 1
-            amount_max: 2
-          red_chestnut_flower:
-            item_id: "red_chestnut_flower"
-            weight: 22
-            amount_min: 1
-            amount_max: 2
-      shelf2:
-        chest_tag: "shelf2"
-        min_items: 1
-        max_items: 2
-        items:
-          meteorite_crystal:
-            item_id: "meteorite_crystal"
-            weight: 20
-            amount_min: 1
-            amount_max: 1
-          lavos_squid_blood:
-            item_id: "lavos_squid_blood"
-            weight: 18
-            amount_min: 1
-            amount_max: 1
-          door_recipe:
-            item_id: "recipe:Door:9"
-            weight: 2
-            amount_min: 1
-            amount_max: 1
-      shelf3:
-        chest_tag: "shelf3"
-        min_items: 1
-        max_items: 2
-        items:
-          starfaced_stone:
-            item_id: "starfaced_stone"
-            weight: 18
-            amount_min: 1
-            amount_max: 1
-          asmann_complete_brain:
-            item_id: "asmann_complete_brain"
-            weight: 12
-            amount_min: 1
-            amount_max: 1
-          cursed_wraith_artifact:
-            item_id: "cursed_wraith_artifact"
-            weight: 10
-            amount_min: 1
-            amount_max: 1
-      upper_stairs:
-        chest_tag: "upper_stairs"
-        min_items: 1
-        max_items: 1
-        items:
-          imbued_ink_sac:
-            item_id: "imbued_ink_sac"
-            weight: 20
-            amount_min: 1
-            amount_max: 1
-          void_drifter_heart:
-            item_id: "void_drifter_heart"
-            weight: 12
-            amount_min: 1
-            amount_max: 1
-          door_recipe_8:
-            item_id: "recipe:Door:8"
-            weight: 2
-            amount_min: 1
-            amount_max: 1
-      final:
-        chest_tag: "final"
-        min_items: 1
-        max_items: 1
-        items:
-          astral_mist_essence:
-            item_id: "astral_mist_essence"
-            weight: 45
-            amount_min: 1
-            amount_max: 1
-          wayfinder_tree_root:
-            item_id: "wayfinder_tree_root"
-            weight: 25
-            amount_min: 1
-            amount_max: 1
-          void_drifter_heart:
-            item_id: "void_drifter_heart"
-            weight: 15
-            amount_min: 1
-            amount_max: 1
-          door_potion_7:
-            item_id: "potion:Door:7"
-            weight: 1
-            amount_min: 1
-            amount_max: 1
+    loot:
+      min_items: 2
+      max_items: 5
 
+  # Ялинова бібліотека
   spruce_library:
     file: "spruce_lib.nbt"
     spawn:
-      biomes: [TAIGA, GROVE, OLD_GROWTH_SPRUCE_TAIGA]
+      biomes: [TAIGA, GROVE, OLD_GROWTH_SPRUCE_TAIGA, SNOWY_PLAINS]
       chance: 0.028
       min_distance: 1100
       placement_type: SURFACE
-    loot_tables:
-      stairs:
-        chest_tag: "stairs"
-        min_items: 2
-        max_items: 3
-        items:
-          crystalline_moon_orchid:
-            item_id: "crystalline_moon_orchid"
-            weight: 28
-            amount_min: 1
-            amount_max: 2
-          thought_essence:
-            item_id: "thought_essence"
-            weight: 25
-            amount_min: 1
-            amount_max: 2
-          string_grass_powder:
-            item_id: "string_grass_powder"
-            weight: 22
-            amount_min: 1
-            amount_max: 2
-      shelf1:
-        chest_tag: "shelf1"
-        min_items: 2
-        max_items: 3
-        items:
-          red_chestnut_flower:
-            item_id: "red_chestnut_flower"
-            weight: 26
-            amount_min: 1
-            amount_max: 2
-          iridescent_pearl_dust:
-            item_id: "iridescent_pearl_dust"
-            weight: 23
-            amount_min: 1
-            amount_max: 2
-          deep_sea_marlin_blood:
-            item_id: "deep_sea_marlin_blood"
-            weight: 20
-            amount_min: 1
-            amount_max: 2
-      shelf2:
-        chest_tag: "shelf2"
-        min_items: 1
-        max_items: 2
-        items:
-          meteorite_crystal:
-            item_id: "meteorite_crystal"
-            weight: 22
-            amount_min: 1
-            amount_max: 1
-          tree_of_elders_fruit:
-            item_id: "tree_of_elders_fruit"
-            weight: 18
-            amount_min: 1
-            amount_max: 1
-          door_recipe:
-            item_id: "recipe:Door:9"
-            weight: 2
-            amount_min: 1
-            amount_max: 1
-      shelf3:
-        chest_tag: "shelf3"
-        min_items: 1
-        max_items: 2
-        items:
-          lavos_squid_blood:
-            item_id: "lavos_squid_blood"
-            weight: 20
-            amount_min: 1
-            amount_max: 1
-          mirror_dragon_blood:
-            item_id: "mirror_dragon_blood"
-            weight: 16
-            amount_min: 1
-            amount_max: 1
-          illusory_chime_tree_fruit:
-            item_id: "illusory_chime_tree_fruit"
-            weight: 12
-            amount_min: 1
-            amount_max: 1
-          visionary_recipe:
-            item_id: "recipe:Visionary:9"
-            weight: 2
-            amount_min: 1
-            amount_max: 1
-      upper_stairs:
-        chest_tag: "upper_stairs"
-        min_items: 1
-        max_items: 1
-        items:
-          starfaced_stone:
-            item_id: "starfaced_stone"
-            weight: 22
-            amount_min: 1
-            amount_max: 1
-          mind_crystal_powder:
-            item_id: "mind_crystal_powder"
-            weight: 15
-            amount_min: 1
-            amount_max: 1
-          visionary_recipe_8:
-            item_id: "recipe:Visionary:7"
-            weight: 2
-            amount_min: 1
-            amount_max: 1
-      final:
-        chest_tag: "final"
-        min_items: 1
-        max_items: 1
-        items:
-          asmann_complete_brain:
-            item_id: "asmann_complete_brain"
-            weight: 40
-            amount_min: 1
-            amount_max: 1
-          split_personality_essence:
-            item_id: "split_personality_essence"
-            weight: 30
-            amount_min: 1
-            amount_max: 1
-          imbued_ink_sac:
-            item_id: "imbued_ink_sac"
-            weight: 18
-            amount_min: 1
-            amount_max: 1
-          visionary_potion:
-            item_id: "recipe:Visionary:9"
-            weight: 1
-            amount_min: 1
-            amount_max: 1
+    loot:
+      min_items: 2
+      max_items: 5
 
+  # Зруйнована березова бібліотека - часто зустрічається
   ruined_birch_library:
     file: "ruined_birch_lib.nbt"
     spawn:
@@ -413,118 +344,11 @@ structures:
       chance: 0.04
       min_distance: 800
       placement_type: SURFACE
-    loot_tables:
-      outside:
-        chest_tag: "outside"
-        min_items: 1
-        max_items: 2
-        items:
-          manhal_fish_eyeball:
-            item_id: "manhal_fish_eyeball"
-            weight: 35
-            amount_min: 1
-            amount_max: 2
-          goat_horned_blackfish_blood:
-            item_id: "goat_horned_blackfish_blood"
-            weight: 30
-            amount_min: 1
-            amount_max: 2
-          autumn_crocus_essence:
-            item_id: "autumn_crocus_essence"
-            weight: 25
-            amount_min: 1
-            amount_max: 2
-      shelf:
-        chest_tag: "shelf"
-        min_items: 1
-        max_items: 2
-        items:
-          elf_flower_petals:
-            item_id: "elf_flower_petals"
-            weight: 30
-            amount_min: 1
-            amount_max: 2
-          crystalline_moon_orchid:
-            item_id: "crystalline_moon_orchid"
-            weight: 25
-            amount_min: 1
-            amount_max: 2
-          thought_essence:
-            item_id: "thought_essence"
-            weight: 20
-            amount_min: 1
-            amount_max: 2
-      sogood:
-        chest_tag: "sogood"
-        min_items: 1
-        max_items: 1
-        items:
-          iridescent_pearl_dust:
-            item_id: "iridescent_pearl_dust"
-            weight: 25
-            amount_min: 1
-            amount_max: 2
-          tree_of_elders_fruit:
-            item_id: "tree_of_elders_fruit"
-            weight: 18
-            amount_min: 1
-            amount_max: 1
-          mirror_dragon_eyes:
-            item_id: "mirror_dragon_eyes"
-            weight: 15
-            amount_min: 1
-            amount_max: 1
-          visionary_recipe:
-            item_id: "recipe:Visionary:9"
-            weight: 3
-            amount_min: 1
-            amount_max: 1
-      sobad:
-        chest_tag: "sobad"
-        min_items: 1
-        max_items: 1
-        items:
-          mirror_dragon_blood:
-            item_id: "mirror_dragon_blood"
-            weight: 22
-            amount_min: 1
-            amount_max: 1
-          black_hunting_lizard_spinal_fluid:
-            item_id: "black_hunting_lizard_spinal_fluid"
-            weight: 16
-            amount_min: 1
-            amount_max: 1
-          illusory_chime_tree_fruit:
-            item_id: "illusory_chime_tree_fruit"
-            weight: 12
-            amount_min: 1
-            amount_max: 1
-      final:
-        chest_tag: "final"
-        min_items: 1
-        max_items: 1
-        items:
-          mind_crystal_powder:
-            item_id: "mind_crystal_powder"
-            weight: 55
-            amount_min: 1
-            amount_max: 1
-          split_personality_essence:
-            item_id: "split_personality_essence"
-            weight: 25
-            amount_min: 1
-            amount_max: 1
-          dream_catcher_heart:
-            item_id: "dream_catcher_heart"
-            weight: 12
-            amount_min: 1
-            amount_max: 1
-          visionary_potion:
-            item_id: "potion:Visionary:9"
-            weight: 1
-            amount_min: 1
-            amount_max: 1
+    loot:
+      min_items: 1
+      max_items: 3
 
+  # Зруйнована дубова бібліотека
   ruined_oak_library:
     file: "ruined_oak_lib.nbt"
     spawn:
@@ -532,118 +356,11 @@ structures:
       chance: 0.045
       min_distance: 700
       placement_type: SURFACE
-    loot_tables:
-      outside:
-        chest_tag: "outside"
-        min_items: 1
-        max_items: 2
-        items:
-          elf_flower_petals:
-            item_id: "elf_flower_petals"
-            weight: 32
-            amount_min: 1
-            amount_max: 2
-          spirit_eater_pouch:
-            item_id: "spirit_eater_pouch"
-            weight: 28
-            amount_min: 1
-            amount_max: 2
-          string_grass_powder:
-            item_id: "string_grass_powder"
-            weight: 25
-            amount_min: 1
-            amount_max: 2
-      shelf:
-        chest_tag: "shelf"
-        min_items: 1
-        max_items: 2
-        items:
-          thought_essence:
-            item_id: "thought_essence"
-            weight: 28
-            amount_min: 1
-            amount_max: 2
-          deep_sea_marlin_blood:
-            item_id: "deep_sea_marlin_blood"
-            weight: 24
-            amount_min: 1
-            amount_max: 2
-          red_chestnut_flower:
-            item_id: "red_chestnut_flower"
-            weight: 20
-            amount_min: 1
-            amount_max: 2
-      sogood:
-        chest_tag: "sogood"
-        min_items: 1
-        max_items: 1
-        items:
-          iridescent_pearl_dust:
-            item_id: "iridescent_pearl_dust"
-            weight: 24
-            amount_min: 1
-            amount_max: 2
-          meteorite_crystal:
-            item_id: "meteorite_crystal"
-            weight: 18
-            amount_min: 1
-            amount_max: 1
-          lavos_squid_blood:
-            item_id: "lavos_squid_blood"
-            weight: 14
-            amount_min: 1
-            amount_max: 1
-          door_recipe:
-            item_id: "recipe:Door:9"
-            weight: 3
-            amount_min: 1
-            amount_max: 1
-      sobad:
-        chest_tag: "sobad"
-        min_items: 1
-        max_items: 1
-        items:
-          tree_of_elders_fruit:
-            item_id: "tree_of_elders_fruit"
-            weight: 22
-            amount_min: 1
-            amount_max: 1
-          mirror_dragon_blood:
-            item_id: "mirror_dragon_blood"
-            weight: 16
-            amount_min: 1
-            amount_max: 1
-          starfaced_stone:
-            item_id: "starfaced_stone"
-            weight: 12
-            amount_min: 1
-            amount_max: 1
-      final:
-        chest_tag: "final"
-        min_items: 1
-        max_items: 1
-        items:
-          illusory_chime_tree_fruit:
-            item_id: "illusory_chime_tree_fruit"
-            weight: 50
-            amount_min: 1
-            amount_max: 1
-          asmann_complete_brain:
-            item_id: "asmann_complete_brain"
-            weight: 28
-            amount_min: 1
-            amount_max: 1
-          cursed_wraith_artifact:
-            item_id: "cursed_wraith_artifact"
-            weight: 15
-            amount_min: 1
-            amount_max: 1
-          door_potion:
-            item_id: "potion:Door:8"
-            weight: 1
-            amount_min: 1
-            amount_max: 1
+    loot:
+      min_items: 1
+      max_items: 3
 
+  # Зруйнована бліда бібліотека
   ruined_pale_library:
     file: "ruined_pale_lib.nbt"
     spawn:
@@ -651,118 +368,11 @@ structures:
       chance: 0.038
       min_distance: 900
       placement_type: SURFACE
-    loot_tables:
-      outside:
-        chest_tag: "outside"
-        min_items: 1
-        max_items: 2
-        items:
-          spirit_eater_pouch:
-            item_id: "spirit_eater_pouch"
-            weight: 32
-            amount_min: 1
-            amount_max: 2
-          deep_sea_marlin_blood:
-            item_id: "deep_sea_marlin_blood"
-            weight: 28
-            amount_min: 1
-            amount_max: 2
-          string_grass_powder:
-            item_id: "string_grass_powder"
-            weight: 26
-            amount_min: 1
-            amount_max: 2
-      shelf:
-        chest_tag: "shelf"
-        min_items: 1
-        max_items: 2
-        items:
-          red_chestnut_flower:
-            item_id: "red_chestnut_flower"
-            weight: 28
-            amount_min: 1
-            amount_max: 2
-          meteorite_crystal:
-            item_id: "meteorite_crystal"
-            weight: 24
-            amount_min: 1
-            amount_max: 2
-          lavos_squid_blood:
-            item_id: "lavos_squid_blood"
-            weight: 20
-            amount_min: 1
-            amount_max: 2
-      sogood:
-        chest_tag: "sogood"
-        min_items: 1
-        max_items: 1
-        items:
-          dimensional_wanderer_eye:
-            item_id: "dimensional_wanderer_eye"
-            weight: 20
-            amount_min: 1
-            amount_max: 1
-          ever_shifting_lotus:
-            item_id: "ever_shifting_lotus"
-            weight: 16
-            amount_min: 1
-            amount_max: 1
-          starfaced_stone:
-            item_id: "starfaced_stone"
-            weight: 12
-            amount_min: 1
-            amount_max: 1
-          door_recipe:
-            item_id: "recipe:Door:9"
-            weight: 3
-            amount_min: 1
-            amount_max: 1
-      sobad:
-        chest_tag: "sobad"
-        min_items: 1
-        max_items: 1
-        items:
-          asmann_complete_brain:
-            item_id: "asmann_complete_brain"
-            weight: 20
-            amount_min: 1
-            amount_max: 1
-          cursed_wraith_artifact:
-            item_id: "cursed_wraith_artifact"
-            weight: 14
-            amount_min: 1
-            amount_max: 1
-          imbued_ink_sac:
-            item_id: "imbued_ink_sac"
-            weight: 10
-            amount_min: 1
-            amount_max: 1
-      final:
-        chest_tag: "final"
-        min_items: 1
-        max_items: 1
-        items:
-          void_drifter_heart:
-            item_id: "void_drifter_heart"
-            weight: 48
-            amount_min: 1
-            amount_max: 1
-          astral_mist_essence:
-            item_id: "astral_mist_essence"
-            weight: 30
-            amount_min: 1
-            amount_max: 1
-          wayfinder_tree_root:
-            item_id: "wayfinder_tree_root"
-            weight: 18
-            amount_min: 1
-            amount_max: 1
-          door_potion:
-            item_id: "potion:Door:7"
-            weight: 1
-            amount_min: 1
-            amount_max: 1
+    loot:
+      min_items: 1
+      max_items: 3
 
+  # Зруйнована ялинова бібліотека
   ruined_spruce_library:
     file: "ruined_spruce_lib.nbt"
     spawn:
@@ -770,119 +380,6 @@ structures:
       chance: 0.042
       min_distance: 750
       placement_type: SURFACE
-    loot_tables:
-      outside:
-        chest_tag: "outside"
-        min_items: 1
-        max_items: 2
-        items:
-          crystalline_moon_orchid:
-            item_id: "crystalline_moon_orchid"
-            weight: 30
-            amount_min: 1
-            amount_max: 2
-          red_chestnut_flower:
-            item_id: "red_chestnut_flower"
-            weight: 28
-            amount_min: 1
-            amount_max: 2
-          thought_essence:
-            item_id: "thought_essence"
-            weight: 26
-            amount_min: 1
-            amount_max: 2
-      shelf:
-        chest_tag: "shelf"
-        min_items: 1
-        max_items: 2
-        items:
-          iridescent_pearl_dust:
-            item_id: "iridescent_pearl_dust"
-            weight: 28
-            amount_min: 1
-            amount_max: 2
-          meteorite_crystal:
-            item_id: "meteorite_crystal"
-            weight: 24
-            amount_min: 1
-            amount_max: 2
-          deep_sea_marlin_blood:
-            item_id: "deep_sea_marlin_blood"
-            weight: 22
-            amount_min: 1
-            amount_max: 2
-      sogood:
-        chest_tag: "sogood"
-        min_items: 1
-        max_items: 1
-        items:
-          tree_of_elders_fruit:
-            item_id: "tree_of_elders_fruit"
-            weight: 24
-            amount_min: 1
-            amount_max: 1
-          lavos_squid_blood:
-            item_id: "lavos_squid_blood"
-            weight: 18
-            amount_min: 1
-            amount_max: 1
-          mirror_dragon_blood:
-            item_id: "mirror_dragon_blood"
-            weight: 14
-            amount_min: 1
-            amount_max: 1
-          visionary_recipe:
-            item_id: "recipe:Visionary:9"
-            weight: 3
-            amount_min: 1
-            amount_max: 1
-      sobad:
-        chest_tag: "sobad"
-        min_items: 1
-        max_items: 1
-        items:
-          illusory_chime_tree_fruit:
-            item_id: "illusory_chime_tree_fruit"
-            weight: 20
-            amount_min: 1
-            amount_max: 1
-          starfaced_stone:
-            item_id: "starfaced_stone"
-            weight: 16
-            amount_min: 1
-            amount_max: 1
-          mind_crystal_powder:
-            item_id: "mind_crystal_powder"
-            weight: 12
-            amount_min: 1
-            amount_max: 1
-      final:
-        chest_tag: "final"
-        min_items: 1
-        max_items: 1
-        items:
-          asmann_complete_brain:
-            item_id: "asmann_complete_brain"
-            weight: 45
-            amount_min: 1
-            amount_max: 1
-          split_personality_essence:
-            item_id: "split_personality_essence"
-            weight: 32
-            amount_min: 1
-            amount_max: 1
-          imbued_ink_sac:
-            item_id: "imbued_ink_sac"
-            weight: 16
-            amount_min: 1
-            amount_max: 1
-          door_potion:
-            item_id: "potion:Door:8"
-            weight: 1
-            amount_min: 1
-            amount_max: 1
-          visionary_potion:
-            item_id: "potion:Visionary:8"
-            weight: 1
-            amount_min: 1
-            amount_max: 1
+    loot:
+      min_items: 1
+      max_items: 3

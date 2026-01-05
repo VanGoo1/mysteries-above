@@ -12,11 +12,12 @@ custom-items:
       - ""
     glow: true
     custom-model-data: "master_recipe_book"
-# ============================================
-# 9 VISIONARY
-# ============================================
+
+  # ============================================
+  # 9 VISIONARY
+  # ============================================
   manhal_fish_eyeball:
-    display-name: "§fОко риби Манхал"
+    display-name: "§7Око риби Манхал"
     material: PAPER
     lore:
       - ""
@@ -50,7 +51,6 @@ custom-items:
   # ============================================
   # 8 VISIONARY
   # ============================================
-
   crystalline_moon_orchid:
     display-name: "§7Кришталева Місячна Орхідея"
     material: PAPER
@@ -75,13 +75,11 @@ custom-items:
     glow: false
     custom-model-data: "iridescent_pearl_dust"
 
-
   # ============================================
   # 7 VISIONARY
   # ============================================
-
   tree_of_elders_fruit:
-    display-name: "§7Плоди Дерева Бузини"
+    display-name: "§bПлоди Дерева Бузини"
     material: PAPER
     lore:
       - ""
@@ -89,7 +87,7 @@ custom-items:
     custom-model-data: "tree_of_elders_fruit"
 
   mirror_dragon_eyes:
-    display-name: "§7Очі Дзеркального Дракона"
+    display-name: "§bОчі Дзеркального Дракона"
     material: PAPER
     lore:
       - ""
@@ -97,7 +95,7 @@ custom-items:
     custom-model-data: "mirror_dragon_eyes"
 
   mirror_dragon_blood:
-    display-name: "§7Кров Дзеркального Дракона"
+    display-name: "§bКров Дзеркального Дракона"
     material: PAPER
     lore:
       - ""
@@ -107,9 +105,8 @@ custom-items:
   # ============================================
   # 6 VISIONARY
   # ============================================
-
   black_hunting_lizard_spinal_fluid:
-    display-name: "§7Спинномозкова Рідина Чорної Ящірки"
+    display-name: "§bСпинномозкова Рідина Чорної Ящірки"
     material: PAPER
     lore:
       - ""
@@ -117,7 +114,7 @@ custom-items:
     custom-model-data: "black_hunting_lizard_spinal_fluid"
 
   illusory_chime_tree_fruit:
-    display-name: "§7Плоди Ілюзорного Дерева Дзвіночків"
+    display-name: "§bПлоди Ілюзорного Дерева Дзвіночків"
     material: PAPER
     lore:
       - ""
@@ -125,7 +122,7 @@ custom-items:
     custom-model-data: "illusory_chime_tree_fruit"
 
   mind_crystal_powder:
-    display-name: "§7Кристалічний Порошок Розуму"
+    display-name: "§bКристалічний Порошок Розуму"
     material: PAPER
     lore:
       - ""
@@ -133,7 +130,7 @@ custom-items:
     custom-model-data: "mind_crystal_powder"
 
   split_personality_essence:
-    display-name: "§7Есенція Роздвоєння Особистості"
+    display-name: "§bЕсенція Роздвоєння Особистості"
     material: PAPER
     lore:
       - ""
@@ -143,9 +140,8 @@ custom-items:
   # ============================================
   # 5 VISIONARY
   # ============================================
-
   dream_catcher_heart:
-    display-name: "§7Серце Ловця Снів"
+    display-name: "§6Серце Ловця Снів"
     material: PAPER
     lore:
       - ""
@@ -153,7 +149,7 @@ custom-items:
     custom-model-data: "dream_catcher_heart"
 
   mind_illusion_crystal:
-    display-name: "§7Кристал Ілюзії Розуму"
+    display-name: "§6Кристал Ілюзії Розуму"
     material: PAPER
     lore:
       - ""
@@ -161,22 +157,16 @@ custom-items:
     custom-model-data: "mind_illusion_crystal"
 
   adult_mind_dragon_blood:
-    display-name: "§7Кров Дорослого Розумового Дракона"
+    display-name: "§6Кров Дорослого Розумового Дракона"
     material: PAPER
     lore:
       - ""
     glow: false
     custom-model-data: "adult_mind_dragon_blood"
 
-  #
-  #
-  #
-  #
-
   # ============================================
   # 9 DOOR
   # ============================================
-
   dimensional_wanderer_eye:
     display-name: "§7Око Вимірного Мандрівника"
     material: PAPER
@@ -196,7 +186,6 @@ custom-items:
   # ============================================
   # 8 DOOR
   # ============================================
-
   spirit_eater_pouch:
     display-name: "§7Мішечок Пожирача Духів"
     material: PAPER
@@ -232,9 +221,8 @@ custom-items:
   # ============================================
   # 7 DOOR
   # ============================================
-
   meteorite_crystal:
-    display-name: "§7Метеоритний Кристал"
+    display-name: "§bМетеоритний Кристал"
     material: PAPER
     lore:
       - ""
@@ -242,7 +230,7 @@ custom-items:
     custom-model-data: "meteorite_crystal"
 
   lavos_squid_blood:
-    display-name: "§Кров Кальмара Лавос"
+    display-name: "§bКров Кальмара Лавос"
     material: PAPER
     lore:
       - ""
@@ -250,7 +238,7 @@ custom-items:
     custom-model-data: "lavos_squid_blood"
 
   starfaced_stone:
-    display-name: "§Камінь Зірки"
+    display-name: "§bКамінь Зірки"
     material: PAPER
     lore:
       - ""
@@ -260,9 +248,8 @@ custom-items:
   # ============================================
   # 6 DOOR
   # ============================================
-
   asmann_complete_brain:
-    display-name: "§Цілий Мозок Асманна"
+    display-name: "§bЦілий Мозок Асманна"
     material: PAPER
     lore:
       - ""
@@ -270,7 +257,7 @@ custom-items:
     custom-model-data: "asmann_complete_brain"
 
   cursed_wraith_artifact:
-    display-name: "§Артефакт Проклятого Привида"
+    display-name: "§bАртефакт Проклятого Привида"
     material: PAPER
     lore:
       - ""
@@ -278,7 +265,7 @@ custom-items:
     custom-model-data: "cursed_wraith_artifact"
 
   imbued_ink_sac:
-    display-name: "§Наповнений Чорнильний Мішок"
+    display-name: "§bНаповнений Чорнильний Мішок"
     material: PAPER
     lore:
       - ""
@@ -288,9 +275,8 @@ custom-items:
   # ============================================
   # 5 DOOR
   # ============================================
-
   void_drifter_heart:
-    display-name: "§Серце Мандрівника Порожнечі"
+    display-name: "§6Серце Мандрівника Порожнечі"
     material: PAPER
     lore:
       - ""
@@ -298,7 +284,7 @@ custom-items:
     custom-model-data: "void_drifter_heart"
 
   astral_mist_essence:
-    display-name: "§Есенція Астрального Туману"
+    display-name: "§6Есенція Астрального Туману"
     material: PAPER
     lore:
       - ""
@@ -306,7 +292,7 @@ custom-items:
     custom-model-data: "astral_mist_essence"
 
   wayfinder_tree_root:
-    display-name: "§Корінь Дерева-Знахідника"
+    display-name: "§6Корінь Дерева-Знахідника"
     material: PAPER
     lore:
       - ""

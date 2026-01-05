@@ -4,7 +4,6 @@ import org.bukkit.block.Biome;
 import org.bukkit.structure.Structure;
 
 import java.util.List;
-import java.util.Map;
 
 public record StructureData(
         String id,
@@ -13,7 +12,7 @@ public record StructureData(
         double spawnChance,
         int minDistance,
         StructurePlacementType placementType,
-        Map<String, LootTableData> lootTables
+        LootTableData lootTable
 ) {
     // Конструктор з дефолтними значеннями для зворотної сумісності
     public StructureData(
@@ -21,8 +20,8 @@ public record StructureData(
             Structure structure,
             List<Biome> biomes,
             double spawnChance,
-            Map<String, LootTableData> lootTables
+            LootTableData lootTable
     ) {
-        this(id, structure, biomes, spawnChance, 500, StructurePlacementType.SURFACE, lootTables);
+        this(id, structure, biomes, spawnChance, 500, StructurePlacementType.SURFACE, lootTable);
     }
 }

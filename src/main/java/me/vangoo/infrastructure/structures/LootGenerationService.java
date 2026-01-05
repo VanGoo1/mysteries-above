@@ -10,12 +10,10 @@ import me.vangoo.domain.valueobjects.StructureData;
 import me.vangoo.infrastructure.items.RecipeBookFactory;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
 import java.util.*;
@@ -25,7 +23,6 @@ public class LootGenerationService {
     private final CustomItemService customItemService;
     private final PotionManager potionManager;
     private final RecipeBookFactory recipeBookFactory;
-    private final NamespacedKey lootTagKey;
     private final Random random = new Random();
 
     public LootGenerationService(
@@ -37,12 +34,11 @@ public class LootGenerationService {
         this.customItemService = customItemService;
         this.potionManager = potionManager;
         this.recipeBookFactory = recipeBookFactory;
-        this.lootTagKey = new NamespacedKey(plugin, "chest_tag");
     }
 
     public void processStructureLoot(StructureData data, Location center) {
-        if (data.lootTables().isEmpty()) {
-            plugin.getLogger().warning("No loot tables for structure " + data.id());
+        if (data.lootTable() == null || data.lootTable().items().isEmpty()) {
+            plugin.getLogger().warning("No loot table for structure " + data.id());
             return;
         }
 
@@ -52,13 +48,13 @@ public class LootGenerationService {
             return;
         }
 
-        int radius = 64; // Збільшено радіус пошуку
-        int chestsFound = 0;
-        int chestsFilled = 0;
+        int radius = 64;
+        List<Chest> chests = new ArrayList<>();
 
         plugin.getLogger().info("Searching for chests in structure " + data.id() +
                 " around " + center.getBlockX() + ", " + center.getBlockY() + ", " + center.getBlockZ());
 
+        // Збираємо всі сундуки в радіусі
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {
                 for (int z = -radius; z <= radius; z++) {
@@ -69,57 +65,25 @@ public class LootGenerationService {
                     );
 
                     if (block.getType() == Material.CHEST || block.getType() == Material.TRAPPED_CHEST) {
-                        chestsFound++;
                         if (block.getState() instanceof Chest chest) {
-                            if (fillChestIfTagged(chest, data)) {
-                                chestsFilled++;
-                            }
+                            chests.add(chest);
                         }
                     }
                 }
             }
         }
 
-        plugin.getLogger().info("Structure " + data.id() + ": found " + chestsFound +
-                " chests, filled " + chestsFilled + " with loot");
+        plugin.getLogger().info("Structure " + data.id() + ": found " + chests.size() + " chests");
 
-        if (chestsFilled == 0 && chestsFound > 0) {
-            plugin.getLogger().warning("Found chests but none were filled! Check NBT tags in structure file.");
-        }
-    }
-
-    private boolean fillChestIfTagged(Chest chest, StructureData data) {
-        var container = chest.getPersistentDataContainer();
-
-        if (!container.has(lootTagKey, PersistentDataType.STRING)) {
-            // Логуємо якщо сундук без тегу
-            plugin.getLogger().fine("Chest at " + chest.getLocation() + " has no tag");
-            return false;
+        // Заповнюємо всі знайдені сундуки
+        int filledCount = 0;
+        for (Chest chest : chests) {
+            chest.getInventory().clear();
+            populateInventory(chest, data.lootTable());
+            filledCount++;
         }
 
-        String tag = container.get(lootTagKey, PersistentDataType.STRING);
-        plugin.getLogger().info("Found chest with tag: '" + tag + "' at " + chest.getLocation());
-
-        LootTableData lootTable = data.lootTables().get(tag);
-
-        if (lootTable == null) {
-            plugin.getLogger().warning("No loot table found for tag: '" + tag + "' in structure: " + data.id());
-            plugin.getLogger().warning("Available tags: " + data.lootTables().keySet());
-            return false;
-        }
-
-        // Видаляємо тег
-        container.remove(lootTagKey);
-        chest.update();
-
-        // Очищаємо інвентар
-        chest.getInventory().clear();
-
-        // Заповнюємо лутом
-        populateInventory(chest, lootTable);
-
-        plugin.getLogger().info("Successfully filled chest with tag '" + tag + "'");
-        return true;
+        plugin.getLogger().info("Structure " + data.id() + ": filled " + filledCount + " chests with loot");
     }
 
     private void populateInventory(Chest chest, LootTableData lootTable) {
@@ -134,7 +98,7 @@ public class LootGenerationService {
                 : (minItems + random.nextInt(maxItems - minItems + 1));
         itemCount = Math.min(itemCount, inventorySize);
 
-        plugin.getLogger().info("  Filling with " + itemCount + " items (min=" + minItems + ", max=" + maxItems + ")");
+        plugin.getLogger().fine("  Filling chest with " + itemCount + " items (min=" + minItems + ", max=" + maxItems + ")");
 
         List<Integer> availableSlots = new ArrayList<>();
         for (int i = 0; i < inventorySize; i++) availableSlots.add(i);
@@ -173,13 +137,13 @@ public class LootGenerationService {
                 addedItems.add(selectedItem.itemId());
                 successfullyAdded++;
 
-                plugin.getLogger().info("    Added: " + selectedItem.itemId() + " x" + amount + " to slot " + slot);
+                plugin.getLogger().fine("    Added: " + selectedItem.itemId() + " x" + amount + " to slot " + slot);
             } else {
                 plugin.getLogger().warning("    Failed to create item: " + selectedItem.itemId());
             }
         }
 
-        plugin.getLogger().info("  Total items added: " + successfullyAdded + " (attempts: " + attempts + ")");
+        plugin.getLogger().fine("  Total items added: " + successfullyAdded + " (attempts: " + attempts + ")");
     }
 
     private LootItem rollItem(LootTableData lootTable, int totalWeight) {
@@ -265,18 +229,5 @@ public class LootGenerationService {
             plugin.getLogger().warning("Failed to create recipe book: " + itemId + " - " + e.getMessage());
             return new ItemStack(Material.BARRIER);
         }
-    }
-
-    public void setChestTag(Chest chest, String tag) {
-        chest.getPersistentDataContainer().set(lootTagKey, PersistentDataType.STRING, tag);
-        chest.update();
-        plugin.getLogger().info("Set chest tag '" + tag + "' at " + chest.getLocation());
-    }
-
-    public String getChestTag(Chest chest) {
-        if (!chest.getPersistentDataContainer().has(lootTagKey, PersistentDataType.STRING)) {
-            return null;
-        }
-        return chest.getPersistentDataContainer().get(lootTagKey, PersistentDataType.STRING);
     }
 }
