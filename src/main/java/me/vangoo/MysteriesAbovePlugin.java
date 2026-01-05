@@ -10,6 +10,7 @@ import me.vangoo.infrastructure.JSONRecipeUnlockRepository;
 import me.vangoo.infrastructure.items.*;
 import me.vangoo.infrastructure.listeners.RampageEventListener;
 import me.vangoo.infrastructure.recipes.RecipeBookCraftingRecipe;
+import me.vangoo.infrastructure.schedulers.AbilityMenuItemUpdater;
 import me.vangoo.infrastructure.schedulers.MasteryRegenerationScheduler;
 import me.vangoo.infrastructure.schedulers.PassiveAbilityScheduler;
 import me.vangoo.infrastructure.schedulers.RampageScheduler;
@@ -67,14 +68,14 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     IRecipeUnlockRepository recipeUnlockRepository;
     RecipeUnlockService recipeUnlockService;
     PotionCraftingService potionCraftingService;
-    private RecipeBookCraftingRecipe recipeBookCraftingRecipe;
+    RecipeBookCraftingRecipe recipeBookCraftingRecipe;
+    AbilityMenuItemUpdater abilityMenuItemUpdater;
 
     @Override
     public void onEnable() {
         this.pluginLogger = this.getLogger();
         glowingEntities = new GlowingEntities(this);
         initializeManagers();
-//        initializeStructures();
         registerEvents();
         registerCommands();
 
@@ -93,9 +94,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         glowingEntities.disable();
         beyonderStorage.saveAll();
         beyonderStorage.getAll().forEach(((uuid, beyonder) -> beyonder.cleanUpAbilities()));
-        if (recipeUnlockRepository != null) {
-            recipeUnlockRepository.saveAll();
-        }
+        recipeUnlockRepository.saveAll();
+
         super.onDisable();
     }
 
@@ -149,6 +149,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         this.potionManager = new PotionManager(pathwayManager, potionItemFactory, customItemService);
         initializeRecipeSystem();
         this.abilityMenu = new AbilityMenu(this, abilityItemFactory, recipeUnlockService, potionManager, abilityExecutor);
+        this.abilityMenuItemUpdater = new AbilityMenuItemUpdater(this, beyonderService, abilityMenu);
         this.recipeBookCraftingRecipe = new RecipeBookCraftingRecipe(this, customItemService);
         this.recipeBookCraftingRecipe.registerRecipe();
         configLoader = new NBTStructureConfigLoader(this);
@@ -210,6 +211,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 potionManager,
                 recipeUnlockService
         );
+        StructureCommand structureCommand = new StructureCommand(structurePopulator, lootService);
         getCommand("pathway").setExecutor(pathwayCommand);
         getCommand("pathway").setTabCompleter(pathwayCommand);
         getCommand("potion").setExecutor(sequencePotionCommand);
@@ -219,7 +221,6 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getCommand("rampager").setTabCompleter(rampagerCommand);
         getCommand("custom-items").setExecutor(customItemCommand);
         getCommand("custom-items").setTabCompleter(customItemCommand);
-        StructureCommand structureCommand = new StructureCommand(structurePopulator, lootService);
         getCommand("structure").setExecutor(structureCommand);
         getCommand("structure").setTabCompleter(structureCommand);
         getCommand("recipe").setExecutor(recipeBookCommand);
@@ -236,6 +237,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         rampageScheduler.start();
         passiveAbilityScheduler.start();
         masteryRegenerationScheduler.start();
+        abilityMenuItemUpdater.start();
     }
 
     private void stopSchedulers() {
@@ -247,6 +249,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         }
         if (rampageScheduler != null) {
             rampageScheduler.stop();
+        }
+        if (abilityMenuItemUpdater != null) {
+            abilityMenuItemUpdater.stop();
         }
     }
 

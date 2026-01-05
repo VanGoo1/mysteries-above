@@ -127,7 +127,7 @@ public class Beyonder {
         AbilityIdentity identity = ability.getIdentity();
 
         // Check if ability with this identity already exists
-        if (offPathwayActiveAbilities.stream().anyMatch(a->a.getIdentity().equals(identity))) {
+        if (offPathwayActiveAbilities.stream().anyMatch(a -> a.getIdentity().equals(identity))) {
             return false;
         }
 
@@ -157,6 +157,7 @@ public class Beyonder {
 
     /**
      * Get all custom ability identities (for persistence)
+     *
      * @return Set of custom ability IDs
      */
     public Set<Ability> getOffPathwayActiveAbilities() {
@@ -222,8 +223,19 @@ public class Beyonder {
                     "New pathway must be from the same group: current=" +
                             pathway.getGroup() + ", new=" + newPathway.getGroup());
         }
+
+        if (!canAdvance()) {
+            throw new IllegalStateException(
+                    "Cannot advance: sequence=" + sequence + ", mastery=" + mastery);
+        }
+
         pathway = newPathway;
-        advance();
+
+        sequence = sequence.advance();
+        mastery = mastery.reset();
+        updateMaximumSpirituality();
+
+        loadAbilities();
     }
 
     public AbilityResult useAbility(Ability ability, IAbilityContext context) {
