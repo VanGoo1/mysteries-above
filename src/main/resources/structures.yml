@@ -13,25 +13,25 @@ global_loot:
       item_id: "manhal_fish_eyeball"
       weight: 30
       amount_min: 1
-      amount_max: 2
+      amount_max: 1
     
     goat_horned_blackfish_blood:
       item_id: "goat_horned_blackfish_blood"
       weight: 28
       amount_min: 1
-      amount_max: 2
+      amount_max: 1
     
     autumn_crocus_essence:
       item_id: "autumn_crocus_essence"
       weight: 26
       amount_min: 1
-      amount_max: 2
+      amount_max: 1
     
     elf_flower_petals:
       item_id: "elf_flower_petals"
       weight: 28
       amount_min: 1
-      amount_max: 2
+      amount_max: 1
     
     # ============================================
     # VISIONARY PATHWAY - Sequence 8
@@ -40,19 +40,19 @@ global_loot:
       item_id: "crystalline_moon_orchid"
       weight: 24
       amount_min: 1
-      amount_max: 2
+      amount_max: 1
     
     thought_essence:
       item_id: "thought_essence"
       weight: 22
       amount_min: 1
-      amount_max: 2
+      amount_max: 1
     
     iridescent_pearl_dust:
       item_id: "iridescent_pearl_dust"
       weight: 20
       amount_min: 1
-      amount_max: 2
+      amount_max: 1
     
     # ============================================
     # VISIONARY PATHWAY - Sequence 7
@@ -170,19 +170,19 @@ global_loot:
     # ============================================
     meteorite_crystal:
       item_id: "meteorite_crystal"
-      weight: 20
+      weight: 14
       amount_min: 1
       amount_max: 1
     
     lavos_squid_blood:
       item_id: "lavos_squid_blood"
-      weight: 18
+      weight: 14
       amount_min: 1
       amount_max: 1
     
     starfaced_stone:
       item_id: "starfaced_stone"
-      weight: 16
+      weight: 14
       amount_min: 1
       amount_max: 1
     
@@ -191,19 +191,19 @@ global_loot:
     # ============================================
     asmann_complete_brain:
       item_id: "asmann_complete_brain"
-      weight: 14
+      weight: 10
       amount_min: 1
       amount_max: 1
     
     cursed_wraith_artifact:
       item_id: "cursed_wraith_artifact"
-      weight: 12
+      weight: 10
       amount_min: 1
       amount_max: 1
     
     imbued_ink_sac:
       item_id: "imbued_ink_sac"
-      weight: 12
+      weight: 10
       amount_min: 1
       amount_max: 1
     
@@ -212,19 +212,19 @@ global_loot:
     # ============================================
     void_drifter_heart:
       item_id: "void_drifter_heart"
-      weight: 10
+      weight: 5
       amount_min: 1
       amount_max: 1
     
     astral_mist_essence:
       item_id: "astral_mist_essence"
-      weight: 8
+      weight: 5
       amount_min: 1
       amount_max: 1
     
     wayfinder_tree_root:
       item_id: "wayfinder_tree_root"
-      weight: 6
+      weight: 3
       amount_min: 1
       amount_max: 1
     
@@ -233,31 +233,31 @@ global_loot:
     # ============================================
     visionary_recipe_9:
       item_id: "recipe:Visionary:9"
-      weight: 2
+      weight: 5
       amount_min: 1
       amount_max: 1
     
     visionary_recipe_8:
       item_id: "recipe:Visionary:8"
-      weight: 2
+      weight: 5
       amount_min: 1
       amount_max: 1
     
     visionary_recipe_7:
       item_id: "recipe:Visionary:7"
-      weight: 1
+      weight: 4
       amount_min: 1
       amount_max: 1
     
     door_recipe_9:
       item_id: "recipe:Door:9"
-      weight: 2
+      weight: 5
       amount_min: 1
       amount_max: 1
     
     door_recipe_8:
       item_id: "recipe:Door:8"
-      weight: 2
+      weight: 4
       amount_min: 1
       amount_max: 1
     
@@ -378,6 +378,16 @@ structures:
     spawn:
       biomes: [TAIGA, OLD_GROWTH_SPRUCE_TAIGA]
       chance: 0.042
+      min_distance: 750
+      placement_type: SURFACE
+    loot:
+      min_items: 1
+      max_items: 3
+  ruins2:
+    file: "ruins2.nbt"
+    spawn:
+      biomes: [ TAIGA, OLD_GROWTH_SPRUCE_TAIGA, SNOWY_TAIGA, PLAINS, FOREST, SNOWY_PLAINS]
+      chance: 0.05
       min_distance: 750
       placement_type: SURFACE
     loot:

@@ -190,6 +190,14 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 potionManager,
                 abilityMenu
         );
+        VanillaStructureLootListener vanillaStructureLootListener =
+                new VanillaStructureLootListener(
+                        this,
+                        customItemService,
+                        potionManager,
+                        recipeBookFactory,
+                        configLoader.getGlobalLootTable()
+                );
         getServer().getPluginManager().registerEvents(abilityMenuListener, this);
         getServer().getPluginManager().registerEvents(beyonderPlayerListener, this);
         getServer().getPluginManager().registerEvents(pathwayPotionListener, this);
@@ -199,6 +207,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(recipeBookListener, this);
         getServer().getPluginManager().registerEvents(potionCraftingListener, this);
         getServer().getPluginManager().registerEvents(masterRecipeBookListener, this);
+        getServer().getPluginManager().registerEvents(vanillaStructureLootListener, this);
     }
 
     private void registerCommands() {

@@ -25,6 +25,10 @@ public class NBTStructureConfigLoader {
         this.plugin = plugin;
     }
 
+    public LootTableData getGlobalLootTable() {
+        return globalLootTable;
+    }
+
     public Map<String, StructureData> loadAllStructures() {
         Map<String, StructureData> structures = new HashMap<>();
         File configFile = new File(plugin.getDataFolder(), "structures.yml");
