@@ -3,6 +3,7 @@ package me.vangoo.infrastructure.structures;
 import me.vangoo.domain.valueobjects.StructureData;
 import me.vangoo.domain.valueobjects.StructurePlacementType;
 import org.bukkit.*;
+import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.generator.BlockPopulator;
@@ -18,18 +19,17 @@ public class StructurePopulator extends BlockPopulator {
     private final Map<String, StructureData> structures;
     private final LootGenerationService lootGenerationService;
     private final Map<String, Set<BlockPos>> spawnedStructures = new ConcurrentHashMap<>();
+    private final Map<String, Set<Biome>> spawnedBiomes = new ConcurrentHashMap<>();
 
-    // Конфігурація генерації
+    // Конфігурація генерації (ОПТИМІЗОВАНО)
     private static final class GenerationConfig {
-        static final int TERRAIN_FLATNESS_RADIUS = 8;
+        static final int CHECK_RADIUS = 8;
         static final int MAX_HEIGHT_DIFFERENCE = 3;
-        static final int MIN_DISTANCE_TO_ANY_STRUCTURE = 200;
-        static final int FOOTPRINT_RADIUS_DEFAULT = 6;
+        static final int MIN_DISTANCE_TO_ANY_STRUCTURE = 450;
         static final int FILL_UNDER_MAX_DEPTH = 6;
-        static final int SAMPLE_STRIDE = 1;
-        static final int REGION_SIZE = 8;
+        static final int SAMPLE_STRIDE = 2;
+        static final int REGION_SIZE = 18;
         static final int MAX_SCAN_DEPTH = 40;
-        static final double MAX_UNSUITABLE_SAMPLES_RATIO = 0.4;
         static final long LOOT_GENERATION_DELAY_TICKS = 60L;
     }
 
@@ -40,7 +40,10 @@ public class StructurePopulator extends BlockPopulator {
         this.lootGenerationService = lootGenerationService;
         this.structures = configLoader.loadAllStructures();
 
-        structures.keySet().forEach(id -> spawnedStructures.put(id, ConcurrentHashMap.newKeySet()));
+        structures.keySet().forEach(id -> {
+            spawnedStructures.put(id, ConcurrentHashMap.newKeySet());
+            spawnedBiomes.put(id, ConcurrentHashMap.newKeySet());
+        });
         plugin.getLogger().info("StructurePopulator initialized with " + structures.size() + " structures.");
     }
 
@@ -66,14 +69,27 @@ public class StructurePopulator extends BlockPopulator {
     }
 
     private boolean trySpawnStructureInChunk(World world, Chunk chunk, Random random, StructureData data) {
-        if (random.nextDouble() > data.spawnChance()) {
-            return false;
-        }
-
         int x = (chunk.getX() << 4) + random.nextInt(16);
         int z = (chunk.getZ() << 4) + random.nextInt(16);
 
-        if (!canSpawnAt(data, x, z)) {
+        Location testLoc = new Location(world, x, 64, z);
+        Biome currentBiome = world.getBiome(testLoc);
+
+        Set<Biome> alreadySpawnedBiomes = spawnedBiomes.get(data.id());
+        boolean isTargetBiome = data.biomes().contains(currentBiome);
+        boolean isFirstSpawnInBiome = isTargetBiome && !alreadySpawnedBiomes.contains(currentBiome);
+
+        double effectiveChance = data.spawnChance();
+
+        if (isFirstSpawnInBiome) {
+            if (isBiomeStable(world, x, z, currentBiome)) {
+                effectiveChance = Math.min(0.65, data.spawnChance() * 10.0);
+            }
+        } else if (!isTargetBiome) {
+            return false;
+        }
+
+        if (random.nextDouble() > effectiveChance) {
             return false;
         }
 
@@ -82,47 +98,94 @@ public class StructurePopulator extends BlockPopulator {
             return false;
         }
 
-        if (isTooCloseToOtherStructures(spawnLoc, data.id())) {
+        BlockPos position = new BlockPos(spawnLoc.getBlockX(), spawnLoc.getBlockZ());
+
+        Set<BlockPos> structurePositions = spawnedStructures.get(data.id());
+        if (!structurePositions.add(position)) {
+            return false;
+        }
+
+        boolean distCheckPassed = canSpawnAtExcludingPosition(data, spawnLoc.getBlockX(), spawnLoc.getBlockZ(), position)
+                && !isTooCloseToOtherStructures(spawnLoc, data.id());
+
+        if (!distCheckPassed) {
+            structurePositions.remove(position);
             return false;
         }
 
         if (spawnStructure(data, spawnLoc, random)) {
-            registerSpawnedStructure(data, spawnLoc);
-            return true;
-        }
+            if (isFirstSpawnInBiome) {
+                alreadySpawnedBiomes.add(currentBiome);
+                plugin.getLogger().info("First time spawn for " + data.id() + " in biome " + currentBiome);
+            }
 
-        return false;
+            plugin.getLogger().info("Spawned " + data.id() + " at " + position.x + ", " + position.z +
+                    " (Chance: " + String.format("%.2f%%", effectiveChance * 100) + ")");
+            return true;
+        } else {
+            structurePositions.remove(position);
+            return false;
+        }
+    }
+
+    private boolean isBiomeStable(World world, int x, int z, Biome targetBiome) {
+        int offset = 24;
+
+        if (world.getBiome(new Location(world, x + offset, 64, z)) != targetBiome) return false;
+        if (world.getBiome(new Location(world, x - offset, 64, z)) != targetBiome) return false;
+        if (world.getBiome(new Location(world, x, 64, z + offset)) != targetBiome) return false;
+        return world.getBiome(new Location(world, x, 64, z - offset)) == targetBiome;
     }
 
     private Location findValidSpawnLocation(World world, StructureData data, int x, int z) {
-        int footprintRadius = GenerationConfig.FOOTPRINT_RADIUS_DEFAULT;
-        Location spawnLoc = findSurfaceLocationBetter(world, x, z, footprintRadius);
-
-        if (spawnLoc == null) {
+        Location testLoc = new Location(world, x, 64, z);
+        if (!data.biomes().isEmpty() && !data.biomes().contains(world.getBiome(testLoc))) {
             return null;
         }
 
-        if (!data.biomes().isEmpty() && !data.biomes().contains(world.getBiome(spawnLoc))) {
-            return null;
-        }
-
+        // Для SURFACE робимо одну комплексну перевірку
         if (data.placementType() == StructurePlacementType.SURFACE) {
-            if (!isTerrainFlatAround(world, spawnLoc.getBlockX(), spawnLoc.getBlockZ(),
-                    GenerationConfig.TERRAIN_FLATNESS_RADIUS)) {
-                return null;
+            return findFlatSurfaceLocation(world, x, z);
+        }
+
+        // Інші типи розміщення
+        return switch (data.placementType()) {
+            case LIQUID_SURFACE -> findLiquidSurfaceLocation(world, x, z);
+            case SKY -> findSkyLocation(world, x, z, new Random());
+            default -> new Location(world, x, world.getHighestBlockYAt(x, z), z);
+        };
+    }
+
+    private Location findFlatSurfaceLocation(World world, int centerX, int centerZ) {
+        List<Integer> ys = new ArrayList<>();
+        int stride = GenerationConfig.SAMPLE_STRIDE;
+        int radius = GenerationConfig.CHECK_RADIUS;
+
+        // Семплюємо Y координати один раз
+        for (int dx = -radius; dx <= radius; dx += stride) {
+            for (int dz = -radius; dz <= radius; dz += stride) {
+                int y = findSupportingY(world, centerX + dx, centerZ + dz);
+                ys.add(y);
             }
         }
 
-        return spawnLoc;
-    }
+        if (ys.isEmpty()) {
+            return null;
+        }
 
-    private void registerSpawnedStructure(StructureData data, Location location) {
-        spawnedStructures.get(data.id()).add(new BlockPos(location.getBlockX(), location.getBlockZ()));
-        plugin.getLogger().info(String.format("Spawned structure %s at %d %d %d",
-                data.id(), location.getBlockX(), location.getBlockY(), location.getBlockZ()));
-    }
+        // Сортуємо і беремо медіану
+        Collections.sort(ys);
+        int medianY = ys.get(ys.size() / 2);
+        int minY = ys.get(0);
+        int maxY = ys.get(ys.size() - 1);
 
-    // ==================== Перевірки відстані (рефакторинг дублювання) ====================
+        // Одна проста перевірка: різниця висот не більше 3 блоків
+        if (maxY - minY > GenerationConfig.MAX_HEIGHT_DIFFERENCE) {
+            return null;
+        }
+
+        return new Location(world, centerX, medianY, centerZ);
+    }
 
     private boolean canSpawnAt(StructureData data, int centerX, int centerZ) {
         return isMinimumDistanceRespected(
@@ -131,6 +194,22 @@ public class StructurePopulator extends BlockPopulator {
                 data.minDistance(),
                 (id, positions) -> id.equals(data.id())
         );
+    }
+
+    private boolean canSpawnAtExcludingPosition(StructureData data, int centerX, int centerZ, BlockPos excludePos) {
+        long minDistSq = (long) data.minDistance() * (long) data.minDistance();
+
+        Set<BlockPos> positions = spawnedStructures.get(data.id());
+        for (BlockPos pos : positions) {
+            // Пропускаємо поточну зарезервовану позицію
+            if (pos.equals(excludePos)) {
+                continue;
+            }
+            if (calculateSquaredDistance(centerX, centerZ, pos.x, pos.z) < minDistSq) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean isTooCloseToOtherStructures(Location location, String currentStructureId) {
@@ -142,9 +221,6 @@ public class StructurePopulator extends BlockPopulator {
         );
     }
 
-    /**
-     * Універсальний метод перевірки мінімальної відстані
-     */
     private boolean isMinimumDistanceRespected(int x, int z, int minDistance,
                                                BiPredicate<String, Set<BlockPos>> positionFilter) {
         long minDistSq = (long) minDistance * (long) minDistance;
@@ -169,72 +245,6 @@ public class StructurePopulator extends BlockPopulator {
         return dx * dx + dz * dz;
     }
 
-    // ==================== Пошук поверхні (рефакторинг дублювання) ====================
-
-    private Location findSurfaceLocationBetter(World world, int centerX, int centerZ, int footprintRadius) {
-        List<Integer> ys = sampleFootprintYCoordinates(world, centerX, centerZ, footprintRadius);
-
-        if (ys.isEmpty()) {
-            return null;
-        }
-
-        TerrainAnalysis analysis = analyzeTerrainSamples(ys);
-
-        if (!analysis.isSuitable()) {
-            return null;
-        }
-
-        return new Location(world, centerX, analysis.medianY, centerZ);
-    }
-
-    private boolean isTerrainFlatAround(World world, int centerX, int centerZ, int radius) {
-        int centerY = findSupportingY(world, centerX, centerZ);
-        List<Integer> ys = sampleFootprintYCoordinates(world, centerX, centerZ, radius);
-
-        return ys.stream().allMatch(y ->
-                Math.abs(y - centerY) <= GenerationConfig.MAX_HEIGHT_DIFFERENCE
-        );
-    }
-
-    /**
-     * Універсальний метод семплування Y координат у footprint
-     */
-    private List<Integer> sampleFootprintYCoordinates(World world, int centerX, int centerZ, int radius) {
-        List<Integer> ys = new ArrayList<>();
-        int stride = Math.max(1, GenerationConfig.SAMPLE_STRIDE);
-
-        for (int dx = -radius; dx <= radius; dx += stride) {
-            for (int dz = -radius; dz <= radius; dz += stride) {
-                int y = findSupportingY(world, centerX + dx, centerZ + dz);
-                ys.add(y);
-            }
-        }
-
-        return ys;
-    }
-
-    private TerrainAnalysis analyzeTerrainSamples(List<Integer> ys) {
-        Collections.sort(ys);
-        int median = ys.get(ys.size() / 2);
-        int min = ys.get(0);
-        int max = ys.get(ys.size() - 1);
-
-        if (max - min > GenerationConfig.MAX_HEIGHT_DIFFERENCE) {
-            return TerrainAnalysis.unsuitable();
-        }
-
-        long unsuitableCount = ys.stream()
-                .filter(y -> Math.abs(y - median) > GenerationConfig.MAX_HEIGHT_DIFFERENCE)
-                .count();
-
-        boolean tooManyUnsuitableSamples =
-                unsuitableCount > ys.size() * GenerationConfig.MAX_UNSUITABLE_SAMPLES_RATIO;
-
-        return tooManyUnsuitableSamples
-                ? TerrainAnalysis.unsuitable()
-                : TerrainAnalysis.suitable(median);
-    }
-
     private int findSupportingY(World world, int x, int z) {
         int startY = world.getHighestBlockYAt(x, z);
         int minY = Math.max(world.getMinHeight(), startY - GenerationConfig.MAX_SCAN_DEPTH);
@@ -250,26 +260,15 @@ public class StructurePopulator extends BlockPopulator {
     }
 
     private boolean isSolidForSupport(Material m) {
-        switch (m) {
-            case GRASS_BLOCK:
-            case DIRT:
-            case COARSE_DIRT:
-            case PODZOL:
-            case MYCELIUM:
-            case STONE:
-            case DEEPSLATE:
-            case SAND:
-            case RED_SAND:
-            case GRAVEL:
-            case SNOW_BLOCK:
-            case POWDER_SNOW:
-                return true;
-            default:
-                return m.name().contains("TERRACOTTA");
-        }
+        return switch (m) {
+            case GRASS_BLOCK, DIRT, COARSE_DIRT, PODZOL, MYCELIUM,
+                 ROOTED_DIRT, DIRT_PATH, CLAY, MUD, MOSS_BLOCK, SNOW_BLOCK, POWDER_SNOW, ICE, PACKED_ICE, BLUE_ICE,
+                 SAND, RED_SAND, GRAVEL, SANDSTONE, RED_SANDSTONE, STONE, DEEPSLATE, ANDESITE, GRANITE, DIORITE, TUFF,
+                 CALCITE, DRIPSTONE_BLOCK -> true;
+            default -> m.name().contains("TERRACOTTA") ||
+                    m.name().contains("CONCRETE");
+        };
     }
-
-    // ==================== Альтернативні типи розміщення ====================
 
     private Location findLiquidSurfaceLocation(World world, int x, int z) {
         int y = world.getHighestBlockYAt(x, z);
@@ -287,14 +286,13 @@ public class StructurePopulator extends BlockPopulator {
         return new Location(world, x, y, z);
     }
 
-    // ==================== Спавн структури ====================
-
     private boolean spawnStructure(StructureData data, Location location, Random random) {
         try {
             StructureRotation rotation = getRandomRotation(random);
+            Location startLocation = calculateStartLocationForCenter(data.structure(), location, rotation);
 
             data.structure().place(
-                    location,
+                    startLocation,
                     true,
                     rotation,
                     org.bukkit.block.structure.Mirror.NONE,
@@ -311,6 +309,21 @@ public class StructurePopulator extends BlockPopulator {
             e.printStackTrace();
             return false;
         }
+    }
+
+    private Location calculateStartLocationForCenter(org.bukkit.structure.Structure structure, Location center, StructureRotation rotation) {
+        org.bukkit.util.BlockVector size = structure.getSize();
+
+        double sizeX = size.getX();
+        double sizeZ = size.getZ();
+
+        if (rotation == StructureRotation.CLOCKWISE_90 || rotation == StructureRotation.COUNTERCLOCKWISE_90) {
+            double temp = sizeX;
+            sizeX = sizeZ;
+            sizeZ = temp;
+        }
+
+        return center.clone().subtract(sizeX / 2.0, 0, sizeZ / 2.0);
     }
 
     private StructureRotation getRandomRotation(Random random) {
@@ -330,8 +343,6 @@ public class StructurePopulator extends BlockPopulator {
         }, GenerationConfig.LOOT_GENERATION_DELAY_TICKS);
     }
 
-    // ==================== Публічні методи управління ====================
-
     public Set<String> getStructureIds() {
         return structures.keySet();
     }
@@ -341,18 +352,33 @@ public class StructurePopulator extends BlockPopulator {
         if (data == null) {
             return false;
         }
-        return spawnStructure(data, location, new Random());
+
+        BlockPos position = new BlockPos(location.getBlockX(), location.getBlockZ());
+
+        // Для ручного розміщення теж резервуємо позицію
+        if (!spawnedStructures.get(data.id()).add(position)) {
+            return false;
+        }
+
+        if (spawnStructure(data, location, new Random())) {
+            return true;
+        } else {
+            spawnedStructures.get(data.id()).remove(position);
+            return false;
+        }
     }
 
     public void clearSpawnHistory(String structureId) {
         if (spawnedStructures.containsKey(structureId)) {
             spawnedStructures.get(structureId).clear();
+            spawnedBiomes.get(structureId).clear();
             plugin.getLogger().info("Cleared spawn history for " + structureId);
         }
     }
 
     public void clearAllSpawnHistory() {
         spawnedStructures.values().forEach(Set::clear);
+        spawnedBiomes.values().forEach(Set::clear);
         plugin.getLogger().info("Cleared all spawn history");
     }
 
@@ -361,8 +387,6 @@ public class StructurePopulator extends BlockPopulator {
         spawnedStructures.forEach((id, coords) -> counts.put(id, coords.size()));
         return counts;
     }
-
-    // ==================== Допоміжні класи ====================
 
     private static class BlockPos {
         final int x;
@@ -384,28 +408,6 @@ public class StructurePopulator extends BlockPopulator {
         @Override
         public int hashCode() {
             return Objects.hash(x, z);
-        }
-    }
-
-    private static class TerrainAnalysis {
-        final boolean suitable;
-        final int medianY;
-
-        private TerrainAnalysis(boolean suitable, int medianY) {
-            this.suitable = suitable;
-            this.medianY = medianY;
-        }
-
-        static TerrainAnalysis suitable(int medianY) {
-            return new TerrainAnalysis(true, medianY);
-        }
-
-        static TerrainAnalysis unsuitable() {
-            return new TerrainAnalysis(false, 0);
-        }
-
-        boolean isSuitable() {
-            return suitable;
         }
     }
 }

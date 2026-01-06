@@ -184,11 +184,7 @@ public class NBTStructureConfigLoader {
 
     private Structure loadStructureFromFile(File nbtFile) throws IOException {
         try (FileInputStream fis = new FileInputStream(nbtFile)) {
-            Structure structure = Bukkit.getStructureManager().loadStructure(fis);
-            if (structure == null) {
-                throw new IOException("Structure loaded as null from file: " + nbtFile.getName());
-            }
-            return structure;
+            return Bukkit.getStructureManager().loadStructure(fis);
         } catch (IOException e) {
             throw new IOException("Failed to load structure from file " + nbtFile.getName() + ": " + e.getMessage(), e);
         }

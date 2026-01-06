@@ -145,25 +145,25 @@ global_loot:
       item_id: "spirit_eater_pouch"
       weight: 28
       amount_min: 1
-      amount_max: 2
+      amount_max: 1
     
     deep_sea_marlin_blood:
       item_id: "deep_sea_marlin_blood"
       weight: 26
       amount_min: 1
-      amount_max: 2
+      amount_max: 1
     
     string_grass_powder:
       item_id: "string_grass_powder"
       weight: 24
       amount_min: 1
-      amount_max: 2
+      amount_max: 1
     
     red_chestnut_flower:
       item_id: "red_chestnut_flower"
       weight: 24
       amount_min: 1
-      amount_max: 2
+      amount_max: 1
     
     # ============================================
     # DOOR PATHWAY - Sequence 7
@@ -386,8 +386,18 @@ structures:
   ruins2:
     file: "ruins2.nbt"
     spawn:
-      biomes: [ TAIGA, OLD_GROWTH_SPRUCE_TAIGA, SNOWY_TAIGA, PLAINS, FOREST, SNOWY_PLAINS]
+      biomes: [ TAIGA, OLD_GROWTH_SPRUCE_TAIGA, SNOWY_TAIGA, PLAINS, FOREST, SNOWY_PLAINS, SAVANNA, windswept_hills]
       chance: 0.05
+      min_distance: 750
+      placement_type: SURFACE
+    loot:
+      min_items: 1
+      max_items: 3
+  vahonchik:
+    file: "vahonchik.nbt"
+    spawn:
+      biomes: [ TAIGA, OLD_GROWTH_SPRUCE_TAIGA, SNOWY_TAIGA, PLAINS, FOREST, SNOWY_PLAINS, SAVANNA, CHERRY_GROVE]
+      chance: 0.03
       min_distance: 750
       placement_type: SURFACE
     loot:
