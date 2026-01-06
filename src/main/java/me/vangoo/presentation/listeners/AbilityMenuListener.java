@@ -86,6 +86,23 @@ public class AbilityMenuListener implements Listener {
         boolean cursorIsAbility = cursor != null &&
                 abilityItemFactory.isAbilityItem(cursor, beyonder);
 
+        assert currentItem != null;
+        if (currentItem.getType() == Material.BUNDLE) {
+            if (cursorIsMenu || cursorIsAbility) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+
+        // 2. Гравець клікає мішком по здібності/меню (намагається "зачерпнути" предмет)
+        assert cursor != null;
+        if (cursor.getType() == Material.BUNDLE) {
+            if (currentIsMenu || currentIsAbility) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+
         // Обробка кліку на предмет меню (відкриття меню)
         if (currentIsMenu) {
             handleMenuItemClick(event, player, beyonder);
