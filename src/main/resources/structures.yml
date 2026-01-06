@@ -1,403 +1,506 @@
-# Глобальна таблиця лута для всіх структур
 global_loot:
-  # Мінімальна та максимальна кількість ЗАПОВНЕНИХ СЛОТІВ предметів у сундуку (можна перевизначити для кожної структури)
   min_items: 1
-  max_items: 3
-  
-  # Всі можливі предмети з їх вагами
+  max_items: 2
+
   items:
-    # ============================================
-    # VISIONARY PATHWAY - Sequence 9
-    # ============================================
+    # =====================================================================
+    #                               VISIONARY PATHWAY
+    # =====================================================================
+
+    # --- Ingredients ---
+    # Збільшив ваги інгредієнтів 9-8 рангу, щоб вони падали частіше за рецепти
     manhal_fish_eyeball:
       item_id: "manhal_fish_eyeball"
-      weight: 30
+      weight: 80  # Було 20
       amount_min: 1
       amount_max: 1
-    
     goat_horned_blackfish_blood:
       item_id: "goat_horned_blackfish_blood"
-      weight: 28
+      weight: 80
       amount_min: 1
       amount_max: 1
-    
     autumn_crocus_essence:
       item_id: "autumn_crocus_essence"
-      weight: 26
+      weight: 80
       amount_min: 1
       amount_max: 1
-    
     elf_flower_petals:
       item_id: "elf_flower_petals"
-      weight: 28
+      weight: 80
       amount_min: 1
       amount_max: 1
-    
-    # ============================================
-    # VISIONARY PATHWAY - Sequence 8
-    # ============================================
     crystalline_moon_orchid:
       item_id: "crystalline_moon_orchid"
-      weight: 24
+      weight: 50  # Було 15
       amount_min: 1
       amount_max: 1
-    
     thought_essence:
       item_id: "thought_essence"
-      weight: 22
+      weight: 50
       amount_min: 1
       amount_max: 1
-    
     iridescent_pearl_dust:
       item_id: "iridescent_pearl_dust"
+      weight: 50
+      amount_min: 1
+      amount_max: 1
+    tree_of_elders_fruit:
+      item_id: "tree_of_elders_fruit"
+      weight: 20  # Було 10
+      amount_min: 1
+      amount_max: 1
+    mirror_dragon_eyes:
+      item_id: "mirror_dragon_eyes"
       weight: 20
       amount_min: 1
       amount_max: 1
-    
-    # ============================================
-    # VISIONARY PATHWAY - Sequence 7
-    # ============================================
-    tree_of_elders_fruit:
-      item_id: "tree_of_elders_fruit"
-      weight: 18
-      amount_min: 1
-      amount_max: 1
-    
-    mirror_dragon_eyes:
-      item_id: "mirror_dragon_eyes"
-      weight: 16
-      amount_min: 1
-      amount_max: 1
-    
     mirror_dragon_blood:
       item_id: "mirror_dragon_blood"
-      weight: 16
+      weight: 20
       amount_min: 1
       amount_max: 1
-    
-    # ============================================
-    # VISIONARY PATHWAY - Sequence 6
-    # ============================================
     black_hunting_lizard_spinal_fluid:
       item_id: "black_hunting_lizard_spinal_fluid"
-      weight: 14
+      weight: 8   # Було 7 (трохи збільшив розрив між 7 і 6)
       amount_min: 1
       amount_max: 1
-    
     illusory_chime_tree_fruit:
       item_id: "illusory_chime_tree_fruit"
-      weight: 14
-      amount_min: 1
-      amount_max: 1
-    
-    mind_crystal_powder:
-      item_id: "mind_crystal_powder"
-      weight: 12
-      amount_min: 1
-      amount_max: 1
-    
-    split_personality_essence:
-      item_id: "split_personality_essence"
-      weight: 12
-      amount_min: 1
-      amount_max: 1
-    
-    # ============================================
-    # VISIONARY PATHWAY - Sequence 5
-    # ============================================
-    dream_catcher_heart:
-      item_id: "dream_catcher_heart"
-      weight: 10
-      amount_min: 1
-      amount_max: 1
-    
-    mind_illusion_crystal:
-      item_id: "mind_illusion_crystal"
       weight: 8
       amount_min: 1
       amount_max: 1
-    
-    adult_mind_dragon_blood:
-      item_id: "adult_mind_dragon_blood"
-      weight: 6
+    mind_crystal_powder:
+      item_id: "mind_crystal_powder"
+      weight: 8
       amount_min: 1
       amount_max: 1
-    
-    # ============================================
-    # DOOR PATHWAY - Sequence 9
-    # ============================================
-    dimensional_wanderer_eye:
-      item_id: "dimensional_wanderer_eye"
-      weight: 26
+    split_personality_essence:
+      item_id: "split_personality_essence"
+      weight: 8
       amount_min: 1
       amount_max: 1
-    
-    ever_shifting_lotus:
-      item_id: "ever_shifting_lotus"
-      weight: 24
+    dream_catcher_heart:
+      item_id: "dream_catcher_heart"
+      weight: 2   # Було 4. Зменшив, щоб Seq 5 був справді рідкісним
       amount_min: 1
       amount_max: 1
-    
-    # ============================================
-    # DOOR PATHWAY - Sequence 8
-    # ============================================
-    spirit_eater_pouch:
-      item_id: "spirit_eater_pouch"
-      weight: 28
-      amount_min: 1
-      amount_max: 1
-    
-    deep_sea_marlin_blood:
-      item_id: "deep_sea_marlin_blood"
-      weight: 26
-      amount_min: 1
-      amount_max: 1
-    
-    string_grass_powder:
-      item_id: "string_grass_powder"
-      weight: 24
-      amount_min: 1
-      amount_max: 1
-    
-    red_chestnut_flower:
-      item_id: "red_chestnut_flower"
-      weight: 24
-      amount_min: 1
-      amount_max: 1
-    
-    # ============================================
-    # DOOR PATHWAY - Sequence 7
-    # ============================================
-    meteorite_crystal:
-      item_id: "meteorite_crystal"
-      weight: 14
-      amount_min: 1
-      amount_max: 1
-    
-    lavos_squid_blood:
-      item_id: "lavos_squid_blood"
-      weight: 14
-      amount_min: 1
-      amount_max: 1
-    
-    starfaced_stone:
-      item_id: "starfaced_stone"
-      weight: 14
-      amount_min: 1
-      amount_max: 1
-    
-    # ============================================
-    # DOOR PATHWAY - Sequence 6
-    # ============================================
-    asmann_complete_brain:
-      item_id: "asmann_complete_brain"
-      weight: 10
-      amount_min: 1
-      amount_max: 1
-    
-    cursed_wraith_artifact:
-      item_id: "cursed_wraith_artifact"
-      weight: 10
-      amount_min: 1
-      amount_max: 1
-    
-    imbued_ink_sac:
-      item_id: "imbued_ink_sac"
-      weight: 10
-      amount_min: 1
-      amount_max: 1
-    
-    # ============================================
-    # DOOR PATHWAY - Sequence 5
-    # ============================================
-    void_drifter_heart:
-      item_id: "void_drifter_heart"
-      weight: 5
-      amount_min: 1
-      amount_max: 1
-    
-    astral_mist_essence:
-      item_id: "astral_mist_essence"
-      weight: 5
-      amount_min: 1
-      amount_max: 1
-    
-    wayfinder_tree_root:
-      item_id: "wayfinder_tree_root"
-      weight: 3
-      amount_min: 1
-      amount_max: 1
-    
-    # ============================================
-    # RECIPE BOOKS - Рідкісні
-    # ============================================
-    visionary_recipe_9:
-      item_id: "recipe:Visionary:9"
-      weight: 5
-      amount_min: 1
-      amount_max: 1
-    
-    visionary_recipe_8:
-      item_id: "recipe:Visionary:8"
-      weight: 5
-      amount_min: 1
-      amount_max: 1
-    
-    visionary_recipe_7:
-      item_id: "recipe:Visionary:7"
-      weight: 4
-      amount_min: 1
-      amount_max: 1
-    
-    door_recipe_9:
-      item_id: "recipe:Door:9"
-      weight: 5
-      amount_min: 1
-      amount_max: 1
-    
-    door_recipe_8:
-      item_id: "recipe:Door:8"
-      weight: 4
-      amount_min: 1
-      amount_max: 1
-    
-    door_recipe_7:
-      item_id: "recipe:Door:7"
+    mind_illusion_crystal:
+      item_id: "mind_illusion_crystal"
       weight: 2
       amount_min: 1
       amount_max: 1
-    
-    # ============================================
-    # POTIONS - Дуже рідкісні
-    # ============================================
+    adult_mind_dragon_blood:
+      item_id: "adult_mind_dragon_blood"
+      weight: 1   # Найрідкісніший інгредієнт
+      amount_min: 1
+      amount_max: 1
+
+    # --- Recipes (Rebalanced) ---
+    # ТУТ ОСНОВНА ЗМІНА:
+    # Різниця між 12 і 1 (у вашому варіанті) замала.
+    # Різниця між 60 і 1 (у моєму) забезпечить правильну рідкісність.
+    visionary_recipe_9:
+      item_id: "recipe:Visionary:9"
+      weight: 60  # Було 12
+      amount_min: 1
+      amount_max: 1
+    visionary_recipe_8:
+      item_id: "recipe:Visionary:8"
+      weight: 30  # Було 5
+      amount_min: 1
+      amount_max: 1
+    visionary_recipe_7:
+      item_id: "recipe:Visionary:7"
+      weight: 10  # Було 3
+      amount_min: 1
+      amount_max: 1
+    visionary_recipe_6:
+      item_id: "recipe:Visionary:6"
+      weight: 4   # Було 2
+      amount_min: 1
+      amount_max: 1
+    visionary_recipe_5:
+      item_id: "recipe:Visionary:5"
+      weight: 1   # Лишили 1, але на фоні 60 це буде дуже рідко
+      amount_min: 1
+      amount_max: 1
+
+    # --- Potions (Rebalanced) ---
+    # Виправив проблему однакової ваги для всіх зілль вище 9-го
     visionary_potion_9:
       item_id: "potion:Visionary:9"
-      weight: 1
+      weight: 15
       amount_min: 1
       amount_max: 1
-    
     visionary_potion_8:
       item_id: "potion:Visionary:8"
-      weight: 1
+      weight: 8   # Було 1. Тепер Seq 8 падає частіше за Seq 5
       amount_min: 1
       amount_max: 1
-    
-    door_potion_8:
-      item_id: "potion:Door:8"
-      weight: 1
+    visionary_potion_7:
+      item_id: "potion:Visionary:7"
+      weight: 4   # Було 1
       amount_min: 1
       amount_max: 1
-    
-    door_potion_7:
-      item_id: "potion:Door:7"
+    visionary_potion_6:
+      item_id: "potion:Visionary:6"
+      weight: 2   # Було 1
+      amount_min: 1
+      amount_max: 1
+    visionary_potion_5:
+      item_id: "potion:Visionary:5"
+      weight: 1   # Дуже рідкісне
+      amount_min: 1
+      amount_max: 1
+
+    # =====================================================================
+    #                                 DOOR PATHWAY
+    # =====================================================================
+
+    # --- Ingredients ---
+    dimensional_wanderer_eye:
+      item_id: "dimensional_wanderer_eye"
+      weight: 80
+      amount_min: 1
+      amount_max: 1
+    ever_shifting_lotus:
+      item_id: "ever_shifting_lotus"
+      weight: 80
+      amount_min: 1
+      amount_max: 1
+    spirit_eater_pouch:
+      item_id: "spirit_eater_pouch"
+      weight: 50
+      amount_min: 1
+      amount_max: 1
+    deep_sea_marlin_blood:
+      item_id: "deep_sea_marlin_blood"
+      weight: 50
+      amount_min: 1
+      amount_max: 1
+    string_grass_powder:
+      item_id: "string_grass_powder"
+      weight: 50
+      amount_min: 1
+      amount_max: 1
+    red_chestnut_flower:
+      item_id: "red_chestnut_flower"
+      weight: 50
+      amount_min: 1
+      amount_max: 1
+    meteorite_crystal:
+      item_id: "meteorite_crystal"
+      weight: 20
+      amount_min: 1
+      amount_max: 1
+    lavos_squid_blood:
+      item_id: "lavos_squid_blood"
+      weight: 20
+      amount_min: 1
+      amount_max: 1
+    starfaced_stone:
+      item_id: "starfaced_stone"
+      weight: 20
+      amount_min: 1
+      amount_max: 1
+    asmann_complete_brain:
+      item_id: "asmann_complete_brain"
+      weight: 8
+      amount_min: 1
+      amount_max: 1
+    cursed_wraith_artifact:
+      item_id: "cursed_wraith_artifact"
+      weight: 8
+      amount_min: 1
+      amount_max: 1
+    imbued_ink_sac:
+      item_id: "imbued_ink_sac"
+      weight: 8
+      amount_min: 1
+      amount_max: 1
+    void_drifter_heart:
+      item_id: "void_drifter_heart"
+      weight: 2
+      amount_min: 1
+      amount_max: 1
+    astral_mist_essence:
+      item_id: "astral_mist_essence"
+      weight: 2
+      amount_min: 1
+      amount_max: 1
+    wayfinder_tree_root:
+      item_id: "wayfinder_tree_root"
       weight: 1
       amount_min: 1
       amount_max: 1
 
-# ============================================
-# КОНФІГУРАЦІЯ СТРУКТУР
-# ============================================
+    # --- Recipes (Rebalanced) ---
+    door_recipe_9:
+      item_id: "recipe:Door:9"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+    door_recipe_8:
+      item_id: "recipe:Door:8"
+      weight: 30
+      amount_min: 1
+      amount_max: 1
+    door_recipe_7:
+      item_id: "recipe:Door:7"
+      weight: 10
+      amount_min: 1
+      amount_max: 1
+    door_recipe_6:
+      item_id: "recipe:Door:6"
+      weight: 4
+      amount_min: 1
+      amount_max: 1
+    door_recipe_5:
+      item_id: "recipe:Door:5"
+      weight: 1
+      amount_min: 1
+      amount_max: 1
+
+    # --- Potions (Rebalanced) ---
+    door_potion_9:
+      item_id: "potion:Door:9"
+      weight: 15
+      amount_min: 1
+      amount_max: 1
+    door_potion_8:
+      item_id: "potion:Door:8"
+      weight: 8
+      amount_min: 1
+      amount_max: 1
+    door_potion_7:
+      item_id: "potion:Door:7"
+      weight: 4
+      amount_min: 1
+      amount_max: 1
+    door_potion_6:
+      item_id: "potion:Door:6"
+      weight: 2
+      amount_min: 1
+      amount_max: 1
+    door_potion_5:
+      item_id: "potion:Door:5"
+      weight: 1
+      amount_min: 1
+      amount_max: 1
+
+    # =====================================================================
+    #                              JUSTICIAR PATHWAY
+    # =====================================================================
+
+    # --- Ingredients ---
+    heart_of_unquestioned_command:
+      item_id: "heart_of_unquestioned_command"
+      weight: 80
+      amount_min: 1
+      amount_max: 1
+    bone_of_the_unyielding_frame:
+      item_id: "bone_of_the_unyielding_frame"
+      weight: 80
+      amount_min: 1
+      amount_max: 1
+    eye_of_judicial_insight:
+      item_id: "eye_of_judicial_insight"
+      weight: 80
+      amount_min: 1
+      amount_max: 1
+    pair_of_terror_demon_worms_eyes:
+      item_id: "pair_of_terror_demon_worms_eyes"
+      weight: 50
+      amount_min: 1
+      amount_max: 1
+    silver_war_bears_right_palm:
+      item_id: "silver_war_bears_right_palm"
+      weight: 50
+      amount_min: 1
+      amount_max: 1
+    eye_of_perfect_recognition:
+      item_id: "eye_of_perfect_recognition"
+      weight: 50
+      amount_min: 1
+      amount_max: 1
+    thread_of_supernatural_intuition:
+      item_id: "thread_of_supernatural_intuition"
+      weight: 50
+      amount_min: 1
+      amount_max: 1
+    horn_of_a_flash_patterned_black_snake:
+      item_id: "horn_of_a_flash_patterned_black_snake"
+      weight: 20
+      amount_min: 1
+      amount_max: 1
+    dust_of_lake_spirit:
+      item_id: "dust_of_lake_spirit"
+      weight: 20
+      amount_min: 1
+      amount_max: 1
+    ashes_of_a_broken_oath_seal:
+      item_id: "ashes_of_a_broken_oath_seal"
+      weight: 20
+      amount_min: 1
+      amount_max: 1
+    heart_of_the_silent_verdict:
+      item_id: "heart_of_the_silent_verdict"
+      weight: 8
+      amount_min: 1
+      amount_max: 1
+    fragment_of_a_sealed_domain:
+      item_id: "fragment_of_a_sealed_domain"
+      weight: 8
+      amount_min: 1
+      amount_max: 1
+    ashes_of_a_forbidden_decree:
+      item_id: "ashes_of_a_forbidden_decree"
+      weight: 8
+      amount_min: 1
+      amount_max: 1
+    chains_of_collective_fear:
+      item_id: "chains_of_collective_fear"
+      weight: 8
+      amount_min: 1
+      amount_max: 1
+    core_of_retributive_authority:
+      item_id: "core_of_retributive_authority"
+      weight: 2
+      amount_min: 1
+      amount_max: 1
+    brand_of_the_unforgiving_oath:
+      item_id: "brand_of_the_unforgiving_oath"
+      weight: 2
+      amount_min: 1
+      amount_max: 1
+    ashes_of_a_public_execution:
+      item_id: "ashes_of_a_public_execution"
+      weight: 2
+      amount_min: 1
+      amount_max: 1
+    shackles_of_the_guilty:
+      item_id: "shackles_of_the_guilty"
+      weight: 2
+      amount_min: 1
+      amount_max: 1
+
+    # --- Recipes (Rebalanced) ---
+    justiciar_recipe_9:
+      item_id: "recipe:Justiciar:9"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+    justiciar_recipe_8:
+      item_id: "recipe:Justiciar:8"
+      weight: 30
+      amount_min: 1
+      amount_max: 1
+    justiciar_recipe_7:
+      item_id: "recipe:Justiciar:7"
+      weight: 10
+      amount_min: 1
+      amount_max: 1
+    justiciar_recipe_6:
+      item_id: "recipe:Justiciar:6"
+      weight: 4
+      amount_min: 1
+      amount_max: 1
+    justiciar_recipe_5:
+      item_id: "recipe:Justiciar:5"
+      weight: 1
+      amount_min: 1
+      amount_max: 1
+
+    # --- Potions (Rebalanced) ---
+    justiciar_potion_9:
+      item_id: "potion:Justiciar:9"
+      weight: 15
+      amount_min: 1
+      amount_max: 1
+    justiciar_potion_8:
+      item_id: "potion:Justiciar:8"
+      weight: 8
+      amount_min: 1
+      amount_max: 1
+    justiciar_potion_7:
+      item_id: "potion:Justiciar:7"
+      weight: 4
+      amount_min: 1
+      amount_max: 1
+    justiciar_potion_6:
+      item_id: "potion:Justiciar:6"
+      weight: 2
+      amount_min: 1
+      amount_max: 1
+    justiciar_potion_5:
+      item_id: "potion:Justiciar:5"
+      weight: 1
+      amount_min: 1
+      amount_max: 1
+
+# Структури залишаються без змін, вони на лут не впливають
 structures:
-  # Березова бібліотека - часто зустрічається
   birch_library:
     file: "birch_lib.nbt"
     spawn:
       biomes: [PLAINS, BIRCH_FOREST, FOREST, MEADOW]
-      chance: 0.025
+      chance: 0.07
       min_distance: 1200
       placement_type: SURFACE
-    # Всі сундуки в структурі будуть заповнюватися з глобальної таблиці
-    # можна перевизначити параметри (опціонально)
-    loot:
-      min_items: 1
-      max_items: 4
-
-  # Бліда бібліотека - рідкісна
   pale_library:
     file: "pale_lib.nbt"
     spawn:
       biomes: [TAIGA, SNOWY_TAIGA, SNOWY_PLAINS, MEADOW]
-      chance: 0.02
+      chance: 0.06
       min_distance: 1400
       placement_type: SURFACE
-    loot:
-      min_items: 2
-      max_items: 5
-
-  # Ялинова бібліотека
   spruce_library:
     file: "spruce_lib.nbt"
     spawn:
       biomes: [TAIGA, GROVE, OLD_GROWTH_SPRUCE_TAIGA, SNOWY_PLAINS]
-      chance: 0.028
+      chance: 0.07
       min_distance: 1100
       placement_type: SURFACE
-    loot:
-      min_items: 2
-      max_items: 5
-
-  # Зруйнована березова бібліотека - часто зустрічається
   ruined_birch_library:
     file: "ruined_birch_lib.nbt"
     spawn:
       biomes: [PLAINS, BIRCH_FOREST]
-      chance: 0.04
+      chance: 0.06
       min_distance: 800
       placement_type: SURFACE
-    loot:
-      min_items: 1
-      max_items: 3
-
-  # Зруйнована дубова бібліотека
   ruined_oak_library:
     file: "ruined_oak_lib.nbt"
     spawn:
       biomes: [FOREST, PLAINS, MEADOW]
-      chance: 0.045
+      chance: 0.07
       min_distance: 700
       placement_type: SURFACE
-    loot:
-      min_items: 1
-      max_items: 3
-
-  # Зруйнована бліда бібліотека
   ruined_pale_library:
     file: "ruined_pale_lib.nbt"
     spawn:
       biomes: [SNOWY_TAIGA, SNOWY_PLAINS, ICE_SPIKES]
-      chance: 0.038
+      chance: 0.06
       min_distance: 900
       placement_type: SURFACE
-    loot:
-      min_items: 1
-      max_items: 3
-
-  # Зруйнована ялинова бібліотека
   ruined_spruce_library:
     file: "ruined_spruce_lib.nbt"
     spawn:
       biomes: [TAIGA, OLD_GROWTH_SPRUCE_TAIGA]
-      chance: 0.042
+      chance: 0.07
       min_distance: 750
       placement_type: SURFACE
-    loot:
-      min_items: 1
-      max_items: 3
   ruins2:
     file: "ruins2.nbt"
     spawn:
-      biomes: [ TAIGA, OLD_GROWTH_SPRUCE_TAIGA, SNOWY_TAIGA, PLAINS, FOREST, SNOWY_PLAINS, SAVANNA, windswept_hills]
-      chance: 0.05
+      biomes: [TAIGA, OLD_GROWTH_SPRUCE_TAIGA, SNOWY_TAIGA, PLAINS, FOREST, SNOWY_PLAINS, SAVANNA, WINDSWEPT_HILLS]
+      chance: 0.06
       min_distance: 750
       placement_type: SURFACE
-    loot:
-      min_items: 1
-      max_items: 3
   vahonchik:
     file: "vahonchik.nbt"
     spawn:
-      biomes: [ TAIGA, OLD_GROWTH_SPRUCE_TAIGA, SNOWY_TAIGA, PLAINS, FOREST, SNOWY_PLAINS, SAVANNA, CHERRY_GROVE]
-      chance: 0.03
+      biomes: [TAIGA, OLD_GROWTH_SPRUCE_TAIGA, SNOWY_TAIGA, PLAINS, FOREST, SNOWY_PLAINS, SAVANNA, CHERRY_GROVE]
+      chance: 0.05
       min_distance: 750
       placement_type: SURFACE
     loot:

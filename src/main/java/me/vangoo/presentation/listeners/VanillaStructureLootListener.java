@@ -81,23 +81,22 @@ public class VanillaStructureLootListener implements Listener {
         Map<String, Double> structures = new java.util.HashMap<>();
 
 
-        structures.put("mansion", 0.8);
-        structures.put("ancient_city", 0.7);
-        structures.put("bastion", 0.7);
+        structures.put("mansion", 0.40);
+        structures.put("ancient_city", 0.30);
+        structures.put("bastion", 0.50);
         structures.put("nether_bridge", 0.5);
-        structures.put("end_city", 0.5);
-        structures.put("stronghold", 0.6);
-        structures.put("jungle_temple", 0.6);
-        structures.put("desert_pyramid", 0.3);
-        structures.put("igloo", 0.9);
-        structures.put("pillager_outpost", 0.3);
-        structures.put("ocean_ruin_warm", 0.4);
-        structures.put("ocean_ruin_cold", 0.4);
-        structures.put("buried_treasure", 0.3);
-        structures.put("shipwreck", 0.2);
-        structures.put("mineshaft", 0.3);
-        structures.put("simple_dungeon", 0.2);
-        structures.put("ruined_portal", 0.1);
+        structures.put("end_city", 0.25);
+        structures.put("stronghold", 0.30);
+        structures.put("jungle_temple", 0.30);
+        structures.put("desert_pyramid", 0.30);
+        structures.put("pillager_outpost", 0.45);
+        structures.put("ocean_ruin_warm", 0.20);
+        structures.put("ocean_ruin_cold", 0.20);
+        structures.put("buried_treasure", 0.25);
+        structures.put("shipwreck", 0.10);
+        structures.put("mineshaft", 0.10);
+        structures.put("simple_dungeon", 0.15);
+        structures.put("ruined_portal", 0.25);
 
         logger.info("Enabled vanilla structures for custom loot: " + structures.size());
         return structures;
@@ -114,12 +113,15 @@ public class VanillaStructureLootListener implements Listener {
         List<ItemStack> currentLoot = event.getLoot();
         int totalWeight = globalLootTable.items().stream().mapToInt(LootItem::weight).sum();
 
-        // Визначаємо скільки предметів додати
-//      int minItems = globalLootTable.minItems();
-//      int maxItems = globalLootTable.maxItems();
-//      int itemsToAdd = minItems + random.nextInt(maxItems - minItems + 1);
+        int itemsToAdd;
+        double roll = Math.random();
 
-        int itemsToAdd = (Math.random() <= 0.5) ? 1 : 2;
+        if (roll <= 0.20) {
+            itemsToAdd = 2;
+        } else {
+            itemsToAdd = 1;
+        }
+
         logger.fine("Adding " + itemsToAdd + " custom items to " + lootTableKey);
 
         Set<String> addedItems = new HashSet<>();
