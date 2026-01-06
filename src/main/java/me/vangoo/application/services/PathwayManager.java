@@ -30,7 +30,7 @@ public class PathwayManager {
                 List.of("Door", "Key of Stars", "Planeswalker", "Wanderer", "Secrets Sorcerer", "Traveler", "Scribe",
                         "Astrologer", "Trickmaster", "Apprentice")));
         pathways.put("Justiciar", new Justiciar(PathwayGroup.TheAnarchy,
-                List.of("Justiciar", "Hand of Order", "Balancer", "Chaos Hunter", "Imperative Mage", "Disciplinary Paladin", "Judge",
+                List.of("Justiciar", "Hand of Order", "Balancer", "Chaos Hunter", "Imperative Mage", "Paladin", "Judge",
                         "Interrogator", "Sheriff", "Arbiter")));
     }
 

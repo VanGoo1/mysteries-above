@@ -1,5 +1,5 @@
 name: Mysteries-Above
-version: 0.0
+version: 0.1
 main: me.vangoo.MysteriesAbovePlugin
 api-version: "1.21"
 
@@ -7,21 +7,39 @@ commands:
   pathway:
     description: Manage your Beyonder abilities and pathways
     usage: /<command> <get|set|remove> ...
+    permission: mysteriesabove.admin
+    permission-message: "§cYou do not have permission to use this command."
   mastery:
     description: Manage mastery
     usage: /mastery [info]
+    permission: mysteriesabove.admin
+    permission-message: "§cYou do not have permission to use this command."
   rampager:
     description: оудап
     usage: /rampager set <1-100>
+    permission: mysteriesabove.admin
+    permission-message: "§cYou do not have permission to use this command."
   potion:
     description: get sequence potions
     usage: /potion ...
+    permission: mysteriesabove.admin
+    permission-message: "§cYou do not have permission to use this command."
   custom-items:
     description: custom item info
     usage: /custom-items give <player> <item_id> [quantity]
+    permission: mysteriesabove.admin
+    permission-message: "§cYou do not have permission to use this command."
   structure:
     description: Generate structures with custom loot
     usage: /structure <spawn|list> ...
+    permission: mysteriesabove.admin
+    permission-message: "§cYou do not have permission to use this command."
   recipe:
     description: Manage recipe books and unlocks
     usage: /recipe <give|list> ...
+    permission: mysteriesabove.admin
+    permission-message: "§cYou do not have permission to use this command."
+permissions:
+  mysteriesabove.admin:
+    description: Gives access to all administrative commands
+    default: op
