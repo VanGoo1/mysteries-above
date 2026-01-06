@@ -3,336 +3,495 @@ package me.vangoo.domain.pathways.justiciar.abilities;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.Sequence;
+import me.vangoo.domain.valueobjects.SequenceBasedSuccessChance;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.potion.PotionEffect;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
-
+/**
+ * Domain Ability: Authority (Авторитет)
+ *
+ * Активна здібність що:
+ * - Випромінює ауру влади
+ * - Через 6 секунд примушує гравців викинути предмет з рук
+ * - Знімає всю броню (якщо інвентар повний - викидає на землю)
+ * - Накладає повільність 1 на 10 секунд
+ * - Використовує sequence-based шанси опору
+ */
 public class Authority extends ActiveAbility {
 
-    private static final double RADIUS = 10.0;
-    private static final int MOB_DAMAGE = 6; // 3 hearts
-    private static final int DEBUFF_DURATION_TICKS = 100; // 5 seconds
-    private static final int COMBAT_CHECK_INTERVAL_TICKS = 100; // 5 seconds
-    private static final double DAMAGE_REDUCTION_PER_STACK = 0.02; // 2%
-    private static final int MAX_STACKS = 7; // 14% max reduction (7 * 2%)
-    private static final int COOLDOWN = 40;
-    private static final int COST = 50;
-
-    // Tracking combat state for each affected player
-    private static final Map<UUID, CombatState> combatStates = new ConcurrentHashMap<>();
-
-    private static class CombatState {
-        int stacks;
-        long lastCombatTime;
-        UUID casterUuid;
-
-        CombatState(UUID casterUuid) {
-            this.stacks = 0;
-            this.lastCombatTime = System.currentTimeMillis();
-            this.casterUuid = casterUuid;
-        }
-
-        void addStack() {
-            if (stacks < MAX_STACKS) {
-                stacks++;
-            }
-            lastCombatTime = System.currentTimeMillis();
-        }
-
-        void resetCombat() {
-            lastCombatTime = System.currentTimeMillis();
-        }
-
-        boolean isInCombat() {
-            // Consider in combat if less than 10 seconds since last combat
-            return System.currentTimeMillis() - lastCombatTime < 10000;
-        }
-
-        double getDamageMultiplier() {
-            return 1.0 - (stacks * DAMAGE_REDUCTION_PER_STACK);
-        }
-    }
+    private static final double RADIUS = 15.0;
+    private static final int BUILDUP_TIME_TICKS = 120; // 6 seconds
+    private static final int SLOWNESS_DURATION_TICKS = 200; // 10 seconds
+    private static final int SLOWNESS_AMPLIFIER = 0; // Slowness 1
 
     @Override
     public String getName() {
-        return "Авторитет";
+        return "Authority";
     }
 
     @Override
     public String getDescription(Sequence userSequence) {
-        return "Випромінюєш ауру відчаю, що впливає на волю ворогів.\n" +
+        return "Випромінюєш ауру неоспорюваного авторитету.\n" +
                 ChatColor.GRAY + "▪ Радіус: " + ChatColor.WHITE + (int)RADIUS + " блоків\n" +
-                ChatColor.GRAY + "▪ Моби: " + ChatColor.RED + (MOB_DAMAGE/2) + " ♥\n" +
-                ChatColor.GRAY + "▪ Гравці: Дебаф -2% шкоди кожні 5с (макс 14%)";
+                ChatColor.GRAY + "▪ Затримка: " + ChatColor.WHITE + "6 секунд\n" +
+                ChatColor.GRAY + "▪ Ефект: Викидання предметів + броні\n" +
+                ChatColor.GRAY + "▪ Дебаф: Повільність I на 10с\n" +
+                ChatColor.DARK_GRAY + "▸ Висока послідовність = більший шанс";
     }
 
     @Override
     public int getSpiritualityCost() {
-        return COST;
+        return 40;
     }
 
     @Override
     public int getCooldown(Sequence userSequence) {
-        return COOLDOWN;
+        return 30; // 30 seconds
     }
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        List<LivingEntity> nearbyEntities = context.getNearbyEntities(RADIUS);
+        List<Player> nearbyPlayers = context.getNearbyPlayers(RADIUS);
 
-        // Check if there's anyone nearby
-        if (nearbyEntities.isEmpty()) {
-            return AbilityResult.failure("В радіусі нікого немає!");
+        if (nearbyPlayers.isEmpty()) {
+            return AbilityResult.failure("В радіусі немає інших гравців!");
         }
 
-        int playersAffected = 0;
-        int mobsAffected = 0;
+        Beyonder caster = context.getCasterBeyonder();
+        int casterSequence = caster.getSequenceLevel();
 
-        // Process all nearby entities
-        for (LivingEntity entity : nearbyEntities) {
-            if (entity instanceof Player player) {
-                // Apply debuff to player
-                applyPlayerDebuff(context, player);
-                playersAffected++;
-            } else if (entity instanceof Monster) {
-                // Damage mobs
-                context.damage(entity.getUniqueId(), MOB_DAMAGE);
+        // Show initial aura activation
+        showAuraActivation(context);
 
-                // Visual effect for damaged mob
-                context.spawnParticle(
-                        Particle.SMOKE,
-                        entity.getLocation().add(0, 1, 0),
-                        15,
-                        0.3, 0.5, 0.3
-                );
+        // Notify caster
+        context.sendMessageToCaster(
+                ChatColor.GOLD + "Аура Авторитету активована! " +
+                        ChatColor.GRAY + "Ефект через 6 секунд..."
+        );
 
-                mobsAffected++;
-            }
-        }
+        // Track affected players for statistics
+        Set<UUID> affectedPlayers = new HashSet<>();
+        Set<UUID> resistedPlayers = new HashSet<>();
 
-        // Visual effects at caster location
-        showAuraActivationEffects(context);
+        // Schedule buildup effects (visual warnings)
+        scheduleBuildupEffects(context, nearbyPlayers);
 
-        // Build result message
-        StringBuilder message = new StringBuilder(ChatColor.DARK_PURPLE + "Аура Відчаю активована!");
-        if (playersAffected > 0) {
-            message.append("\n").append(ChatColor.GRAY)
-                    .append("Гравців уражено: ").append(ChatColor.YELLOW).append(playersAffected);
-        }
-        if (mobsAffected > 0) {
-            message.append("\n").append(ChatColor.GRAY)
-                    .append("Мобів пошкоджено: ").append(ChatColor.RED).append(mobsAffected);
-        }
+        // Schedule main effect after 6 seconds
+        context.scheduleDelayed(() -> {
+            executeAuthorityEffect(
+                    context,
+                    nearbyPlayers,
+                    casterSequence,
+                    affectedPlayers,
+                    resistedPlayers
+            );
 
-        return AbilityResult.successWithMessage(message.toString());
+            // Show final statistics to caster
+            showResultStatistics(context, affectedPlayers, resistedPlayers);
+
+        }, BUILDUP_TIME_TICKS);
+
+        return AbilityResult.success();
     }
 
     /**
-     * Apply debuff to player and setup combat tracking
+     * Schedule visual buildup effects during 6 second delay
      */
-    private void applyPlayerDebuff(IAbilityContext context, Player target) {
+    private void scheduleBuildupEffects(IAbilityContext context, List<Player> targets) {
+        // Warning at 2 seconds (4 seconds remaining)
+        context.scheduleDelayed(() -> {
+            showBuildupWarning(context, targets, 1);
+        }, 40L);
+
+        // Warning at 4 seconds (2 seconds remaining)
+        context.scheduleDelayed(() -> {
+            showBuildupWarning(context, targets, 2);
+        }, 80L);
+
+        // Final warning at 5.5 seconds (0.5 seconds remaining)
+        context.scheduleDelayed(() -> {
+            showBuildupWarning(context, targets, 3);
+        }, 110L);
+    }
+
+    /**
+     * Show progressive warning effects
+     */
+    private void showBuildupWarning(IAbilityContext context, List<Player> targets, int stage) {
+        for (Player target : targets) {
+            if (!target.isOnline()) continue;
+
+            Location loc = target.getLocation().add(0, 1, 0);
+
+            // Progressively more intense effects
+            int particleCount = stage * 10;
+            float soundPitch = 0.5f + (stage * 0.3f);
+
+            context.spawnParticle(
+                    Particle.ENCHANT,
+                    loc,
+                    particleCount,
+                    0.5, 0.5, 0.5
+            );
+
+            context.spawnParticle(
+                    Particle.END_ROD,
+                    loc,
+                    stage * 3,
+                    0.3, 0.3, 0.3
+            );
+
+            context.playSound(
+                    loc,
+                    Sound.BLOCK_BELL_USE,
+                    0.5f,
+                    soundPitch
+            );
+
+            // Warning messages
+            String warning = switch (stage) {
+                case 1 -> ChatColor.YELLOW + "⚠ Відчуваєш тиск авторитету...";
+                case 2 -> ChatColor.GOLD + "⚠⚠ Важко опиратися...";
+                case 3 -> ChatColor.RED + "⚠⚠⚠ НЕМОЖЛИВО ОПИРАТИСЯ!";
+                default -> "";
+            };
+
+            context.sendMessage(target.getUniqueId(), warning);
+        }
+    }
+
+    /**
+     * Execute the main authority effect on all targets
+     */
+    private void executeAuthorityEffect(
+            IAbilityContext context,
+            List<Player> targets,
+            int casterSequence,
+            Set<UUID> affectedPlayers,
+            Set<UUID> resistedPlayers
+    ) {
+        for (Player target : targets) {
+            if (!target.isOnline()) continue;
+
+            UUID targetId = target.getUniqueId();
+
+            // Get target's sequence if they are a beyonder
+            Beyonder targetBeyonder = context.getBeyonderFromEntity(targetId);
+
+            boolean resisted = false;
+
+            // Check sequence-based resistance if target is a beyonder
+            if (targetBeyonder != null) {
+                int targetSequence = targetBeyonder.getSequenceLevel();
+
+                SequenceBasedSuccessChance successChance =
+                        new SequenceBasedSuccessChance(casterSequence, targetSequence);
+
+                // Roll for success
+                if (!successChance.rollSuccess()) {
+                    resisted = true;
+                    resistedPlayers.add(targetId);
+
+                    // Show resistance feedback
+                    showResistanceEffect(context, target, successChance);
+                    continue;
+                }
+            }
+
+            // Apply authority effect
+            applyAuthorityEffect(context, target);
+            affectedPlayers.add(targetId);
+        }
+    }
+
+    /**
+     * Apply the full authority effect to a target
+     */
+    private void applyAuthorityEffect(IAbilityContext context, Player target) {
         UUID targetId = target.getUniqueId();
-        UUID casterId = context.getCasterId();
+        PlayerInventory inv = target.getInventory();
+        Location dropLocation = target.getLocation().add(0, 1.5, 0);
 
-        // Initialize or update combat state
-        CombatState state = combatStates.computeIfAbsent(targetId, k -> new CombatState(casterId));
-        state.casterUuid = casterId; // Update caster if different
+        // 1. Drop item from main hand
+        ItemStack mainHand = inv.getItemInMainHand();
+        if (mainHand.getType() != Material.AIR) {
+            target.getWorld().dropItem(dropLocation, mainHand.clone());
+            inv.setItemInMainHand(new ItemStack(Material.AIR));
+        }
 
-        // Apply initial visual debuff
+        // 2. Drop item from off hand
+        ItemStack offHand = inv.getItemInOffHand();
+        if (offHand.getType() != Material.AIR) {
+            target.getWorld().dropItem(dropLocation, offHand.clone());
+            inv.setItemInOffHand(new ItemStack(Material.AIR));
+        }
+
+        // 3. Remove and drop armor
+        removeAndDropArmor(context, target, inv, dropLocation);
+
+        // 4. Apply slowness effect
         context.applyEffect(
                 targetId,
                 PotionEffectType.SLOWNESS,
-                DEBUFF_DURATION_TICKS,
-                0
+                SLOWNESS_DURATION_TICKS,
+                SLOWNESS_AMPLIFIER
         );
 
-        // Subtle darkness effect
-        context.applyEffect(
+        // 5. Show effect on target
+        showAuthorityEffect(context, target);
+
+        // 6. Notify target
+        context.sendMessage(
                 targetId,
-                PotionEffectType.BLINDNESS,
-                20, // 1 second
-                0
+                ChatColor.RED + "Ти не можеш опиратися цьому авторитету!"
+        );
+    }
+
+    /**
+     * Remove armor and try to place in inventory, drop if full
+     */
+    private void removeAndDropArmor(
+            IAbilityContext context,
+            Player target,
+            PlayerInventory inv,
+            Location dropLocation
+    ) {
+        // Get all armor pieces
+        ItemStack helmet = inv.getHelmet();
+        ItemStack chestplate = inv.getChestplate();
+        ItemStack leggings = inv.getLeggings();
+        ItemStack boots = inv.getBoots();
+
+        // Clear armor slots
+        inv.setHelmet(null);
+        inv.setChestplate(null);
+        inv.setLeggings(null);
+        inv.setBoots(null);
+
+        // Try to add to inventory, drop if can't
+        List<ItemStack> armorPieces = Arrays.asList(helmet, chestplate, leggings, boots);
+
+        for (ItemStack armor : armorPieces) {
+            if (armor == null || armor.getType() == Material.AIR) {
+                continue;
+            }
+
+            // Try to add to inventory
+            HashMap<Integer, ItemStack> leftover = inv.addItem(armor);
+
+            // If couldn't add (inventory full), drop on ground
+            if (!leftover.isEmpty()) {
+                for (ItemStack drop : leftover.values()) {
+                    target.getWorld().dropItem(dropLocation, drop);
+                }
+            }
+        }
+    }
+
+    /**
+     * Show visual effect when authority is applied
+     */
+    private void showAuthorityEffect(IAbilityContext context, Player target) {
+        Location loc = target.getLocation().add(0, 1, 0);
+
+        // Explosion-like particle effect
+        context.spawnParticle(
+                Particle.EXPLOSION,
+                loc,
+                1,
+                0, 0, 0
         );
 
-        // Setup combat tracking scheduler
-        setupCombatTracking(context, targetId, casterId);
-
-        // Visual effect on target
+        // Gold particles falling down (symbolizing authority)
         context.spawnParticle(
-                Particle.SQUID_INK,
-                target.getLocation().add(0, 1, 0),
+                Particle.FALLING_DUST,
+                loc,
+                30,
+                0.5, 1.0, 0.5
+        );
+
+        // Flash effect
+        context.spawnParticle(
+                Particle.END_ROD,
+                loc,
                 20,
                 0.3, 0.5, 0.3
         );
 
-        // Sound for target
+        // Sound effects
         context.playSound(
-                target.getLocation(),
-                Sound.ENTITY_ELDER_GUARDIAN_CURSE,
+                loc,
+                Sound.ENTITY_LIGHTNING_BOLT_THUNDER,
                 0.5f,
+                1.2f
+        );
+
+        context.playSound(
+                loc,
+                Sound.ENTITY_WITHER_BREAK_BLOCK,
+                0.7f,
                 0.8f
         );
-
-        // Message to target
-        context.sendMessage(targetId, ChatColor.DARK_GRAY + "Відчай огортає вашу свідомість...");
     }
 
     /**
-     * Setup combat tracking for gradual damage reduction
+     * Show effect when target resists
      */
-    private void setupCombatTracking(IAbilityContext context, UUID targetId, UUID casterId) {
-        // Subscribe to damage events for this player
-        context.subscribeToEvent(
-                EntityDamageByEntityEvent.class,
-                event -> {
-                    // Check if this player is dealing damage
-                    if (event.getDamager().getUniqueId().equals(targetId)) {
-                        CombatState state = combatStates.get(targetId);
-                        if (state != null) {
-                            // Update combat time
-                            state.resetCombat();
-                            return true; // Target is involved in combat
-                        }
-                    }
+    private void showResistanceEffect(
+            IAbilityContext context,
+            Player target,
+            SequenceBasedSuccessChance successChance
+    ) {
+        Location loc = target.getLocation().add(0, 1, 0);
 
-                    // Check if this player is taking damage from caster
-                    if (event.getEntity().getUniqueId().equals(targetId) &&
-                            event.getDamager().getUniqueId().equals(casterId)) {
-                        CombatState state = combatStates.get(targetId);
-                        if (state != null) {
-                            state.resetCombat();
-                            return true;
-                        }
-                    }
-
-                    return false;
-                },
-                event -> {
-                    // Check if target is dealing damage to caster or vice versa
-                    boolean targetIsDamager = event.getDamager().getUniqueId().equals(targetId);
-                    boolean targetIsVictim = event.getEntity().getUniqueId().equals(targetId);
-                    boolean casterInvolved = event.getDamager().getUniqueId().equals(casterId) ||
-                            event.getEntity().getUniqueId().equals(casterId);
-
-                    if ((targetIsDamager || targetIsVictim) && casterInvolved) {
-                        CombatState state = combatStates.get(targetId);
-                        if (state != null && targetIsDamager) {
-                            // Apply damage reduction
-                            double multiplier = state.getDamageMultiplier();
-                            double originalDamage = event.getDamage();
-                            double newDamage = originalDamage * multiplier;
-                            event.setDamage(newDamage);
-
-                            // Show visual feedback if significant reduction
-                            if (state.stacks > 0) {
-                                context.spawnParticle(
-                                        Particle.SMOKE,
-                                        event.getEntity().getLocation().add(0, 1, 0),
-                                        5,
-                                        0.2, 0.2, 0.2
-                                );
-                            }
-                        }
-                    }
-                },
-                DEBUFF_DURATION_TICKS
+        // Shield-like particles
+        context.spawnParticle(
+                Particle.FIREWORK,
+                loc,
+                20,
+                0.5, 0.5, 0.5
         );
 
-        // Setup periodic stack addition
-        scheduleStackIncrease(context, targetId, casterId);
-    }
-    private void scheduleStackIncrease(IAbilityContext context, UUID targetId, UUID casterId) {
-        // First stack after 5 seconds
-        context.scheduleDelayed(() -> {
-            CombatState state = combatStates.get(targetId);
-            if (state != null && state.isInCombat()) {
-                state.addStack();
+        // Resistance sound
+        context.playSound(
+                loc,
+                Sound.ITEM_SHIELD_BLOCK,
+                1.0f,
+                1.2f
+        );
 
-                // Notify player of increased despair
-                context.sendMessage(
-                        targetId,
-                        ChatColor.DARK_GRAY + "Відчай посилюється... " +
-                                ChatColor.RED + "(-" + (state.stacks * 2) + "% шкоди)"
-                );
-
-                // Visual effect
-                Player target = context.getCaster().getServer().getPlayer(targetId);
-                if (target != null) {
-                    context.spawnParticle(
-                            Particle.SQUID_INK,
-                            target.getLocation().add(0, 1, 0),
-                            10,
-                            0.2, 0.3, 0.2
-                    );
-                }
-
-                // Schedule next stack if not at max
-                if (state.stacks < MAX_STACKS) {
-                    scheduleStackIncrease(context, targetId, casterId);
-                }
-            } else {
-                // Combat ended, cleanup
-                cleanupCombatState(targetId);
-            }
-        }, COMBAT_CHECK_INTERVAL_TICKS);
+        // Notify target of successful resistance
+        context.sendMessage(
+                target.getUniqueId(),
+                ChatColor.GREEN + "Ти зміг опиратися! " +
+                        ChatColor.GRAY + "(Шанс: " + successChance.getFormattedChance() + ")"
+        );
     }
 
     /**
-     * Cleanup combat state when debuff ends
+     * Show initial aura activation effect
      */
-    private static void cleanupCombatState(UUID targetId) {
-        combatStates.remove(targetId);
-    }
+    private void showAuraActivation(IAbilityContext context) {
+        Location centerLoc = context.getCasterLocation();
 
-    /**
-     * Show visual effects for aura activation
-     */
-    private void showAuraActivationEffects(IAbilityContext context) {
-        // Dark sphere expanding from caster
+        // Large expanding sphere
         context.playSphereEffect(
-                context.getCasterLocation().add(0, 1, 0),
+                centerLoc.add(0, 1, 0),
                 RADIUS,
-                Particle.SQUID_INK,
+                Particle.ENCHANT,
+                60
+        );
+
+        // Wave at ground level
+        context.playWaveEffect(
+                centerLoc,
+                RADIUS,
+                Particle.GLOW,
                 40
         );
 
-        // Dark wave
-        context.playWaveEffect(
-                context.getCasterLocation(),
-                RADIUS,
-                Particle.SMOKE,
-                20
+        // Pillar of light at caster
+        context.playLineEffect(
+                centerLoc,
+                centerLoc.clone().add(0, 5, 0),
+                Particle.END_ROD
         );
 
         // Sound effects
-        context.playSoundToCaster(Sound.ENTITY_WARDEN_SONIC_BOOM, 0.7f, 0.6f);
-        context.playSoundToCaster(Sound.ENTITY_ELDER_GUARDIAN_CURSE, 1.0f, 0.8f);
+        context.playSoundToCaster(Sound.ENTITY_EVOKER_PREPARE_ATTACK, 1.0f, 0.8f);
+        context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 0.8f, 1.2f);
 
-        // Circle effect at ground level
+        // Circle effect
         context.playCircleEffect(
-                context.getCasterLocation(),
+                centerLoc,
                 RADIUS,
-                Particle.ASH,
-                60
+                Particle.SOUL_FIRE_FLAME,
+                80
         );
     }
 
-    @Override
-    public void cleanUp() {
-        // Clean up all combat states when ability is removed
-        combatStates.clear();
+    /**
+     * Show result statistics to caster
+     */
+    private void showResultStatistics(
+            IAbilityContext context,
+            Set<UUID> affectedPlayers,
+            Set<UUID> resistedPlayers
+    ) {
+        int total = affectedPlayers.size() + resistedPlayers.size();
+
+        if (total == 0) {
+            context.sendMessageToCaster(
+                    ChatColor.YELLOW + "Всі цілі покинули радіус дії"
+            );
+            return;
+        }
+
+        StringBuilder message = new StringBuilder();
+        message.append(ChatColor.GOLD).append("═══ Результат Авторитету ═══\n");
+
+        if (!affectedPlayers.isEmpty()) {
+            message.append(ChatColor.GREEN)
+                    .append("✓ Підкорено: ")
+                    .append(ChatColor.WHITE)
+                    .append(affectedPlayers.size())
+                    .append("\n");
+        }
+
+        if (!resistedPlayers.isEmpty()) {
+            message.append(ChatColor.RED)
+                    .append("✗ Опирались: ")
+                    .append(ChatColor.WHITE)
+                    .append(resistedPlayers.size())
+                    .append("\n");
+        }
+
+        int successRate = (int)((affectedPlayers.size() * 100.0) / total);
+        message.append(ChatColor.GRAY)
+                .append("Успішність: ")
+                .append(ChatColor.YELLOW)
+                .append(successRate)
+                .append("%");
+
+        context.sendMessageToCaster(message.toString());
+
+        // Visual feedback at caster location
+        if (successRate >= 70) {
+            // High success - golden effect
+            context.spawnParticle(
+                    Particle.TOTEM_OF_UNDYING,
+                    context.getCasterLocation().add(0, 2, 0),
+                    30,
+                    0.5, 0.5, 0.5
+            );
+            context.playSoundToCaster(Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.2f);
+        } else if (successRate >= 40) {
+            // Medium success
+            context.spawnParticle(
+                    Particle.HAPPY_VILLAGER,
+                    context.getCasterLocation().add(0, 2, 0),
+                    20,
+                    0.5, 0.5, 0.5
+            );
+        } else {
+            // Low success
+            context.spawnParticle(
+                    Particle.SMOKE,
+                    context.getCasterLocation().add(0, 2, 0),
+                    15,
+                    0.5, 0.5, 0.5
+            );
+        }
     }
 }

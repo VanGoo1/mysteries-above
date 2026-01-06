@@ -4,7 +4,12 @@ package me.vangoo.domain.pathways.door.abilities;
 import me.vangoo.domain.abilities.core.*;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.events.AbilityDomainEvent;
+import me.vangoo.domain.services.SequenceScaler;
+import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.domain.valueobjects.Sequence;
+import me.vangoo.domain.valueobjects.SequenceBasedSuccessChance;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -19,14 +24,21 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Door Sequence 6: Record Ability
  *
- * ВИПРАВЛЕНО: Тепер спочатку перевіряє останню здібність з історії (10 сек),
- * потім чекає нову протягом залишку часу
+ * Обмеження:
+ * - Ймовірність успіху залежить від послідовності, на якій отримується здібність
+ * - Здібності seq 4 і вище дуже важко записати
+ * - Кількість записаних здібностей обмежена масtery
  */
 public class Record extends ActiveAbility {
     private static final int RECORDING_DURATION_SECONDS = 10;
     private static final double DETECTION_RADIUS = 15.0;
     private static final int COST = 80;
     private static final int COOLDOWN = 60;
+
+    // Базові ліміти для послідовностей
+    private static final int BASE_DEMIGOD_LIMIT = 1;  // Seq 0-4
+    private static final int BASE_MID_LIMIT = 8;      // Seq 5-6
+    private static final int BASE_LOW_LIMIT = 20;     // Seq 7-9
 
     @Override
     public String getName() {
@@ -35,9 +47,13 @@ public class Record extends ActiveAbility {
 
     @Override
     public String getDescription(Sequence userSequence) {
+        Beyonder caster = null; // Не маємо доступу тут, покажемо базові значення
+
         return "Записує останню здібність вибраного гравця (до 10 сек назад) " +
                 "або чекає нову протягом " + RECORDING_DURATION_SECONDS + " секунд.\n" +
-                ChatColor.GRAY + "Радіус: " + (int)DETECTION_RADIUS + " блоків";
+                ChatColor.GRAY + "Радіус: " + (int)DETECTION_RADIUS + " блоків\n" +
+                ChatColor.YELLOW + "⚠ Шанс успіху залежить від потужності здібності\n" +
+                ChatColor.YELLOW + "⚠ Кількість записаних здібностей обмежена";
     }
 
     @Override
@@ -52,6 +68,19 @@ public class Record extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
+        Beyonder caster = context.getCasterBeyonder();
+
+        // Перевірка ліміту записаних здібностей
+        int currentCount = caster.getOffPathwayActiveAbilities().size();
+        int maxAllowed = calculateMaxRecordedAbilities(caster);
+
+        if (currentCount >= maxAllowed) {
+            return AbilityResult.failure(String.format(
+                    "Досягнуто ліміт записаних здібностей (%d/%d). Видаліть старі для запису нових.",
+                    currentCount, maxAllowed
+            ));
+        }
+
         List<Player> nearbyPlayers = context.getNearbyPlayers(DETECTION_RADIUS);
 
         if (nearbyPlayers.isEmpty()) {
@@ -68,6 +97,40 @@ public class Record extends ActiveAbility {
         return AbilityResult.success();
     }
 
+    /**
+     * Розрахувати максимальну кількість записаних здібностей на основі mastery
+     */
+    private int calculateMaxRecordedAbilities(Beyonder caster) {
+        int sequence = caster.getSequenceLevel();
+        int mastery = caster.getMasteryValue();
+
+        // Визначаємо базовий ліміт за послідовністю
+        int baseLimit;
+        if (sequence <= 4) {
+            // Напівбоги (0-4)
+            baseLimit = BASE_DEMIGOD_LIMIT;
+        } else if (sequence <= 6) {
+            // Середні (5-6)
+            baseLimit = BASE_MID_LIMIT;
+        } else {
+            // Низькі (7-9)
+            baseLimit = BASE_LOW_LIMIT;
+        }
+
+        // Для напівбогів при full mastery додаємо бонус
+        if (sequence <= 4 && mastery >= 100) {
+            return 2; // Full mastery дає 2 записи для напівбогів
+        }
+
+        // Mastery впливає на ліміт: 0% mastery = baseLimit, 100% mastery = baseLimit * 2
+        // Використовуємо просте лінійне масштабування
+        double masteryMultiplier = 1.0 + (mastery / 100.0);
+
+        int finalLimit = (int) Math.ceil(baseLimit * masteryMultiplier);
+
+        return Math.max(1, finalLimit); // Мінімум 1 здібність завжди
+    }
+
     private ItemStack createPlayerHead(Player player) {
         ItemStack head = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta meta = (SkullMeta) head.getItemMeta();
@@ -81,12 +144,19 @@ public class Record extends ActiveAbility {
 
     private void startRecording(IAbilityContext context, Player target) {
         Player caster = context.getCaster();
+        Beyonder casterBeyonder = context.getCasterBeyonder();
 
         Beyonder targetBeyonder = context.getBeyonderFromEntity(target.getUniqueId());
         if (targetBeyonder == null) {
             context.sendMessageToCaster(ChatColor.RED + "Ціль не є Потойбічним!");
             return;
         }
+
+        // Показуємо iconic фразу
+        caster.spigot().sendMessage(
+                ChatMessageType.ACTION_BAR,
+                new TextComponent(ChatColor.GOLD + "✦ Я прийшов, я побачив, я записав ✦")
+        );
 
         // ============================================
         // КРОК 1: Спробувати знайти в історії (останні 10 сек)
@@ -155,6 +225,7 @@ public class Record extends ActiveAbility {
             AbilityDomainEvent.AbilityUsed recordedEvent
     ) {
         Player caster = context.getCaster();
+        Beyonder casterBeyonder = context.getCasterBeyonder();
 
         if (recordedEvent == null) {
             caster.playSound(caster.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
@@ -179,17 +250,67 @@ public class Record extends ActiveAbility {
             return;
         }
 
-        Beyonder ownerBeyonder = context.getCasterBeyonder();
+        // Перевірка ліміту (подвійна перевірка на всяк випадок)
+        int currentCount = casterBeyonder.getOffPathwayActiveAbilities().size();
+        int maxAllowed = calculateMaxRecordedAbilities(casterBeyonder);
 
-        // Check if caster already has this ability (in pathway or off-pathway)
-        if (ownerBeyonder.getAbilityByName(ability.getName()).isPresent()) {
+        if (currentCount >= maxAllowed) {
+            context.sendMessageToCaster(ChatColor.RED +
+                    String.format("Досягнуто ліміт записаних здібностей (%d/%d)!", currentCount, maxAllowed));
+            return;
+        }
+
+        // Перевірка чи вже є ця здібність
+        if (casterBeyonder.getAbilityByName(ability.getName()).isPresent()) {
             context.sendMessageToCaster(ChatColor.RED +
                     "У вас вже є ця здібність!");
             return;
         }
 
+        // ============================================
+        // ПЕРЕВІРКА ШАНСУ УСПІХУ на основі послідовності здібності
+        // ============================================
+
+        // Знаходимо послідовність, на якій ця здібність отримується
+        int abilitySequence = findAbilitySequence(targetBeyonder, ability);
+
+        if (abilitySequence == -1) {
+            // Якщо не знайшли, використовуємо поточну послідовність цілі
+            abilitySequence = targetBeyonder.getSequenceLevel();
+        }
+
+        // Використовуємо SequenceBasedSuccessChance:
+        // Кастер намагається записати здібність певної послідовності
+        // Чим вища послідовність (нижче число) - тим важче
+        int casterSequence = casterBeyonder.getSequenceLevel();
+
+        // Створюємо шанс успіху: кастер проти "опору" послідовності здібності
+        SequenceBasedSuccessChance successChance =
+                new SequenceBasedSuccessChance(casterSequence, abilitySequence);
+
+        if (!successChance.rollSuccess()) {
+            caster.playSound(caster.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
+            context.sendMessageToCaster(String.format(
+                    "%sНе вдалося записати здібність! (Шанс: %s)",
+                    ChatColor.RED,
+                    successChance.getFormattedChance()
+            ));
+
+            // Показуємо інформацію про складність
+            if (abilitySequence <= 4) {
+                context.sendMessageToCaster(ChatColor.YELLOW +
+                        "⚠ Здібності напівбогів надзвичайно важко записати!");
+            }
+
+            return;
+        }
+
+        // ============================================
+        // УСПІШНИЙ ЗАПИС
+        // ============================================
+
         OneTimeUseAbility oneTimeAbility = new OneTimeUseAbility(activeAbility);
-        boolean added = ownerBeyonder.addOffPathwayAbility(oneTimeAbility);
+        boolean added = casterBeyonder.addOffPathwayAbility(oneTimeAbility);
 
         if (!added) {
             context.sendMessageToCaster(ChatColor.RED +
@@ -207,5 +328,29 @@ public class Record extends ActiveAbility {
                 ChatColor.AQUA, recordedEvent.abilityName(),
                 ChatColor.GRAY
         ));
+
+        // Показуємо інформацію про ліміт
+        int newCount = casterBeyonder.getOffPathwayActiveAbilities().size();
+        context.sendMessageToCaster(String.format(
+                "%sЗаписано здібностей: %s%d/%d",
+                ChatColor.GRAY,
+                ChatColor.YELLOW, newCount, maxAllowed
+        ));
+    }
+
+    /**
+     * Знайти послідовність, на якій ця здібність отримується
+     */
+    private int findAbilitySequence(Beyonder beyonder, Ability ability) {
+        // Шукаємо здібність у шляху гравця
+        for (int seq = 0; seq <= 9; seq++) {
+            List<Ability> abilities = beyonder.getPathway().GetAbilitiesForSequence(seq);
+            for (Ability a : abilities) {
+                if (a.getIdentity().equals(ability.getIdentity())) {
+                    return seq;
+                }
+            }
+        }
+        return -1; // Не знайдено
     }
 }
