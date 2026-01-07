@@ -15,10 +15,10 @@ public class SpiritualityCalculator {
             20,   // Sequence 2
             15,   // Sequence 3
             12,   // Sequence 4
-            8,   // Sequence 5
-            6,   // Sequence 6
-            5,   // Sequence 7
-            3,   // Sequence 8
+            6,   // Sequence 5
+            4,   // Sequence 6
+            3,   // Sequence 7
+            2,   // Sequence 8
             1    // Sequence 9
     };
 
