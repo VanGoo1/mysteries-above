@@ -4,6 +4,7 @@ import de.slikey.effectlib.EffectManager;
 import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.application.services.*;
 import me.vangoo.application.services.RampageManager;
+import me.vangoo.domain.pathways.justiciar.abilities.Verdict;
 import me.vangoo.domain.valueobjects.CustomItem;
 import me.vangoo.infrastructure.IRecipeUnlockRepository;
 import me.vangoo.infrastructure.JSONRecipeUnlockRepository;
@@ -78,7 +79,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         initializeManagers();
         registerEvents();
         registerCommands();
-
+        Verdict verdict = new Verdict();
+        verdict.register(this);
         startSchedulers();
         eventPublisher.subscribeToAbility(ev -> {
             getLogger().info("[GLOBAL-SUB] Got ability event: " + ev.abilityName() + " from " + ev.casterId());

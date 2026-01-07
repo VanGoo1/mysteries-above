@@ -11,6 +11,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -18,22 +19,13 @@ import org.bukkit.potion.PotionEffectType;
 
 import java.util.*;
 
-/**
- * Domain Ability: Authority (Авторитет)
- *
- * Активна здібність що:
- * - Випромінює ауру влади
- * - Через 6 секунд примушує гравців викинути предмет з рук
- * - Знімає всю броню (якщо інвентар повний - викидає на землю)
- * - Накладає повільність 1 на 10 секунд
- * - Використовує sequence-based шанси опору
- */
 public class Authority extends ActiveAbility {
 
     private static final double RADIUS = 15.0;
-    private static final int BUILDUP_TIME_TICKS = 120; // 6 seconds
-    private static final int SLOWNESS_DURATION_TICKS = 200; // 10 seconds
-    private static final int SLOWNESS_AMPLIFIER = 0; // Slowness 1
+    private static final int BUILDUP_TIME_TICKS = 120;
+    private static final int SLOWNESS_DURATION_TICKS = 200;
+    private static final int SLOWNESS_AMPLIFIER = 0;
+    private static final double MOB_DAMAGE = 8.0; // 4 hearts
 
     @Override
     public String getName() {
@@ -47,6 +39,7 @@ public class Authority extends ActiveAbility {
                 ChatColor.GRAY + "▪ Затримка: " + ChatColor.WHITE + "6 секунд\n" +
                 ChatColor.GRAY + "▪ Ефект: Викидання предметів + броні\n" +
                 ChatColor.GRAY + "▪ Дебаф: Повільність I на 10с\n" +
+                ChatColor.GRAY + "▪ Моби: " + ChatColor.WHITE + "8 урону (4 серця)\n" +
                 ChatColor.DARK_GRAY + "▸ Висока послідовність = більший шанс";
     }
 
@@ -57,37 +50,40 @@ public class Authority extends ActiveAbility {
 
     @Override
     public int getCooldown(Sequence userSequence) {
-        return 30; // 30 seconds
+        return 30;
     }
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
         List<Player> nearbyPlayers = context.getNearbyPlayers(RADIUS);
+        List<LivingEntity> nearbyEntities = context.getNearbyEntities(RADIUS);
 
-        if (nearbyPlayers.isEmpty()) {
-            return AbilityResult.failure("В радіусі немає інших гравців!");
-        }
+        // Видаляємо гравців зі списку ентіті
+        nearbyEntities.removeIf(entity -> entity instanceof Player);
 
         Beyonder caster = context.getCasterBeyonder();
         int casterSequence = caster.getSequenceLevel();
 
-        // Show initial aura activation
         showAuraActivation(context);
 
-        // Notify caster
+        if (nearbyPlayers.isEmpty() && nearbyEntities.isEmpty()) {
+            context.sendMessageToCaster(
+                    ChatColor.GOLD + "Аура Авторитету активована! " +
+                            ChatColor.GRAY + "Поруч немає живих істот..."
+            );
+            return AbilityResult.success();
+        }
+
         context.sendMessageToCaster(
                 ChatColor.GOLD + "Аура Авторитету активована! " +
                         ChatColor.GRAY + "Ефект через 6 секунд..."
         );
 
-        // Track affected players for statistics
         Set<UUID> affectedPlayers = new HashSet<>();
         Set<UUID> resistedPlayers = new HashSet<>();
 
-        // Schedule buildup effects (visual warnings)
         scheduleBuildupEffects(context, nearbyPlayers);
 
-        // Schedule main effect after 6 seconds
         context.scheduleDelayed(() -> {
             executeAuthorityEffect(
                     context,
@@ -97,44 +93,41 @@ public class Authority extends ActiveAbility {
                     resistedPlayers
             );
 
-            // Show final statistics to caster
-            showResultStatistics(context, affectedPlayers, resistedPlayers);
+            // Атакуємо мобів
+            for (LivingEntity entity : nearbyEntities) {
+                if (entity.isValid() && !entity.isDead()) {
+                    context.damage(entity.getUniqueId(), MOB_DAMAGE);
+                    showMobDamageEffect(context, entity);
+                }
+            }
+
+            showResultStatistics(context, affectedPlayers, resistedPlayers, nearbyEntities.size());
 
         }, BUILDUP_TIME_TICKS);
 
         return AbilityResult.success();
     }
 
-    /**
-     * Schedule visual buildup effects during 6 second delay
-     */
     private void scheduleBuildupEffects(IAbilityContext context, List<Player> targets) {
-        // Warning at 2 seconds (4 seconds remaining)
         context.scheduleDelayed(() -> {
             showBuildupWarning(context, targets, 1);
         }, 40L);
 
-        // Warning at 4 seconds (2 seconds remaining)
         context.scheduleDelayed(() -> {
             showBuildupWarning(context, targets, 2);
         }, 80L);
 
-        // Final warning at 5.5 seconds (0.5 seconds remaining)
         context.scheduleDelayed(() -> {
             showBuildupWarning(context, targets, 3);
         }, 110L);
     }
 
-    /**
-     * Show progressive warning effects
-     */
     private void showBuildupWarning(IAbilityContext context, List<Player> targets, int stage) {
         for (Player target : targets) {
             if (!target.isOnline()) continue;
 
             Location loc = target.getLocation().add(0, 1, 0);
 
-            // Progressively more intense effects
             int particleCount = stage * 10;
             float soundPitch = 0.5f + (stage * 0.3f);
 
@@ -159,7 +152,6 @@ public class Authority extends ActiveAbility {
                     soundPitch
             );
 
-            // Warning messages
             String warning = switch (stage) {
                 case 1 -> ChatColor.YELLOW + "⚠ Відчуваєш тиск авторитету...";
                 case 2 -> ChatColor.GOLD + "⚠⚠ Важко опиратися...";
@@ -171,9 +163,6 @@ public class Authority extends ActiveAbility {
         }
     }
 
-    /**
-     * Execute the main authority effect on all targets
-     */
     private void executeAuthorityEffect(
             IAbilityContext context,
             List<Player> targets,
@@ -186,61 +175,49 @@ public class Authority extends ActiveAbility {
 
             UUID targetId = target.getUniqueId();
 
-            // Get target's sequence if they are a beyonder
             Beyonder targetBeyonder = context.getBeyonderFromEntity(targetId);
 
             boolean resisted = false;
 
-            // Check sequence-based resistance if target is a beyonder
             if (targetBeyonder != null) {
                 int targetSequence = targetBeyonder.getSequenceLevel();
 
                 SequenceBasedSuccessChance successChance =
                         new SequenceBasedSuccessChance(casterSequence, targetSequence);
 
-                // Roll for success
                 if (!successChance.rollSuccess()) {
                     resisted = true;
                     resistedPlayers.add(targetId);
 
-                    // Show resistance feedback
                     showResistanceEffect(context, target, successChance);
                     continue;
                 }
             }
 
-            // Apply authority effect
             applyAuthorityEffect(context, target);
             affectedPlayers.add(targetId);
         }
     }
 
-    /**
-     * Apply the full authority effect to a target
-     */
     private void applyAuthorityEffect(IAbilityContext context, Player target) {
         UUID targetId = target.getUniqueId();
         PlayerInventory inv = target.getInventory();
         Location dropLocation = target.getLocation().add(0, 1.5, 0);
 
-        // 1. Drop item from main hand
         ItemStack mainHand = inv.getItemInMainHand();
         if (mainHand.getType() != Material.AIR) {
             target.getWorld().dropItem(dropLocation, mainHand.clone());
             inv.setItemInMainHand(new ItemStack(Material.AIR));
         }
 
-        // 2. Drop item from off hand
         ItemStack offHand = inv.getItemInOffHand();
         if (offHand.getType() != Material.AIR) {
             target.getWorld().dropItem(dropLocation, offHand.clone());
             inv.setItemInOffHand(new ItemStack(Material.AIR));
         }
 
-        // 3. Remove and drop armor
         removeAndDropArmor(context, target, inv, dropLocation);
 
-        // 4. Apply slowness effect
         context.applyEffect(
                 targetId,
                 PotionEffectType.SLOWNESS,
@@ -248,38 +225,30 @@ public class Authority extends ActiveAbility {
                 SLOWNESS_AMPLIFIER
         );
 
-        // 5. Show effect on target
         showAuthorityEffect(context, target);
 
-        // 6. Notify target
         context.sendMessage(
                 targetId,
                 ChatColor.RED + "Ти не можеш опиратися цьому авторитету!"
         );
     }
 
-    /**
-     * Remove armor and try to place in inventory, drop if full
-     */
     private void removeAndDropArmor(
             IAbilityContext context,
             Player target,
             PlayerInventory inv,
             Location dropLocation
     ) {
-        // Get all armor pieces
         ItemStack helmet = inv.getHelmet();
         ItemStack chestplate = inv.getChestplate();
         ItemStack leggings = inv.getLeggings();
         ItemStack boots = inv.getBoots();
 
-        // Clear armor slots
         inv.setHelmet(null);
         inv.setChestplate(null);
         inv.setLeggings(null);
         inv.setBoots(null);
 
-        // Try to add to inventory, drop if can't
         List<ItemStack> armorPieces = Arrays.asList(helmet, chestplate, leggings, boots);
 
         for (ItemStack armor : armorPieces) {
@@ -287,10 +256,8 @@ public class Authority extends ActiveAbility {
                 continue;
             }
 
-            // Try to add to inventory
             HashMap<Integer, ItemStack> leftover = inv.addItem(armor);
 
-            // If couldn't add (inventory full), drop on ground
             if (!leftover.isEmpty()) {
                 for (ItemStack drop : leftover.values()) {
                     target.getWorld().dropItem(dropLocation, drop);
@@ -299,13 +266,9 @@ public class Authority extends ActiveAbility {
         }
     }
 
-    /**
-     * Show visual effect when authority is applied
-     */
     private void showAuthorityEffect(IAbilityContext context, Player target) {
         Location loc = target.getLocation().add(0, 1, 0);
 
-        // Explosion-like particle effect
         context.spawnParticle(
                 Particle.EXPLOSION,
                 loc,
@@ -313,15 +276,16 @@ public class Authority extends ActiveAbility {
                 0, 0, 0
         );
 
-        // Gold particles falling down (symbolizing authority)
+        // ВИПРАВЛЕННЯ:
+        // FALLING_DUST викликав помилку, бо вимагав BlockData.
+        // Замінено на CRIT (золоті частинки), що пасує темі і не крашить сервер.
         context.spawnParticle(
-                Particle.FALLING_DUST,
+                Particle.CRIT,
                 loc,
                 30,
                 0.5, 1.0, 0.5
         );
 
-        // Flash effect
         context.spawnParticle(
                 Particle.END_ROD,
                 loc,
@@ -329,7 +293,6 @@ public class Authority extends ActiveAbility {
                 0.3, 0.5, 0.3
         );
 
-        // Sound effects
         context.playSound(
                 loc,
                 Sound.ENTITY_LIGHTNING_BOLT_THUNDER,
@@ -345,9 +308,31 @@ public class Authority extends ActiveAbility {
         );
     }
 
-    /**
-     * Show effect when target resists
-     */
+    private void showMobDamageEffect(IAbilityContext context, LivingEntity entity) {
+        Location loc = entity.getLocation().add(0, 1, 0);
+
+        context.spawnParticle(
+                Particle.DAMAGE_INDICATOR,
+                loc,
+                15,
+                0.3, 0.5, 0.3
+        );
+
+        context.spawnParticle(
+                Particle.CRIT,
+                loc,
+                10,
+                0.2, 0.3, 0.2
+        );
+
+        context.playSound(
+                loc,
+                Sound.ENTITY_PLAYER_ATTACK_STRONG,
+                0.8f,
+                0.9f
+        );
+    }
+
     private void showResistanceEffect(
             IAbilityContext context,
             Player target,
@@ -355,7 +340,6 @@ public class Authority extends ActiveAbility {
     ) {
         Location loc = target.getLocation().add(0, 1, 0);
 
-        // Shield-like particles
         context.spawnParticle(
                 Particle.FIREWORK,
                 loc,
@@ -363,7 +347,6 @@ public class Authority extends ActiveAbility {
                 0.5, 0.5, 0.5
         );
 
-        // Resistance sound
         context.playSound(
                 loc,
                 Sound.ITEM_SHIELD_BLOCK,
@@ -371,7 +354,6 @@ public class Authority extends ActiveAbility {
                 1.2f
         );
 
-        // Notify target of successful resistance
         context.sendMessage(
                 target.getUniqueId(),
                 ChatColor.GREEN + "Ти зміг опиратися! " +
@@ -379,13 +361,9 @@ public class Authority extends ActiveAbility {
         );
     }
 
-    /**
-     * Show initial aura activation effect
-     */
     private void showAuraActivation(IAbilityContext context) {
         Location centerLoc = context.getCasterLocation();
 
-        // Large expanding sphere
         context.playSphereEffect(
                 centerLoc.add(0, 1, 0),
                 RADIUS,
@@ -393,7 +371,6 @@ public class Authority extends ActiveAbility {
                 60
         );
 
-        // Wave at ground level
         context.playWaveEffect(
                 centerLoc,
                 RADIUS,
@@ -401,18 +378,15 @@ public class Authority extends ActiveAbility {
                 40
         );
 
-        // Pillar of light at caster
         context.playLineEffect(
                 centerLoc,
                 centerLoc.clone().add(0, 5, 0),
                 Particle.END_ROD
         );
 
-        // Sound effects
         context.playSoundToCaster(Sound.ENTITY_EVOKER_PREPARE_ATTACK, 1.0f, 0.8f);
         context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 0.8f, 1.2f);
 
-        // Circle effect
         context.playCircleEffect(
                 centerLoc,
                 RADIUS,
@@ -421,15 +395,13 @@ public class Authority extends ActiveAbility {
         );
     }
 
-    /**
-     * Show result statistics to caster
-     */
     private void showResultStatistics(
             IAbilityContext context,
             Set<UUID> affectedPlayers,
-            Set<UUID> resistedPlayers
+            Set<UUID> resistedPlayers,
+            int affectedMobs
     ) {
-        int total = affectedPlayers.size() + resistedPlayers.size();
+        int total = affectedPlayers.size() + resistedPlayers.size() + affectedMobs;
 
         if (total == 0) {
             context.sendMessageToCaster(
@@ -443,7 +415,7 @@ public class Authority extends ActiveAbility {
 
         if (!affectedPlayers.isEmpty()) {
             message.append(ChatColor.GREEN)
-                    .append("✓ Підкорено: ")
+                    .append("✓ Гравці підкорено: ")
                     .append(ChatColor.WHITE)
                     .append(affectedPlayers.size())
                     .append("\n");
@@ -451,13 +423,21 @@ public class Authority extends ActiveAbility {
 
         if (!resistedPlayers.isEmpty()) {
             message.append(ChatColor.RED)
-                    .append("✗ Опирались: ")
+                    .append("✗ Гравці опирались: ")
                     .append(ChatColor.WHITE)
                     .append(resistedPlayers.size())
                     .append("\n");
         }
 
-        int successRate = (int)((affectedPlayers.size() * 100.0) / total);
+        if (affectedMobs > 0) {
+            message.append(ChatColor.YELLOW)
+                    .append("⚔ Моби атаковано: ")
+                    .append(ChatColor.WHITE)
+                    .append(affectedMobs)
+                    .append("\n");
+        }
+
+        int successRate = (int)((affectedPlayers.size() * 100.0) / Math.max(1, affectedPlayers.size() + resistedPlayers.size()));
         message.append(ChatColor.GRAY)
                 .append("Успішність: ")
                 .append(ChatColor.YELLOW)
@@ -466,9 +446,7 @@ public class Authority extends ActiveAbility {
 
         context.sendMessageToCaster(message.toString());
 
-        // Visual feedback at caster location
-        if (successRate >= 70) {
-            // High success - golden effect
+        if (successRate >= 70 || affectedMobs >= 3) {
             context.spawnParticle(
                     Particle.TOTEM_OF_UNDYING,
                     context.getCasterLocation().add(0, 2, 0),
@@ -477,7 +455,6 @@ public class Authority extends ActiveAbility {
             );
             context.playSoundToCaster(Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.2f);
         } else if (successRate >= 40) {
-            // Medium success
             context.spawnParticle(
                     Particle.HAPPY_VILLAGER,
                     context.getCasterLocation().add(0, 2, 0),
@@ -485,7 +462,6 @@ public class Authority extends ActiveAbility {
                     0.5, 0.5, 0.5
             );
         } else {
-            // Low success
             context.spawnParticle(
                     Particle.SMOKE,
                     context.getCasterLocation().add(0, 2, 0),

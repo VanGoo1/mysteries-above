@@ -82,9 +82,9 @@ public class VanillaStructureLootListener implements Listener {
 
 
         structures.put("mansion", 0.40);
-        structures.put("ancient_city", 0.30);
-        structures.put("bastion", 0.50);
-        structures.put("nether_bridge", 0.5);
+        structures.put("ancient_city", 0.25);
+        structures.put("bastion", 0.40);
+        structures.put("nether_bridge", 0.15);
         structures.put("end_city", 0.25);
         structures.put("stronghold", 0.30);
         structures.put("jungle_temple", 0.30);
@@ -101,7 +101,6 @@ public class VanillaStructureLootListener implements Listener {
         logger.info("Enabled vanilla structures for custom loot: " + structures.size());
         return structures;
     }
-
     /**
      * Додає кастомні предмети до лута
      */
