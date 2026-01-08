@@ -4,7 +4,6 @@ import de.slikey.effectlib.EffectManager;
 import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.application.services.*;
 import me.vangoo.application.services.RampageManager;
-import me.vangoo.domain.pathways.justiciar.abilities.Verdict;
 import me.vangoo.domain.valueobjects.CustomItem;
 import me.vangoo.infrastructure.IRecipeUnlockRepository;
 import me.vangoo.infrastructure.JSONRecipeUnlockRepository;
@@ -16,8 +15,7 @@ import me.vangoo.infrastructure.schedulers.MasteryRegenerationScheduler;
 import me.vangoo.infrastructure.schedulers.PassiveAbilityScheduler;
 import me.vangoo.infrastructure.schedulers.RampageScheduler;
 import me.vangoo.infrastructure.structures.LootGenerationService;
-import me.vangoo.infrastructure.structures.NBTStructureConfigLoader;
-import me.vangoo.infrastructure.structures.StructurePopulator;
+import me.vangoo.infrastructure.structures.LootTableConfigLoader;
 import me.vangoo.presentation.commands.*;
 import me.vangoo.infrastructure.IBeyonderRepository;
 import me.vangoo.infrastructure.JSONBeyonderRepository;
@@ -26,8 +24,6 @@ import me.vangoo.presentation.listeners.*;
 import me.vangoo.infrastructure.ui.AbilityMenu;
 import me.vangoo.infrastructure.ui.BossBarUtil;
 import me.vangoo.infrastructure.ui.NBTBuilder;
-import org.bukkit.Bukkit;
-import org.bukkit.World;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -62,9 +58,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     CustomItemFactory customItemFactory;
     CustomItemRegistry customItemRegistry;
     CustomItemService customItemService;
-    NBTStructureConfigLoader configLoader;
+    LootTableConfigLoader configLoader;
     LootGenerationService lootService;
-    StructurePopulator structurePopulator;
     RecipeBookFactory recipeBookFactory;
     IRecipeUnlockRepository recipeUnlockRepository;
     RecipeUnlockService recipeUnlockService;
@@ -79,8 +74,6 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         initializeManagers();
         registerEvents();
         registerCommands();
-        Verdict verdict = new Verdict();
-        verdict.register(this);
         startSchedulers();
         eventPublisher.subscribeToAbility(ev -> {
             getLogger().info("[GLOBAL-SUB] Got ability event: " + ev.abilityName() + " from " + ev.casterId());
@@ -154,14 +147,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         this.abilityMenuItemUpdater = new AbilityMenuItemUpdater(this, beyonderService, abilityMenu);
         this.recipeBookCraftingRecipe = new RecipeBookCraftingRecipe(this, customItemService);
         this.recipeBookCraftingRecipe.registerRecipe();
-        configLoader = new NBTStructureConfigLoader(this);
-        lootService = new LootGenerationService(this, customItemService, potionManager, recipeBookFactory);
-        structurePopulator = new StructurePopulator(this, configLoader, lootService);
-        for (World world : Bukkit.getWorlds()) {
-            world.getPopulators().add(structurePopulator);
-        }
-        getLogger().info("Structure system initialized: " +
-                structurePopulator.getStructureIds().size() + " structures");
+        this.configLoader = new LootTableConfigLoader(this);
+        configLoader.loadLootTable();
+        this.lootService = new LootGenerationService(this, customItemService, potionManager, recipeBookFactory);
         this.masteryRegenerationScheduler = new MasteryRegenerationScheduler(this, beyonderService);
         this.beyonderSleepListener = new BeyonderSleepListener(beyonderService);
     }
@@ -195,9 +183,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         VanillaStructureLootListener vanillaStructureLootListener =
                 new VanillaStructureLootListener(
                         this,
-                        customItemService,
-                        potionManager,
-                        recipeBookFactory,
+                        lootService,
                         configLoader.getGlobalLootTable()
                 );
         getServer().getPluginManager().registerEvents(abilityMenuListener, this);
@@ -222,7 +208,6 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 potionManager,
                 recipeUnlockService
         );
-        StructureCommand structureCommand = new StructureCommand(structurePopulator, lootService);
         getCommand("pathway").setExecutor(pathwayCommand);
         getCommand("pathway").setTabCompleter(pathwayCommand);
         getCommand("potion").setExecutor(sequencePotionCommand);
@@ -232,8 +217,6 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getCommand("rampager").setTabCompleter(rampagerCommand);
         getCommand("custom-items").setExecutor(customItemCommand);
         getCommand("custom-items").setTabCompleter(customItemCommand);
-        getCommand("structure").setExecutor(structureCommand);
-        getCommand("structure").setTabCompleter(structureCommand);
         getCommand("recipe").setExecutor(recipeBookCommand);
         getCommand("recipe").setTabCompleter(recipeBookCommand);
     }

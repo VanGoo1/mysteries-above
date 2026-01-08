@@ -1,13 +1,7 @@
 package me.vangoo.presentation.listeners;
 
-import me.vangoo.application.services.CustomItemService;
-import me.vangoo.application.services.PotionManager;
-import me.vangoo.domain.PathwayPotions;
-import me.vangoo.domain.valueobjects.LootItem;
+import me.vangoo.infrastructure.structures.LootGenerationService;
 import me.vangoo.domain.valueobjects.LootTableData;
-import me.vangoo.domain.valueobjects.Sequence;
-import me.vangoo.infrastructure.items.RecipeBookFactory;
-import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -24,9 +18,7 @@ import java.util.logging.Logger;
 public class VanillaStructureLootListener implements Listener {
 
     private final Logger logger;
-    private final CustomItemService customItemService;
-    private final PotionManager potionManager;
-    private final RecipeBookFactory recipeBookFactory;
+    private final LootGenerationService lootService;
     private final LootTableData globalLootTable;
     private final Random random = new Random();
 
@@ -35,14 +27,10 @@ public class VanillaStructureLootListener implements Listener {
 
     public VanillaStructureLootListener(
             Plugin plugin,
-            CustomItemService customItemService,
-            PotionManager potionManager,
-            RecipeBookFactory recipeBookFactory,
+            LootGenerationService lootService,
             LootTableData globalLootTable) {
         this.logger = plugin.getLogger();
-        this.customItemService = customItemService;
-        this.potionManager = potionManager;
-        this.recipeBookFactory = recipeBookFactory;
+        this.lootService = lootService;
         this.globalLootTable = globalLootTable;
         this.enabledStructures = loadEnabledVanillaStructures();
 
@@ -51,20 +39,17 @@ public class VanillaStructureLootListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onLootGenerate(LootGenerateEvent event) {
-        // Отримуємо ключ loot table
         String lootTableKey = event.getLootTable().getKey().toString();
 
         double chance = getStructureChance(lootTableKey);
-
         if (chance <= 0.0) {
             return;
         }
 
         if (random.nextDouble() > chance) {
-            // logger.fine("Chance failed for " + lootTableKey + " (Chance: " + chance + ")");
             return;
         }
-        // Додаємо кастомні предмети
+
         addCustomLoot(event, lootTableKey);
     }
 
@@ -77,9 +62,8 @@ public class VanillaStructureLootListener implements Listener {
         return 0.0;
     }
 
-    private java.util.Map<String, Double> loadEnabledVanillaStructures() {
-        Map<String, Double> structures = new java.util.HashMap<>();
-
+    private Map<String, Double> loadEnabledVanillaStructures() {
+        Map<String, Double> structures = new HashMap<>();
 
         structures.put("mansion", 0.40);
         structures.put("ancient_city", 0.25);
@@ -97,10 +81,14 @@ public class VanillaStructureLootListener implements Listener {
         structures.put("mineshaft", 0.10);
         structures.put("simple_dungeon", 0.15);
         structures.put("ruined_portal", 0.25);
+        structures.put("mysteries", 0.25);
+        structures.put("qrafty", 0.20);
+        structures.put("nova_structures", 0.20);
 
         logger.info("Enabled vanilla structures for custom loot: " + structures.size());
         return structures;
     }
+
     /**
      * Додає кастомні предмети до лута
      */
@@ -110,146 +98,22 @@ public class VanillaStructureLootListener implements Listener {
         }
 
         List<ItemStack> currentLoot = event.getLoot();
-        int totalWeight = globalLootTable.items().stream().mapToInt(LootItem::weight).sum();
 
-        int itemsToAdd;
-        double roll = Math.random();
-
-        if (roll <= 0.20) {
-            itemsToAdd = 2;
-        } else {
-            itemsToAdd = 1;
-        }
+        // Визначаємо кількість предметів для додавання (20% шанс на 2 предмети)
+        int itemsToAdd = (Math.random() <= 0.20) ? 2 : 1;
 
         logger.fine("Adding " + itemsToAdd + " custom items to " + lootTableKey);
 
-        Set<String> addedItems = new HashSet<>();
-        int addedCount = 0;
-        int attempts = 0;
-        int maxAttempts = 35; // itemsToAdd * 10
+        // Генеруємо лут через LootGenerationService
+        List<ItemStack> generatedLoot = lootService.generateLoot(
+                globalLootTable,
+                itemsToAdd,
+                false // не дозволяємо дублікати
+        );
 
-        while (addedCount < itemsToAdd && attempts < maxAttempts) {
-            attempts++;
+        // Додаємо згенеровані предмети до луту події
+        currentLoot.addAll(generatedLoot);
 
-            if (totalWeight <= 0) break;
-
-            LootItem selectedItem = rollItem(totalWeight);
-            if (selectedItem == null) continue;
-
-            // Уникаємо дублювання поки є альтернативи
-            if (addedItems.contains(selectedItem.itemId()) &&
-                    addedItems.size() < globalLootTable.items().size()) {
-                continue;
-            }
-
-            ItemStack itemStack = createItemFromId(selectedItem.itemId());
-            if (itemStack != null && itemStack.getType() != Material.BARRIER) {
-                int amount = calculateAmount(selectedItem);
-                itemStack.setAmount(amount);
-
-                currentLoot.add(itemStack);
-                addedItems.add(selectedItem.itemId());
-                addedCount++;
-
-                logger.fine("  Added: " + selectedItem.itemId() + " x" + amount);
-            }
-        }
-
-        logger.fine("Successfully added " + addedCount + " items to vanilla structure");
-    }
-
-    /**
-     * Випадково вибирає предмет за вагою
-     */
-    private LootItem rollItem(int totalWeight) {
-        int roll = random.nextInt(totalWeight);
-        int cumulative = 0;
-
-        for (LootItem item : globalLootTable.items()) {
-            cumulative += item.weight();
-            if (roll < cumulative) {
-                return item;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Розраховує кількість предмета
-     */
-    private int calculateAmount(LootItem item) {
-        int min = item.minAmount();
-        int max = item.maxAmount();
-        return (min == max) ? min : (min + random.nextInt(max - min + 1));
-    }
-
-    /**
-     * Створює ItemStack з ID
-     */
-    private ItemStack createItemFromId(String itemId) {
-        if (itemId.startsWith("potion:")) {
-            return createPotion(itemId);
-        }
-
-        if (itemId.startsWith("recipe:")) {
-            return createRecipeBook(itemId);
-        }
-
-        String actualId = itemId.startsWith("custom:") ? itemId.substring(7) : itemId;
-        Optional<ItemStack> itemStackOptional = customItemService.createItemStack(actualId);
-
-        if (itemStackOptional.isEmpty()) {
-            logger.warning("Failed to create item: " + itemId);
-            return null;
-        }
-
-        return itemStackOptional.get();
-    }
-
-    private ItemStack createPotion(String itemId) {
-        try {
-            String[] parts = itemId.split(":");
-            if (parts.length != 3) {
-                return null;
-            }
-
-            String pathway = parts[1];
-            int sequence = Integer.parseInt(parts[2]);
-
-            if (sequence < 0 || sequence > 9) {
-                return null;
-            }
-
-            return potionManager.createPotionItem(pathway, Sequence.of(sequence));
-        } catch (Exception e) {
-            logger.warning("Failed to create potion: " + itemId + " - " + e.getMessage());
-            return null;
-        }
-    }
-
-    private ItemStack createRecipeBook(String itemId) {
-        try {
-            String[] parts = itemId.split(":");
-            if (parts.length != 3) {
-                return null;
-            }
-
-            String pathway = parts[1];
-            int sequence = Integer.parseInt(parts[2]);
-
-            if (sequence < 0 || sequence > 9) {
-                return null;
-            }
-
-            PathwayPotions pathwayPotions = potionManager.getPotionsPathway(pathway).orElse(null);
-            if (pathwayPotions == null) {
-                return null;
-            }
-
-            return recipeBookFactory.createRecipeBook(pathwayPotions, sequence);
-        } catch (Exception e) {
-            logger.warning("Failed to create recipe book: " + itemId + " - " + e.getMessage());
-            return null;
-        }
+        logger.fine("Successfully added " + generatedLoot.size() + " items to vanilla structure");
     }
 }
