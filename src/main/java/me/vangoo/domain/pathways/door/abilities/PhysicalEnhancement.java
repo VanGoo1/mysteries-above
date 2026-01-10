@@ -1,4 +1,4 @@
-package me.vangoo.domain.pathways.justiciar.abilities;
+package me.vangoo.domain.pathways.door.abilities;
 
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.abilities.core.PermanentPassiveAbility;
@@ -15,8 +15,9 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
     private static final int BASE_HP_CALC_VALUE = 4;
     private static final double DEFAULT_HEALTH = 20.0;
 
-    private static final int REFRESH_PERIOD_TICKS = 7 * 20;
-    private static final int EFFECT_DURATION_TICKS = 8 * 20;
+    // Таймінги для ефектів
+    private static final int REFRESH_PERIOD_TICKS = 7 * 20; // 7 сек
+    private static final int EFFECT_DURATION_TICKS = 8 * 20; // 8 сек
 
     @Override
     public String getName() {
@@ -28,27 +29,17 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
         int bonusHp = calculateBonusHP(userSequence);
         int amplifier = calculateAmplifier(userSequence);
         int effectLevel = amplifier + 1;
-        int seqLevel = userSequence.level();
-
-        String effects;
-
-        if (seqLevel == 9) {
-            // 9 Послідовність: Тільки Швидкість
-            effects = String.format("Швидкість %d", effectLevel);
-        } else {
-            // 8 і сильніше: Сила + Швидкість
-            effects = String.format("Сила %d, Швидкість %d", effectLevel, effectLevel);
-        }
 
         return String.format(
-                "Арбітр отримує могутнє тіло.\n" +
-                        "Пасивно надає: %s та +%.1f сердець до здоров'я.",
-                effects, bonusHp / 2.0
+                "Ви отримує сильне тіло. " +
+                        "Пасивно надає: Сила %d, Швидкість %d та +%.1f сердець до здоров'я.",
+                effectLevel, effectLevel, bonusHp / 2.0
         );
     }
 
     @Override
     public void onActivate(IAbilityContext context) {
+        // Миттєво застосовуємо все при старті
         applyPotionEffects(context);
         updateHealth(context);
     }
@@ -58,8 +49,12 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
         Player player = context.getCaster();
         if (player == null || !player.isValid() || player.isDead()) return;
 
+        // 1. ХП перевіряємо КОЖЕН тік.
+        // Це гарантує, що при зміні послідовності (0 -> 8) ХП впаде миттєво.
+        // Операція getAttribute дуже швидка, це не навантажить сервер.
         updateHealth(context);
 
+        // 2. Ефекти оновлюємо раз на 7 секунд (циклічно)
         if (player.getTicksLived() % REFRESH_PERIOD_TICKS == 0) {
             applyPotionEffects(context);
         }
@@ -70,9 +65,13 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
         Player player = context.getCaster();
         if (player == null) return;
 
+        // ЖОРСТКЕ СКИДАННЯ ПРИ ВИДАЛЕННІ ЗДІБНОСТІ
         AttributeInstance healthAttr = player.getAttribute(Attribute.MAX_HEALTH);
         if (healthAttr != null) {
+            // Завжди повертаємо до 20.0
             healthAttr.setBaseValue(DEFAULT_HEALTH);
+
+            // Якщо у гравця зараз більше 20 хп, зрізаємо його, щоб не висіли зайві серця
             if (player.getHealth() > DEFAULT_HEALTH) {
                 player.setHealth(DEFAULT_HEALTH);
             }
@@ -82,6 +81,10 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
         player.removePotionEffect(PotionEffectType.SPEED);
     }
 
+    /**
+     * Логіка оновлення здоров'я.
+     * Перевіряє поточний sequence гравця і порівнює з реальним атрибутом.
+     */
     private void updateHealth(IAbilityContext context) {
         Player player = context.getCaster();
         Sequence sequence = context.getCasterBeyonder().getSequence();
@@ -109,21 +112,17 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
     private void applyPotionEffects(IAbilityContext context) {
         Player player = context.getCaster();
         Sequence sequence = context.getCasterBeyonder().getSequence();
-        int seqLevel = sequence.level();
         int amplifier = calculateAmplifier(sequence);
 
-        // Швидкість є ЗАВЖДИ (навіть на 9-й)
+        // Накладаємо на 8 секунд (перекриває цикл у 7 секунд)
+        player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, EFFECT_DURATION_TICKS, amplifier, false, false));
         player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, EFFECT_DURATION_TICKS, amplifier, false, false));
-
-        // Сила додається ТІЛЬКИ з 8-ї послідовності (8, 7, 6...)
-        if (seqLevel <= 8) {
-            player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, EFFECT_DURATION_TICKS, amplifier, false, false));
-        }
     }
 
     // --- Розрахунки ---
 
     private int calculateBonusHP(Sequence sequence) {
+        // DIVINE (+60% за рівень)
         int calculated = scaleValue(BASE_HP_CALC_VALUE, sequence, SequenceScaler.ScalingStrategy.DIVINE);
         return Math.max(6, calculated);
     }

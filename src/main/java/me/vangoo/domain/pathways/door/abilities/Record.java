@@ -102,7 +102,7 @@ public class Record extends ActiveAbility {
      */
     private int calculateMaxRecordedAbilities(Beyonder caster) {
         int sequence = caster.getSequenceLevel();
-        int mastery = caster.getMasteryValue();
+        double mastery = caster.getMasteryValue();
 
         // Визначаємо базовий ліміт за послідовністю
         int baseLimit;

@@ -33,12 +33,10 @@ public class PsychicCue extends ActiveAbility {
             int navRange = scaleValue(BASE_NAVIGATION_RANGE, userSequence, SequenceScaler.ScalingStrategy.MODERATE);
             return "Навіює цілі психологічні установки через прямий контакт. " +
                     "Діє " + (DURATION_TICKS / 20) + " секунд.\n" +
-                    ChatColor.GOLD + "◆ Нова сила: " + ChatColor.WHITE + "Можна задати точку навігації (до " + navRange + " блоків).\n" +
-                    ChatColor.GRAY + "Примітка: не діє на послідовності 4-0";
+                    ChatColor.GOLD + "◆ Нова сила: " + ChatColor.WHITE + "Можна задати точку куди буде притягуватися ціль (до " + navRange + " блоків).\n";
         } else {
             return "Навіює цілі психологічні установки через прямий контакт. " +
-                    "Діє " + (DURATION_TICKS / 20) + " секунд.\n" +
-                    ChatColor.GRAY + "Примітка: не діє на послідовності 4-0";
+                    "Діє " + (DURATION_TICKS / 20) + " секунд.\n";
         }
     }
 

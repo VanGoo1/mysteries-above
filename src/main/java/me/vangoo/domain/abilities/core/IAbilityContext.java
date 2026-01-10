@@ -142,7 +142,7 @@ public interface IAbilityContext {
 
     int getExperienceLevel(UUID targetId);
 
-    int getBeyonderMastery(UUID targetId);
+    double getBeyonderMastery(UUID targetId);
 
     // ==========================================
     // VISUAL EFFECTS (EffectLib)

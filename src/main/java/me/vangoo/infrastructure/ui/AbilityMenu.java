@@ -284,12 +284,17 @@ public class AbilityMenu {
         lore.add("");
 
         // Засвоєння
-        int masteryValue = beyonder.getMasteryValue();
-        int masteryBars = masteryValue / 5;
-        String masteryBar = ChatColor.GOLD + "█".repeat(masteryBars) +
-                ChatColor.GRAY + "█".repeat(20 - masteryBars);
+        double masteryValue = beyonder.getMasteryValue();
 
-        lore.add(ChatColor.YELLOW + "✦ Засвоєння: " + ChatColor.GREEN + masteryValue + "%");
+        int filledBars = (int) (masteryValue / 5.0);
+        filledBars = Math.min(20, Math.max(0, filledBars));
+
+        int emptyBars = 20 - filledBars;
+
+        String masteryBar = ChatColor.GOLD + "█".repeat(filledBars) +
+                ChatColor.GRAY + "█".repeat(emptyBars);
+
+        lore.add(ChatColor.YELLOW + "✦ Засвоєння: " + ChatColor.GREEN + String.format("%.2f", masteryValue) + "%");
         lore.add(masteryBar);
         lore.add("");
 

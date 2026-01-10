@@ -41,7 +41,7 @@ public class Appeasement extends ActiveAbility {
 
     @Override
     public int getSpiritualityCost() {
-        return 100;
+        return 80;
     }
 
     @Override

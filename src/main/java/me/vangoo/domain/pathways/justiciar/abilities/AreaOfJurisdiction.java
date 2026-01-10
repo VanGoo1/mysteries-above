@@ -12,25 +12,20 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
-
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Sequence 9 Arbiter: Tribunal Domain
- *
- * Активна здібність. Створює зону що масштабується з послідовністю.
- * Всередині зони кастер отримує Resistance I та Haste I.
- * Позиція зберігається до перезавантаження серверу.
  */
 public class AreaOfJurisdiction extends ActiveAbility {
 
-    private static final int COST = 150;
-    private static final int COOLDOWN = 60; // 1 хвилина
+    private static final int COST = 80;
+    private static final int COOLDOWN = 70; // 1 хвилина
     private static final int BASE_DOMAIN_RADIUS = 50; // Базовий радіус для Sequence 9
 
-    // Зберігає центр домену та радіус для кожного гравця
+    // Зберігає центр домену та радіус для кожного гравця (owner UUID -> DomainData)
     private static final Map<UUID, DomainData> activeDomains = new ConcurrentHashMap<>();
 
     // Змінні для контролю глобального таймера
@@ -48,8 +43,7 @@ public class AreaOfJurisdiction extends ActiveAbility {
 
         return "Встановлює територію закону (радіус " + radius + " блоків) у вашій поточній позиції.\n" +
                 "У цій зоні ви отримуєте " + ChatColor.GRAY + "Опір I" + ChatColor.RESET +
-                " та " + ChatColor.YELLOW + "Поспіх I" + ChatColor.RESET + ".\n" +
-                ChatColor.DARK_GRAY + "Радіус масштабується з послідовністю";
+                " та " + ChatColor.YELLOW + "Квапливість I" + ChatColor.RESET + ".\n";
     }
 
     @Override
@@ -90,10 +84,6 @@ public class AreaOfJurisdiction extends ActiveAbility {
         return AbilityResult.success();
     }
 
-    /**
-     * Запускає глобальний таймер, який перевіряє позиції всіх Арбітрів.
-     * Запускається лише один раз на весь сервер.
-     */
     private void startGlobalMonitoringIfNotRunning() {
         if (isTaskRunning) return;
 
@@ -138,44 +128,70 @@ public class AreaOfJurisdiction extends ActiveAbility {
     }
 
     private void playCreationEffects(Location center, int scaledRadius) {
-        World world = center.getWorld();
-        if (world == null) return;
+        if (center.getWorld() == null) return;
 
-        // Звук удару молотка
-        world.playSound(center, Sound.ENTITY_IRON_GOLEM_REPAIR, 1.0f, 0.5f);
-        world.playSound(center, Sound.BLOCK_BEACON_ACTIVATE, 0.7f, 1.2f);
+        try {
+            World world = center.getWorld();
 
-        // Малюємо коло на землі (показуємо 10% від реального радіусу для візуалізації центру)
-        double visualRadius = Math.min(scaledRadius * 0.1, 10.0);
-        for (int i = 0; i < 360; i += 10) {
-            double angle = Math.toRadians(i);
-            double x = Math.cos(angle) * visualRadius;
-            double z = Math.sin(angle) * visualRadius;
+            world.playSound(center, Sound.ENTITY_IRON_GOLEM_REPAIR, 1.0f, 0.5f);
 
-            Location point = center.clone().add(x, 0.1, z);
-            world.spawnParticle(Particle.CRIT, point, 1, 0, 0, 0, 0);
-            world.spawnParticle(Particle.ELECTRIC_SPARK, point, 1, 0, 0, 0, 0);
-        }
+            double visualRadius = Math.min(scaledRadius * 0.1, 10.0);
 
-        // Додаткові кола для показу повного радіусу (на 25%, 50%, 75%, 100%)
-        for (double percent : new double[]{0.25, 0.5, 0.75, 1.0}) {
-            double r = scaledRadius * percent;
-            // Показуємо менше частинок для віддалених кіл
-            int particleCount = (int)(360 / (10 * percent));
-
-            for (int i = 0; i < 360; i += particleCount) {
+            for (int i = 0; i < 360; i += 10) {
                 double angle = Math.toRadians(i);
-                double x = Math.cos(angle) * r;
-                double z = Math.sin(angle) * r;
+                double x = Math.cos(angle) * visualRadius;
+                double z = Math.sin(angle) * visualRadius;
 
                 Location point = center.clone().add(x, 0.1, z);
-                world.spawnParticle(Particle.END_ROD, point, 1, 0, 0, 0, 0);
-            }
-        }
 
-        // Стовп світла в центрі
-        world.spawnParticle(Particle.END_ROD, center.clone().add(0, 1, 0), 20, 0.2, 2, 0.2, 0.05);
-        world.spawnParticle(Particle.FLASH, center.clone().add(0, 0.5, 0), 3, 0, 0, 0, 0);
+                world.spawnParticle(Particle.FLAME, point, 1, 0, 0, 0, 0);
+                world.spawnParticle(Particle.CRIT, point, 1, 0, 0, 0, 0);
+            }
+
+            world.spawnParticle(Particle.FLASH, center.clone().add(0, 1, 0), 1, 0, 0, 0, 0);
+
+        } catch (Exception e) {
+            Bukkit.getLogger().warning("[Mysteries-Above] Помилка візуалізації: " + e.getMessage());
+        }
+    }
+
+    // ПОВЕРТАЄ true якщо гравець знаходиться всередині чужого домену (тобто owner != player)
+    public static boolean isInsideDomain(Player player) {
+        DomainData dataForOwner = activeDomains.get(player.getUniqueId());
+        // Якщо у гравця свій домен — перевіряємо тільки щоб не вважати себе чужим доменом
+        for (Map.Entry<UUID, DomainData> e : activeDomains.entrySet()) {
+            UUID owner = e.getKey();
+            DomainData d = e.getValue();
+            if (!player.getWorld().equals(d.center.getWorld())) continue;
+            if (player.getUniqueId().equals(owner)) continue; // ігноруємо власний домен
+            if (player.getLocation().distanceSquared(d.center) <= (d.radius * d.radius)) return true;
+        }
+        return false;
+    }
+
+    // НОВИЙ: повертає UUID власника домену який містить вказану локацію, або null
+    public static UUID getDomainOwnerAt(Location loc) {
+        if (loc == null) return null;
+        for (Map.Entry<UUID, DomainData> e : activeDomains.entrySet()) {
+            UUID owner = e.getKey();
+            DomainData d = e.getValue();
+            if (!loc.getWorld().equals(d.center.getWorld())) continue;
+            if (loc.distanceSquared(d.center) <= (d.radius * d.radius)) return owner;
+        }
+        return null;
+    }
+
+    // допоміжний: перевіряє чи локація всередині конкретного домену власника
+    public static boolean isLocationInsideDomainForOwner(Location loc, UUID owner) {
+        DomainData d = activeDomains.get(owner);
+        if (d == null) return false;
+        if (!loc.getWorld().equals(d.center.getWorld())) return false;
+        return loc.distanceSquared(d.center) <= (d.radius * d.radius);
+    }
+
+    // Повертає DomainData (публічно для інших класів)
+    public static DomainData getDomainData(UUID owner) {
+        return activeDomains.get(owner);
     }
 
     public static void cleanup() {
@@ -186,16 +202,22 @@ public class AreaOfJurisdiction extends ActiveAbility {
         isTaskRunning = false;
     }
 
-    /**
-     * Внутрішній клас для зберігання даних домену
-     */
-    private static class DomainData {
-        final Location center;
-        final int radius;
+    public static class DomainData {
+        private final Location center;
+        private final int radius;
 
-        DomainData(Location center, int radius) {
+        public DomainData(Location center, int radius) {
             this.center = center;
             this.radius = radius;
         }
+
+        public Location getCenter() {
+            return center;
+        }
+
+        public int getRadius() {
+            return radius;
+        }
     }
+
 }

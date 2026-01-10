@@ -25,7 +25,7 @@ public class AbilityItemFactory {
                     ChatColor.GRAY + "--------------------------------------------"
             ));
 
-            List<String> descriptionLines = splitTextIntoLines(ability.getDescription(userSequence), 60);
+            List<String> descriptionLines = splitDescriptionByMarker(ability.getDescription(userSequence));
             for (String line : descriptionLines) {
                 lore.add(ChatColor.GRAY + line);
             }
@@ -84,50 +84,28 @@ public class AbilityItemFactory {
         return null;
     }
 
-
-    private List<String> splitTextIntoLines(String text, int maxLength) {
+    /**
+     * Розбиває опис на рядки по маркеру "/n".
+     * Повертає список рядків без провідних/кінцевих пробілів; порожні частини ігноруються.
+     */
+    private List<String> splitDescriptionByMarker(String description) {
         List<String> lines = new ArrayList<>();
-
-        if (text == null || text.isEmpty()) {
+        if (description == null || description.isEmpty()) {
             return lines;
         }
 
-        // Розділяємо текст по словах
-        String[] words = text.split("\\s+");
-        StringBuilder currentLine = new StringBuilder();
+        // Якщо в описі є справжні перенос рядка (\n), теж їх обробимо разом із маркером "/n"
+        // Спочатку замінимо всі реальні newlines на маркер, щоб уніфікувати розбиття.
+        String normalized = description.replace("\r\n", "/n").replace("\n", "/n").replace("\r", "/n");
 
-        for (String word : words) {
-            // Перевіряємо, чи поміститься слово в поточному рядку
-            if (currentLine.length() + word.length() + 1 <= maxLength) {
-                if (!currentLine.isEmpty()) {
-                    currentLine.append(" ");
-                }
-                currentLine.append(word);
-            } else {
-                // Якщо поточний рядок не порожній, додаємо його до списку
-                if (!currentLine.isEmpty()) {
-                    lines.add(currentLine.toString());
-                    currentLine = new StringBuilder();
-                }
-
-                // Якщо слово довше за максимальну довжину, розбиваємо його
-                if (word.length() > maxLength) {
-                    while (word.length() > maxLength) {
-                        lines.add(word.substring(0, maxLength));
-                        word = word.substring(maxLength);
-                    }
-                    currentLine.append(word);
-                } else {
-                    currentLine.append(word);
-                }
+        String[] parts = normalized.split("/n");
+        for (String part : parts) {
+            if (part == null) continue;
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                lines.add(trimmed);
             }
         }
-
-        // Додаємо останній рядок, якщо він не порожній
-        if (currentLine.length() > 0) {
-            lines.add(currentLine.toString());
-        }
-
         return lines;
     }
 

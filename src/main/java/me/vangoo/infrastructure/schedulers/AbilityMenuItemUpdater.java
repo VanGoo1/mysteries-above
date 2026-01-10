@@ -11,6 +11,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -145,10 +146,10 @@ public class AbilityMenuItemUpdater {
     private static class BeyonderSnapshot {
         private final String pathwayName;
         private final int sequenceLevel;
-        private final int masteryValue;
+        private final double masteryValue;
         private final int sanityLoss;
 
-        private BeyonderSnapshot(String pathwayName, int sequenceLevel, int masteryValue, int sanityLoss) {
+        private BeyonderSnapshot(String pathwayName, int sequenceLevel, double masteryValue, int sanityLoss) {
             this.pathwayName = pathwayName;
             this.sequenceLevel = sequenceLevel;
             this.masteryValue = masteryValue;
@@ -169,19 +170,17 @@ public class AbilityMenuItemUpdater {
             if (this == o) return true;
             if (!(o instanceof BeyonderSnapshot that)) return false;
 
+            // Використовуємо Double.compare для коректного порівняння дробових чисел
             return sequenceLevel == that.sequenceLevel &&
-                    masteryValue == that.masteryValue &&
+                    Double.compare(that.masteryValue, masteryValue) == 0 &&
                     sanityLoss == that.sanityLoss &&
-                    pathwayName.equals(that.pathwayName);
+                    Objects.equals(pathwayName, that.pathwayName);
         }
 
         @Override
         public int hashCode() {
-            int result = pathwayName.hashCode();
-            result = 31 * result + sequenceLevel;
-            result = 31 * result + masteryValue;
-            result = 31 * result + sanityLoss;
-            return result;
+            // Оновлено логіку хешування для double
+            return Objects.hash(pathwayName, sequenceLevel, masteryValue, sanityLoss);
         }
     }
 }

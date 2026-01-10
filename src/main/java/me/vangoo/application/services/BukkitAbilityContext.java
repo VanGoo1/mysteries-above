@@ -829,11 +829,12 @@ public class BukkitAbilityContext implements IAbilityContext {
     }
 
     @Override
-    public int getBeyonderMastery(UUID targetId) {
+    public double getBeyonderMastery(UUID targetId) {
         Beyonder b = beyonderService.getBeyonder(targetId);
-        return (b != null) ? b.getMasteryValue() : 0;
-    }
 
+        if (b == null) return 0.0; // Повертаємо 0.0 для коректності
+        return b.getMasteryValue();
+    }
     @Override
     public void monitorSneaking(UUID targetId, int durationTicks, Consumer<Boolean> callback) {
         new BukkitRunnable() {

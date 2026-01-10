@@ -7,10 +7,7 @@ import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.util.Vector;
 import org.bukkit.Particle.DustOptions;
 
@@ -41,7 +38,7 @@ public class TravellersDoor extends ActiveAbility {
 
     @Override
     public String getDescription(Sequence userSequence) {
-        return "ПКМ: створити двері в режим спостереження (ЛКМ для виходу). " +
+        return "ПКМ: створити двері в режим спостереження (exit в чат для виходу). " +
                 "Shift+ПКМ: створити двері телепортації (макс. " + MAX_TELEPORT_DISTANCE + " блоків).";
     }
 
@@ -84,16 +81,20 @@ public class TravellersDoor extends ActiveAbility {
 
         // 2. Підписка на ЛКМ для виходу з режиму спостереження
         context.subscribeToEvent(
-                PlayerInteractEvent.class,
+                AsyncPlayerChatEvent.class,
                 e -> activeSpectators.contains(e.getPlayer().getUniqueId()) &&
-                        (e.getAction() == Action.LEFT_CLICK_AIR || e.getAction() == Action.LEFT_CLICK_BLOCK),
+                        e.getMessage().equalsIgnoreCase("exit"),
                 e -> {
                     e.setCancelled(true);
-                    exitSpectatorMode(context, e.getPlayer());
-                    e.getPlayer().sendMessage(ChatColor.YELLOW + "Ви завершили подорожування (ЛКМ).");
+                    Bukkit.getScheduler().runTask(
+                            Bukkit.getPluginManager().getPlugin("Mysteries-Above"),
+                            () -> exitSpectatorMode(context, e.getPlayer())
+                    );
                 },
                 Integer.MAX_VALUE
         );
+
+
     }
     @Override
     protected void postExecution(IAbilityContext context) {
@@ -275,7 +276,7 @@ public class TravellersDoor extends ActiveAbility {
         } else {
             // Кастер увійшов
             player.sendMessage(ChatColor.AQUA + "Подорожування активовано на 60 секунд");
-            player.sendMessage(ChatColor.GREEN + "Натисніть ЛКМ, щоб завершити.");
+            player.sendMessage(ChatColor.GREEN + "Напишіть в чат exit, щоб завершити.");
 
             // ЗАПУСК МЕХАНІЗМУ "ВЕСТИ ЗА РУКУ"
             startTetheringTask(context, player);

@@ -143,16 +143,6 @@ global_loot:
       weight: 4   # Було 1
       amount_min: 1
       amount_max: 1
-    visionary_potion_6:
-      item_id: "potion:Visionary:6"
-      weight: 2   # Було 1
-      amount_min: 1
-      amount_max: 1
-    visionary_potion_5:
-      item_id: "potion:Visionary:5"
-      weight: 1   # Дуже рідкісне
-      amount_min: 1
-      amount_max: 1
 
     # =====================================================================
     #                                 DOOR PATHWAY
@@ -278,16 +268,7 @@ global_loot:
       weight: 4
       amount_min: 1
       amount_max: 1
-    door_potion_6:
-      item_id: "potion:Door:6"
-      weight: 2
-      amount_min: 1
-      amount_max: 1
-    door_potion_5:
-      item_id: "potion:Door:5"
-      weight: 1
-      amount_min: 1
-      amount_max: 1
+
 
     # =====================================================================
     #                              JUSTICIAR PATHWAY
@@ -426,15 +407,5 @@ global_loot:
     justiciar_potion_7:
       item_id: "potion:Justiciar:7"
       weight: 4
-      amount_min: 1
-      amount_max: 1
-    justiciar_potion_6:
-      item_id: "potion:Justiciar:6"
-      weight: 2
-      amount_min: 1
-      amount_max: 1
-    justiciar_potion_5:
-      item_id: "potion:Justiciar:5"
-      weight: 1
       amount_min: 1
       amount_max: 1

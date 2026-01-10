@@ -65,25 +65,26 @@ public class VanillaStructureLootListener implements Listener {
     private Map<String, Double> loadEnabledVanillaStructures() {
         Map<String, Double> structures = new HashMap<>();
 
-        structures.put("mansion", 0.40);
+        structures.put("mansion", 0.20);
         structures.put("ancient_city", 0.25);
-        structures.put("bastion", 0.40);
-        structures.put("nether_bridge", 0.15);
-        structures.put("end_city", 0.25);
-        structures.put("stronghold", 0.30);
-        structures.put("jungle_temple", 0.30);
-        structures.put("desert_pyramid", 0.30);
-        structures.put("pillager_outpost", 0.45);
-        structures.put("ocean_ruin_warm", 0.20);
-        structures.put("ocean_ruin_cold", 0.20);
-        structures.put("buried_treasure", 0.25);
+        structures.put("bastion", 0.15);
+        structures.put("nether_bridge", 0.05);
+        structures.put("end_city", 0.10);
+        structures.put("stronghold", 0.10);
+        structures.put("jungle_temple", 0.10);
+        structures.put("desert_pyramid", 0.10);
+        structures.put("pillager_outpost", 0.10);
+        structures.put("ocean_ruin_warm", 0.10);
+        structures.put("ocean_ruin_cold", 0.10);
+        structures.put("buried_treasure", 0.15);
         structures.put("shipwreck", 0.10);
         structures.put("mineshaft", 0.10);
-        structures.put("simple_dungeon", 0.15);
-        structures.put("ruined_portal", 0.25);
-        structures.put("mysteries", 0.25);
-        structures.put("qrafty", 0.20);
-        structures.put("nova_structures", 0.20);
+        structures.put("simple_dungeon", 0.10);
+        structures.put("ruined_portal", 0.15);
+        structures.put("mysteries", 0.15);
+        structures.put("nova_structures", 0.10);
+        structures.put("trial_chambers/supply", 0.10);
+        structures.put("trial_chambers/corridor", 0.10);
 
         logger.info("Enabled vanilla structures for custom loot: " + structures.size());
         return structures;

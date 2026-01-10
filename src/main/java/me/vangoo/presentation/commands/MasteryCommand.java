@@ -80,7 +80,7 @@ public class MasteryCommand implements CommandExecutor, TabCompleter {
     }
 
     private void showMasteryInfo(Player player, Beyonder beyonder) {
-        int mastery = beyonder.getMastery().value();
+        double mastery = beyonder.getMastery().value();
         int sequence = beyonder.getSequence().level();
         String pathwayName = beyonder.getPathway() != null ? beyonder.getPathway().getName() : "Невідомо";
 
@@ -93,14 +93,14 @@ public class MasteryCommand implements CommandExecutor, TabCompleter {
         if (beyonder.canAdvance()) {
             player.sendMessage(ChatColor.GREEN + "✓ Ви можете перейти до наступної послідовності!");
         } else {
-            int needed = 100 - mastery;
+            double needed = 100.0 - mastery;
             player.sendMessage(ChatColor.YELLOW + "До просування потрібно ще " + ChatColor.GREEN + needed
                     + ChatColor.YELLOW + " засвоєння");
         }
     }
 
     private void setMastery(Player player, Beyonder beyonder, int value) {
-        int oldMastery = beyonder.getMasteryValue();
+        double oldMastery = beyonder.getMasteryValue();
         try {
             beyonder.setMastery(new Mastery(value));
             player.sendMessage(ChatColor.GREEN + "Засвоєння змінено з " + ChatColor.YELLOW + oldMastery +
@@ -152,7 +152,7 @@ public class MasteryCommand implements CommandExecutor, TabCompleter {
                     Beyonder beyonder = beyonderService.getBeyonder(player.getUniqueId());
 
                     if (beyonder != null) {
-                        int current = beyonder.getMastery().value();
+                        double current = beyonder.getMastery().value();
                         if (current < 100) {
                             String[] suggestions = {
                                     String.valueOf(Math.min(100, current + 10)),

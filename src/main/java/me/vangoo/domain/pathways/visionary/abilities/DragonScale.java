@@ -22,7 +22,7 @@ public class DragonScale extends ActiveAbility {
     // На Seq 6 це буде: 20 * 1.45 ≈ 29-30 секунд.
     // На Seq 4 (Напівбог): 20 * 1.75 = 35 секунд.
 
-    private static final int BASE_COST = 200;
+    private static final int BASE_COST = 150;
 
 
     private static final int BASE_COOLDOWN = 75;

@@ -17,7 +17,7 @@ public class BeyonderDTO {
     private int sequence;
 
     @Expose
-    private int mastery;
+    private double mastery;
 
     @Expose
     private int spirituality;
@@ -37,7 +37,7 @@ public class BeyonderDTO {
             UUID playerId,
             String pathwayName,
             int sequence,
-            int mastery,
+            double mastery,
             int spirituality,
             int sanityLossScale,
             List<String> offPathwayAbilities
@@ -76,11 +76,11 @@ public class BeyonderDTO {
         this.sequence = sequence;
     }
 
-    public int getMastery() {
+    public double getMastery() {
         return mastery;
     }
 
-    public void setMastery(int mastery) {
+    public void setMastery(double mastery) {
         this.mastery = mastery;
     }
 
