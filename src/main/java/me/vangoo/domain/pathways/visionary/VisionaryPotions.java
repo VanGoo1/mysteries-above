@@ -38,7 +38,7 @@ public class VisionaryPotions extends PathwayPotions {
 
             addIngredientsRecipe(9, manhalFishEyeball.get(), goatHornedBlackfishBlood.get(), autumnCrocusEssence.get(), elfFlowerPetals.get());
             addIngredientsRecipe(8, crystallineMoonOrchid.get(), thoughtEssence.get(), iridescentPearlDust.get());
-            addIngredientsRecipe(7, treeOfEldersFruit.get(), mirrorDragonBlood.get(), mirrorDragonBlood.get());
+            addIngredientsRecipe(7, treeOfEldersFruit.get(), mirrorDragonEyes.get(), mirrorDragonBlood.get());
             addIngredientsRecipe(6, blackHuntingLizardSpinalFluid.get(), illusoryChimeTreeFruit.get(), mindCrystalPowder.get(), splitPersonalityEssence.get());
             addIngredientsRecipe(5, dreamCatcherHeart.get(), mindIllusionCrystal.get(), adultMindDragonBlood.get());
         }

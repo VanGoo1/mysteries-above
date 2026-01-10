@@ -82,7 +82,7 @@ public class MasteryRegenerationScheduler {
 
             // Increment mastery by 1
             Mastery oldMastery = beyonder.getMastery();
-            Mastery newMastery = oldMastery.increment(1);
+            Mastery newMastery = oldMastery.add(1.0);
             beyonder.setMastery(newMastery);
 
             // Update and save

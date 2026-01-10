@@ -4,22 +4,14 @@ import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.valueobjects.Sequence;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
-import org.bukkit.plugin.Plugin;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,10 +28,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * - Смерть: Наносить 8 сердець чистого урону
  * - Випарення: Вдаряє блискавкою по цілі з радіусу 20 блоків, наносить 5 сердець
  *
- * Shift + ПКМ - переключення режиму (тут, всередині Verdict)
- * ПКМ - використання здібності (pipeline)
+ * Shift + ПКМ - переключення режиму
+ * ПКМ - використання здібності
  */
-public class Verdict extends ActiveAbility implements Listener {
+public class Verdict extends ActiveAbility {
 
     // Режими вироку
     public enum VerdictMode {
@@ -69,12 +61,6 @@ public class Verdict extends ActiveAbility implements Listener {
     // Зберігання активних обмежень
     private static final Map<UUID, RestrictionZone> activeRestrictions = new ConcurrentHashMap<>();
 
-    // Маркер гравців, які щойно перемкнули режим (щоб pipeline не виконав дію)
-    private final Set<UUID> recentlyCycled = ConcurrentHashMap.newKeySet();
-
-    // Плагін (потрібен для планувальника)
-    private Plugin plugin;
-
     // Конфігурація
     private static final int EXILE_RADIUS = 20;
     private static final int EXILE_DISTANCE = 50;
@@ -84,18 +70,6 @@ public class Verdict extends ActiveAbility implements Listener {
     private static final double DEATH_DAMAGE = 16.0; // 8 сердець
     private static final int EVAPORATION_RADIUS = 20;
     private static final double EVAPORATION_DAMAGE = 10.0; // 5 сердець
-
-    // ---------- Публічні API ----------
-
-    /**
-     * Зареєструй цей об'єкт як слухача та збережи посилання на плагін.
-     * Виклич у onEnable(): verdict.register(thisPluginInstance);
-     */
-    public void register(Plugin plugin) {
-        if (plugin == null) return;
-        this.plugin = plugin;
-        plugin.getServer().getPluginManager().registerEvents(this, plugin);
-    }
 
     @Override
     public String getName() {
@@ -115,6 +89,7 @@ public class Verdict extends ActiveAbility implements Listener {
                 §4• Смерть §7- Смертельний урон
                 §3• Випарення §7- Удар блискавки""";
     }
+
     @Override
     public int getSpiritualityCost() {
         return 130;
@@ -126,16 +101,7 @@ public class Verdict extends ActiveAbility implements Listener {
     }
 
     /**
-     * Не блокуємо виконання тут — все обробляємо у performExecution і в нашому listener
-     */
-    @Override
-    protected boolean canExecute(IAbilityContext context) {
-        return true;
-    }
-
-    /**
-     * Якщо гравець щойно перемикав режим (recentlyCycled) — нічого не виконуємо.
-     * Інакше — виконуємо поточний режим.
+     * Якщо гравець присідає — переключаємо режим БЕЗ витрат і кулдауну
      */
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
@@ -146,28 +112,27 @@ public class Verdict extends ActiveAbility implements Listener {
         // 🔁 ПЕРЕКЛЮЧЕННЯ РЕЖИМУ (НЕ КАСТ)
         // ===============================
         if (caster != null && caster.isSneaking()) {
+            VerdictMode currentMode = getCurrentMode(casterId);
+            VerdictMode newMode = currentMode.next();
+            playerModes.put(casterId, newMode);
 
-            // захист від подвійного виклику
-            if (!recentlyCycled.contains(casterId)) {
-                recentlyCycled.add(casterId);
+            // Звук
+            caster.playSound(caster.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.8f, 1.5f);
 
-                if (plugin != null) {
-                    plugin.getServer().getScheduler().runTaskLater(
-                            plugin,
-                            () -> recentlyCycled.remove(casterId),
-                            6L
-                    );
-                }
-            }
+            // Повідомлення в чат (не action bar)
+            caster.sendMessage(ChatColor.GOLD + "⚖ Режим Вердикту: " +
+                    newMode.displayName + " " + newMode.description);
 
-            VerdictMode newMode = cycleModeForPlayer(casterId, caster);
+            // Частинки
+            context.spawnParticle(
+                    Particle.ENCHANT,
+                    caster.getLocation().add(0, 1, 0),
+                    20, 0.3, 0.5, 0.3
+            );
 
             // ❗ КЛЮЧОВИЙ МОМЕНТ:
             // success = false → НІ КУЛДАУНУ, НІ ВИТРАТ
-            return AbilityResult.failure(
-                    "⚖ Режим переключено: " +
-                            newMode.displayName + " " + newMode.description
-            );
+            return AbilityResult.failure("");
         }
 
         // ===============================
@@ -183,47 +148,6 @@ public class Verdict extends ActiveAbility implements Listener {
             case EVAPORATION -> executeEvaporation(context);
         };
     }
-
-
-
-    // ===========================
-    // Event handler (всередині Verdict)
-    // ===========================
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onPlayerInteract(PlayerInteractEvent event) {
-        Player p = event.getPlayer();
-        Action action = event.getAction();
-
-        if (!p.isSneaking()) return;
-        if (action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) return;
-
-        // Ставимо маркер одразу — щоб, якщо pipeline виконається майже одночасно,
-        // performExecution бачив recentlyCycled і не виконував режим.
-        UUID id = p.getUniqueId();
-        recentlyCycled.add(id);
-
-        // Переключаємо режим (візуали)
-        cycleModeForPlayer(id, p);
-
-        // Забираємо можливість подальшої обробки кліку
-        event.setUseInteractedBlock(org.bukkit.event.Event.Result.DENY);
-        event.setUseItemInHand(org.bukkit.event.Event.Result.DENY);
-        event.setCancelled(true);
-
-        // Прибираємо маркер через кілька тиків (6 — експериментально)
-        if (plugin != null) {
-            plugin.getServer().getScheduler().runTaskLater(plugin,
-                    () -> recentlyCycled.remove(id),
-                    6L);
-        } else {
-            // запасний варіант, якщо plugin null (не рекомендовано)
-            new Thread(() -> {
-                try { Thread.sleep(300); } catch (InterruptedException ignored) {}
-                recentlyCycled.remove(id);
-            }).start();
-        }
-    }
-
 
     // ===========================================
     // РЕЖИМИ — без змін (твоя логіка)
@@ -578,33 +502,6 @@ public class Verdict extends ActiveAbility implements Listener {
     // UTILITIES
     // ===========================================
 
-    /**
-     * Переключити режим для гравця та показати візуалізацію.
-     * Викликається з onPlayerInteract.
-     */
-    public VerdictMode cycleModeForPlayer(UUID playerId, Player caster) {
-        if (playerId == null || caster == null) return getCurrentMode(playerId);
-
-        VerdictMode current = getCurrentMode(playerId);
-        VerdictMode next = current.next();
-        playerModes.put(playerId, next);
-
-        try {
-            caster.spigot().sendMessage(
-                    ChatMessageType.ACTION_BAR,
-                    new TextComponent(ChatColor.GOLD + "⚖ Режим: " + next.displayName + " " + next.description)
-            );
-
-            caster.playSound(caster.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.8f, 1.5f);
-            caster.getWorld().spawnParticle(Particle.ENCHANT,
-                    caster.getLocation().add(0, 1, 0), 20, 0.3, 0.5, 0.3, 0.5);
-        } catch (Exception ex) {
-            Bukkit.getLogger().warning("Verdict: cycle visuals failed: " + ex.getMessage());
-        }
-
-        return next;
-    }
-
     private VerdictMode getCurrentMode(UUID playerId) {
         return playerModes.getOrDefault(playerId, VerdictMode.EXILE);
     }
@@ -613,7 +510,6 @@ public class Verdict extends ActiveAbility implements Listener {
     public void cleanUp() {
         activeRestrictions.clear();
         playerModes.clear();
-        recentlyCycled.clear();
     }
 
     // ===========================================

@@ -42,9 +42,9 @@ public class SpiritualityCalculator {
         }
 
         // Interpolate between min and max based on mastery percentage
-        float t = mastery.value() / 100.0f;
+        double t = mastery.value() / 100.0;
 
-        return Math.round(min + (max - min) * t);
+        return (int) Math.round(min + (max - min) * t);
     }
 
     public int calculateRegenerationRate(Sequence sequence, Mastery mastery) {

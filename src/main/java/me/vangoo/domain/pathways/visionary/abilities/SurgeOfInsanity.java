@@ -44,7 +44,7 @@ public class SurgeOfInsanity extends ActiveAbility {
 
     @Override
     public int getSpiritualityCost() {
-        return 90;
+        return 80;
     }
 
     @Override

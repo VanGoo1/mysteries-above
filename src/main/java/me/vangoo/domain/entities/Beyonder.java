@@ -263,9 +263,9 @@ public class Beyonder {
             int cost = ability.getSpiritualityCost();
             spirituality = spirituality.decrement(cost);
 
-            int masteryGain = MasteryProgressionCalculator.calculateMasteryGain(cost, sequence);
+            double masteryGain = MasteryProgressionCalculator.calculateMasteryGain(cost, sequence);
             if (masteryGain > 0) {
-                mastery = mastery.increment(masteryGain);
+                mastery = mastery.add(masteryGain);
             }
 
             if (spirituality.isCritical()) {
@@ -429,7 +429,7 @@ public class Beyonder {
         return mastery;
     }
 
-    public int getMasteryValue() {
+    public double getMasteryValue() {
         return mastery.value();
     }
 

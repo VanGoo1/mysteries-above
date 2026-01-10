@@ -11,8 +11,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.potion.PotionEffectType;
@@ -29,7 +28,7 @@ public class Authority extends ActiveAbility {
 
     @Override
     public String getName() {
-        return "Authority";
+        return "Авторитет";
     }
 
     @Override
@@ -40,12 +39,12 @@ public class Authority extends ActiveAbility {
                 ChatColor.GRAY + "▪ Ефект: Викидання предметів + броні\n" +
                 ChatColor.GRAY + "▪ Дебаф: Повільність I на 10с\n" +
                 ChatColor.GRAY + "▪ Моби: " + ChatColor.WHITE + "8 урону (4 серця)\n" +
-                ChatColor.DARK_GRAY + "▸ Висока послідовність = більший шанс";
+                ChatColor.DARK_GRAY + "▸ Не чіпає мирних жителів та големів";
     }
 
     @Override
     public int getSpiritualityCost() {
-        return 40;
+        return 50;
     }
 
     @Override
@@ -58,8 +57,15 @@ public class Authority extends ActiveAbility {
         List<Player> nearbyPlayers = context.getNearbyPlayers(RADIUS);
         List<LivingEntity> nearbyEntities = context.getNearbyEntities(RADIUS);
 
-        // Видаляємо гравців зі списку ентіті
-        nearbyEntities.removeIf(entity -> entity instanceof Player);
+        // Фільтруємо список:
+        // 1. Прибираємо самого кастера (якщо він раптом потрапив)
+        // 2. Прибираємо інших гравців (вони обробляються окремо в nearbyPlayers)
+        // 3. Прибираємо мирних мобів (жителі, големи, коти, стійки для броні)
+        nearbyEntities.removeIf(entity ->
+                entity instanceof Player ||
+                        entity instanceof ArmorStand ||
+                        isFriendlyEntity(entity)
+        );
 
         Beyonder caster = context.getCasterBeyonder();
         int casterSequence = caster.getSequenceLevel();
@@ -69,7 +75,7 @@ public class Authority extends ActiveAbility {
         if (nearbyPlayers.isEmpty() && nearbyEntities.isEmpty()) {
             context.sendMessageToCaster(
                     ChatColor.GOLD + "Аура Авторитету активована! " +
-                            ChatColor.GRAY + "Поруч немає живих істот..."
+                            ChatColor.GRAY + "Поруч немає ворогів..."
             );
             return AbilityResult.success();
         }
@@ -93,7 +99,7 @@ public class Authority extends ActiveAbility {
                     resistedPlayers
             );
 
-            // Атакуємо мобів
+            // Атакуємо тільки ворожих мобів (які залишилися після фільтрації)
             for (LivingEntity entity : nearbyEntities) {
                 if (entity.isValid() && !entity.isDead()) {
                     context.damage(entity.getUniqueId(), MOB_DAMAGE);
@@ -106,6 +112,34 @@ public class Authority extends ActiveAbility {
         }, BUILDUP_TIME_TICKS);
 
         return AbilityResult.success();
+    }
+
+    /**
+     * Перевіряє, чи є сутність мирною/нейтральною
+     */
+    private boolean isFriendlyEntity(LivingEntity entity) {
+        // Жителі та торговці
+        if (entity instanceof Villager || entity instanceof WanderingTrader) {
+            return true;
+        }
+        // Захисники поселень
+        if (entity instanceof IronGolem || entity instanceof Snowman) {
+            return true;
+        }
+        // Приручені тварини (вовки, коти, папуги), якщо у них є власник
+        if (entity instanceof Tameable) {
+            return ((Tameable) entity).isTamed();
+        }
+        // Мирні тварини (корови, свині, курки тощо)
+        // Увага: Вовки теж Animals, але ми їх перевірили вище через Tameable.
+        // Дикий вовк не Tamed, тому він не пройде верхню перевірку, але пройде цю.
+        // Якщо хочете бити диких вовків - треба ускладнити логіку.
+        // Поточна логіка: Animals = мирні. (Дикі вовки вважатимуться мирними)
+        if (entity instanceof Animals) {
+            return true;
+        }
+
+        return false;
     }
 
     private void scheduleBuildupEffects(IAbilityContext context, List<Player> targets) {
@@ -276,9 +310,6 @@ public class Authority extends ActiveAbility {
                 0, 0, 0
         );
 
-        // ВИПРАВЛЕННЯ:
-        // FALLING_DUST викликав помилку, бо вимагав BlockData.
-        // Замінено на CRIT (золоті частинки), що пасує темі і не крашить сервер.
         context.spawnParticle(
                 Particle.CRIT,
                 loc,

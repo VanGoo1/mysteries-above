@@ -1,18 +1,21 @@
 package me.vangoo.domain.valueobjects;
 
-public record Mastery(int value) {
-    private static final int MIN_VALUE = 0;
-    private static final int MAX_VALUE = 100;
+public record Mastery(double value) {
+    private static final double MIN_VALUE = 0.0;
+    private static final double MAX_VALUE = 100.0;
 
-    public Mastery {
-        if (value < MIN_VALUE || value > MAX_VALUE) {
+    public Mastery(double value) {
+        // Округлюємо до 2 знаків після коми
+        this.value = Math.round(value * 100.0) / 100.0;
+
+        if (this.value < MIN_VALUE || this.value > MAX_VALUE) {
             throw new IllegalArgumentException(
-                    "Mastery must be between " + MIN_VALUE + " and " + MAX_VALUE + ", got: " + value
+                    "Mastery must be between " + MIN_VALUE + " and " + MAX_VALUE + ", got: " + this.value
             );
         }
     }
 
-    public static Mastery of(int value) {
+    public static Mastery of(double value) {
         return new Mastery(value);
     }
 
@@ -24,16 +27,16 @@ public record Mastery(int value) {
         return new Mastery(MAX_VALUE);
     }
 
-    public Mastery increment(int amount) {
+    public Mastery add(double amount) {
         if (amount < 0) {
             throw new IllegalArgumentException("Cannot increment by negative amount: " + amount);
         }
-        int newValue = Math.min(value + amount, MAX_VALUE);
+        double newValue = Math.min(value + amount, MAX_VALUE);
         return new Mastery(newValue);
     }
 
     public Mastery increment() {
-        return increment(1);
+        return add(1.0);
     }
 
     public Mastery reset() {
@@ -44,12 +47,18 @@ public record Mastery(int value) {
         return value >= MAX_VALUE;
     }
 
-    public int getPercentage() {
+    public double getPercentage() {
         return value;
     }
 
+    public double getValue() {
+        return value;
+    }
+    public int asInt() {
+        return (int) value;
+    }
     @Override
     public String toString() {
-        return value + "%";
+        return String.format("%.2f%%", value);
     }
 }

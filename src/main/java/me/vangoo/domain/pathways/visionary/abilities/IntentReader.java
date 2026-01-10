@@ -20,7 +20,7 @@ public class IntentReader extends ActiveAbility {
 
     private static final int DURATION_SECONDS = 20;
     private static final int RADIUS = 15;
-    private static final int COST = 70;
+    private static final int COST = 75;
     private static final int COOLDOWN = 30;
 
     @Override
@@ -132,21 +132,18 @@ public class IntentReader extends ActiveAbility {
                 // Червона пульсуюча аура - використовуємоWorld API напряму
                 Particle.DustOptions redDust = new Particle.DustOptions(Color.fromRGB(220, 20, 20), 1.2f);
                 entity.getWorld().spawnParticle(Particle.DUST, headLoc, 8, 0.25, 0.25, 0.25, 0, redDust);
-                context.spawnParticle(Particle.CRIMSON_SPORE, headLoc, 3, 0.2, 0.2, 0.2);
                 break;
 
             case OBSERVING:
                 // Синя спокійна аура
                 Particle.DustOptions blueDust = new Particle.DustOptions(Color.fromRGB(50, 120, 255), 1.0f);
                 entity.getWorld().spawnParticle(Particle.DUST, headLoc, 6, 0.2, 0.2, 0.2, 0, blueDust);
-                context.spawnParticle(Particle.SOUL_FIRE_FLAME, headLoc, 2, 0.15, 0.15, 0.15);
                 break;
 
             case FLEEING:
                 // Жовта тривожна аура
                 Particle.DustOptions yellowDust = new Particle.DustOptions(Color.fromRGB(255, 220, 50), 1.0f);
                 entity.getWorld().spawnParticle(Particle.DUST, headLoc, 6, 0.25, 0.25, 0.25, 0, yellowDust);
-                context.spawnParticle(Particle.WAX_ON, headLoc, 4, 0.2, 0.2, 0.2);
                 break;
 
             case NEUTRAL:

@@ -12,7 +12,8 @@ public class Flash extends ActiveAbility {
 
     private static final int RADIUS = 10;
     private static final int DURATION = 60; // 3 секунди
-
+    private static final int COST = 50;
+    private static final int COOLDOWN = 15;
     @Override
     public String getName() {
         return "Флешка";
@@ -26,12 +27,12 @@ public class Flash extends ActiveAbility {
 
     @Override
     public int getSpiritualityCost() {
-        return 45;
+        return COST;
     }
 
     @Override
     public int getCooldown(Sequence sequence) {
-        return 20;
+        return COOLDOWN;
     }
 
     @Override
