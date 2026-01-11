@@ -11,6 +11,11 @@ import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.events.AbilityDomainEvent;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.infrastructure.ui.ChoiceMenuFactory;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
@@ -373,6 +378,16 @@ public class BukkitAbilityContext implements IAbilityContext {
     @Override
     public void sendMessageToCaster(String message) {
         caster.sendMessage(message);
+    }
+
+
+    @Override
+    public void sendMessageToActionBar(Component message) {
+        if (caster != null && caster.isOnline()) {
+            String legacy = LegacyComponentSerializer.legacySection().serialize(message);
+            BaseComponent[] components = new BaseComponent[] {new TextComponent(legacy)};
+            caster.spigot().sendMessage(ChatMessageType.ACTION_BAR, components);
+        }
     }
 
     // ==========================================

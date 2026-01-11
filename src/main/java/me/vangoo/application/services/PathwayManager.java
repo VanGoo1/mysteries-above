@@ -7,6 +7,7 @@ import me.vangoo.domain.pathways.door.Door;
 import me.vangoo.domain.pathways.error.Error;
 import me.vangoo.domain.pathways.justiciar.Justiciar;
 import me.vangoo.domain.pathways.visionary.Visionary;
+import me.vangoo.domain.pathways.whitetower.WhiteTower;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
 
 import java.util.*;
@@ -32,6 +33,9 @@ public class PathwayManager {
         pathways.put("Justiciar", new Justiciar(PathwayGroup.TheAnarchy,
                 List.of("Justiciar", "Hand of Order", "Balancer", "Chaos Hunter", "Imperative Mage", "Paladin", "Judge",
                         "Interrogator", "Sheriff", "Arbiter")));
+        pathways.put("WhiteTower", new WhiteTower(PathwayGroup.GodAlmighty,
+                List.of("White Tower", "Omniscient Eye", "Wisdom Angel", "Cognizer", "Prophet", "Mysticism Magister", "Polymath",
+                        "Detective", "Student", "Reader")));
     }
 
     public Pathway getPathway(String name) {

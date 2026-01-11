@@ -4,6 +4,7 @@ package me.vangoo.domain.abilities.core;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.events.AbilityDomainEvent;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
+import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LivingEntity;
@@ -95,6 +96,8 @@ public interface IAbilityContext {
     void sendMessage(UUID playerId, String message);
 
     void sendMessageToCaster(String message);
+
+    void sendMessageToActionBar(Component message);
 
     // ==================== BEYONDER ====================
     void updateSanityLoss(UUID playerId, int change);

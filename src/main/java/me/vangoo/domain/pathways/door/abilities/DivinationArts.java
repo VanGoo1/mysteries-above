@@ -18,7 +18,7 @@ import java.util.*;
 import java.util.function.Function;
 
 public class DivinationArts extends ActiveAbility {
-    private final int BASE_COST = 120;
+    private int BASE_COST = 120;
     private final int BASE_COOLDOWN = 60;
 
     // Послідовність, на якій з'являється пасивка (зазвичай 7-ма)
@@ -32,6 +32,12 @@ public class DivinationArts extends ActiveAbility {
     public DivinationArts() {
         initPendulumQuestions();
         initDiviningRodTargets();
+    }
+
+    public DivinationArts(int spiritualityCost) {
+        initPendulumQuestions();
+        initDiviningRodTargets();
+        BASE_COST = spiritualityCost;
     }
 
     // ========== ІНІЦІАЛІЗАЦІЯ ==========

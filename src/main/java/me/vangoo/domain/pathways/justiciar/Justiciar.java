@@ -2,6 +2,7 @@ package me.vangoo.domain.pathways.justiciar;
 
 import me.vangoo.domain.entities.Pathway;
 import me.vangoo.domain.entities.PathwayGroup;
+import me.vangoo.domain.pathways.door.abilities.AntiDivination;
 import me.vangoo.domain.pathways.justiciar.abilities.*;
 
 import java.util.List;
@@ -17,6 +18,6 @@ public class Justiciar extends Pathway {
         sequenceAbilities.put(8, List.of(new AreaOfJurisdiction(), new Recognition(), new Intuition()));
         sequenceAbilities.put(7, List.of(new WhipOfPain(), new PsychicPiercing(), new BrandOfRestraint(), new PsychicLashing()));
         sequenceAbilities.put(6, List.of(new Verdict(), new PowerProhibition(), new SpawnProhibition()));
-        sequenceAbilities.put(5, List.of(new Punishment()));
+        sequenceAbilities.put(5, List.of(new Punishment(), new AntiDivination()));
     }
 }
