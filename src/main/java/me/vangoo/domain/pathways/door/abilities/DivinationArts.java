@@ -20,7 +20,7 @@ import java.util.*;
 import java.util.function.Function;
 
 public class DivinationArts extends ActiveAbility {
-    private final int BASE_COST = 120;
+    private int BASE_COST = 120;
     private final int BASE_COOLDOWN = 60;
     private final int ANTI_DIVINATION_UNLOCK_SEQUENCE = 7;
 
@@ -32,6 +32,12 @@ public class DivinationArts extends ActiveAbility {
     public DivinationArts() {
         initPendulumQuestions();
         initDiviningRodTargets();
+    }
+
+    public DivinationArts(int spiritualityCost) {
+        initPendulumQuestions();
+        initDiviningRodTargets();
+        BASE_COST = spiritualityCost;
     }
 
     // ========== ІНІЦІАЛІЗАЦІЯ ==========
