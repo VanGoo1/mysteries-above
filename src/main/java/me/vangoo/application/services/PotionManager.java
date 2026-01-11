@@ -5,6 +5,7 @@ import me.vangoo.domain.pathways.door.DoorPotions;
 import me.vangoo.domain.pathways.error.ErrorPotions;
 import me.vangoo.domain.pathways.justiciar.JusticiarPotions;
 import me.vangoo.domain.pathways.visionary.VisionaryPotions;
+import me.vangoo.domain.pathways.whitetower.WhiteTowerPotions;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.infrastructure.items.PotionItemFactory;
 import org.bukkit.*;
@@ -55,6 +56,11 @@ public class PotionManager {
 
         potions.add(new JusticiarPotions(
                 pathwayManager.getPathway("Justiciar"),
+                Color.fromRGB(255, 255, 0),
+                customItemService
+        ));
+        potions.add(new WhiteTowerPotions(
+                pathwayManager.getPathway("WhiteTower"),
                 Color.fromRGB(255, 255, 0),
                 customItemService
         ));
