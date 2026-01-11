@@ -3,7 +3,6 @@ package me.vangoo.domain.pathways.door.abilities;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
-import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -24,9 +23,7 @@ public class Blink extends ActiveAbility {
 
     @Override
     public String getDescription(Sequence userSequence) {
-        int cost = scaleValue(BASE_COST, userSequence, SequenceScaler.ScalingStrategy.WEAK);
-        return "Миттєво переміщує вас вперед до " + (int)MAX_DISTANCE + " блоків у напрямку погляду. " +
-                "Духовність: " + cost;
+        return "Миттєво переміщує вас вперед до " + (int)MAX_DISTANCE + " блоків у напрямку погляду.";
     }
 
     @Override
@@ -90,6 +87,7 @@ public class Blink extends ActiveAbility {
         // Швидка лінія між точками
         showTeleportTrail(oldLocation, safeLoc, context);
 
+        // Система автоматично списує духовність та встановлює кулдаун
         return AbilityResult.success();
     }
 
@@ -122,8 +120,8 @@ public class Blink extends ActiveAbility {
 
         // Фінальний спалах
         context.scheduleDelayed(() -> {
-            world.spawnParticle(Particle.FLASH, loc.clone().add(0, 1, 0), 1);
-            world.spawnParticle(Particle.WITCH, loc.clone().add(0, 1, 0), 20, 0.3, 0.5, 0.3, 0.05);
+            world.spawnParticle(Particle.END_ROD, loc.clone().add(0, 1, 0), 20, 0.3, 0.5, 0.3, 0.1);
+            world.spawnParticle(Particle.CLOUD, loc.clone().add(0, 1, 0), 15, 0.2, 0.4, 0.2, 0.05);
         }, 15);
     }
 
@@ -134,7 +132,7 @@ public class Blink extends ActiveAbility {
         World world = loc.getWorld();
 
         // Початковий спалах
-        world.spawnParticle(Particle.FLASH, loc.clone().add(0, 1, 0), 1);
+        world.spawnParticle(Particle.END_ROD, loc.clone().add(0, 1, 0), 30, 0.3, 0.5, 0.3, 0.15);
 
         // Силует гравця що формується (від прозорого до яскравого)
         for (int i = 0; i < 15; i++) {
@@ -172,7 +170,7 @@ public class Blink extends ActiveAbility {
                 Location particleLoc = baseLoc.clone().add(x, y, z);
 
                 // Основні частинки (менше при зникненні)
-                int count = (int)(2 * fade);
+                int count = (int)(3 * fade);
                 if (count > 0) {
                     world.spawnParticle(
                             Particle.SOUL_FIRE_FLAME,
@@ -195,7 +193,7 @@ public class Blink extends ActiveAbility {
         double distance = direction.length();
         direction.normalize();
 
-        // Швидка анімована лінія (20 кадрів замість 50)
+        // Швидка анімована лінія (20 кадрів)
         for (int i = 0; i < 20; i++) {
             int delay = i;
             context.scheduleDelayed(() -> {
@@ -204,11 +202,11 @@ public class Blink extends ActiveAbility {
 
                 Location point = from.clone().add(direction.clone().multiply(currentDist));
 
-                // Основна лінія
+                // Основна лінія - використовуємо ENCHANT замість WITCH
                 world.spawnParticle(
-                        Particle.WITCH,
+                        Particle.ENCHANT,
                         point.clone().add(0, 1, 0),
-                        2,
+                        3,
                         0.05, 0.05, 0.05,
                         0
                 );
@@ -217,7 +215,7 @@ public class Blink extends ActiveAbility {
                 world.spawnParticle(
                         Particle.PORTAL,
                         point.clone().add(0, 1, 0),
-                        3,
+                        5,
                         0.1, 0.1, 0.1,
                         0.3
                 );

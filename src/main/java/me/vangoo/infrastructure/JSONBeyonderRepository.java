@@ -63,6 +63,8 @@ public class JSONBeyonderRepository implements IBeyonderRepository {
                 for (Map.Entry<UUID, BeyonderDTO> entry : dtos.entrySet()) {
                     try {
                         Beyonder beyonder = mapper.toDomain(entry.getValue());
+                        // CRITICAL: Ensure transient fields are properly initialized after deserialization
+                        beyonder.initializeTransientFields();
                         beyonders.put(entry.getKey(), beyonder);
                     } catch (Exception e) {
                         LOGGER.warning("Failed to load beyonder " + entry.getKey() + ": " + e.getMessage());

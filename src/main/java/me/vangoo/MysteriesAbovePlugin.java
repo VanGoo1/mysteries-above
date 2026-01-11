@@ -3,194 +3,172 @@ package me.vangoo;
 import de.slikey.effectlib.EffectManager;
 import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.application.services.*;
-import me.vangoo.application.services.RampageManager;
-import me.vangoo.domain.valueobjects.CustomItem;
-import me.vangoo.infrastructure.IRecipeUnlockRepository;
-import me.vangoo.infrastructure.JSONRecipeUnlockRepository;
-import me.vangoo.infrastructure.items.*;
-import me.vangoo.infrastructure.listeners.RampageEventListener;
-import me.vangoo.infrastructure.recipes.RecipeBookCraftingRecipe;
-import me.vangoo.infrastructure.schedulers.AbilityMenuItemUpdater;
-import me.vangoo.infrastructure.schedulers.MasteryRegenerationScheduler;
-import me.vangoo.infrastructure.schedulers.PassiveAbilityScheduler;
-import me.vangoo.infrastructure.schedulers.RampageScheduler;
-import me.vangoo.infrastructure.structures.LootGenerationService;
-import me.vangoo.infrastructure.structures.LootTableConfigLoader;
+import me.vangoo.infrastructure.di.ServiceContainer;
 import me.vangoo.presentation.commands.*;
-import me.vangoo.infrastructure.IBeyonderRepository;
-import me.vangoo.infrastructure.JSONBeyonderRepository;
-import me.vangoo.infrastructure.abilities.AbilityItemFactory;
 import me.vangoo.presentation.listeners.*;
-import me.vangoo.infrastructure.ui.AbilityMenu;
-import me.vangoo.infrastructure.ui.BossBarUtil;
 import me.vangoo.infrastructure.ui.NBTBuilder;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.File;
-import java.util.Map;
 import java.util.logging.Logger;
 
 public class MysteriesAbovePlugin extends JavaPlugin {
-    Logger pluginLogger;
-    AbilityMenu abilityMenu;
-    CooldownManager cooldownManager;
-    AbilityLockManager lockManager;
-    PathwayManager pathwayManager;
-    PotionManager potionManager;
-    BeyonderService beyonderService;
-    GlowingEntities glowingEntities;
-    AbilityExecutor abilityExecutor;
-    EffectManager effectManager;
-    IBeyonderRepository beyonderStorage;
-    AbilityItemFactory abilityItemFactory;
-    PassiveAbilityManager passiveAbilityManager;
-    PassiveAbilityScheduler passiveAbilityScheduler;
-    MasteryRegenerationScheduler masteryRegenerationScheduler;
-    RampageScheduler rampageScheduler;
-    BeyonderSleepListener beyonderSleepListener;
-    RampageManager rampageManager;
-    AbilityContextFactory abilityContextFactory;
-    PotionItemFactory potionItemFactory;
-    DomainEventPublisher eventPublisher;
-    SanityPenaltyHandler sanityPenaltyHandler;
-    RampageEventListener rampageEventListener;
-    TemporaryEventManager temporaryEventManager;
-    CustomItemFactory customItemFactory;
-    CustomItemRegistry customItemRegistry;
-    CustomItemService customItemService;
-    LootTableConfigLoader configLoader;
-    LootGenerationService lootService;
-    RecipeBookFactory recipeBookFactory;
-    IRecipeUnlockRepository recipeUnlockRepository;
-    RecipeUnlockService recipeUnlockService;
-    PotionCraftingService potionCraftingService;
-    RecipeBookCraftingRecipe recipeBookCraftingRecipe;
-    AbilityMenuItemUpdater abilityMenuItemUpdater;
+    private Logger pluginLogger;
+    private ServiceContainer services;
+    private GlowingEntities glowingEntities;
+    private EffectManager effectManager;
 
     @Override
     public void onEnable() {
         this.pluginLogger = this.getLogger();
-        glowingEntities = new GlowingEntities(this);
-        initializeManagers();
+
+        // Initialize NBT builder FIRST (needed by CustomItemFactory)
+        NBTBuilder.setPlugin(this);
+
+        // Initialize external dependencies FIRST (needed by ServiceContainer)
+        try {
+            glowingEntities = new GlowingEntities(this);
+        } catch (Exception e) {
+            pluginLogger.severe("Failed to initialize GlowingEntities! Make sure the dependency is installed.");
+            pluginLogger.severe("Error: " + e.getMessage());
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+
+        try {
+            effectManager = new EffectManager(this);
+        } catch (Exception e) {
+            pluginLogger.severe("Failed to initialize EffectLib! Make sure the dependency is installed.");
+            pluginLogger.severe("Error: " + e.getMessage());
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+
+        if (glowingEntities == null) {
+            pluginLogger.severe("GlowingEntities is null! Make sure the GlowingEntities plugin is installed and enabled.");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+
+        // Initialize service container
+        services = new ServiceContainer(this, glowingEntities, effectManager);
+
+        // Register events and commands
         registerEvents();
         registerCommands();
-        startSchedulers();
-        eventPublisher.subscribeToAbility(ev -> {
+
+        // Start schedulers
+        services.startSchedulers();
+
+        // Setup event subscriptions
+        services.getEventPublisher().subscribeToAbility(ev -> {
             getLogger().info("[GLOBAL-SUB] Got ability event: " + ev.abilityName() + " from " + ev.casterId());
         });
+
+        // Setup rampage event listener
+        services.getEventPublisher().subscribeToRampage(services.getRampageEventListener()::handle);
+
+        // Start regeneration scheduler (every second)
+        startRegenerationScheduler();
+
+        // Register recipes
+        services.getRecipeBookCraftingRecipe().registerRecipe();
+
+        // Load loot tables
+        services.getLootTableConfigLoader().loadLootTable();
+
+        pluginLogger.info("Custom items system initialized:");
+        pluginLogger.info("  Total items: " + services.getCustomItemService().getStatistics().get("totalItems"));
+        pluginLogger.info("Recipe and crafting system initialized");
+    }
+
+    private void startRegenerationScheduler() {
+        getServer().getScheduler().runTaskTimer(
+                this,
+                () -> {
+                    try {
+                        services.getBeyonderService().regenerateAll();
+                    } catch (Exception e) {
+                        getLogger().severe("Error in regeneration scheduler: " + e.getMessage());
+                        e.printStackTrace();
+                        // Continue running - don't let one error stop the scheduler
+                    }
+                },
+                20L,
+                20L
+        );
+    }
+
+    private void initializeCustomItems() {
+        // Custom items are already initialized in ServiceContainer
+        // This method is kept for logging purposes
     }
 
     @Override
     public void onDisable() {
-        stopSchedulers();
+        // Stop schedulers
+        if (services != null) {
+            services.stopSchedulers();
+        }
+
+        // Dispose external dependencies
         if (effectManager != null) {
             effectManager.dispose();
         }
-        glowingEntities.disable();
-        beyonderStorage.saveAll();
-        beyonderStorage.getAll().forEach(((uuid, beyonder) -> beyonder.cleanUpAbilities()));
-        recipeUnlockRepository.saveAll();
+        if (glowingEntities != null) {
+            glowingEntities.disable();
+        }
+
+        // Save all data and cleanup
+        if (services != null) {
+            services.saveAll();
+            services.cleanup();
+        }
 
         super.onDisable();
     }
 
-    private void initializeManagers() {
-        NBTBuilder.setPlugin(this);
-        initializeCustomItems();
-        this.temporaryEventManager = new TemporaryEventManager(this);
-        this.eventPublisher = new DomainEventPublisher();
-        this.rampageManager = new RampageManager(eventPublisher);
-        this.sanityPenaltyHandler = new SanityPenaltyHandler();
-        this.cooldownManager = new CooldownManager();
-        this.rampageScheduler = new RampageScheduler(this, rampageManager);
-        this.abilityItemFactory = new AbilityItemFactory();
-
-        this.pathwayManager = new PathwayManager();
-
-        this.beyonderStorage =
-                new JSONBeyonderRepository(
-                        this.getDataFolder() + File.separator + "beyonders.json",
-                        pathwayManager
-                );
-
-        this.beyonderService = new BeyonderService(beyonderStorage, new BossBarUtil());
-        this.lockManager = new AbilityLockManager();
-        this.effectManager = new EffectManager(this);
-        this.passiveAbilityManager = new PassiveAbilityManager();
-
-        this.abilityContextFactory = new AbilityContextFactory(this, cooldownManager, beyonderService, lockManager,
-                glowingEntities, effectManager, rampageManager, temporaryEventManager, passiveAbilityManager, eventPublisher);
-
-        this.passiveAbilityScheduler = new PassiveAbilityScheduler(
-                this,
-                passiveAbilityManager,
-                beyonderService,
-                abilityContextFactory
-        );
-        this.rampageEventListener = new RampageEventListener(passiveAbilityScheduler, beyonderService);
-        eventPublisher.subscribeToRampage(rampageEventListener::handle);
-
-        this.abilityExecutor = new AbilityExecutor(
-                beyonderService,
-                lockManager,
-                rampageManager,
-                passiveAbilityManager,
-                abilityContextFactory,
-                sanityPenaltyHandler,
-                eventPublisher
-        );
-
-        this.potionItemFactory = new PotionItemFactory();
-        this.potionManager = new PotionManager(pathwayManager, potionItemFactory, customItemService);
-        initializeRecipeSystem();
-        this.abilityMenu = new AbilityMenu(this, abilityItemFactory, recipeUnlockService, potionManager, abilityExecutor);
-        this.abilityMenuItemUpdater = new AbilityMenuItemUpdater(this, beyonderService, abilityMenu);
-        this.recipeBookCraftingRecipe = new RecipeBookCraftingRecipe(this, customItemService);
-        this.recipeBookCraftingRecipe.registerRecipe();
-        this.configLoader = new LootTableConfigLoader(this);
-        configLoader.loadLootTable();
-        this.lootService = new LootGenerationService(this, customItemService, potionManager, recipeBookFactory);
-        this.masteryRegenerationScheduler = new MasteryRegenerationScheduler(this, beyonderService);
-        this.beyonderSleepListener = new BeyonderSleepListener(beyonderService);
-    }
 
     private void registerEvents() {
         AbilityMenuListener abilityMenuListener =
-                new AbilityMenuListener(abilityMenu, beyonderService, abilityItemFactory, pluginLogger);
+                new AbilityMenuListener(services.getAbilityMenu(), services.getBeyonderService(),
+                        services.getAbilityItemFactory(), pluginLogger);
 
         BeyonderPlayerListener beyonderPlayerListener =
-                new BeyonderPlayerListener(beyonderService, new BossBarUtil(), abilityExecutor, abilityItemFactory, pluginLogger);
+                new BeyonderPlayerListener(services.getBeyonderService(), services.getBossBarUtil(),
+                        services.getAbilityExecutor(), services.getAbilityItemFactory(),
+                        services.getRampageManager(), pluginLogger);
 
         PathwayPotionListener pathwayPotionListener =
-                new PathwayPotionListener(potionManager, beyonderService, passiveAbilityScheduler);
+                new PathwayPotionListener(services.getPotionManager(), services.getBeyonderService(),
+                        services.getPassiveAbilityScheduler());
 
         PassiveAbilityLifecycleListener passiveAbilityLifecycleListener =
-                new PassiveAbilityLifecycleListener(this.passiveAbilityScheduler);
+                new PassiveAbilityLifecycleListener(services.getPassiveAbilityScheduler());
 
         RecipeBookInteractionListener recipeBookListener =
-                new RecipeBookInteractionListener(recipeBookFactory, recipeUnlockService);
+                new RecipeBookInteractionListener(services.getRecipeBookFactory(), services.getRecipeUnlockService());
 
         PotionCraftingListener potionCraftingListener =
-                new PotionCraftingListener(this, potionCraftingService);
+                new PotionCraftingListener(this, services.getPotionCraftingService());
 
         MasterRecipeBookListener masterRecipeBookListener = new MasterRecipeBookListener(
                 this,
-                customItemService,
-                recipeUnlockService,
-                potionManager,
-                abilityMenu
+                services.getCustomItemService(),
+                services.getRecipeUnlockService(),
+                services.getPotionManager(),
+                services.getAbilityMenu()
         );
         VanillaStructureLootListener vanillaStructureLootListener =
                 new VanillaStructureLootListener(
                         this,
-                        lootService,
-                        configLoader.getGlobalLootTable()
+                        services.getLootGenerationService(),
+                        services.getLootTableConfigLoader().getGlobalLootTable()
                 );
         getServer().getPluginManager().registerEvents(abilityMenuListener, this);
         getServer().getPluginManager().registerEvents(beyonderPlayerListener, this);
         getServer().getPluginManager().registerEvents(pathwayPotionListener, this);
         getServer().getPluginManager().registerEvents(passiveAbilityLifecycleListener, this);
-        getServer().getPluginManager().registerEvents(beyonderSleepListener, this);
+        getServer().getPluginManager().registerEvents(services.getBeyonderSleepListener(), this);
         getServer().getPluginManager().registerEvents(new PotionCauldronListener(this), this);
         getServer().getPluginManager().registerEvents(recipeBookListener, this);
         getServer().getPluginManager().registerEvents(potionCraftingListener, this);
@@ -199,20 +177,21 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     }
 
     private void registerCommands() {
-        PathwayCommand pathwayCommand = new PathwayCommand(beyonderService, pathwayManager, abilityMenu, abilityItemFactory);
-        SequencePotionCommand sequencePotionCommand = new SequencePotionCommand(potionManager);
-        RampagerCommand rampagerCommand = new RampagerCommand(beyonderService);
-        CustomItemCommand customItemCommand = new CustomItemCommand(customItemService);
+        PathwayCommand pathwayCommand = new PathwayCommand(services.getBeyonderService(),
+                services.getPathwayManager(), services.getAbilityMenu(), services.getAbilityItemFactory());
+        SequencePotionCommand sequencePotionCommand = new SequencePotionCommand(services.getPotionManager());
+        RampagerCommand rampagerCommand = new RampagerCommand(services.getBeyonderService());
+        CustomItemCommand customItemCommand = new CustomItemCommand(services.getCustomItemService());
         RecipeBookCommand recipeBookCommand = new RecipeBookCommand(
-                recipeBookFactory,
-                potionManager,
-                recipeUnlockService
+                services.getRecipeBookFactory(),
+                services.getPotionManager(),
+                services.getRecipeUnlockService()
         );
         getCommand("pathway").setExecutor(pathwayCommand);
         getCommand("pathway").setTabCompleter(pathwayCommand);
         getCommand("potion").setExecutor(sequencePotionCommand);
         getCommand("potion").setTabCompleter(sequencePotionCommand);
-        getCommand("mastery").setExecutor(new MasteryCommand(beyonderService));
+        getCommand("mastery").setExecutor(new MasteryCommand(services.getBeyonderService()));
         getCommand("rampager").setExecutor(rampagerCommand);
         getCommand("rampager").setTabCompleter(rampagerCommand);
         getCommand("custom-items").setExecutor(customItemCommand);
@@ -221,64 +200,4 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getCommand("recipe").setTabCompleter(recipeBookCommand);
     }
 
-    private void startSchedulers() {
-        getServer().getScheduler().runTaskTimer(
-                this,
-                () -> beyonderService.regenerateAll(),
-                20L,
-                20L
-        );
-        rampageScheduler.start();
-        passiveAbilityScheduler.start();
-        masteryRegenerationScheduler.start();
-        abilityMenuItemUpdater.start();
-    }
-
-    private void stopSchedulers() {
-        if (passiveAbilityScheduler != null) {
-            passiveAbilityScheduler.stop();
-        }
-        if (masteryRegenerationScheduler != null) {
-            masteryRegenerationScheduler.stop();
-        }
-        if (rampageScheduler != null) {
-            rampageScheduler.stop();
-        }
-        if (abilityMenuItemUpdater != null) {
-            abilityMenuItemUpdater.stop();
-        }
-    }
-
-    private void initializeCustomItems() {
-        this.customItemFactory = new CustomItemFactory();
-        this.customItemRegistry = new CustomItemRegistry(customItemFactory);
-        CustomItemConfigLoader configLoader = new CustomItemConfigLoader(this);
-        Map<String, CustomItem> items = configLoader.loadItems();
-        customItemRegistry.registerAll(items);
-        this.customItemService = new CustomItemService(customItemRegistry);
-        Map<String, Object> stats = customItemService.getStatistics();
-        pluginLogger.info("Custom items system initialized:");
-        pluginLogger.info("  Total items: " + stats.get("totalItems"));
-    }
-
-    private void initializeRecipeSystem() {
-        // Recipe book factory
-        this.recipeBookFactory = new RecipeBookFactory();
-
-        // Recipe unlock repository
-        String recipeUnlocksPath = this.getDataFolder() + File.separator + "recipe_unlocks.json";
-        this.recipeUnlockRepository = new JSONRecipeUnlockRepository(recipeUnlocksPath);
-
-        // Recipe unlock service
-        this.recipeUnlockService = new RecipeUnlockService(recipeUnlockRepository);
-
-        // Potion crafting service
-        this.potionCraftingService = new PotionCraftingService(
-                potionManager,
-                recipeUnlockService,
-                customItemService
-        );
-
-        pluginLogger.info("Recipe and crafting system initialized");
-    }
 }

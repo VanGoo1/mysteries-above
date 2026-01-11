@@ -56,11 +56,6 @@ public class BattleHypnotism extends ActiveAbility {
         Beyonder beyonder = context.getCasterBeyonder();
         int sequenceVal = beyonder.getSequence().level();
 
-        Spirituality sp = beyonder.getSpirituality();
-        if (sp.current() < BASE_COST) {
-            return AbilityResult.failure("Недостатньо духовності.");
-        }
-
         int range = getRange(sequenceVal);
         RayTraceResult rayTrace = caster.getWorld().rayTraceEntities(
                 caster.getEyeLocation(),
@@ -79,8 +74,7 @@ public class BattleHypnotism extends ActiveAbility {
 
         applyHypnosis(context, caster, target);
 
-        beyonder.setSpirituality(new Spirituality(sp.current() - BASE_COST, sp.maximum()));
-
+        // NOTE: Spirituality and cooldown are handled automatically by Beyonder.useAbility()
         return AbilityResult.success();
     }
 

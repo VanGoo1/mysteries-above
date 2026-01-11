@@ -3,6 +3,7 @@ package me.vangoo.domain.abilities.core;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.services.MasteryProgressionCalculator;
 import me.vangoo.domain.valueobjects.Mastery;
+import me.vangoo.domain.valueobjects.SanityPenalty;
 import me.vangoo.domain.valueobjects.Spirituality;
 
 /**
@@ -54,6 +55,24 @@ public class AbilityResourceConsumer {
         // Check for critical spirituality
         if (beyonder.getSpirituality().isCritical()) {
             beyonder.increaseSanityLoss(2);
+        }
+
+        // Apply sanity penalty check for deferred abilities
+        SanityPenalty penalty = beyonder.checkAndCalculateSanityPenalty();
+        if (penalty.hasEffect()) {
+        // Apply the penalty effects
+        switch (penalty.type()) {
+            case DAMAGE -> {
+                // Damage is handled in SanityPenaltyHandler
+            }
+            case SPIRITUALITY_LOSS -> beyonder.setSpirituality(
+                    beyonder.getSpirituality().decrement(penalty.amount())
+            );
+            case EXTREME -> {
+                // This should trigger rampage, but we'll handle it in AbilityExecutor
+                // Just mark that penalty occurred
+            }
+        }
         }
 
         return true;

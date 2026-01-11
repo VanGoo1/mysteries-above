@@ -86,18 +86,24 @@ public class PassiveAbilityScheduler {
      */
     private void tickAllPlayers() {
         for (Player player : Bukkit.getOnlinePlayers()) {
-            UUID playerId = player.getUniqueId();
-            Beyonder beyonder = beyonderService.getBeyonder(playerId);
+            try {
+                UUID playerId = player.getUniqueId();
+                Beyonder beyonder = beyonderService.getBeyonder(playerId);
 
-            if (beyonder == null) {
-                continue;
+                if (beyonder == null) {
+                    continue;
+                }
+
+                // Get or create context for this player
+                IAbilityContext context = getOrCreateContext(player);
+
+                // Tick all passive abilities
+                passiveAbilityManager.tickPlayer(beyonder, context);
+            } catch (Exception e) {
+                plugin.getLogger().severe("Error ticking abilities for player " + player.getName() + ": " + e.getMessage());
+                e.printStackTrace();
+                // Continue with next player - don't let one player's error stop ticking for everyone
             }
-
-            // Get or create context for this player
-            IAbilityContext context = getOrCreateContext(player);
-
-            // Tick all passive abilities
-            passiveAbilityManager.tickPlayer(beyonder, context);
         }
     }
 

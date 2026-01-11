@@ -15,12 +15,14 @@ public abstract class PathwayPotions {
     private final Color potionColor;
     private final ChatColor nameColor;
     private final List<String> description;
+    protected final IItemResolver itemResolver;
 
     public PathwayPotions(Pathway pathway, Color potionColor, ChatColor nameColor, List<String> description, IItemResolver itemResolver) {
         this.potionColor = potionColor;
         this.pathway = pathway;
         this.nameColor = nameColor;
         this.description = description;
+        this.itemResolver = itemResolver;
         ingredientsPerSequence = new HashMap<>();
     }
 

@@ -2,6 +2,7 @@ package me.vangoo.presentation.listeners;
 
 import me.vangoo.application.services.AbilityExecutor;
 import me.vangoo.application.services.BeyonderService;
+import me.vangoo.application.services.RampageManager;
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.entities.Beyonder;
@@ -30,6 +31,7 @@ public class BeyonderPlayerListener implements Listener {
     private final BossBarUtil bossBarUtil;
     private final AbilityExecutor abilityExecutor;
     private final AbilityItemFactory abilityItemFactory;
+    private final RampageManager rampageManager;
     private final Logger logger;
 
     public BeyonderPlayerListener(
@@ -37,12 +39,14 @@ public class BeyonderPlayerListener implements Listener {
             BossBarUtil bossBarUtil,
             AbilityExecutor abilityExecutor,
             AbilityItemFactory abilityItemFactory,
+            RampageManager rampageManager,
             Logger logger
     ) {
         this.beyonderService = beyonderService;
         this.bossBarUtil = bossBarUtil;
         this.abilityExecutor = abilityExecutor;
         this.abilityItemFactory = abilityItemFactory;
+        this.rampageManager = rampageManager;
         this.logger = logger;
     }
 
@@ -60,6 +64,8 @@ public class BeyonderPlayerListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         bossBarUtil.removePlayer(event.getPlayer());
+        // Ensure rampage state is cleaned up when player quits
+        rampageManager.onPlayerQuit(event.getPlayer().getUniqueId());
     }
 
     @EventHandler

@@ -17,16 +17,9 @@ import org.bukkit.potion.PotionEffectType;
 
 public class DragonScale extends ActiveAbility {
 
-    // Базові значення (умовні для Seq 9), щоб на Seq 6 вони стали збалансованими
     private static final int BASE_DURATION_SECONDS = 21;
-    // На Seq 6 це буде: 20 * 1.45 ≈ 29-30 секунд.
-    // На Seq 4 (Напівбог): 20 * 1.75 = 35 секунд.
-
     private static final int BASE_COST = 150;
-
-
     private static final int BASE_COOLDOWN = 75;
-
 
     @Override
     public String getName() {
@@ -47,16 +40,11 @@ public class DragonScale extends ActiveAbility {
 
     @Override
     public int getCooldown(Sequence userSequence) {
-        // Кулдаун трохи зменшується з рівнем (Divine strategy для зменшення часу)
-        // Але не менше 60 секунд
         double multiplier = SequenceScaler.calculateMultiplier(userSequence.level(), ScalingStrategy.WEAK);
         return Math.max(60, (int) (BASE_COOLDOWN / multiplier));
     }
 
     private int calculateDuration(int sequence) {
-        // Використовуємо MODERATE (15% за рівень сили)
-        // Seq 6 (Power 3): 1.0 + 0.45 = 1.45x -> ~29 сек
-        // Seq 0 (Power 9): 1.0 + 1.35 = 2.35x -> ~47 сек
         double multiplier = SequenceScaler.calculateMultiplier(sequence, ScalingStrategy.MODERATE);
         return (int) (BASE_DURATION_SECONDS * multiplier);
     }
@@ -67,15 +55,8 @@ public class DragonScale extends ActiveAbility {
         Beyonder beyonder = context.getCasterBeyonder();
         int sequenceVal = beyonder.getSequence().level();
 
-        // Додаткова перевірка: Здібність доступна тільки з 6-ї послідовності
-        // (Хоча зазвичай це перевіряється на етапі видачі здібності, тут для надійності)
         if (sequenceVal > 6) {
             return AbilityResult.failure("Ваш рівень послідовності занизький для цієї форми.");
-        }
-
-        Spirituality sp = beyonder.getSpirituality();
-        if (sp.current() < BASE_COST) {
-            return AbilityResult.failure("Недостатньо духовності для матеріалізації луски.");
         }
 
         int durationSeconds = calculateDuration(sequenceVal);
@@ -89,13 +70,15 @@ public class DragonScale extends ActiveAbility {
         // Візуал: Більш "важкий" звук
         context.playSoundToCaster(Sound.ENTITY_ENDER_DRAGON_GROWL, 0.8f, 0.7f);
         context.playSoundToCaster(Sound.ITEM_ARMOR_EQUIP_NETHERITE, 1f, 0.5f);
-
         caster.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "Психологічна луска вкриває ваше тіло!");
 
-        // Візуал: Ефект дихання дракона (Dragon Breath particles)
-        caster.getWorld().spawnParticle(Particle.DRAGON_BREATH, caster.getLocation().add(0, 1, 0), 20, 0.5, 1, 0.5, 0.02);
+        caster.getWorld().spawnParticle(Particle.FLAME,
+                caster.getLocation().add(0, 1, 0),
+                30, 0.5, 1, 0.5, 0.02);
 
-        beyonder.setSpirituality(new Spirituality(sp.current() - BASE_COST, sp.maximum()));
+        caster.getWorld().spawnParticle(Particle.LAVA,
+                caster.getLocation().add(0, 1, 0),
+                10, 0.5, 1, 0.5);
 
         return AbilityResult.success();
     }

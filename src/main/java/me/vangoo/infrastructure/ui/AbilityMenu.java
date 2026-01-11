@@ -43,21 +43,24 @@ public class AbilityMenu {
     private final Map<UUID, AbilityFilter> playerFilters = new HashMap<>();
 
     public enum AbilityFilter {
-        ALL("Всі здібності", Material.NETHER_STAR),
-        ACTIVE("Активні", Material.DIAMOND_SWORD),
-        TOGGLEABLE_PASSIVE("Перемикаються", Material.LEVER),
-        PERMANENT_PASSIVE("Постійні", Material.BEACON);
+        ALL(Material.NETHER_STAR),
+        ACTIVE(Material.DIAMOND_SWORD),
+        TOGGLEABLE_PASSIVE(Material.LEVER),
+        PERMANENT_PASSIVE(Material.BEACON);
 
-        private final String displayName;
         private final Material icon;
 
-        AbilityFilter(String displayName, Material icon) {
-            this.displayName = displayName;
+        AbilityFilter(Material icon) {
             this.icon = icon;
         }
 
         public String getDisplayName() {
-            return displayName;
+            return switch (this) {
+                case ALL -> "Всі здібності";
+                case ACTIVE -> "Активні";
+                case TOGGLEABLE_PASSIVE -> "Перемикаються";
+                case PERMANENT_PASSIVE -> "Постійні";
+            };
         }
 
         public Material getIcon() {
@@ -228,6 +231,11 @@ public class AbilityMenu {
     private GuiItem createAbilityGuiItem(Ability ability, Beyonder beyonder, Player player) {
         ItemStack abilityItem = createAbilityItem(ability, beyonder, player);
 
+        // For active abilities that are already in inventory, make them non-clickable
+        if (ability.getType() == AbilityType.ACTIVE && hasAbilityItem(player, ability, beyonder)) {
+            return new GuiItem(abilityItem); // No click handler - item is not clickable
+        }
+
         return new GuiItem(abilityItem, event -> {
             event.setCancelled(true);
             handleAbilityClick(player, beyonder, ability);
@@ -361,7 +369,7 @@ public class AbilityMenu {
     private void handleAbilityClick(Player player, Beyonder beyonder, Ability ability) {
         switch (ability.getType()) {
             case ACTIVE -> {
-                // Check if player already has this ability item
+                // Double-check: Prevent duplicates by checking inventory again
                 if (hasAbilityItem(player, ability, beyonder)) {
                     player.sendMessage(ChatColor.RED + "Ця здібність вже є у вашому інвентарі!");
                     player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);

@@ -32,7 +32,18 @@ public class AbilityItemFactory {
 
             if (ability.getType() == AbilityType.ACTIVE) {
                 lore.add(ChatColor.GRAY + "Кулдаун: " + ChatColor.BLUE + ability.getCooldown(userSequence) + "c");
-                lore.add(ChatColor.GRAY + "Вартість: " + ChatColor.BLUE + ability.getSpiritualityCost());
+
+                // Display cost based on ability type
+                int immediateCost = ability.getSpiritualityCost();
+                int periodicCost = ability.getPeriodicCost();
+
+                if (periodicCost > 0) {
+                    // Channeled/toggle ability with periodic cost
+                    lore.add(ChatColor.GRAY + "Вартість: " + ChatColor.BLUE + periodicCost + "/сек");
+                } else {
+                    // Instant ability with immediate cost
+                    lore.add(ChatColor.GRAY + "Вартість: " + ChatColor.BLUE + immediateCost);
+                }
             }
 
             try {

@@ -19,6 +19,16 @@ public abstract class Ability {
     public abstract int getSpiritualityCost();
 
     /**
+     * Get periodic spirituality cost (per second) for channeled/toggle abilities.
+     * Return 0 for instant abilities.
+     *
+     * @return Spirituality cost per second, or 0 if not applicable
+     */
+    public int getPeriodicCost() {
+        return 0; // Default: no periodic cost
+    }
+
+    /**
      * Cooldown in seconds
      */
     public abstract int getCooldown(Sequence userSequence);

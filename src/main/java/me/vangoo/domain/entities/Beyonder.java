@@ -8,6 +8,7 @@ import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.services.SpiritualityCalculator;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Beyonder {
     private final UUID playerId;
@@ -17,7 +18,7 @@ public class Beyonder {
     private Spirituality spirituality;
     private SanityLoss sanityLoss;
     private transient Random random;
-    private transient List<Ability> abilities;
+    private transient volatile List<Ability> abilities;
     private transient SpiritualityCalculator spiritualityCalculator;
     private transient AbilityTransformer abilityTransformer;
     private transient Set<Ability> offPathwayActiveAbilities;
@@ -39,7 +40,7 @@ public class Beyonder {
         this.mastery = Mastery.zero();
         this.sanityLoss = SanityLoss.none();
         this.abilities = new ArrayList<>();
-        this.offPathwayActiveAbilities = new HashSet<>();
+        this.offPathwayActiveAbilities = ConcurrentHashMap.newKeySet();
         this.spiritualityCalculator = new SpiritualityCalculator();
         this.abilityTransformer = new AbilityTransformer();
         this.random = new Random();
@@ -79,7 +80,7 @@ public class Beyonder {
     /**
      * Initialize transient fields after deserialization
      */
-    public void initializeTransientFields() {
+    public synchronized void initializeTransientFields() {
         if (spiritualityCalculator == null) {
             spiritualityCalculator = new SpiritualityCalculator();
         }
@@ -92,8 +93,8 @@ public class Beyonder {
         if (abilities == null || abilities.isEmpty()) {
             loadAbilities();
         }
-        if (offPathwayActiveAbilities == null || offPathwayActiveAbilities.isEmpty()) {
-            offPathwayActiveAbilities = new HashSet<>();
+        if (offPathwayActiveAbilities == null) {
+            offPathwayActiveAbilities = ConcurrentHashMap.newKeySet();
         }
     }
 
@@ -119,7 +120,7 @@ public class Beyonder {
         return beyonder;
     }
 
-    public boolean addOffPathwayAbility(Ability ability) {
+    public synchronized boolean addOffPathwayAbility(Ability ability) {
         if (ability == null) {
             throw new IllegalArgumentException("Ability cannot be null");
         }
@@ -137,7 +138,7 @@ public class Beyonder {
         return true;
     }
 
-    public boolean removeAbility(AbilityIdentity identity) {
+    public synchronized boolean removeAbility(AbilityIdentity identity) {
         if (identity == null) {
             throw new IllegalArgumentException("AbilityIdentity cannot be null");
         }
@@ -148,7 +149,7 @@ public class Beyonder {
         );
 
         // Remove from main abilities list
-        boolean removedFromActive = abilities.removeIf(
+        boolean removedFromActive = abilities != null && abilities.removeIf(
                 ability -> ability.getIdentity().equals(identity)
         );
 
@@ -167,8 +168,10 @@ public class Beyonder {
     /**
      * Clear all custom abilities
      */
-    public void clearCustomAbilities() {
-        abilities.removeIf(ability -> offPathwayActiveAbilities.contains(ability));
+    public synchronized void clearCustomAbilities() {
+        if (abilities != null) {
+            abilities.removeIf(ability -> offPathwayActiveAbilities.contains(ability));
+        }
         offPathwayActiveAbilities.clear();
     }
 
@@ -198,7 +201,7 @@ public class Beyonder {
         }
     }
 
-    public void advance() {
+    public synchronized void advance() {
         if (!canAdvance()) {
             throw new IllegalStateException(
                     "Cannot advance: sequence=" + sequence + ", mastery=" + mastery);
@@ -214,7 +217,7 @@ public class Beyonder {
         abilities = abilityTransformer.transform(oldAbilities, newSequenceAbilities);
     }
 
-    public void advanceWithPathwayChange(Pathway newPathway) {
+    public synchronized void advanceWithPathwayChange(Pathway newPathway) {
         if (newPathway == null) {
             throw new IllegalArgumentException("New pathway cannot be null");
         }
@@ -222,6 +225,13 @@ public class Beyonder {
             throw new IllegalArgumentException(
                     "New pathway must be from the same group: current=" +
                             pathway.getGroup() + ", new=" + newPathway.getGroup());
+        }
+
+        // CRITICAL: Pathway changes are only allowed at high sequences (9+)
+        // This prevents sequence 1 players from switching pathways
+        if (sequence.level() < 9) {
+            throw new IllegalStateException(
+                    "Pathway changes are only allowed at sequence 9 or higher. Current sequence: " + sequence.level());
         }
 
         if (!canAdvance()) {
@@ -295,7 +305,7 @@ public class Beyonder {
         return AbilityResult.success();
     }
 
-    private SanityPenalty checkAndCalculateSanityPenalty() {
+    public SanityPenalty checkAndCalculateSanityPenalty() {
         // Negligible sanity loss - no check needed
         if (sanityLoss.isNegligible()) {
             return SanityPenalty.none();
@@ -408,6 +418,13 @@ public class Beyonder {
     }
 
     public void setSpirituality(Spirituality spirituality) {
+        if (spirituality == null) {
+            throw new IllegalArgumentException("Spirituality cannot be null");
+        }
+        // Additional validation to prevent bypassing decrement() protections
+        if (spirituality.current() < 0) {
+            throw new IllegalArgumentException("Cannot set spirituality to negative value: " + spirituality.current());
+        }
         this.spirituality = spirituality;
     }
 
@@ -469,8 +486,9 @@ public class Beyonder {
     }
 
     public List<Ability> getAbilities() {
+        // Ensure transient fields are initialized (lazy initialization)
         if (abilities == null) {
-            return Collections.emptyList();
+            initializeTransientFields();
         }
 
         // Merge pathway abilities with off-pathway abilities

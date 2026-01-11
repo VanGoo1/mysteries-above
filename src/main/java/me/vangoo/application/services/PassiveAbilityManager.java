@@ -51,22 +51,33 @@ public class PassiveAbilityManager {
      * @return true if now enabled, false if now disabled
      */
     public boolean toggleAbility(UUID playerId, ToggleablePassiveAbility ability, IAbilityContext context) {
-        Set<AbilityIdentity> enabled = enabledToggleableAbilities.computeIfAbsent(playerId, k -> ConcurrentHashMap.newKeySet());
-
         AbilityIdentity abilityIdentity = ability.getIdentity();
-        boolean wasEnabled = enabled.contains(abilityIdentity);
 
-        if (wasEnabled) {
-            // Disable
-            enabled.remove(abilityIdentity);
-            ability.onDisable(context);
-            return false;
-        } else {
-            // Enable
-            enabled.add(abilityIdentity);
-            ability.onEnable(context);
-            return true;
-        }
+        // Use atomic compute operation to avoid race conditions
+        boolean[] result = new boolean[1];
+        enabledToggleableAbilities.compute(playerId, (id, enabled) -> {
+            if (enabled == null) {
+                enabled = ConcurrentHashMap.newKeySet();
+            }
+
+            boolean wasEnabled = enabled.contains(abilityIdentity);
+
+            if (wasEnabled) {
+                // Disable
+                enabled.remove(abilityIdentity);
+                ability.onDisable(context);
+                result[0] = false;
+            } else {
+                // Enable
+                enabled.add(abilityIdentity);
+                ability.onEnable(context);
+                result[0] = true;
+            }
+
+            return enabled.isEmpty() ? null : enabled;
+        });
+
+        return result[0];
     }
 
     /**

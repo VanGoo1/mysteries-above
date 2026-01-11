@@ -51,6 +51,11 @@ public class PsychologicalInvisibility extends ActiveAbility {
     }
 
     @Override
+    public int getPeriodicCost() {
+        return COST_PER_SECOND;
+    }
+
+    @Override
     public int getCooldown(Sequence userSequence) {
         return COOLDOWN_SECONDS;
     }
@@ -62,8 +67,8 @@ public class PsychologicalInvisibility extends ActiveAbility {
         Beyonder beyonder = context.getCasterBeyonder();
 
         if (activeCancellers.containsKey(uuid)) {
-            // Ручна деактивація - БЕЗ кулдауну
-            disableInvisibility(context, caster, "деактивація", false);
+            // Ручна деактивація - З кулдауном
+            disableInvisibility(context, caster, "деактивація", true);
             return AbilityResult.success();
         }
 
@@ -72,7 +77,8 @@ public class PsychologicalInvisibility extends ActiveAbility {
         }
 
         enableInvisibility(context, caster);
-        return AbilityResult.success();
+        // Deferred - НЕ встановлювати КД при активації, він буде встановлений при вимкненні
+        return AbilityResult.deferred();
     }
 
     private void enableInvisibility(IAbilityContext context, Player caster) {
