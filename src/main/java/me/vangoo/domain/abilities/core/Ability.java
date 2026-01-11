@@ -61,6 +61,8 @@ public abstract class Ability {
         AbilityResult sequenceCheckResult = performSequenceBasedSuccessCheck(context);
         if (sequenceCheckResult != null) {
             // Ability uses sequence-based success and check failed
+            // КРИТИЧНО: НЕ встановлювати кулдаун для deferred здібностей!
+            // Кулдаун буде встановлений пізніше через AbilityResourceConsumer
             context.setCooldown(this, getCooldown(context.getCasterBeyonder().getSequence()));
             return sequenceCheckResult;
         }
@@ -68,10 +70,18 @@ public abstract class Ability {
         // MAIN EXECUTION
         AbilityResult result = performExecution(context);
 
+        // КРИТИЧНО: НЕ встановлювати кулдаун якщо результат deferred!
+        if (result.isDeferred()) {
+            return result;
+        }
+
         if (result.isSuccess()) {
             postExecution(context);
+            // Кулдаун встановлюється пізніше через AbilityResourceConsumer
+            // для deferred здібностей, або тут для звичайних
             if (getType() == AbilityType.ACTIVE) {
-                context.setCooldown(this, getCooldown(context.getCasterBeyonder().getSequence()));
+                // НЕ встановлюємо кулдаун тут - це робить AbilityResourceConsumer
+                // context.setCooldown(this, getCooldown(context.getCasterBeyonder().getSequence()));
             }
         }
         return result;

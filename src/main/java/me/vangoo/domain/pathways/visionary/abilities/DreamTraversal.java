@@ -1,8 +1,10 @@
 package me.vangoo.domain.pathways.visionary.abilities;
 
+import me.vangoo.domain.abilities.core.AbilityResourceConsumer;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -54,13 +56,13 @@ public class DreamTraversal extends ActiveAbility {
         if (sleepingPlayers.size() == 1) {
             // Передаємо UUID — пізніше під час виконання не будемо викликати context.getPlayer(...)
             startTeleportSequence(context, sleepingPlayers.getFirst().getUniqueId(), sleepingPlayers.getFirst().getName());
-            return AbilityResult.success();
+            return AbilityResult.deferred();
         }
 
         // Якщо кілька — показуємо меню вибору (передаємо Player-об'єкти для побудови UI, але у callback'у передаєм UUID)
         openDreamTargetMenu(context, sleepingPlayers);
 
-        return AbilityResult.success();
+        return AbilityResult.deferred();
     }
     private int calculateRange(Sequence sequence) {
         int currentLevel = sequence.level();
@@ -145,6 +147,12 @@ public class DreamTraversal extends ActiveAbility {
      * Тепер передаємо UUID та відоме ім'я (щоб не звертатись за Player об'єктами пізніше).
      */
     private void startTeleportSequence(IAbilityContext context, UUID targetId, String targetName) {
+        Beyonder casterBeyonder = context.getCasterBeyonder();
+        if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, context)) {
+            context.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
+            return;
+        }
+
         // Закриваємо меню у кастера
         Player caster = context.getCaster();
         caster.closeInventory();

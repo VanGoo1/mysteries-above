@@ -1,13 +1,14 @@
 package me.vangoo.domain.pathways.visionary.abilities;
 
 import me.vangoo.domain.abilities.core.*;
+import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.valueobjects.*;
 import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.*;
-import org.bukkit.event.vehicle.VehicleEnterEvent; // Додано імпорт
+import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffectType;
@@ -72,7 +73,8 @@ public class PsychicCue extends ActiveAbility {
             openBasicMenu(context, target);
         }
 
-        return AbilityResult.success();
+        // КРИТИЧНО: Повертаємо deferred - ресурси будуть спожиті пізніше
+        return AbilityResult.deferred();
     }
 
     /**
@@ -138,7 +140,7 @@ public class PsychicCue extends ActiveAbility {
                 e -> {
                     e.setCancelled(true);
 
-                    // Скасування
+                    // Скасування - НЕ споживає ресурси
                     if (e.getPlayer().isSneaking()) {
                         ctx.sendMessageToCaster(ChatColor.YELLOW + "✗ Навігація скасована");
                         ctx.playSoundToCaster(Sound.ENTITY_VILLAGER_NO, 0.7f, 1.0f);
@@ -157,6 +159,7 @@ public class PsychicCue extends ActiveAbility {
                             return;
                         }
 
+                        // ТІЛЬКИ ТУТ споживаємо ресурси
                         applyNavigationCue(ctx, target, destination);
                     }
                 },
@@ -168,13 +171,21 @@ public class PsychicCue extends ActiveAbility {
      * Застосувати сигнал навігації
      */
     private void applyNavigationCue(IAbilityContext ctx, Player target, Location destination) {
+        Beyonder casterBeyonder = ctx.getCasterBeyonder();
+
+        // КРИТИЧНО: Споживаємо ресурси ТІЛЬКИ ЗАРАЗ
+        if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
+            ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
+            return;
+        }
+
         // Візуальні ефекти
         ctx.spawnParticle(Particle.WITCH, target.getEyeLocation(), 15, 0.4, 0.4, 0.4);
         ctx.playSound(target.getLocation(), Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.5f, 0.8f);
         ctx.spawnParticle(Particle.END_ROD, destination, 30, 0.3, 0.5, 0.3);
         ctx.playSound(destination, Sound.BLOCK_BEACON_ACTIVATE, 0.7f, 1.5f);
 
-        // 1. ПЕРЕВІРКА ТРАНСПОРТУ: Якщо ціль вже в човні/вагонетці — викидаємо
+        // Якщо ціль вже в човні/вагонетці — викидаємо
         if (target.isInsideVehicle()) {
             target.leaveVehicle();
         }
@@ -186,14 +197,12 @@ public class PsychicCue extends ActiveAbility {
         target.sendMessage(ChatColor.DARK_PURPLE + "✦ Ваша свідомість отримала новий імператив...");
         target.sendMessage(ChatColor.GRAY + "Щось притягує вас до певної точці...");
 
-        // Стан активності (використовуємо масив як mutable boolean wrapper)
-        // Це дозволяє передати посилання на змінну і в таймер, і в івент
+        // Стан активності
         final boolean[] isActive = {true};
 
-        // 2. ЗАБОРОНА СІДАТИ В ТРАНСПОРТ
+        // Заборона сідати в транспорт
         ctx.subscribeToEvent(
                 VehicleEnterEvent.class,
-                // Спрацьовує тільки для цілі і ТІЛЬКИ ПОКИ імператив активний (isActive[0] == true)
                 e -> e.getEntered().getUniqueId().equals(target.getUniqueId()) && isActive[0],
                 e -> {
                     e.setCancelled(true);
@@ -202,7 +211,7 @@ public class PsychicCue extends ActiveAbility {
                 DURATION_TICKS
         );
 
-        // Запускаємо цикл навігації, передаючи контроль стану
+        // Запускаємо цикл навігації
         startNavigationLoop(ctx, target, destination, isActive);
     }
 
@@ -210,29 +219,27 @@ public class PsychicCue extends ActiveAbility {
      * Цикл навігації - ФІЗИЧНО притягує гравця до точки
      */
     private void startNavigationLoop(IAbilityContext ctx, Player target, Location destination, boolean[] isActive) {
-        final int CHECK_INTERVAL = 5; // Перевірка кожні 0.25 секунди (швидше = плавніше)
-        final double COMPLETION_RADIUS = 2.0; // Радіус виконання в блоках
-        final double PULL_STRENGTH = 0.3; // Сила притягання
-        final double MIN_DISTANCE_FOR_PULL = 3.0; // Мінімальна відстань для притягання
+        final int CHECK_INTERVAL = 5;
+        final double COMPLETION_RADIUS = 2.0;
+        final double PULL_STRENGTH = 0.3;
+        final double MIN_DISTANCE_FOR_PULL = 3.0;
 
-        // Трекер для уникнення спаму
-        final int[] lastDistanceBracket = {-1}; // Остання "категорія" відстані
-        final boolean[] lastSlownessApplied = {false}; // Чи був застосований slowness
+        final int[] lastDistanceBracket = {-1};
+        final boolean[] lastSlownessApplied = {false};
 
         ctx.scheduleRepeating(new Runnable() {
             int ticksPassed = 0;
-            int pullCounter = 0; // Лічильник для менш частого притягання
+            int pullCounter = 0;
 
             @Override
             public void run() {
-                // КРИТИЧНО: перевірка активності на початку
                 if (!isActive[0]) {
-                    return; // Вже завершено, не виконуємо більше
+                    return;
                 }
 
                 if (ticksPassed >= DURATION_TICKS) {
-                    if (isActive[0]) { // Час вийшов
-                        isActive[0] = false; // Вимикаємо заборону транспорту
+                    if (isActive[0]) {
+                        isActive[0] = false;
                         target.sendMessage(ChatColor.YELLOW + "✓ Імператив згас...");
                         ctx.playSound(target.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 0.8f);
                         ctx.removeEffect(target.getUniqueId(), PotionEffectType.SLOWNESS);
@@ -244,15 +251,14 @@ public class PsychicCue extends ActiveAbility {
                     isActive[0] = false;
                     return;
                 }
-                // Малюємо маркер кожні 5 тіків
+
                 drawTargetMarker(ctx, destination);
                 Location currentLoc = target.getLocation();
                 double distance = currentLoc.distance(destination);
 
-                // Перевірка досягнення цілі
                 if (distance <= COMPLETION_RADIUS) {
-                    if (isActive[0]) { // Успіх
-                        isActive[0] = false; // Вимикаємо заборону транспорту
+                    if (isActive[0]) {
+                        isActive[0] = false;
                         target.sendMessage(ChatColor.GREEN + "✓ Ви досягли пункту призначення");
                         ctx.spawnParticle(Particle.TOTEM_OF_UNDYING, currentLoc, 20, 0.5, 1, 0.5);
                         ctx.playSound(currentLoc, Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.2f);
@@ -261,17 +267,14 @@ public class PsychicCue extends ActiveAbility {
                     return;
                 }
 
-                // ФІЗИЧНЕ ПРИТЯГАННЯ кожні 0.5 секунди
                 pullCounter++;
                 if (pullCounter >= 2 && distance > MIN_DISTANCE_FOR_PULL) {
                     pullCounter = 0;
 
-                    // Розрахунок вектора притягання
                     Vector direction = destination.toVector()
                             .subtract(currentLoc.toVector())
                             .normalize();
 
-                    // Адаптивна сила залежно від відстані
                     double adaptivePullStrength = PULL_STRENGTH;
                     if (distance > 20) {
                         adaptivePullStrength = PULL_STRENGTH * 1.5;
@@ -285,14 +288,12 @@ public class PsychicCue extends ActiveAbility {
 
                     target.setVelocity(pullVelocity);
 
-                    // Тихі ефекти притягання (без звуку, тільки частинки)
                     ctx.spawnParticle(Particle.WITCH, currentLoc.clone().add(0, 1, 0), 2, 0.2, 0.2, 0.2);
                     ctx.spawnParticle(Particle.END_ROD,
                             currentLoc.clone().add(direction.multiply(1.5)).add(0, 1, 0),
                             1, 0.1, 0.1, 0.1);
                 }
 
-                // Дезорієнтація - повільність кожні 4 секунди
                 if (ticksPassed % 80 == 0 && !lastSlownessApplied[0]) {
                     ctx.applyEffect(target.getUniqueId(), PotionEffectType.SLOWNESS, 100, 0);
                     lastSlownessApplied[0] = true;
@@ -300,7 +301,6 @@ public class PsychicCue extends ActiveAbility {
                     lastSlownessApplied[0] = false;
                 }
 
-                // Підказки - тільки при ЗМІНІ відстані (кожні 10 блоків)
                 int currentBracket = (int)(distance / 10);
 
                 if (ticksPassed % 40 == 0 && currentBracket != lastDistanceBracket[0]) {
@@ -309,12 +309,10 @@ public class PsychicCue extends ActiveAbility {
                     Vector direction = destination.toVector().subtract(currentLoc.toVector()).normalize();
                     Location particleLoc = currentLoc.clone().add(direction.multiply(2)).add(0, 1.5, 0);
 
-                    // Візуальні ефекти
                     ctx.spawnParticle(Particle.SOUL_FIRE_FLAME, particleLoc, 8, 0.2, 0.2, 0.2);
                     ctx.playSound(currentLoc, Sound.BLOCK_NOTE_BLOCK_BELL, 0.4f, 1.5f);
                     ctx.playSound(currentLoc, Sound.ENTITY_VEX_AMBIENT, 0.2f, 0.8f);
 
-                    // Повідомлення
                     String arrow = getDirectionArrow(currentLoc, destination);
                     target.sendMessage(ChatColor.DARK_PURPLE + arrow + " " + ChatColor.GRAY +
                             "Імператив тягне вас... (" + (int)distance + "м)");
@@ -324,36 +322,26 @@ public class PsychicCue extends ActiveAbility {
             }
         }, 0, CHECK_INTERVAL);
     }
+
     private void drawTargetMarker(IAbilityContext ctx, Location destination) {
-        // Опускаємо точку трохи нижче, щоб коло було біля підлоги
         Location floorLoc = destination.clone().subtract(0, 0.8, 0);
 
-        // 1. Стовп світла (Центр)
-        // Малюємо 3 точки по вертикалі
         for (double y = 0; y < 2.5; y += 0.8) {
-            // END_ROD дає гарне біле світіння
             ctx.spawnParticle(Particle.END_ROD, floorLoc.clone().add(0, y, 0), 1, 0, 0, 0);
         }
 
-        // 2. Магічне коло навколо
-        // Малюємо 8 точок по колу
         for (int degree = 0; degree < 360; degree += 45) {
             double radians = Math.toRadians(degree);
-            double x = Math.cos(radians) * 0.7; // Радіус 0.7
+            double x = Math.cos(radians) * 0.7;
             double z = Math.sin(radians) * 0.7;
 
             Location point = floorLoc.clone().add(x, 0.1, z);
-
-            // SPELL_WITCH - це фіолетові частинки, ідеально для Візіонера
             ctx.spawnParticle(Particle.WITCH, point, 1, 0, 0, 0);
         }
 
-        // Додаткова точка по центру для акценту
         ctx.spawnParticle(Particle.DRAGON_BREATH, floorLoc.clone().add(0, 0.2, 0), 1, 0.1, 0.1, 0.1);
     }
-    /**
-     * Отримати стрілку напрямку на основі координат
-     */
+
     private String getDirectionArrow(Location from, Location to) {
         double dx = to.getX() - from.getX();
         double dz = to.getZ() - from.getZ();
@@ -369,6 +357,14 @@ public class PsychicCue extends ActiveAbility {
      * Застосувати базовий сигнал (для всіх послідовностей)
      */
     private void applyCue(IAbilityContext ctx, Player target, PsychicCueType type) {
+        Beyonder casterBeyonder = ctx.getCasterBeyonder();
+
+        // КРИТИЧНО: Споживаємо ресурси ТІЛЬКИ ЗАРАЗ, коли сигнал застосовується
+        if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
+            ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
+            return;
+        }
+
         switch (type) {
             case HUNGER -> ctx.subscribeToEvent(
                     PlayerItemConsumeEvent.class,

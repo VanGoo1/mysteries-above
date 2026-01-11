@@ -259,6 +259,13 @@ public class Beyonder {
             return executionResult;
         }
 
+        // КРИТИЧНО: Якщо execution is deferred, НЕ споживати ресурси!
+        // Ресурси будуть спожиті пізніше через AbilityResourceConsumer
+        if (executionResult.isDeferred()) {
+            return executionResult;
+        }
+
+        // Тепер споживаємо ресурси ТІЛЬКИ якщо здібність НЕ deferred
         if (ability.getType() == AbilityType.ACTIVE) {
             int cost = ability.getSpiritualityCost();
             spirituality = spirituality.decrement(cost);
@@ -267,6 +274,9 @@ public class Beyonder {
             if (masteryGain > 0) {
                 mastery = mastery.add(masteryGain);
             }
+
+            // Set cooldown for immediate (non-deferred) abilities
+            context.setCooldown(ability, ability.getCooldown(sequence));
 
             if (spirituality.isCritical()) {
                 increaseSanityLoss(2);

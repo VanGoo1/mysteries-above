@@ -94,7 +94,8 @@ public class Record extends ActiveAbility {
                 selectedPlayer -> startRecording(context, selectedPlayer)
         );
 
-        return AbilityResult.success();
+        // Return deferred - spirituality will be consumed when recording actually happens
+        return AbilityResult.deferred();
     }
 
     /**
@@ -315,6 +316,15 @@ public class Record extends ActiveAbility {
         if (!added) {
             context.sendMessageToCaster(ChatColor.RED +
                     "Не вдалося додати здібність (можливо вона вже існує)");
+            return;
+        }
+
+        // Consume spirituality and grant mastery NOW (deferred execution complete)
+        if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, context)) {
+            // This shouldn't happen since we checked at the beginning, but handle it anyway
+            context.sendMessageToCaster(ChatColor.RED +
+                    "Недостатньо духовності для завершення запису!");
+            casterBeyonder.removeAbility(oneTimeAbility.getIdentity());
             return;
         }
 

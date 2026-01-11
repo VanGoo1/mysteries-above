@@ -1,8 +1,10 @@
 package me.vangoo.domain.pathways.visionary.abilities;
 
+import me.vangoo.domain.abilities.core.AbilityResourceConsumer;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.*;
@@ -20,17 +22,13 @@ public class Alteration extends ActiveAbility {
     // КОНСТАНТИ
     private static final int RANGE = 5;
     private static final int BASE_COST = 250;
-    private static final int BASE_COOLDOWN_SECONDS = 90; // Базовий кулдаун у секундах
+    private static final int BASE_COOLDOWN_SECONDS = 90;
     private static final int MODIFICATION_DURATION_TICKS = 3600; // 3 хвилини
     private static final int EFFECT_DURATION_TICKS = 200; // 15 секунд
     private static final int MAX_MODIFICATIONS_PER_TARGET = 2;
 
     // СТАН
-    // Зберігання активних модифікацій: targetId -> List<ModificationData>
     private final Map<UUID, List<ModificationData>> activeModifications = new HashMap<>();
-
-    // Ручне зберігання кулдаунів: casterId -> час завершення кулдауну (ms)
-    private final Map<UUID, Long> manualCooldowns = new HashMap<>();
 
     @Override
     public String getName() {
@@ -45,19 +43,13 @@ public class Alteration extends ActiveAbility {
 
     @Override
     public int getSpiritualityCost() {
-        return 0; // Списуємо вручну при застосуванні
+        return BASE_COST;
     }
 
     @Override
     public int getCooldown(Sequence userSequence) {
-        return 0; // Керуємо вручну
-    }
-
-    // Розрахунок реального часу кулдауну в мілісекундах
-    private long calculateRealCooldownMs(Sequence userSequence) {
         double multiplier = SequenceScaler.calculateMultiplier(userSequence.level(), SequenceScaler.ScalingStrategy.WEAK);
-        int seconds = (int) (BASE_COOLDOWN_SECONDS / multiplier);
-        return Math.max(10, seconds) * 1000L;
+        return Math.max(10, (int) (BASE_COOLDOWN_SECONDS / multiplier));
     }
 
     @Override
@@ -67,23 +59,6 @@ public class Alteration extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCaster();
-        UUID casterId = caster.getUniqueId();
-
-        // 1. ПЕРЕВІРКА РУЧНОГО КУЛДАУНУ
-        if (manualCooldowns.containsKey(casterId)) {
-            long expirationTime = manualCooldowns.get(casterId);
-            long timeLeftMs = expirationTime - System.currentTimeMillis();
-
-            if (timeLeftMs > 0) {
-                long secondsLeft = (timeLeftMs / 1000) + 1;
-                return AbilityResult.failure("Здібність перезаряджається: " + secondsLeft + "с");
-            } else {
-                // Час вийшов, видаляємо запис, щоб не засмічувати пам'ять
-                manualCooldowns.remove(casterId);
-            }
-        }
-
         Optional<LivingEntity> targetOpt = context.getTargetedEntity(RANGE);
 
         if (targetOpt.isEmpty() || !(targetOpt.get() instanceof Player target)) {
@@ -91,7 +66,8 @@ public class Alteration extends ActiveAbility {
         }
 
         openMainMenu(context, target);
-        return AbilityResult.success();
+        // Return deferred - spirituality will be consumed when modification is actually applied
+        return AbilityResult.deferred();
     }
 
     // ==========================================
@@ -115,9 +91,18 @@ public class Alteration extends ActiveAbility {
     private void handleMainMenuChoice(IAbilityContext ctx, Player target, MainMenuOption option) {
         switch (option) {
             case ADD_NEW -> openModificationCreationMenu(ctx, target);
-            case VIEW_LIST -> openModificationListMenu(ctx, target);
-            case REMOVE -> openRemovalMenu(ctx, target);
-            case CANCEL -> ctx.sendMessageToCaster(ChatColor.GRAY + "Скасовано");
+            case VIEW_LIST -> {
+                openModificationListMenu(ctx, target);
+                // Viewing doesn't consume resources - just show info
+            }
+            case REMOVE -> {
+                openRemovalMenu(ctx, target);
+                // Removing doesn't consume resources
+            }
+            case CANCEL -> {
+                ctx.sendMessageToCaster(ChatColor.GRAY + "Скасовано");
+                // Cancelling doesn't consume resources
+            }
         }
     }
 
@@ -235,51 +220,42 @@ public class Alteration extends ActiveAbility {
     }
 
     // ==========================================
-    // ЗАСТОСУВАННЯ (З ФІКСОМ КУЛДАУНУ)
+    // ЗАСТОСУВАННЯ (З ВИПРАВЛЕННЯМ КУЛДАУНУ)
     // ==========================================
     private void applyModification(IAbilityContext ctx, Player target, TriggerType trigger, EffectType effect) {
         UUID targetId = target.getUniqueId();
-        UUID casterId = ctx.getCasterId();
         Player caster = ctx.getCaster();
+        Beyonder casterBeyonder = ctx.getCasterBeyonder();
 
-        caster.closeInventory(); // Закриваємо меню
+        caster.closeInventory();
 
         List<ModificationData> mods = activeModifications.computeIfAbsent(targetId, k -> new ArrayList<>());
 
-        // Ліміти
+        // Перевірка ліміту
         if (mods.size() >= MAX_MODIFICATIONS_PER_TARGET) {
             ctx.sendMessageToCaster(ChatColor.RED + "✗ Досягнуто ліміт модифікацій на цій цілі!");
             ctx.playSoundToCaster(Sound.BLOCK_ANVIL_LAND, 1f, 2f);
             return;
         }
 
-        // Духовність (мануал)
-        if (!ctx.getCasterBeyonder().getSpirituality().hasSufficient(BASE_COST)) {
-            ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності (" + BASE_COST + ")");
+        // КРИТИЧНО: Споживаємо ресурси ТІЛЬКИ ЗАРАЗ, коли модифікація справді створюється
+        if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
+            ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності для створення модифікації!");
             return;
         }
 
-        ctx.getCasterBeyonder().setSpirituality(
-                ctx.getCasterBeyonder().getSpirituality().decrement(BASE_COST)
-        );
-
-        // КУЛДАУН (МАНУАЛ) - Це виправляє вашу проблему
-        long cooldownMs = calculateRealCooldownMs(ctx.getCasterBeyonder().getSequence());
-        manualCooldowns.put(casterId, System.currentTimeMillis() + cooldownMs);
-
-        // Логіка створення
+        // Створюємо модифікацію
         long expirationTime = System.currentTimeMillis() + (MODIFICATION_DURATION_TICKS * 50L);
-        ModificationData mod = new ModificationData(casterId, trigger, effect, expirationTime);
+        ModificationData mod = new ModificationData(ctx.getCasterId(), trigger, effect, expirationTime);
         mods.add(mod);
 
         subscribeTriggerEvent(ctx, targetId, trigger, effect, mod);
 
-        // Таймер на видалення самої модифікації через 5 хв
+        // Таймер на видалення модифікації через 3 хвилини
         ctx.scheduleDelayed(() -> removeModification(targetId, mod), MODIFICATION_DURATION_TICKS);
 
         // Фідбек
         ctx.sendMessageToCaster(ChatColor.GREEN + "✓ Видозміну успішно створено!");
-        ctx.sendMessageToCaster(ChatColor.GRAY + " [Кулдаун: " + (cooldownMs / 1000) + "с]");
         ctx.playSoundToCaster(Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1f, 1.5f);
 
         ctx.getCaster().spawnParticle(Particle.WITCH, target.getEyeLocation().add(0, 0.5, 0), 10, 0.2, 0.2, 0.2, 0);
@@ -332,7 +308,7 @@ public class Alteration extends ActiveAbility {
     private void applyEffect(IAbilityContext ctx, UUID targetId, EffectType effect, ModificationData mod) {
         List<ModificationData> activeList = activeModifications.get(targetId);
         if (activeList == null || !activeList.contains(mod)) {
-            return; // Це зупиняє ефект, якщо ви видалили його через меню
+            return;
         }
         if (System.currentTimeMillis() - mod.lastTriggerTime < 3000) {
             return;
@@ -350,12 +326,10 @@ public class Alteration extends ActiveAbility {
                 ctx.applyEffect(targetId, PotionEffectType.WEAKNESS, EFFECT_DURATION_TICKS, 1);
                 ctx.sendMessage(targetId, ChatColor.GRAY + "Сили покидають вас...");
             }
-
             case HUNGER -> {
                 ctx.applyEffect(targetId, PotionEffectType.HUNGER, EFFECT_DURATION_TICKS, 1);
                 ctx.sendMessage(targetId, ChatColor.GOLD + "Раптовий голод...");
             }
-
             case DROP_ITEM -> {
                 ItemStack hand = target.getInventory().getItemInMainHand();
                 if (hand != null && hand.getType() != Material.AIR) {
@@ -376,7 +350,6 @@ public class Alteration extends ActiveAbility {
                 ctx.damage(targetId, 2.0);
                 ctx.sendMessage(targetId, ChatColor.RED + "Різкий біль...");
             }
-
         }
         target.getWorld().playSound(target.getLocation(), Sound.ENTITY_ELDER_GUARDIAN_CURSE, 1f, 1f);
     }
@@ -408,7 +381,6 @@ public class Alteration extends ActiveAbility {
     @Override
     public void cleanUp() {
         activeModifications.clear();
-        manualCooldowns.clear();
     }
 
     // ==========================================
@@ -420,7 +392,7 @@ public class Alteration extends ActiveAbility {
         final TriggerType trigger;
         final EffectType effect;
         final long expirationTime;
-        long lastTriggerTime = 0; // <-- НОВЕ ПОЛЕ: час останнього спрацювання
+        long lastTriggerTime = 0;
 
         ModificationData(UUID casterId, TriggerType trigger, EffectType effect, long expirationTime) {
             this.casterId = casterId;

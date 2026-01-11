@@ -11,6 +11,7 @@ public class AbilityResult {
     private final FailureReason failureReason;
     private final SequenceBasedSuccessChance successChance;
     private final SanityPenalty sanityPenalty;
+    private final boolean deferred;
 
     /**
      * Reason why an ability failed
@@ -29,13 +30,15 @@ public class AbilityResult {
             String message,
             FailureReason reason,
             @Nullable SequenceBasedSuccessChance successChance,
-            @Nullable SanityPenalty sanityPenalty
+            @Nullable SanityPenalty sanityPenalty,
+            boolean deferred
     ) {
         this.success = success;
         this.message = message;
         this.failureReason = reason;
         this.successChance = successChance;
         this.sanityPenalty = sanityPenalty;
+        this.deferred = deferred;
     }
 
     // ==========================================
@@ -43,18 +46,33 @@ public class AbilityResult {
     // ==========================================
 
     public static AbilityResult success() {
-        return new AbilityResult(true, null, FailureReason.NONE, null, null);
+        return new AbilityResult(true, null, FailureReason.NONE, null, null, false);
     }
 
     public static AbilityResult successWithMessage(String message) {
-        return new AbilityResult(true, message, FailureReason.NONE, null, null);
+        return new AbilityResult(true, message, FailureReason.NONE, null, null, false);
     }
 
     /**
      * Success with sanity penalty - ability executed successfully but sanity loss caused a penalty
      */
     public static AbilityResult successWithPenalty(SanityPenalty penalty, String message) {
-        return new AbilityResult(true, message, FailureReason.NONE, null, penalty);
+        return new AbilityResult(true, message, FailureReason.NONE, null, penalty, false);
+    }
+
+    /**
+     * Deferred execution - ability started but execution is deferred (e.g., waiting for user input).
+     * Spirituality and cooldown should NOT be consumed yet.
+     */
+    public static AbilityResult deferred(String message) {
+        return new AbilityResult(true, message, FailureReason.NONE, null, null, true);
+    }
+
+    /**
+     * Deferred execution with no message.
+     */
+    public static AbilityResult deferred() {
+        return new AbilityResult(true, null, FailureReason.NONE, null, null, true);
     }
 
     // ==========================================
@@ -62,20 +80,20 @@ public class AbilityResult {
     // ==========================================
 
     public static AbilityResult failure(String reason) {
-        return new AbilityResult(false, reason, FailureReason.CUSTOM, null, null);
+        return new AbilityResult(false, reason, FailureReason.CUSTOM, null, null, false);
     }
 
     public static AbilityResult cooldownFailure(long remainingSeconds) {
         String message = "Cooldown: " + remainingSeconds + "с";
-        return new AbilityResult(false, message, FailureReason.COOLDOWN, null, null);
+        return new AbilityResult(false, message, FailureReason.COOLDOWN, null, null, false);
     }
 
     public static AbilityResult insufficientResources(String message) {
-        return new AbilityResult(false, message, FailureReason.INSUFFICIENT_RESOURCES, null, null);
+        return new AbilityResult(false, message, FailureReason.INSUFFICIENT_RESOURCES, null, null, false);
     }
 
     public static AbilityResult invalidTarget(String message) {
-        return new AbilityResult(false, message, FailureReason.INVALID_TARGET, null, null);
+        return new AbilityResult(false, message, FailureReason.INVALID_TARGET, null, null, false);
     }
 
     /**
@@ -86,7 +104,7 @@ public class AbilityResult {
                 "Ціль чинила опір! (Шанс успіху: %s)",
                 successChance.getFormattedChance()
         );
-        return new AbilityResult(false, message, FailureReason.SEQUENCE_RESISTANCE, successChance, null);
+        return new AbilityResult(false, message, FailureReason.SEQUENCE_RESISTANCE, successChance, null, false);
     }
 
     // ==========================================
@@ -139,6 +157,13 @@ public class AbilityResult {
         return sanityPenalty != null && sanityPenalty.hasEffect();
     }
 
+    /**
+     * Check if execution is deferred (spirituality should not be consumed yet).
+     */
+    public boolean isDeferred() {
+        return deferred;
+    }
+
     @Override
     public String toString() {
         return "AbilityResult[" +
@@ -146,7 +171,8 @@ public class AbilityResult {
                 "message=" + message + ", " +
                 "reason=" + failureReason + ", " +
                 "successChance=" + (successChance != null ? successChance.getFormattedChance() : "N/A") + ", " +
-                "sanityPenalty=" + (sanityPenalty != null ? sanityPenalty : "N/A") +
+                "sanityPenalty=" + (sanityPenalty != null ? sanityPenalty : "N/A") + ", " +
+                "deferred=" + deferred +
                 ']';
     }
 }

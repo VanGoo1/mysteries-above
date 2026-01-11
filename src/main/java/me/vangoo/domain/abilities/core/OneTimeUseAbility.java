@@ -71,7 +71,7 @@ public class OneTimeUseAbility extends ActiveAbility {
                 context.sendMessageToCaster(
                         "§7Одноразова здібність §e" + getName() + " §7була використана");
             } else {
-                // Ще залишились використання
+                // Ще залишилися використання
                 context.sendMessageToCaster(
                         "§7Використань залишилось: §e" + usesRemaining);
             }

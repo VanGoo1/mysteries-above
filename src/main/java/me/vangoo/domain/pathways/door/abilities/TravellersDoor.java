@@ -1,8 +1,10 @@
 package me.vangoo.domain.pathways.door.abilities;
 
+import me.vangoo.domain.abilities.core.AbilityResourceConsumer;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -160,7 +162,8 @@ public class TravellersDoor extends ActiveAbility {
                 600
         );
 
-        return AbilityResult.success();
+        // Deferred - spirituality will be consumed after coordinates are entered and door is created
+        return AbilityResult.deferred();
     }
 
     private void handleCoordinatesInput(IAbilityContext context, Player caster, String input) {
@@ -199,6 +202,14 @@ public class TravellersDoor extends ActiveAbility {
     }
 
     private void createTeleportDoor(IAbilityContext context, Player caster, Location target) {
+        Beyonder casterBeyonder = context.getCasterBeyonder();
+
+        // Consume spirituality NOW (deferred execution complete)
+        if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, context)) {
+            caster.sendMessage(ChatColor.RED + "Недостатньо духовності для створення двері!");
+            return;
+        }
+
         Location doorLoc = caster.getEyeLocation().add(caster.getLocation().getDirection().multiply(2));
         Vector direction = caster.getLocation().getDirection();
 

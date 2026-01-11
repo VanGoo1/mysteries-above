@@ -266,7 +266,7 @@ public interface IAbilityContext {
      * Стежить за гравцем протягом певного часу.
      *
      * @param targetId      кого перевіряємо
-     * @param durationTicks скільки часу чекаємо (в тіках)
+     * @param durationTicks скільки часу чекаємо (у тіках)
      * @param callback      викликається з true, якщо гравець присів, і false, якщо час вийшов
      */
     void monitorSneaking(UUID targetId, int durationTicks, Consumer<Boolean> callback);
@@ -311,7 +311,9 @@ public interface IAbilityContext {
             Function<AbilityDomainEvent, Boolean> handler,
             int durationTicks
     );
+
     Optional<AbilityDomainEvent> getLastAbilityEvent(UUID casterId, int maxAgeSeconds);
+
     List<AbilityDomainEvent> getAbilityEventHistory(UUID casterId, int maxAgeSeconds);
 
 }

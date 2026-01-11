@@ -1,10 +1,12 @@
 package me.vangoo.domain.pathways.door.abilities;
 
+import me.vangoo.domain.abilities.core.AbilityResourceConsumer;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.domain.valueobjects.SequenceBasedSuccessChance;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.*;
 import org.bukkit.entity.*;
@@ -20,8 +22,6 @@ import java.util.function.Function;
 public class DivinationArts extends ActiveAbility {
     private final int BASE_COST = 120;
     private final int BASE_COOLDOWN = 60;
-
-    // Послідовність, на якій з'являється пасивка (зазвичай 7-ма)
     private final int ANTI_DIVINATION_UNLOCK_SEQUENCE = 7;
 
     private final List<PendulumQuestion> pendulumQuestions = new ArrayList<>();
@@ -127,7 +127,8 @@ public class DivinationArts extends ActiveAbility {
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
         openMainDivinationMenu(context);
-        return AbilityResult.success();
+        // КРИТИЧНО: Повертаємо deferred - ресурси будуть спожиті коли гравець вибере метод
+        return AbilityResult.deferred();
     }
 
     // ========== МЕНЮ ==========
@@ -163,10 +164,9 @@ public class DivinationArts extends ActiveAbility {
         }
     }
 
-    // ========== КЛЮЧОВИЙ МЕТОД (ВИПРАВЛЕНИЙ) ==========
+    // ========== КЛЮЧОВИЙ МЕТОД ==========
 
     private boolean rollDivinationAgainstTarget(IAbilityContext ctx, UUID targetId) {
-        // КРОК 1: Визначення статусу Anti-Divination
         boolean active1 = ctx.isAbilityActivated(targetId, AbilityIdentity.of("Anti Divination"));
         boolean active2 = ctx.isAbilityActivated(targetId, AbilityIdentity.of("Anti-Divination"));
         boolean active3 = ctx.isAbilityActivated(targetId, AbilityIdentity.of("anti_divination"));
@@ -177,13 +177,11 @@ public class DivinationArts extends ActiveAbility {
         boolean isLevelAppropriate = targetSeq <= ANTI_DIVINATION_UNLOCK_SEQUENCE;
         boolean hasResistance = isAntiToggledOn && isLevelAppropriate;
 
-        // ЛОГІКА 1: Якщо захист ВИМКНЕНО → 100% Успіху
         if (!hasResistance) {
             ctx.sendMessageToCaster(ChatColor.GRAY + "Шанс успіху гадання: " + ChatColor.AQUA + "100%");
             return true;
         }
 
-        // ЛОГІКА 2: Якщо захист УВІМКНЕНО → Розрахунок шансів
         UUID casterId = ctx.getCasterId();
         int casterSeq = ctx.getEntitySequenceLevel(casterId).orElse(9);
 
@@ -194,25 +192,11 @@ public class DivinationArts extends ActiveAbility {
         int diff = seqChance.getSequenceDifference();
         boolean casterAdvantaged = seqChance.isCasterAdvantaged();
 
-        // ===== ВИПРАВЛЕННЯ ПОЧИНАЄТЬСЯ ТУТ =====
-
-        // ВИПАДОК 1: Кастер СИЛЬНІШИЙ (нижча послідовність)
-        // Seq 0 проти Seq 5 — base = 100%, захист майже не працює
         if (casterAdvantaged) {
-            // Різниця на користь кастера — захист має МІНІМАЛЬНИЙ вплив
-            // Формула: базовий шанс * (100% - малий штраф)
-            // Seq 0 vs Seq 5 (diff=5): 100% * (1.0 - 0.05*5) = 100% * 0.75 = 75% (приклад)
-            // Але це все одно занадто жорстко. Давайте зробимо ще м'якше:
-
-            double penalty = Math.min(0.2, diff * 0.03); // Максимум 20% штрафу
+            double penalty = Math.min(0.2, diff * 0.03);
             finalChance = baseChance * (1.0 - penalty);
-
-            // Для Seq 0 vs Seq 5: 100% * (1.0 - 0.15) = 85% мінімум
-            finalChance = Math.max(0.75, finalChance); // Ніколи не нижче 75% для сильнішого
-        }
-        // ВИПАДОК 2: Кастер СЛАБШИЙ або РІВНИЙ
-        else {
-            // Тут ціль сильніша + має захист — повна логіка опору
+            finalChance = Math.max(0.75, finalChance);
+        } else {
             double dynamic = 1.0 - 0.35 * diff;
             finalChance = baseChance * Math.max(0.05, dynamic);
 
@@ -228,9 +212,18 @@ public class DivinationArts extends ActiveAbility {
 
         return chanceRng.nextDouble() < finalChance;
     }
+
     // ========== 1. КРИШТАЛЕВА КУЛЯ ==========
 
     private void performCrystalBallDivination(IAbilityContext ctx) {
+        Beyonder casterBeyonder = ctx.getCasterBeyonder();
+
+        // КРИТИЧНО: Споживаємо ресурси ТІЛЬКИ ЗАРАЗ
+        if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
+            ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
+            return;
+        }
+
         Player caster = ctx.getCaster();
         ctx.playSoundToCaster(Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1f, 0.8f);
         ctx.spawnParticle(Particle.END_ROD, ctx.getCasterLocation().add(0, 1.5, 0), 30, 0.5, 0.5, 0.5);
@@ -244,8 +237,6 @@ public class DivinationArts extends ActiveAbility {
         }
 
         Player target = onlinePlayers.get(rng.nextInt(onlinePlayers.size()));
-
-        // Використовує спільний метод
         boolean success = rollDivinationAgainstTarget(ctx, target.getUniqueId());
 
         if (success) {
@@ -307,6 +298,14 @@ public class DivinationArts extends ActiveAbility {
     // ========== 2. АСТРОЛОГІЯ ==========
 
     private void performAstrologyDivination(IAbilityContext ctx) {
+        Beyonder casterBeyonder = ctx.getCasterBeyonder();
+
+        // КРИТИЧНО: Споживаємо ресурси ТІЛЬКИ ЗАРАЗ
+        if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
+            ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
+            return;
+        }
+
         for (int i = 0; i < 5; i++) {
             final int tick = i;
             ctx.scheduleDelayed(() -> {
@@ -314,7 +313,6 @@ public class DivinationArts extends ActiveAbility {
                         Math.cos(tick) * 2, 2 + tick * 0.3, Math.sin(tick) * 2
                 );
                 ctx.spawnParticle(Particle.END_ROD, loc, 5, 0.1, 0.1, 0.1);
-
             }, i * 5L);
         }
 
@@ -332,7 +330,6 @@ public class DivinationArts extends ActiveAbility {
                 ctx.sendMessageToCaster(ChatColor.RED + "✦ Зірки застерігають...");
                 ctx.sendMessageToCaster(ChatColor.GRAY + "Слабкість +1 (10 хв)");
                 ctx.playSoundToCaster(Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.7f, 1f);
-
             }
         }, 40L);
     }
@@ -359,6 +356,14 @@ public class DivinationArts extends ActiveAbility {
     }
 
     private void performPendulumDivination(IAbilityContext ctx, PendulumQuestion question) {
+        Beyonder casterBeyonder = ctx.getCasterBeyonder();
+
+        // КРИТИЧНО: Споживаємо ресурси ТІЛЬКИ ЗАРАЗ
+        if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
+            ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
+            return;
+        }
+
         for (int i = 0; i < 4; i++) {
             ctx.scheduleDelayed(() -> ctx.playSoundToCaster(Sound.BLOCK_NOTE_BLOCK_BELL, 0.3f, 1.5f), i * 8L);
         }
@@ -398,6 +403,14 @@ public class DivinationArts extends ActiveAbility {
     }
 
     private void startDiviningRodTracking(IAbilityContext ctx, DivinationTarget target) {
+        Beyonder casterBeyonder = ctx.getCasterBeyonder();
+
+        // КРИТИЧНО: Споживаємо ресурси ТІЛЬКИ ЗАРАЗ
+        if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
+            ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
+            return;
+        }
+
         Player caster = ctx.getCaster();
         ctx.sendMessageToCaster(ChatColor.GREEN + "🔍 Лозошукальний стрижень активовано!");
         ctx.sendMessageToCaster(ChatColor.GRAY + "Шукаємо: " + ChatColor.GOLD + target.name);
@@ -461,7 +474,6 @@ public class DivinationArts extends ActiveAbility {
                 return;
             }
 
-            // Стрілка
             Vector direction = nearest.clone().add(0.5, 0.5, 0.5).toVector().subtract(caster.getEyeLocation().toVector()).normalize();
             Vector right = direction.clone().crossProduct(new Vector(0, 1, 0));
             if (right.lengthSquared() < 0.001) right = new Vector(1, 0, 0);
@@ -498,7 +510,7 @@ public class DivinationArts extends ActiveAbility {
         }, 0L, 2L);
     }
 
-    // ========== 5. СОННЕ ПРОВИДІННЯ (ВАША РЕАЛІЗАЦІЯ) ==========
+    // ========== 5. СОННЕ ПРОВИДІННЯ ==========
 
     private void openDreamVisionMenu(IAbilityContext ctx) {
         List<Player> targets = ctx.getNearbyPlayers(10000);
@@ -529,15 +541,22 @@ public class DivinationArts extends ActiveAbility {
     }
 
     private void startDreamVisionSpectate(IAbilityContext ctx, Player target) {
+        Beyonder casterBeyonder = ctx.getCasterBeyonder();
         Player caster = ctx.getCaster();
 
         GameMode originalMode = caster.getGameMode();
         Location originalLoc = caster.getLocation().clone();
 
-        // Використовує спільний метод
+        // Перевірка опору ПЕРЕД споживанням ресурсів
         if (!rollDivinationAgainstTarget(ctx, target.getUniqueId())) {
-            ctx.sendMessageToCaster(ChatColor.RED + "✗ Спроба увійти в сон провалена, можиливо, щось заважає?.");
+            ctx.sendMessageToCaster(ChatColor.RED + "✗ Спроба увійти в сон провалена, можливо, щось заважає?");
             ctx.playSoundToCaster(Sound.ENTITY_ENDERMAN_TELEPORT, 0.7f, 0.6f);
+            return; // НЕ споживаємо ресурси при провалі
+        }
+
+        // КРИТИЧНО: Споживаємо ресурси ТІЛЬКИ після успішної перевірки
+        if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
+            ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
             return;
         }
 

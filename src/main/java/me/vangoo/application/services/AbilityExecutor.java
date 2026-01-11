@@ -55,11 +55,21 @@ public class AbilityExecutor {
         // Delegate to domain - all business logic happens here
         AbilityResult result = beyonder.useAbility(ability, context);
 
-        // Set cooldown if ability succeeded
+        // КРИТИЧНО: НЕ встановлювати кулдаун якщо результат deferred!
+        // Deferred означає що здібність ще не виконана (показує меню, чекає вибору)
+        if (result.isDeferred()) {
+            // Здібність відкладена - ресурси будуть спожиті пізніше
+            return result;
+        }
+
+        // Set cooldown ONLY if ability succeeded AND is not deferred
         if (ability.getType() == AbilityType.ACTIVE && result.isSuccess()) {
-            context.setCooldown(ability, ability.getCooldown(beyonder.getSequence()));
+            // Кулдаун вже встановлений через AbilityResourceConsumer
+            // Тому тут нічого не робимо
+
             boolean isOffPathway = beyonder.getOffPathwayActiveAbilities()
-                    .contains(ability.getIdentity());
+                    .stream()
+                    .anyMatch(a -> a.getIdentity().equals(ability.getIdentity()));
 
             EventPublisher.publishAbility(
                     new AbilityDomainEvent.AbilityUsed(
