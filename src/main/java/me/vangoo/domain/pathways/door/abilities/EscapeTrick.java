@@ -16,7 +16,7 @@ public class EscapeTrick extends ActiveAbility {
     private static final int COOLDOWN = 10;
     @Override
     public String getName() {
-        return "Трюк з діабло";
+        return "Трюк зі зникненням";
     }
 
     @Override

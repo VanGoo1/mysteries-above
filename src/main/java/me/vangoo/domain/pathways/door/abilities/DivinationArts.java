@@ -18,11 +18,13 @@ import org.bukkit.util.Vector;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class DivinationArts extends ActiveAbility {
     private int BASE_COST = 120;
     private final int BASE_COOLDOWN = 60;
     private final int ANTI_DIVINATION_UNLOCK_SEQUENCE = 7;
+    private final int DIVINING_ROD_DURATION_TICKS = 400; // 20 секунд замість 60
 
     private final List<PendulumQuestion> pendulumQuestions = new ArrayList<>();
     private final List<DivinationTarget> diviningRodTargets = new ArrayList<>();
@@ -96,15 +98,22 @@ public class DivinationArts extends ActiveAbility {
     }
 
     private void initDiviningRodTargets() {
-        diviningRodTargets.add(new DivinationTarget("Діаманти", Material.DIAMOND, Material.DIAMOND_ORE, Material.DEEPSLATE_DIAMOND_ORE));
-        diviningRodTargets.add(new DivinationTarget("Залізо", Material.IRON_INGOT, Material.IRON_ORE, Material.DEEPSLATE_IRON_ORE));
-        diviningRodTargets.add(new DivinationTarget("Золото", Material.GOLD_INGOT, Material.GOLD_ORE, Material.DEEPSLATE_GOLD_ORE));
-        diviningRodTargets.add(new DivinationTarget("Смарагди", Material.EMERALD, Material.EMERALD_ORE, Material.DEEPSLATE_EMERALD_ORE));
-        diviningRodTargets.add(new DivinationTarget("Редстоун", Material.REDSTONE, Material.REDSTONE_ORE, Material.DEEPSLATE_REDSTONE_ORE));
-        diviningRodTargets.add(new DivinationTarget("Лазурит", Material.LAPIS_LAZULI, Material.LAPIS_ORE, Material.DEEPSLATE_LAPIS_ORE));
-        diviningRodTargets.add(new DivinationTarget("Вугілля", Material.COAL, Material.COAL_ORE, Material.DEEPSLATE_COAL_ORE));
-        diviningRodTargets.add(new DivinationTarget("Портал Незер", Material.OBSIDIAN, Material.NETHER_PORTAL));
-        diviningRodTargets.add(new DivinationTarget("Древня руїна", Material.ANCIENT_DEBRIS, Material.ANCIENT_DEBRIS));
+        // Послідовність 9: Базові ресурси
+        diviningRodTargets.add(new DivinationTarget("Залізо", 9, Material.IRON_INGOT, Material.IRON_ORE, Material.DEEPSLATE_IRON_ORE));
+        diviningRodTargets.add(new DivinationTarget("Золото", 9, Material.GOLD_INGOT, Material.GOLD_ORE, Material.DEEPSLATE_GOLD_ORE));
+        diviningRodTargets.add(new DivinationTarget("Редстоун", 9, Material.REDSTONE, Material.REDSTONE_ORE, Material.DEEPSLATE_REDSTONE_ORE));
+        diviningRodTargets.add(new DivinationTarget("Лазурит", 9, Material.LAPIS_LAZULI, Material.LAPIS_ORE, Material.DEEPSLATE_LAPIS_ORE));
+        diviningRodTargets.add(new DivinationTarget("Вугілля", 9, Material.COAL, Material.COAL_ORE, Material.DEEPSLATE_COAL_ORE));
+        diviningRodTargets.add(new DivinationTarget("Портал Незер", 9, Material.OBSIDIAN, Material.NETHER_PORTAL));
+
+        // Послідовність 8: + Смарагди
+        diviningRodTargets.add(new DivinationTarget("Смарагди", 8, Material.EMERALD, Material.EMERALD_ORE, Material.DEEPSLATE_EMERALD_ORE));
+
+        // Послідовність 7: + Діаманти
+        diviningRodTargets.add(new DivinationTarget("Діаманти", 7, Material.DIAMOND, Material.DIAMOND_ORE, Material.DEEPSLATE_DIAMOND_ORE));
+
+        // Послідовність 5: Древні уламки (ексклюзивно)
+        diviningRodTargets.add(new DivinationTarget("Стародавні уламки", 5, Material.ANCIENT_DEBRIS, Material.ANCIENT_DEBRIS));
     }
 
     // ========== ЛОГІКА ЗДІБНОСТІ ==========
@@ -117,7 +126,8 @@ public class DivinationArts extends ActiveAbility {
     @Override
     public String getDescription(Sequence userSequence) {
         return "Володіння мистецтвом гадання. Відкриває доступ до різних методів " +
-                "передбачення: кристальний шар, астрологія, маятник, лозошукання та сонне провидіння.";
+                "передбачення: кристальний шар, астрологія, маятник, лозошукання та сонне провидіння." +
+                "\n§7§oЛозошукання покращується з просуванням послідовності.";
     }
 
     @Override
@@ -133,7 +143,6 @@ public class DivinationArts extends ActiveAbility {
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
         openMainDivinationMenu(context);
-        // КРИТИЧНО: Повертаємо deferred - ресурси будуть спожиті коли гравець вибере метод
         return AbilityResult.deferred();
     }
 
@@ -224,7 +233,6 @@ public class DivinationArts extends ActiveAbility {
     private void performCrystalBallDivination(IAbilityContext ctx) {
         Beyonder casterBeyonder = ctx.getCasterBeyonder();
 
-        // КРИТИЧНО: Споживаємо ресурси ТІЛЬКИ ЗАРАЗ
         if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
             ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
             return;
@@ -306,7 +314,6 @@ public class DivinationArts extends ActiveAbility {
     private void performAstrologyDivination(IAbilityContext ctx) {
         Beyonder casterBeyonder = ctx.getCasterBeyonder();
 
-        // КРИТИЧНО: Споживаємо ресурси ТІЛЬКИ ЗАРАЗ
         if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
             ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
             return;
@@ -352,7 +359,7 @@ public class DivinationArts extends ActiveAbility {
     }
 
     private ItemStack createPendulumQuestionItem(PendulumQuestion question) {
-        ItemStack item = new ItemStack(Material.CHAIN);
+        ItemStack item = new ItemStack(Material.IRON_CHAIN);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(ChatColor.GOLD + question.question);
@@ -364,7 +371,6 @@ public class DivinationArts extends ActiveAbility {
     private void performPendulumDivination(IAbilityContext ctx, PendulumQuestion question) {
         Beyonder casterBeyonder = ctx.getCasterBeyonder();
 
-        // КРИТИЧНО: Споживаємо ресурси ТІЛЬКИ ЗАРАЗ
         if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
             ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
             return;
@@ -390,12 +396,44 @@ public class DivinationArts extends ActiveAbility {
     // ========== 4. ЛОЗОШУКАННЯ ==========
 
     private void openDiviningRodMenu(IAbilityContext ctx) {
+        Beyonder beyonder = ctx.getCasterBeyonder();
+        int casterSequence = beyonder.getSequenceLevel();
+
+        // Фільтруємо цілі в залежності від послідовності
+        List<DivinationTarget> availableTargets = getAvailableTargetsForSequence(casterSequence);
+
+        if (availableTargets.isEmpty()) {
+            ctx.sendMessageToCaster(ChatColor.RED + "На вашому рівні немає доступних цілей для лозошукання");
+            return;
+        }
+
         ctx.openChoiceMenu(
                 "Лозошукання",
-                diviningRodTargets,
+                availableTargets,
                 this::createDiviningRodTargetItem,
                 target -> startDiviningRodTracking(ctx, target)
         );
+    }
+
+    /**
+     * Отримати доступні цілі для лозошукання в залежності від послідовності
+     * Послідовність 9: Базові ресурси (залізо, золото, редстоун, лазурит, вугілля, портал)
+     * Послідовність 8: + Смарагди
+     * Послідовність 7: + Діаманти
+     * Послідовність 5 та нижче: + стародавні уламки
+     */
+    private List<DivinationTarget> getAvailableTargetsForSequence(int sequence) {
+        // Послідовність 5 і нижче - всі ресурси включно зі стародавніми уламками
+        if (sequence <= 5) {
+            return diviningRodTargets.stream()
+                    .filter(target -> target.requiredSequence >= 5)
+                    .collect(Collectors.toList());
+        }
+
+        // Для вищих послідовностей - цілі з відповідним або вищим рівнем вимог
+        return diviningRodTargets.stream()
+                .filter(target -> target.requiredSequence >= sequence)
+                .collect(Collectors.toList());
     }
 
     private ItemStack createDiviningRodTargetItem(DivinationTarget target) {
@@ -403,6 +441,11 @@ public class DivinationArts extends ActiveAbility {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(ChatColor.GOLD + "Шукати: " + target.name);
+
+            List<String> lore = new ArrayList<>();
+            lore.add(ChatColor.GRAY + "Мінімальна послідовність: " + ChatColor.AQUA + target.requiredSequence);
+            meta.setLore(lore);
+
             item.setItemMeta(meta);
         }
         return item;
@@ -411,7 +454,6 @@ public class DivinationArts extends ActiveAbility {
     private void startDiviningRodTracking(IAbilityContext ctx, DivinationTarget target) {
         Beyonder casterBeyonder = ctx.getCasterBeyonder();
 
-        // КРИТИЧНО: Споживаємо ресурси ТІЛЬКИ ЗАРАЗ
         if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
             ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
             return;
@@ -474,7 +516,8 @@ public class DivinationArts extends ActiveAbility {
                 return;
             }
 
-            if (ticks[0]++ >= 1200) {
+            // Максимальна тривалість - 20 секунд (400 тіків)
+            if (ticks[0]++ >= DIVINING_ROD_DURATION_TICKS) {
                 if (holder[0] != null) holder[0].cancel();
                 ctx.sendMessageToCaster(ChatColor.GRAY + "Лозошукання завершено (час вийшов)");
                 return;
@@ -557,10 +600,10 @@ public class DivinationArts extends ActiveAbility {
         if (!rollDivinationAgainstTarget(ctx, target.getUniqueId())) {
             ctx.sendMessageToCaster(ChatColor.RED + "✗ Спроба увійти в сон провалена, можливо, щось заважає?");
             ctx.playSoundToCaster(Sound.ENTITY_ENDERMAN_TELEPORT, 0.7f, 0.6f);
-            return; // НЕ споживаємо ресурси при провалі
+            return;
         }
 
-        // КРИТИЧНО: Споживаємо ресурси ТІЛЬКИ після успішної перевірки
+        // Споживаємо ресурси ТІЛЬКИ після успішної перевірки
         if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
             ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
             return;
@@ -614,6 +657,7 @@ public class DivinationArts extends ActiveAbility {
         if(name.contains("Смарагд")) return Color.LIME;
         if(name.contains("Редстоун")) return Color.RED;
         if(name.contains("Лазурит")) return Color.BLUE;
+        if(name.contains("Стародавні уламки")) return Color.fromRGB(128, 0, 128); // Фіолетовий для ancient debris
         return Color.GRAY;
     }
 
@@ -653,7 +697,7 @@ public class DivinationArts extends ActiveAbility {
     private enum DivinationType {
         CRYSTAL_BALL("Кришталева куля", Material.AMETHYST_CLUSTER, ChatColor.LIGHT_PURPLE, "Розкриває інформацію про гравців"),
         ASTROLOGY("Астрологія", Material.SPYGLASS, ChatColor.BLUE, "Передбачає удачу або невдачу"),
-        PENDULUM("Духовний маятник", Material.CHAIN, ChatColor.GOLD, "Відповідає на питання 'Так' чи 'Ні'"),
+        PENDULUM("Духовний маятник", Material.IRON_CHAIN, ChatColor.GOLD, "Відповідає на питання 'Так' чи 'Ні'"),
         DIVINING_ROD("Лозошукання", Material.STICK, ChatColor.GREEN, "Пошук ресурсів та об'єктів"),
         DREAM_VISION("Сонне провидіння", Material.PHANTOM_MEMBRANE, ChatColor.DARK_AQUA, "Спостереження за гравцями у сні");
 
@@ -671,9 +715,17 @@ public class DivinationArts extends ActiveAbility {
     }
 
     private record PendulumQuestion(String question, Function<IAbilityContext, String> logic) {}
-    private record DivinationTarget(String name, Material iconMaterial, Material... targetMaterials) {
-        DivinationTarget(String name, Material icon, Material singleTarget) {
-            this(name, icon, new Material[]{singleTarget});
+
+    /**
+     * Ціль лозошукання з вимогою до послідовності
+     * @param name Назва ресурсу
+     * @param requiredSequence Мінімальна послідовність для доступу (9 = найлегше, 0 = найважче)
+     * @param iconMaterial Іконка в меню
+     * @param targetMaterials Матеріали, які шукаємо
+     */
+    private record DivinationTarget(String name, int requiredSequence, Material iconMaterial, Material... targetMaterials) {
+        DivinationTarget(String name, int requiredSequence, Material icon, Material singleTarget) {
+            this(name, requiredSequence, icon, new Material[]{singleTarget});
         }
     }
 }

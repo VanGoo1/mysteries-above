@@ -46,7 +46,7 @@ public class Punishment extends ActiveAbility {
 
     @Override
     public String getName() {
-        return "Punishment";
+        return "Покарання";
     }
 
     @Override

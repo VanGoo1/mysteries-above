@@ -7,15 +7,15 @@ public class MasteryProgressionCalculator {
     // Кількість духовності, необхідна для отримання 1.0 (одного цілого) пункту Mastery.
     // Тобто 1% від повного засвоєння.
     private static final double[] SPIRITUALITY_PER_ONE_PERCENT = {
-            2000.0,  // Sequence 0 - Demigod (hardest)
-            1500.0,  // Sequence 1 - Angel
-            1200.0,  // Sequence 2 - Saint
-            1000.0,  // Sequence 3 - Demi-Saint
-            800.0,  // Sequence 4 - High-Sequence
-            600.0,  // Sequence 5 - Mid-Sequence (виправив з 400 на 200 для балансу, як у логіці прогресії)
-            400.0,  // Sequence 6
-            300.0,  // Sequence 7
-            170.0,   // Sequence 8
+            10000.0,  // Sequence 0 - Demigod (hardest)
+            5000.0,  // Sequence 1 - Angel
+            3500.0,  // Sequence 2 - Saint
+            2500.0,  // Sequence 3 - Demi-Saint
+            1800.0,  // Sequence 4 - High-Sequence
+            1200.0,  // Sequence 5 - Mid-Sequence (виправив з 400 на 200 для балансу, як у логіці прогресії)
+            800.0,  // Sequence 6
+            500.0,  // Sequence 7
+            300.0,   // Sequence 8
             60.0    // Sequence 9 - Starter - 6,000 total (60 * 100)
     };
 

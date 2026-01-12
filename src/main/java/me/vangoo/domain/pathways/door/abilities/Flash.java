@@ -39,7 +39,7 @@ public class Flash extends ActiveAbility {
     protected AbilityResult performExecution(IAbilityContext context) {
         Player caster = context.getCaster();
         Location center = caster.getEyeLocation();
-        context.spawnParticle(Particle.FLASH, center, 5
+        context.spawnParticle(Particle.END_ROD, center, 5
         );
         context.spawnParticle(Particle.END_ROD, caster.getLocation(), 150, 0.0, 0.0, 0.0
         );
