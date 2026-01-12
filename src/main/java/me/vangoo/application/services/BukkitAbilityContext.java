@@ -10,6 +10,8 @@ import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.events.AbilityDomainEvent;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
+import me.vangoo.domain.valueobjects.RecordedEvent;
+import me.vangoo.domain.valueobjects.UnlockedRecipe;
 import me.vangoo.infrastructure.ui.ChoiceMenuFactory;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -28,8 +30,8 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -53,6 +55,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     private final Map<UUID, Entity> entityCache = new HashMap<>();
     private final PassiveAbilityManager passiveAbilityManager;
     private final DomainEventPublisher eventPublisher;
+    private final RecipeUnlockService recipeUnlockService;
 
     public BukkitAbilityContext(
             Player caster,
@@ -60,8 +63,8 @@ public class BukkitAbilityContext implements IAbilityContext {
             CooldownManager cooldownManager,
             BeyonderService beyonderService,
             AbilityLockManager lockManager, GlowingEntities glowingEntities, EffectManager effectManager,
-            RampageManager rampageManager, TemporaryEventManager eventManager, PassiveAbilityManager passiveAbilityManager, DomainEventPublisher eventPublisher
-    ) {
+            RampageManager rampageManager, TemporaryEventManager eventManager, PassiveAbilityManager passiveAbilityManager, DomainEventPublisher eventPublisher,
+            RecipeUnlockService recipeUnlockService) {
         this.caster = caster;
         this.world = caster.getWorld();
         this.plugin = plugin;
@@ -75,6 +78,7 @@ public class BukkitAbilityContext implements IAbilityContext {
         this.eventManager = eventManager;
         this.passiveAbilityManager = passiveAbilityManager;
         this.eventPublisher = eventPublisher;
+        this.recipeUnlockService = recipeUnlockService;
     }
 
     // ==========================================
@@ -338,6 +342,11 @@ public class BukkitAbilityContext implements IAbilityContext {
     public BukkitTask scheduleRepeating(Runnable task, long delayTicks, long periodTicks) {
         return Bukkit.getScheduler().runTaskTimer(plugin, task, delayTicks, periodTicks);
     }
+    // У файлі BukkitAbilityContext.java
+    @Override
+    public void runAsync(Runnable task) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, task);
+    }
 
     // ==========================================
     // COOLDOWN
@@ -388,6 +397,29 @@ public class BukkitAbilityContext implements IAbilityContext {
             BaseComponent[] components = new BaseComponent[] {new TextComponent(legacy)};
             caster.spigot().sendMessage(ChatMessageType.ACTION_BAR, components);
         }
+    }
+    @Override
+    public void spawnTemporaryHologram(Location location, Component text, long durationTicks) {
+        // 1. Спавнимо ArmorStand
+        ArmorStand holo = (ArmorStand) location.getWorld().spawnEntity(location, EntityType.ARMOR_STAND);
+
+        // 2. Налаштовуємо його як "голограму"
+        holo.setVisible(false);
+        holo.setGravity(false);
+        holo.setMarker(true); // Важливо: робить хітбокс мізерним, крізь нього можна бити
+        holo.setCustomNameVisible(true);
+        holo.setInvulnerable(true); // Щоб випадково не знищили вибухом
+
+        // 3. Встановлюємо текст (конвертуємо Component -> String)
+        String serializedText = LegacyComponentSerializer.legacySection().serialize(text);
+        holo.setCustomName(serializedText);
+
+        // 4. Плануємо видалення
+        scheduleDelayed(() -> {
+            if (holo.isValid()) {
+                holo.remove();
+            }
+        }, durationTicks);
     }
 
     // ==========================================
@@ -1011,6 +1043,23 @@ public class BukkitAbilityContext implements IAbilityContext {
     public List<AbilityDomainEvent> getAbilityEventHistory(UUID casterId, int maxAgeSeconds) {
         return eventPublisher.getAbilityEventHistory(casterId, maxAgeSeconds);
     }
+    @Override
+    public List<RecordedEvent> getPastEvents(Location location, int radius, int timeSeconds) {
+        // Делегуємо виконання нашому сервісу в Application Layer
+        return CoreProtectHandler.lookupEvents(location, radius, timeSeconds);
+    }
 
+    @Override
+    public int getKnownRecipeCount(String pathwayName) {
+
+
+        Set<UnlockedRecipe> recipes = recipeUnlockService
+                .getUnlockedRecipes(caster.getUniqueId());
+
+        // Підраховуємо рецепти для конкретного шляху
+        return (int) recipes.stream()
+                .filter(r -> r.pathwayName().equalsIgnoreCase(pathwayName))
+                .count();
+    }
 
 }

@@ -4,6 +4,7 @@ package me.vangoo.domain.abilities.core;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.events.AbilityDomainEvent;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
+import me.vangoo.domain.valueobjects.RecordedEvent;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.entity.HumanEntity;
@@ -22,8 +23,7 @@ import org.bukkit.event.Event;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
-
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 
 public interface IAbilityContext {
@@ -83,6 +83,8 @@ public interface IAbilityContext {
 
     BukkitTask scheduleRepeating(Runnable task, long delayTicks, long periodTicks);
 
+    void runAsync(Runnable task);
+
     // ==================== COOLDOWN ====================
     boolean hasCooldown(Ability ability);
 
@@ -98,6 +100,8 @@ public interface IAbilityContext {
     void sendMessageToCaster(String message);
 
     void sendMessageToActionBar(Component message);
+
+    void spawnTemporaryHologram(Location location, Component text, long durationTicks);
 
     // ==================== BEYONDER ====================
     void updateSanityLoss(UUID playerId, int change);
@@ -319,4 +323,7 @@ public interface IAbilityContext {
 
     List<AbilityDomainEvent> getAbilityEventHistory(UUID casterId, int maxAgeSeconds);
 
+    List<RecordedEvent> getPastEvents(Location location, int radius, int timeSeconds);
+
+    int getKnownRecipeCount(String pathwayName);
 }

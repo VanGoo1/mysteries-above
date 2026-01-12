@@ -2,7 +2,7 @@ name: Mysteries-Above
 version: 0.1
 main: me.vangoo.MysteriesAbovePlugin
 api-version: "1.21"
-
+softdepend: [CoreProtect]
 commands:
   pathway:
     description: Manage your Beyonder abilities and pathways

@@ -15,7 +15,7 @@ public class ElectricShock extends ActiveAbility {
     private static final int COOLDOWN = 8;
     @Override
     public String getName() {
-        return "Уєбало током";
+        return "Електричний розряд";
     }
 
     @Override

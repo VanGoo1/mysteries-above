@@ -6,8 +6,8 @@ import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.domain.valueobjects.SequenceBasedSuccessChance;
 import org.bukkit.entity.LivingEntity;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.Optional;
 

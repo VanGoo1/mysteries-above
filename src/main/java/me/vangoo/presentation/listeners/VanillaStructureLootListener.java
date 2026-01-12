@@ -67,13 +67,13 @@ public class VanillaStructureLootListener implements Listener {
 
         structures.put("mansion", 0.20);
         structures.put("ancient_city", 0.25);
-        structures.put("bastion", 0.15);
+        structures.put("bastion", 0.20);
         structures.put("nether_bridge", 0.05);
         structures.put("end_city", 0.10);
         structures.put("stronghold", 0.10);
         structures.put("jungle_temple", 0.10);
         structures.put("desert_pyramid", 0.10);
-        structures.put("pillager_outpost", 0.10);
+        structures.put("pillager_outpost", 0.20);
         structures.put("ocean_ruin_warm", 0.10);
         structures.put("ocean_ruin_cold", 0.10);
         structures.put("buried_treasure", 0.15);
@@ -82,7 +82,7 @@ public class VanillaStructureLootListener implements Listener {
         structures.put("simple_dungeon", 0.10);
         structures.put("ruined_portal", 0.15);
         structures.put("mysteries", 0.15);
-        structures.put("nova_structures", 0.10);
+        structures.put("nova_structures", 0.15);
         structures.put("trial_chambers/supply", 0.10);
         structures.put("trial_chambers/corridor", 0.10);
 

@@ -160,7 +160,8 @@ public class ServiceContainer {
                 rampageManager,
                 temporaryEventManager,
                 passiveAbilityManager,
-                eventPublisher
+                eventPublisher,
+                recipeUnlockService
         );
 
         this.abilityExecutor = new AbilityExecutor(

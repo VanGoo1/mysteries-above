@@ -2,8 +2,8 @@ package me.vangoo.domain.abilities.core;
 
 import me.vangoo.domain.valueobjects.SanityPenalty;
 import me.vangoo.domain.valueobjects.SequenceBasedSuccessChance;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 
 public class AbilityResult {
     private final boolean success;

@@ -199,5 +199,4 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getCommand("recipe").setExecutor(recipeBookCommand);
         getCommand("recipe").setTabCompleter(recipeBookCommand);
     }
-
 }
