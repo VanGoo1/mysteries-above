@@ -156,7 +156,7 @@ public class RecipeBookMenu {
             int row = ((slot - 1) / 9) + 1;
             int col = ((slot - 1) % 9) + 1;
 
-            ItemStack recipeItem = createRecipeItem(recipe);
+            ItemStack recipeItem = createRecipeItem(recipe, player);
             GuiItem guiItem = new GuiItem(recipeItem, event -> {
                 event.setCancelled(true);
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
@@ -300,7 +300,7 @@ public class RecipeBookMenu {
     /**
      * Створює предмет рецепту з інформацією про інгредієнти
      */
-    private ItemStack createRecipeItem(UnlockedRecipe recipe) {
+    private ItemStack createRecipeItem(UnlockedRecipe recipe, Player player) {
         PathwayPotions pathwayPotions = potionManager.getPotionsPathway(recipe.pathwayName())
                 .orElse(null);
 
@@ -329,16 +329,51 @@ public class RecipeBookMenu {
         ItemStack[] ingredients = pathwayPotions.getIngredients(recipe.sequence());
 
         if (ingredients != null && ingredients.length > 0) {
+            // Групуємо інгредієнти, щоб не дублювати рядки (наприклад, 2 рази по 1 діаманту)
             Map<String, Integer> ingredientCounts = new LinkedHashMap<>();
+            Map<String, ItemStack> originalItems = new HashMap<>(); // Зберігаємо оригінал для перевірки isSimilar
 
             for (ItemStack ingredient : ingredients) {
                 String name = getItemDisplayName(ingredient);
                 ingredientCounts.merge(name, ingredient.getAmount(), Integer::sum);
+                originalItems.putIfAbsent(name, ingredient);
             }
 
             for (Map.Entry<String, Integer> entry : ingredientCounts.entrySet()) {
-                lore.add(ChatColor.YELLOW + "  ▸ " + ChatColor.WHITE +
-                        entry.getValue() + "x " + ChatColor.GRAY + entry.getKey());
+                String name = entry.getKey();
+                int requiredAmount = entry.getValue();
+                ItemStack targetItem = originalItems.get(name);
+
+                // 1. Рахуємо загальну кількість (Інвентар + Шалкери + Мішечки)
+                int totalAmount = InventoryChecker.getTotalAmount(player, targetItem);
+
+                // 2. Рахуємо кількість тільки в основному інвентарі (щоб знати, чи предмет схований)
+                int mainInventoryAmount = 0;
+                for (ItemStack invItem : player.getInventory().getContents()) {
+                    if (invItem != null && invItem.isSimilar(targetItem)) {
+                        mainInventoryAmount += invItem.getAmount();
+                    }
+                }
+
+                StringBuilder line = new StringBuilder();
+                line.append(ChatColor.YELLOW).append("  ▸ ").append(ChatColor.WHITE)
+                        .append(requiredAmount).append("x ").append(ChatColor.GRAY).append(name);
+
+                if (totalAmount >= requiredAmount) {
+                    // Гравцю вистачає ресурсів
+                    line.append(ChatColor.GREEN).append(" ✔");
+
+                    // Якщо в основному інвентарі не вистачає, значить решта десь у контейнерах
+                    if (mainInventoryAmount < requiredAmount) {
+                        line.append(ChatColor.DARK_GRAY).append(" (у шалкері або у мішечку)");
+                    }
+                } else {
+                    // Ресурсів не вистачає
+                    line.append(ChatColor.RED).append(" ✘ ")
+                            .append(ChatColor.DARK_GRAY).append("(").append(totalAmount).append("/").append(requiredAmount).append(")");
+                }
+
+                lore.add(line.toString());
             }
         } else {
             lore.add(ChatColor.DARK_GRAY + "  Інгредієнти невідомі");
