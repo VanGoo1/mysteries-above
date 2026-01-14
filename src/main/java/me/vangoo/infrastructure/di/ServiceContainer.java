@@ -75,7 +75,7 @@ public class ServiceContainer {
     private RecipeBookCraftingRecipe recipeBookCraftingRecipe;
 
     public ServiceContainer(JavaPlugin plugin, fr.skytasul.glowingentities.GlowingEntities glowingEntities,
-                           de.slikey.effectlib.EffectManager effectManager) {
+                            de.slikey.effectlib.EffectManager effectManager) {
         this.plugin = plugin;
 
         // Initialize core services
@@ -146,7 +146,7 @@ public class ServiceContainer {
     }
 
     private void initializeApplicationServices(fr.skytasul.glowingentities.GlowingEntities glowingEntities,
-                                             de.slikey.effectlib.EffectManager effectManager) {
+                                               de.slikey.effectlib.EffectManager effectManager) {
         this.bossBarUtil = new BossBarUtil();
         this.beyonderService = new BeyonderService(beyonderRepository, bossBarUtil);
 

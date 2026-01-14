@@ -1,27 +1,22 @@
-package me.vangoo.domain.pathways.door.abilities;
-import org.bukkit.Particle.DustOptions;
 
+package me.vangoo.domain.pathways.door.abilities;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.*;
+import org.bukkit.Particle.DustOptions;
 import org.bukkit.block.Block;
-import org.bukkit.util.Vector;
-import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Vector;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 public class DoorOpening extends ActiveAbility {
 
-    private static final int MAX_THICKNESS = 10;
+    private static final int BASE_THICKNESS = 10; // Базова товщина для 9 послідовності
     private static final int ACTIVATION_RANGE = 2;
     private static final int COST = 50;
     private static final int COOLDOWN = 15;
@@ -40,12 +35,15 @@ public class DoorOpening extends ActiveAbility {
 
     @Override
     public String getDescription(Sequence userSequence) {
+        // Динамічно розраховуємо товщину для опису
+        int currentMaxThickness = getMaxThickness(userSequence);
+
         if (userSequence.level() <= 7) {
             return "Створіть примарні двері на перешкоді перед вами та пройдіть крізь стіну товщиною до "
-                    + MAX_THICKNESS + " блоків. З 7 послідовності портал стає доступним для всіх гравців поблизу.";
+                    + currentMaxThickness + " блоків. З 7 послідовності портал стає доступним для всіх гравців поблизу.";
         } else {
-            return "Створіть примарні двері на перешкоді перед вами. Портал залишається відкритим"
-                    + (PORTAL_DURATION_TICKS / 20);
+            return "Створіть примарні двері на перешкоді перед вами (глибина до " + currentMaxThickness + "м). Портал залишається відкритим "
+                    + (PORTAL_DURATION_TICKS / 20) + " секунд.";
         }
     }
 
@@ -59,11 +57,18 @@ public class DoorOpening extends ActiveAbility {
         return COOLDOWN;
     }
 
+    // Допоміжний метод для розрахунку дистанції на основі послідовності
+    private int getMaxThickness(Sequence sequence) {
+        // Використовуємо стратегію STRONG (+30% за рівень), оскільки це спеціалізація Шляху
+        return scaleValue(BASE_THICKNESS, sequence, SequenceScaler.ScalingStrategy.STRONG);
+    }
+
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
         Location playerLoc = context.getCasterLocation();
         Vector dir = playerLoc.getDirection().setY(0).normalize();
-        int sequenceLevel = context.getCasterBeyonder().getSequenceLevel();
+        Sequence sequence = context.getCasterBeyonder().getSequence();
+        int sequenceLevel = sequence.level();
 
         // 1) Знайти блок-стіну перед гравцем
         Block entry = findWallInFront(playerLoc, dir);
@@ -71,11 +76,13 @@ public class DoorOpening extends ActiveAbility {
             return AbilityResult.failure("Ви повинні стояти близько до стіни.");
         }
 
-        // 2) Знайти безпечну локацію за стіною
-        Location exit = findExitLocation(entry, dir);
+        // 2) Знайти безпечну локацію за стіною, використовуючи заскейлену дистанцію
+        int currentMaxDist = getMaxThickness(sequence);
+        Location exit = findExitLocation(entry, dir, currentMaxDist);
+
         if (exit == null) {
             context.playSoundToCaster(Sound.BLOCK_CHEST_LOCKED, 1.0f, 0.5f);
-            return AbilityResult.failure("Ця стіна занадто товста або за нею немає місця.");
+            return AbilityResult.failure("Ця стіна занадто товста (макс. " + currentMaxDist + " блоків) або за нею немає місця.");
         }
 
         Location entryCenter = entry.getLocation().add(0.5, 0, 0.5);
@@ -164,10 +171,11 @@ public class DoorOpening extends ActiveAbility {
         return null;
     }
 
-    private Location findExitLocation(Block entryBlock, Vector direction) {
+    // Оновлений метод з динамічною дистанцією
+    private Location findExitLocation(Block entryBlock, Vector direction, int maxDist) {
         Location center = entryBlock.getLocation().add(0.5, 0, 0.5);
 
-        for (int i = 1; i <= MAX_THICKNESS; i++) {
+        for (int i = 1; i <= maxDist; i++) {
             Location check = center.clone().add(direction.clone().multiply(i));
             Block feet = check.getBlock();
             Block head = check.clone().add(0, 1, 0).getBlock();

@@ -131,9 +131,7 @@ public class ScanGazePassive extends ToggleablePassiveAbility {
         int hunger = target.getFoodLevel();
 
         StringBuilder msg = new StringBuilder();
-        msg.append(ChatColor.DARK_AQUA).append("🔍 ")
-                .append(ChatColor.WHITE).append(target.getName()).append("  ")
-                .append(ChatColor.RED).append("❤ ").append(hp).append("/").append(maxHp).append("  ")
+        msg.append(ChatColor.RED).append("❤ ").append(hp).append("/").append(maxHp).append("  ")
                 .append(ChatColor.GOLD).append("🍖 ").append(hunger).append("/20");
 
         // === РОЗШИРЕНА ІНФА (Seq < 7) ===

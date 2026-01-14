@@ -384,7 +384,7 @@ custom-items:
     custom-model-data: "dust_of_lake_spirit"
 
   ashes_of_a_broken_oath_seal:
-    display-name: "§6Пил Озерного Духу"
+    display-name: "§6Попіл зламаної клятви"
     material: PAPER
     lore:
       - ""
