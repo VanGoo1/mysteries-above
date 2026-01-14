@@ -3,8 +3,8 @@ package me.vangoo.domain.pathways.whitetower.abilities;
 import me.vangoo.domain.abilities.core.*;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.Sequence;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -14,23 +14,50 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Analysis extends ActiveAbility {
 
     private static final int ANALYSIS_DELAY_SECONDS = 2;
     private static final double DETECTION_RADIUS = 20.0;
     private static final int COST = 120;
-    private static final int COOLDOWN = 120;
+    private static final int COOLDOWN = 180;
     private static final int MAX_REMEMBERED_ABILITIES = 10;
 
     // --- НАЛАШТУВАННЯ ШАНСІВ ---
-    private static final double BASE_CHANCE = 0.40; // Базовий шанс 50%
+    private static final double BASE_CHANCE = 0.30; // Базовий шанс 30%
     private static final double SEQUENCE_DIFF_MODIFIER = 0.10; // +/- 10% за кожен рівень різниці
     private static final double RECIPE_KNOWLEDGE_BONUS_PER_RECIPE = 0.05;
     private static final double MAX_RECIPE_BONUS = 0.25;
+
+    public enum AnalysisMode {
+        COPY("§aКопіювання", "§7Сканує ціль для копіювання здібності"),
+        DELETE("§cВидалення", "§7Дозволяє видалити раніше скопійовану здібність");
+
+        private final String displayName;
+        private final String description;
+
+        AnalysisMode(String displayName, String description) {
+            this.displayName = displayName;
+            this.description = description;
+        }
+
+        public AnalysisMode next() {
+            AnalysisMode[] modes = values();
+            return modes[(ordinal() + 1) % modes.length];
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+    }
+
+    private static final Map<UUID, AnalysisMode> playerModes = new ConcurrentHashMap<>();
 
     @Override
     public String getName() {
@@ -39,9 +66,10 @@ public class Analysis extends ActiveAbility {
 
     @Override
     public String getDescription(Sequence userSequence) {
-        return "Дозволяє просканувати ціль та скопіювати здібність.\n" +
-                ChatColor.GRAY + "Базовий шанс: 40%\n" +
-                ChatColor.YELLOW + "⚠ Шанс змінюється від різниці рівнів та знань.";
+        return "Дозволяє просканувати ціль, скопіювати здібність або видалити її.\n" +
+                ChatColor.GRAY + "Shift + ПКМ: Переключити режим\n" +
+                ChatColor.GRAY + "ПКМ: Активувати режим\n" +
+                ChatColor.YELLOW + "⚠ Шанс копіювання змінюється від різниці рівнів та знань.";
     }
 
     @Override
@@ -54,11 +82,35 @@ public class Analysis extends ActiveAbility {
         return COOLDOWN;
     }
 
-    // ... (performExecution та startAnalysisPhase без змін) ...
-
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        // ... (Код вибору гравця з попередньої відповіді) ...
+        UUID casterId = context.getCasterId();
+        Player caster = context.getCaster();
+
+        if (caster != null && caster.isSneaking()) {
+            AnalysisMode currentMode = getCurrentMode(casterId);
+            AnalysisMode newMode = currentMode.next();
+            playerModes.put(casterId, newMode);
+
+            caster.playSound(caster.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.8f, 1.5f);
+
+            context.sendMessageToActionBar(
+                    Component.text("Режим Аналізу: ", NamedTextColor.WHITE)
+                            .append(Component.text(newMode.getDisplayName() + " - " + newMode.getDescription()))
+            );
+
+            context.spawnParticle(Particle.ENCHANT, caster.getLocation().add(0, 1, 0), 20, 0.3, 0.5, 0.3);
+            return AbilityResult.deferred();
+        }
+
+        AnalysisMode mode = getCurrentMode(casterId);
+        return switch (mode) {
+            case COPY -> executeCopy(context);
+            case DELETE -> executeDelete(context);
+        };
+    }
+
+    private AbilityResult executeCopy(IAbilityContext context) {
         Beyonder caster = context.getCasterBeyonder();
         int currentCount = caster.getOffPathwayActiveAbilities().size();
         if (currentCount >= MAX_REMEMBERED_ABILITIES) {
@@ -77,17 +129,41 @@ public class Analysis extends ActiveAbility {
         return AbilityResult.deferred();
     }
 
+    private AbilityResult executeDelete(IAbilityContext context) {
+        Beyonder casterBeyonder = context.getCasterBeyonder();
+        Set<Ability> copiedAbilitiesSet = casterBeyonder.getOffPathwayActiveAbilities();
+
+        if (copiedAbilitiesSet.isEmpty()) {
+            return AbilityResult.failure("У вас немає скопійованих здібностей для видалення.");
+        }
+
+        List<Ability> copiedAbilitiesList = new ArrayList<>(copiedAbilitiesSet);
+
+        context.openChoiceMenu(
+                "ВИДАЛЕННЯ: Оберіть здібність",
+                copiedAbilitiesList,
+                this::createDeleteIcon,
+                selectedAbility -> {
+                    boolean removed = casterBeyonder.removeAbility(selectedAbility.getIdentity());
+                    Player caster = context.getCaster();
+                    if (removed) {
+                        context.sendMessageToCaster(ChatColor.GREEN + "Здібність '" + selectedAbility.getName() + "' успішно видалена.");
+                        caster.playSound(caster.getLocation(), Sound.BLOCK_ANVIL_DESTROY, 1f, 1.2f);
+                        context.playVortexEffect(caster.getLocation(), 1, 0.5, Particle.SMOKE, 50);
+                    } else {
+                        context.sendMessageToCaster(ChatColor.RED + "Не вдалося видалити здібність '" + selectedAbility.getName() + "'.");
+                    }
+                }
+        );
+
+        return AbilityResult.deferred();
+    }
+
     private void startAnalysisPhase(IAbilityContext context, Player target) {
-        // ... (Візуал та затримка з попередньої відповіді) ...
-        // Для економії місця тут скорочено, логіка та сама
         Player caster = context.getCaster();
         context.playConeEffect(caster.getEyeLocation(), caster.getLocation().getDirection(), 30, 5, Particle.ENCHANT, 40);
         context.scheduleDelayed(() -> openAbilitySelectionMenu(context, target, context.getBeyonderFromEntity(target.getUniqueId())), ANALYSIS_DELAY_SECONDS * 20L);
     }
-
-    // =========================================================================
-    // КРОК 3: МЕНЮ ЗДІБНОСТЕЙ (Оновлено розрахунок для іконок)
-    // =========================================================================
 
     private void openAbilitySelectionMenu(IAbilityContext context, Player target, Beyonder targetBeyonder) {
         if (!target.isOnline()) return;
@@ -106,16 +182,12 @@ public class Analysis extends ActiveAbility {
         }
 
         context.openChoiceMenu(
-                "КРОК 2: Шанс (База 50%)", // Підказка в заголовку
+                "КРОК 2: Шанс (База 30%)",
                 availableAbilities,
                 ability -> createAbilityIcon(ability, targetBeyonder, context),
                 selectedAbility -> attemptToCopyAbility(context, targetBeyonder, selectedAbility)
         );
     }
-
-    // =========================================================================
-    // КРОК 4: СПРОБА КОПІЮВАННЯ (Нова формула)
-    // =========================================================================
 
     private void attemptToCopyAbility(IAbilityContext context, Beyonder targetBeyonder, Ability ability) {
         Beyonder casterBeyonder = context.getCasterBeyonder();
@@ -131,14 +203,12 @@ public class Analysis extends ActiveAbility {
             return;
         }
         context.publishAbilityUsedEvent(this);
-        // --- НОВИЙ РОЗРАХУНОК ---
         int abilitySeq = findAbilitySequence(targetBeyonder, ability);
         int casterSeq = casterBeyonder.getSequenceLevel();
         int knownRecipes = context.getKnownRecipeCount(targetBeyonder.getPathway().getName());
 
         double finalChance = calculateTotalChance(casterSeq, abilitySeq, knownRecipes);
 
-        // Розрахунок складових для красивого виводу
         double seqDiff = (abilitySeq - casterSeq) * SEQUENCE_DIFF_MODIFIER;
         double recipeBonus = Math.min(knownRecipes * RECIPE_KNOWLEDGE_BONUS_PER_RECIPE, MAX_RECIPE_BONUS);
 
@@ -157,14 +227,12 @@ public class Analysis extends ActiveAbility {
                 ChatColor.GOLD, getColorForChance(finalChance), finalChance * 100
         ));
 
-        // RNG Check
         if (Math.random() > finalChance) {
             caster.playSound(caster.getLocation(), Sound.ENTITY_ITEM_BREAK, 1f, 0.5f);
             context.sendMessageToCaster(ChatColor.RED + "× Невдача! Структура нестабільна.");
             return;
         }
 
-        // Success
         boolean added = casterBeyonder.addOffPathwayAbility(ability);
         if (added) {
             caster.playSound(caster.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
@@ -173,35 +241,14 @@ public class Analysis extends ActiveAbility {
         }
     }
 
-    // =========================================================================
-    // ЦЕНТРАЛІЗОВАНА ЛОГІКА РОЗРАХУНКУ
-    // =========================================================================
-
-    /**
-     * Головна формула шансу
-     */
     private double calculateTotalChance(int casterSeq, int abilitySeq, int knownRecipes) {
-        // 1. База 50%
         double chance = BASE_CHANCE;
-
-        // 2. Модифікатор різниці послідовностей
-        // У LotM: 9 - слабкий, 0 - сильний.
-        // Якщо Кастер(5) копіює Абілку(9): (9 - 5) = +4. +20% до шансу (легше).
-        // Якщо Кастер(9) копіює Абілку(5): (5 - 9) = -4. -20% до шансу (важче).
         double seqModifier = (abilitySeq - casterSeq) * SEQUENCE_DIFF_MODIFIER;
         chance += seqModifier;
-
-        // 3. Бонус від рецептів (тільки плюс)
         double recipeBonus = Math.min(knownRecipes * RECIPE_KNOWLEDGE_BONUS_PER_RECIPE, MAX_RECIPE_BONUS);
         chance += recipeBonus;
-
-        // 4. Ліміти (мін 10%, макс 95%)
         return Math.max(0.10, Math.min(0.95, chance));
     }
-
-    // =========================================================================
-    // GUI ТА ІНШЕ
-    // =========================================================================
 
     private ItemStack createAbilityIcon(Ability ability, Beyonder target, IAbilityContext context) {
         Material mat = switch (ability.getType()) {
@@ -219,7 +266,6 @@ public class Analysis extends ActiveAbility {
             int casterSeq = context.getCasterBeyonder().getSequenceLevel();
             int recipes = context.getKnownRecipeCount(target.getPathway().getName());
 
-            // Використовуємо ту саму формулу
             double finalChance = calculateTotalChance(casterSeq, abilitySeq, recipes);
 
             List<String> lore = new ArrayList<>();
@@ -240,8 +286,6 @@ public class Analysis extends ActiveAbility {
         }
         return item;
     }
-
-    // ... (решта допоміжних методів: createPlayerHead, findAbilitySequence і т.д. без змін) ...
 
     private ItemStack createPlayerHead(Player player, IAbilityContext context) {
         ItemStack head = new ItemStack(Material.PLAYER_HEAD);
@@ -282,5 +326,30 @@ public class Analysis extends ActiveAbility {
         if (chance >= 0.7) return ChatColor.GREEN;
         if (chance >= 0.4) return ChatColor.YELLOW;
         return ChatColor.RED;
+    }
+
+    private ItemStack createDeleteIcon(Ability ability) {
+        ItemStack item = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(ChatColor.RED + "Видалити: " + ChatColor.WHITE + ability.getName());
+            List<String> lore = new ArrayList<>();
+            lore.add(ChatColor.GRAY + "Тип: " + getAbilityTypeDisplay(ability));
+            lore.add("");
+            lore.add(ChatColor.DARK_RED + "⚠ Цю дію неможливо скасувати!");
+            lore.add(ChatColor.YELLOW + "▶ Натисніть щоб видалити");
+            meta.setLore(lore);
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+
+    private AnalysisMode getCurrentMode(UUID playerId) {
+        return playerModes.getOrDefault(playerId, AnalysisMode.COPY);
+    }
+
+    @Override
+    public void cleanUp() {
+        playerModes.clear();
     }
 }

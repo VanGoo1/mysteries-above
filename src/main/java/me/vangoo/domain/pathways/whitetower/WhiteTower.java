@@ -23,6 +23,7 @@ public class WhiteTower extends Pathway {
                 "Ви отримуєте сильне тіло",
                 3), new MysticalReenactment()));
         sequenceAbilities.put(6, List.of(new Analysis()));
+        sequenceAbilities.put(5, List.of(new Spellcasting()));
 
     }
 }
