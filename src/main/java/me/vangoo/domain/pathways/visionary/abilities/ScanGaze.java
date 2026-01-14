@@ -51,16 +51,18 @@ public class ScanGaze extends ActiveAbility {
     protected AbilityResult performExecution(IAbilityContext context) {
         Optional<Player> targetedPlayer = context.getTargetedPlayer(RANGE);
 
-        if (!targetedPlayer.isPresent()) {
-            context.sendMessageToCaster(
-                    ChatColor.RED + "Немає цілі: наведіться на гравця в радіусі " + RANGE + " блоків."
+        if (targetedPlayer.isEmpty()) {
+            context.sendMessageToActionBar(
+                    net.kyori.adventure.text.Component.text(
+                            ChatColor.RED + "Немає цілі в радіусі " + RANGE + " блоків"
+                    )
             );
             return AbilityResult.failure("No valid target found");
         }
 
         Player target = targetedPlayer.get();
 
-        // Базова інформація (завжди)
+        // === БАЗОВІ ДАНІ ===
         double hp = Math.round(target.getHealth() * 10.0) / 10.0;
         double maxHp = 20.0;
         if (target.getAttribute(Attribute.MAX_HEALTH) != null) {
@@ -69,59 +71,54 @@ public class ScanGaze extends ActiveAbility {
 
         int hunger = target.getFoodLevel();
 
-        double armor = 0.0;
+        int armor = 0;
         if (target.getAttribute(Attribute.ARMOR) != null) {
-            armor = Math.round(target.getAttribute(Attribute.ARMOR).getValue());
+            armor = (int) Math.round(target.getAttribute(Attribute.ARMOR).getValue());
         }
 
-        // Показати базову інформацію
-        context.sendMessage(context.getCasterId(), ChatColor.AQUA + "Сканування " + ChatColor.WHITE + target.getName());
-        context.sendMessage(context.getCasterId(),
-                ChatColor.GRAY + "Здоров'я: " + ChatColor.YELLOW + hp +
-                        ChatColor.GRAY + " / " + ChatColor.YELLOW + maxHp
-        );
-        context.sendMessage(context.getCasterId(),
-                ChatColor.GRAY + "Голод: " + ChatColor.YELLOW + hunger +
-                        ChatColor.GRAY + " / " + ChatColor.YELLOW + "20"
-        );
-        context.sendMessage(context.getCasterId(),
-                ChatColor.GRAY + "Броня: " + ChatColor.YELLOW + (int) armor +
-                        ChatColor.GRAY + " / " + ChatColor.YELLOW + "20"
-        );
+        StringBuilder message = new StringBuilder();
+        message.append(ChatColor.AQUA).append("🔍 ").append(target.getName()).append("  ")
+                .append(ChatColor.RED).append("❤ ").append(hp).append("/").append(maxHp).append("  ")
+                .append(ChatColor.GOLD).append("🍖 ").append(hunger).append("/20  ")
+                .append(ChatColor.GRAY).append("🛡 ").append(armor);
 
-        // Додаткова інформація для менших послідовностей
-        Beyonder casterBeyonder = context.getCasterBeyonder();
-        if (casterBeyonder != null && casterBeyonder.getSequenceLevel() < 9) {
-            // Показати насичення
+        // === ДОДАТКОВО ДЛЯ SEQ < 9 ===
+        Beyonder caster = context.getCasterBeyonder();
+        if (caster != null && caster.getSequenceLevel() < 9) {
             float saturation = target.getSaturation();
-            context.sendMessage(context.getCasterId(),
-                    ChatColor.GRAY + "Насичення: " + ChatColor.YELLOW +
-                            Math.round(saturation * 10.0) / 10.0
-            );
+            message.append(ChatColor.YELLOW)
+                    .append("  ✦ Sat: ")
+                    .append(Math.round(saturation * 10.0) / 10.0);
 
-            // Показати активні ефекти
-            var activeEffects = target.getActivePotionEffects();
-            if (!activeEffects.isEmpty()) {
-                context.sendMessage(context.getCasterId(), ChatColor.GRAY + "Активні ефекти:");
-                for (PotionEffect effect : activeEffects) {
-                    String effectName = effect.getType().getTranslationKey();
-                    int amplifier = effect.getAmplifier() + 1;
-                    int duration = effect.getDuration() / 20; // ticks to seconds
+            if (!target.getActivePotionEffects().isEmpty()) {
+                message.append(ChatColor.DARK_PURPLE).append("  ✦ ");
+                int shown = 0;
 
-                    context.sendMessage(context.getCasterId(),
-                            ChatColor.GRAY + "  • " + ChatColor.YELLOW + effectName + " " + amplifier +
-                                    ChatColor.GRAY + " (" + duration + "с)"
-                    );
+                for (PotionEffect effect : target.getActivePotionEffects()) {
+                    if (shown++ >= 2) break; // не перевантажуємо action bar
+
+                    String name = effect.getType().getKey().getKey();
+                    int amp = effect.getAmplifier() + 1;
+                    int duration = effect.getDuration() / 20;
+
+                    message.append(name)
+                            .append(" ")
+                            .append(amp)
+                            .append(" (")
+                            .append(duration)
+                            .append("с) ");
                 }
-            } else {
-                context.sendMessage(context.getCasterId(),
-                        ChatColor.GRAY + "Активні ефекти: " + ChatColor.YELLOW + "немає"
-                );
             }
         }
 
+        // === ACTION BAR ===
+        context.sendMessageToActionBar(
+                net.kyori.adventure.text.Component.text(message.toString())
+        );
+
         return AbilityResult.success();
     }
+
 
     @Override
     public int getCooldown(Sequence userSequence) {

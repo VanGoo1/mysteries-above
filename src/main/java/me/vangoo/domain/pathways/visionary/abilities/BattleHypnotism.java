@@ -1,16 +1,14 @@
 package me.vangoo.domain.pathways.visionary.abilities;
 
-import me.vangoo.domain.abilities.core.AbilityResult;
-import me.vangoo.domain.abilities.core.ActiveAbility;
-import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.abilities.core.*;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.valueobjects.Sequence;
-import me.vangoo.domain.valueobjects.Spirituality;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -30,7 +28,7 @@ public class BattleHypnotism extends ActiveAbility {
 
     @Override
     public String getDescription(Sequence userSequence) {
-        return "Загіпнотизуйте ворога і він втратить вас з поля зору";
+        return "Змушує ворога втратити вас з поля зору, затуманюючи його свідомість.";
     }
 
     @Override
@@ -40,13 +38,18 @@ public class BattleHypnotism extends ActiveAbility {
 
     @Override
     public int getCooldown(Sequence userSequence) {
-        double multiplier = SequenceScaler.calculateMultiplier(userSequence.level(), SequenceScaler.ScalingStrategy.MODERATE);
-        int cooldown = (int) (BASE_COOLDOWN / multiplier);
-        return Math.max(5, cooldown);
+        double multiplier = SequenceScaler.calculateMultiplier(
+                userSequence.level(),
+                SequenceScaler.ScalingStrategy.MODERATE
+        );
+        return Math.max(5, (int) (BASE_COOLDOWN / multiplier));
     }
 
     private int getRange(int sequence) {
-        double multiplier = SequenceScaler.calculateMultiplier(sequence, SequenceScaler.ScalingStrategy.STRONG);
+        double multiplier = SequenceScaler.calculateMultiplier(
+                sequence,
+                SequenceScaler.ScalingStrategy.STRONG
+        );
         return (int) (BASE_RANGE * multiplier);
     }
 
@@ -54,56 +57,98 @@ public class BattleHypnotism extends ActiveAbility {
     protected AbilityResult performExecution(IAbilityContext context) {
         Player caster = context.getCaster();
         Beyonder beyonder = context.getCasterBeyonder();
-        int sequenceVal = beyonder.getSequence().level();
 
-        int range = getRange(sequenceVal);
+        int range = getRange(beyonder.getSequence().level());
+
         RayTraceResult rayTrace = caster.getWorld().rayTraceEntities(
                 caster.getEyeLocation(),
                 caster.getEyeLocation().getDirection(),
                 range,
-                entity -> entity instanceof Player && !entity.getUniqueId().equals(caster.getUniqueId())
+                entity -> entity instanceof Player && entity != caster
         );
 
-        if (rayTrace == null || rayTrace.getHitEntity() == null) {
-            return AbilityResult.failure("Ви не дивитесь на ціль.");
-        }
+        if (rayTrace == null || !(rayTrace.getHitEntity() instanceof Player target)) {
 
-        if (!(rayTrace.getHitEntity() instanceof Player target)) {
-            return AbilityResult.failure("Тільки гравці мають свідомість для гіпнозу.");
+            return AbilityResult.failure("✖ Ви не дивитесь на живу ціль");
         }
 
         applyHypnosis(context, caster, target);
-
-        // NOTE: Spirituality and cooldown are handled automatically by Beyonder.useAbility()
         return AbilityResult.success();
     }
 
     private void applyHypnosis(IAbilityContext context, Player caster, Player target) {
-        // Візуал та звук
-        context.playSoundToCaster(Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1f, 0.5f);
+
+        // ───── ВІЗУАЛ + ЗВУК ─────
+        caster.getWorld().spawnParticle(
+                Particle.SOUL,
+                target.getEyeLocation(),
+                30,
+                0.4, 0.6, 0.4,
+                0.01
+        );
+
+        caster.getWorld().spawnParticle(
+                Particle.WITCH,
+                target.getLocation().add(0, 1, 0),
+                20,
+                0.3, 0.5, 0.3,
+                0.02
+        );
+
+        context.playSoundToCaster(Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1f, 0.6f);
         target.playSound(target.getLocation(), Sound.ENTITY_ELDER_GUARDIAN_CURSE, 1f, 0.5f);
-        caster.spawnParticle(Particle.SOUL, target.getEyeLocation(), 20, 0.5, 0.5, 0.5, 0);
 
-        caster.sendMessage(ChatColor.GREEN + "Ви загіпнотизували " + target.getName() + "!");
-        target.sendMessage(ChatColor.DARK_PURPLE + "Ваша свідомість затуманюється...");
+        // ───── ACTIONBAR ─────
+        context.sendMessageToActionBar(
+                caster,
+                Component.text("🧠 Ви занурили ")
+                        .color(NamedTextColor.DARK_PURPLE)
+                        .append(Component.text(target.getName())
+                                .color(NamedTextColor.LIGHT_PURPLE)
+                                .decorate(TextDecoration.BOLD))
+                        .append(Component.text(" у гіпноз"))
+        );
 
-        // Ефекти
-        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, EFFECT_DURATION_SECONDS * 20, 0));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, EFFECT_DURATION_SECONDS * 20, 0));
+        context.sendMessageToActionBar(
+                target,
+                Component.text("🌫 Ваша свідомість розчиняється…")
+                        .color(NamedTextColor.DARK_PURPLE)
+                        .decorate(TextDecoration.ITALIC)
+        );
 
-        // --- DDD FIX: Використовуємо методи контексту ---
-        // Замість прямого виклику Bukkit API з плагіном, ми кажемо контексту: "сховай мене від нього"
+        // ───── ЕФЕКТИ ─────
+        target.addPotionEffect(new PotionEffect(
+                PotionEffectType.SLOWNESS,
+                EFFECT_DURATION_SECONDS * 20,
+                1
+        ));
+
+        target.addPotionEffect(new PotionEffect(
+                PotionEffectType.NAUSEA,
+                EFFECT_DURATION_SECONDS * 20,
+                0
+        ));
+
+        // ───── ЛОГІКА ГІПНОЗУ ─────
         context.hidePlayerFromTarget(target, caster);
 
-        // Таймер через контекст
         context.scheduleDelayed(() -> {
-            if (target.isOnline() && caster.isOnline()) {
-                // Відновлення видимості через контекст
-                context.showPlayerToTarget(target, caster);
+            if (!target.isOnline() || !caster.isOnline()) return;
 
-                target.sendMessage(ChatColor.YELLOW + "Ви знову бачите реальність.");
-                target.playSound(target.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
-            }
+            context.showPlayerToTarget(target, caster);
+
+            target.playSound(
+                    target.getLocation(),
+                    Sound.ENTITY_EXPERIENCE_ORB_PICKUP,
+                    1f,
+                    1.2f
+            );
+
+            context.sendMessageToActionBar(
+                    target,
+                    Component.text("👁 Реальність повертається")
+                            .color(NamedTextColor.YELLOW)
+            );
         }, EFFECT_DURATION_SECONDS * 20L);
     }
 }

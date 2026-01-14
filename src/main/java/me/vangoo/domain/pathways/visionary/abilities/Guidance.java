@@ -4,6 +4,8 @@ import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.valueobjects.Sequence;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -64,7 +66,8 @@ public class Guidance extends ActiveAbility {
             hasEnded[0] = true;
             activeGuidanceSessions.remove(casterId);
 
-            context.sendMessageToCaster(ChatColor.YELLOW + "Ви розірвали ментальний зв'язок.");
+            context.sendMessageToActionBar(context.getCaster(),
+                    Component.text("Ви розірвали ментальний зв'язок").color(NamedTextColor.YELLOW));
             context.playSoundToCaster(Sound.BLOCK_BEACON_DEACTIVATE, 1f, 1.2f);
             return AbilityResult.success();
         }
@@ -82,8 +85,12 @@ public class Guidance extends ActiveAbility {
 
         UUID targetId = target.getUniqueId();
         // Візуальні ефекти успіху
-        context.sendMessageToCaster(ChatColor.AQUA + "Ви встановили ментальний контроль над " + target.getName());
-        context.sendMessage(targetId, ChatColor.GRAY + "Ви відчуваєте дивний сон, ніби хтось веде вас за руку...");
+        context.sendMessageToActionBar(context.getCaster(),
+                Component.text("Ви встановили ментальний контроль над " + target.getName())
+                        .color(NamedTextColor.AQUA));
+        context.sendMessageToActionBar(target,
+                Component.text("Ви відчуваєте дивний сон, ніби хтось веде вас за руку...")
+                        .color(NamedTextColor.LIGHT_PURPLE));
 
         context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 1f, 1.5f);
         context.spawnParticle(Particle.HAPPY_VILLAGER, target.getLocation().add(0, 1, 0), 20, 0.5, 0.5, 0.5);
@@ -94,7 +101,9 @@ public class Guidance extends ActiveAbility {
                 e -> e.getEntered().getUniqueId().equals(targetId),
                 e -> {
                     e.setCancelled(true);
-                    context.sendMessage(targetId, ChatColor.RED + "Ментальний контроль не дозволяє вам тут сховатись!");
+                    context.sendMessageToActionBar(target,
+                            Component.text("Ментальний контроль не дозволяє вам тут сховатись!")
+                                    .color(NamedTextColor.RED));
                 },
                 DURATION_SECONDS * 20
         );
@@ -211,7 +220,8 @@ public class Guidance extends ActiveAbility {
 
         // Повідомлення (без спаму - раз на 3 секунди)
         if (now - lastMessageTime[0] > 3000) {
-            context.sendMessage(targetId, ChatColor.DARK_PURPLE + "Незрима сила тягне вас назад!");
+            context.sendMessageToActionBar(target,
+                    Component.text("Незрима сила тягне вас назад!").color(NamedTextColor.DARK_PURPLE));
             lastMessageTime[0] = now;
         }
     }

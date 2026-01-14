@@ -1,4 +1,3 @@
-// UPDATED: PowerProhibition.java
 package me.vangoo.domain.pathways.justiciar.abilities;
 
 import me.vangoo.domain.abilities.core.ActiveAbility;
@@ -7,12 +6,10 @@ import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.domain.pathways.justiciar.abilities.AreaOfJurisdiction;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -22,7 +19,8 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
-import org.bukkit.World;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.*;
@@ -40,10 +38,8 @@ public class PowerProhibition extends ActiveAbility {
     private static final Map<UUID, ProhibitionMode> playerModes = new ConcurrentHashMap<>();
     private static final Set<ProhibitionZone> activeZones = ConcurrentHashMap.newKeySet();
 
-    // Нові структури для відслідковування вторгнень у домени
-    // remaining seconds of grace for an intruder
+    // Структури для відслідковування вторгнень у домени
     private static final Map<UUID, Integer> intrusionRemainingSeconds = new ConcurrentHashMap<>();
-    // owner of the domain the player is currently intruding
     private static final Map<UUID, UUID> intrusionDomainOwner = new ConcurrentHashMap<>();
 
     @Override
@@ -82,7 +78,7 @@ public class PowerProhibition extends ActiveAbility {
         Player caster = context.getCaster();
         UUID casterId = caster.getUniqueId();
 
-        // Shift - перемикання режиму (БЕЗ кулдауну і БЕЗ витрат)
+        // 1. Shift - Перемикання режиму
         if (caster.isSneaking()) {
             ProhibitionMode currentMode = playerModes.getOrDefault(casterId, ProhibitionMode.TELEPORT_BAN);
             ProhibitionMode[] modes = ProhibitionMode.values();
@@ -90,68 +86,72 @@ public class PowerProhibition extends ActiveAbility {
             ProhibitionMode newMode = modes[nextIndex];
 
             playerModes.put(casterId, newMode);
-
             caster.playSound(caster.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.5f);
 
-            String message = ChatColor.GOLD + "⚖ Режим: " + ChatColor.YELLOW + newMode.getDisplayName();
-            caster.sendMessage(message);
-
-            context.spawnParticle(
-                    newMode.getParticle(),
-                    caster.getLocation().add(0, 1, 0),
-                    30,
-                    0.5, 0.5, 0.5
+            context.sendMessageToActionBar(
+                    Component.text("⚖ Режим: ", NamedTextColor.GOLD)
+                            .append(LegacyComponentSerializer.legacySection().deserialize(newMode.getDisplayName()))
             );
-
-            // НЕ витрачаємо духовність і НЕ накладаємо кулдаун
-            return AbilityResult.failure("");
+            context.spawnParticle(newMode.getParticle(), caster.getLocation().add(0, 1, 0), 30, 0.5, 0.5, 0.5);
+            return AbilityResult.deferred();
         }
 
-        // Звичайне використання - накладаємо заборону
+        // 2. Активація заборони
         ProhibitionMode mode = playerModes.getOrDefault(casterId, ProhibitionMode.TELEPORT_BAN);
         Beyonder casterBeyonder = context.getCasterBeyonder();
+
+        // Визначаємо рівень і радіус динамічно
         int casterSequence = casterBeyonder == null ? 9 : casterBeyonder.getSequenceLevel();
+        double dynamicRadius = getJurisdictionRadius(casterSequence);
 
-        List<Player> nearbyPlayers = context.getNearbyPlayers(RADIUS);
+        List<Player> nearbyPlayers = context.getNearbyPlayers(dynamicRadius);
 
-        showActivationEffect(context, mode);
+        // Ефекти активації з новим радіусом
+        Location loc = context.getCasterLocation();
+        context.playSphereEffect(loc.clone().add(0, 1, 0), dynamicRadius, mode.getParticle(), 40);
+        context.playWaveEffect(loc, dynamicRadius, Particle.CRIT, 30);
+        context.playSoundToCaster(Sound.ENTITY_EVOKER_PREPARE_ATTACK, 1.0f, 0.7f);
+        context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 0.8f, 1.5f);
+
+        context.sendMessageToActionBar(
+                Component.text("⚖ Активовано заборону: ", NamedTextColor.GOLD)
+                        .append(LegacyComponentSerializer.legacySection().deserialize(mode.getDisplayName()))
+        );
 
         Set<UUID> affectedPlayers = new HashSet<>();
         Set<UUID> resistedPlayers = new HashSet<>();
 
         ProhibitionZone zone = new ProhibitionZone(
                 context.getCasterLocation(),
-                RADIUS,
+                dynamicRadius, // Передаємо динамічний радіус
                 mode,
                 casterSequence,
                 casterId,
                 System.currentTimeMillis() + (DURATION_SECONDS * 1000L)
         );
 
-        // Застосовуємо заборону на всіх в радіусі (ВКЛЮЧАЮЧИ КАСТЕРА)
+        // Початковий скан гравців (для ефектів і статистики)
         for (Player target : nearbyPlayers) {
             UUID targetId = target.getUniqueId();
             Beyonder targetBeyonder = context.getBeyonderFromEntity(targetId);
             int targetSequence = targetBeyonder == null ? 9 : targetBeyonder.getSequenceLevel();
 
-            // Кастер завжди під забороною (не може опиратися власній заборі)
             if (targetId.equals(casterId)) {
                 zone.addBannedPlayer(targetId);
                 affectedPlayers.add(targetId);
                 showProhibitionEffect(context, target, mode);
-                sendProhibitionMessage(target, mode, true);
+                sendProhibitionMessage(context, target, mode, true);
                 continue;
             }
 
-            // Інші можуть опиратися якщо вони потойбічні кращої послідовності
-            boolean canResist = targetBeyonder != null && targetSequence < casterSequence;
-
-            if (canResist) {
-                double resistChance = (casterSequence - targetSequence) * 0.15;
-                if (Math.random() < resistChance) {
+            // Перевірка резисту при касті (для статистики)
+            // Увага: Реальна перевірка для входу тепер буде в subscribeEntryBlocking
+            boolean isStronger = targetBeyonder != null && targetSequence < casterSequence;
+            if (isStronger) {
+                // Шанс резисту для самої заборони, якщо вона накладається прямо на гравця
+                if (Math.random() < 0.5) {
                     resistedPlayers.add(targetId);
                     showResistEffect(context, target);
-                    target.sendMessage(ChatColor.GREEN + "⚖ Ви опиралися забороні!");
                     continue;
                 }
             }
@@ -159,15 +159,13 @@ public class PowerProhibition extends ActiveAbility {
             zone.addBannedPlayer(targetId);
             affectedPlayers.add(targetId);
             showProhibitionEffect(context, target, mode);
-            sendProhibitionMessage(target, mode, false);
+            sendProhibitionMessage(context, target, mode, false);
         }
 
-        // Активуємо зону
         activeZones.add(zone);
         subscribeToProhibitionEvents(context, zone);
         maintainZoneVisuals(context, zone);
 
-        // Автоматичне видалення після закінчення
         context.scheduleDelayed(() -> {
             activeZones.remove(zone);
             announceZoneExpiration(context, zone);
@@ -197,7 +195,10 @@ public class PowerProhibition extends ActiveAbility {
                     event.setCancelled(true);
                     Player player = event.getPlayer();
 
-                    sendActionBar(player, ChatColor.RED + "⚖ Телепортація заборонена!");
+                    // ACTION BAR: Порушник
+                    context.sendMessageToActionBar(player, LegacyComponentSerializer.legacySection().deserialize(
+                            ChatColor.RED + "⚖ Телепортація заборонена!"
+                    ));
                     player.playSound(player.getLocation(), Sound.BLOCK_CHEST_LOCKED, 1.0f, 1.0f);
 
                     notifyCasterOfViolation(context, zone, player, "спробував телепортуватися");
@@ -211,34 +212,64 @@ public class PowerProhibition extends ActiveAbility {
         context.subscribeToEvent(
                 EntityDamageByEntityEvent.class,
                 event -> {
+                    // 1. Базові перевірки
                     if (!activeZones.contains(zone)) return false;
                     if (!(event.getDamager() instanceof Player attacker)) return false;
                     if (!(event.getEntity() instanceof Player victim)) return false;
-                    if (!zone.isInside(victim.getLocation())) return false;
-                    if (!zone.isBanned(attacker.getUniqueId())) return false;
 
-                    // Перевіряємо чи удар вб'є гравця
+                    // 2. Перевірка локації жертви (чи в зоні вона)
+                    if (!zone.isInside(victim.getLocation())) return false;
+
+                    // 3. ПЕРЕВІРКА АТАКУЮЧОГО:
+                    // Блокуємо, якщо атакуючий є в списку забанених АБО якщо атакуючий - це КАСТЕР.
+                    // Це гарантує, що кастер не зможе обійти заборону.
+                    boolean isAttackerBanned = zone.isBanned(attacker.getUniqueId());
+                    boolean isAttackerCaster = attacker.getUniqueId().equals(zone.casterId);
+
+                    if (!isAttackerBanned && !isAttackerCaster) {
+                        return false; // Якщо атакуючий не під забороною і не кастер -> дозволяємо
+                    }
+
+                    // 4. Перевірка на смертельний урон
                     double damageAfter = victim.getHealth() - event.getFinalDamage();
                     return damageAfter <= 0;
                 },
                 event -> {
+                    // Скасовуємо смерть
+                    event.setCancelled(true);
+
                     Player victim = (Player) event.getEntity();
                     Player attacker = (Player) event.getDamager();
 
-                    // Встановлюємо здоров'я на мінум замість смерті
-                    context.scheduleDelayed(() -> {
-                        if (victim.getHealth() <= 0) {
-                            victim.setHealth(1.0);
-                        }
-                    }, 1L);
+                    // Емуляція Тотема Безсмертя (лікування)
+                    if (victim.getHealth() < 1.0) {
+                        victim.setHealth(1.0);
+                    }
 
-                    sendActionBar(attacker, ChatColor.RED + "⚖ Вбивство заборонено!");
-                    attacker.playSound(attacker.getLocation(), Sound.BLOCK_ANVIL_LAND, 1.0f, 0.5f);
+                    // Візуальний та звуковий ефект
+                    victim.playEffect(EntityEffect.TOTEM_RESURRECT);
 
+                    // Баффи після тотема
+                    victim.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 900, 1));
+                    victim.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 800, 0));
+                    victim.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 100, 1));
+
+                    // Сповіщення Атакуючому (це побачить і Кастер, якщо він атакував)
+                    context.sendMessageToActionBar(attacker, LegacyComponentSerializer.legacySection().deserialize(
+                            ChatColor.RED + "⚖ Вбивство заборонено! (Спрацював захист)"
+                    ));
+
+                    // Сповіщення Жертві
+                    context.sendMessageToActionBar(victim, LegacyComponentSerializer.legacySection().deserialize(
+                            ChatColor.GREEN + "⚖ Заборона врятувала вас від смерті!"
+                    ));
+
+                    attacker.playSound(attacker.getLocation(), Sound.ITEM_TOTEM_USE, 1.0f, 1.0f);
+
+                    // Якщо кастер намагався когось вбити — він отримає повідомлення про порушення сам на себе
+                    // (або ми не надсилаємо, якщо attacker == caster, щоб не спамити,
+                    // але в Actionbar він вже побачив попередження вище).
                     notifyCasterOfViolation(context, zone, attacker, "спробував вбити " + victim.getName());
-
-                    context.spawnParticle(Particle.TOTEM_OF_UNDYING, victim.getLocation().add(0, 1, 0), 30, 0.5, 0.5, 0.5);
-                    context.playSound(victim.getLocation(), Sound.ITEM_TOTEM_USE, 1.0f, 1.0f);
                 },
                 DURATION_TICKS + 20
         );
@@ -248,93 +279,53 @@ public class PowerProhibition extends ActiveAbility {
         context.subscribeToEvent(
                 PlayerMoveEvent.class,
                 event -> {
+                    // 1. Перевірка активності зони
                     if (!activeZones.contains(zone)) return false;
 
                     Player player = event.getPlayer();
-                    if (!zone.isBanned(player.getUniqueId())) return false;
 
+                    // 2. Імунітет Кастера
+                    if (player.getUniqueId().equals(zone.casterId)) return false;
+
+                    // 3. Геометрична перевірка (чи входить гравець у зону)
                     Location to = event.getTo();
                     if (to == null) return false;
+                    if (!zone.isInside(to)) return false; // Якщо рух не всередину/всередині зони, ігноруємо
 
-                    // Перевіряємо чи гравець намагається увійти в чужий домен
-                    UUID owner = AreaOfJurisdiction.getDomainOwnerAt(to);
-                    return owner != null && !owner.equals(player.getUniqueId());
+                    // 4. ПЕРЕВІРКА РІВНЯ СИЛ (SEQUENCE HIERARCHY)
+                    Beyonder targetBeyonder = context.getBeyonderFromEntity(player.getUniqueId());
+
+                    if (targetBeyonder != null) {
+                        int targetSeq = targetBeyonder.getSequenceLevel();
+                        // У Lord of the Mysteries менше число = сильніший.
+                        // Якщо ціль (напр. 5) < Кастер (напр. 7), то ціль сильніша.
+                        // Сильніші ігнорують бар'єр.
+                        if (targetSeq < zone.casterSequence) {
+                            return false; // Дозволити вхід
+                        }
+                    }
+
+                    // Якщо рівень слабший або рівний, або це не бійондер — блокуємо
+                    return true;
                 },
                 event -> {
-                    // Обробник входу в домен: сильне відштовхування + 5 секунд на вихід, інакше покарання
                     Player player = event.getPlayer();
-                    Location to = event.getTo();
-                    if (to == null) return;
 
-                    UUID owner = AreaOfJurisdiction.getDomainOwnerAt(to);
-                    if (owner == null) return;
+                    // Вектор відштовхування
+                    Location center = zone.center.clone();
+                    Vector direction = player.getLocation().toVector().subtract(center.toVector()).normalize();
 
-                    // Сильний відштовх назад від центру домену
-                    AreaOfJurisdiction.DomainData data = AreaOfJurisdiction.getDomainData(owner);
-                    if (data == null) return;
+                    if (Double.isNaN(direction.getX())) direction = new Vector(0, 0, 1);
 
-                    Vector away = player.getLocation().toVector().subtract(data.getCenter().toVector()).normalize();
-                    // якщо нульовий вектор (точно в центрі) — використаємо напрямок з гравця
-                    if (away.isZero()) away = player.getLocation().getDirection().clone().multiply(-1);
-                    away.setY(0.9);
-                    away = away.multiply(1.8);
-                    player.setVelocity(away);
+                    // Відштовхуємо назад
+                    player.setVelocity(direction.multiply(1.2).setY(0.4));
 
-                    // actionbar - повідомлення про обмежений час
-                    sendActionBar(player, ChatColor.RED + "⚖ Ви в чужому домені! Вийдіть за 5с або буде покарання.");
-                    player.playSound(player.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 0.6f);
+                    context.sendMessageToActionBar(player, LegacyComponentSerializer.legacySection().deserialize(
+                            ChatColor.RED + "⛔ Рівень заборони занадто високий для вас!"
+                    ));
 
-                    UUID playerId = player.getUniqueId();
-
-                    // Якщо вже відстежується — просто оновимо таймер
-                    intrusionDomainOwner.put(playerId, owner);
-                    intrusionRemainingSeconds.put(playerId, 5);
-
-                    // Стартуємо повторювану перевірку (без можливості явного відписання від таску — але таск перевіряє карти)
-                    context.scheduleRepeating(() -> {
-                        // Якщо гравець більше не відстежується — нічого не робимо
-                        if (!intrusionDomainOwner.containsKey(playerId)) return;
-                        UUID trackedOwner = intrusionDomainOwner.get(playerId);
-                        if (!trackedOwner.equals(owner)) {
-                            intrusionDomainOwner.remove(playerId);
-                            intrusionRemainingSeconds.remove(playerId);
-                            return;
-                        }
-
-                        // Якщо гравець вийшов з домену — прибираємо відстеження і повідомляємо
-                        if (!AreaOfJurisdiction.isLocationInsideDomainForOwner(player.getLocation(), owner)) {
-                            intrusionDomainOwner.remove(playerId);
-                            intrusionRemainingSeconds.remove(playerId);
-                            sendActionBar(player, ChatColor.GREEN + "⚖ Ви вийшли з домену.");
-                            return;
-                        }
-
-                        // Зменшуємо таймер
-                        Integer rem = intrusionRemainingSeconds.get(playerId);
-                        if (rem == null) {
-                            intrusionDomainOwner.remove(playerId);
-                            return;
-                        }
-
-                        if (rem <= 0) {
-                            // Викликаємо покарання — використовуючи owner як "кастер" домену
-                            intrusionDomainOwner.remove(playerId);
-                            intrusionRemainingSeconds.remove(playerId);
-
-                            // реєструємо порушення: "Втручання у домен"
-                            Punishment.registerViolation(context, owner, playerId, "втручання у домен");
-
-                            // Додаткові ефекти
-                            context.spawnParticle(Particle.SMOKE, player.getLocation().add(0, 1, 0), 20, 0.4, 0.4, 0.4);
-                            context.playSound(player.getLocation(), Sound.ENTITY_WITHER_HURT, 1.0f, 0.6f);
-
-                            return;
-                        } else {
-                            intrusionRemainingSeconds.put(playerId, rem - 1);
-                            sendActionBar(player, ChatColor.YELLOW + "⚖ Вийдіть з домену: " + ChatColor.WHITE + rem + "с");
-                        }
-
-                    }, 0L, 20L);
+                    player.playSound(player.getLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 1.2f);
+                    context.spawnParticle(Particle.SOUL_FIRE_FLAME, player.getLocation().add(0, 1, 0), 10, 0.3, 0.3, 0.3);
                 },
                 DURATION_TICKS + 20
         );
@@ -351,7 +342,11 @@ public class PowerProhibition extends ActiveAbility {
                 if (player.isFlying() || player.getAllowFlight()) {
                     player.setFlying(false);
                     player.setAllowFlight(false);
-                    sendActionBar(player, ChatColor.RED + "⚖ Політ заборонено!");
+
+                    // ACTION BAR: Порушник
+                    context.sendMessageToActionBar(player, LegacyComponentSerializer.legacySection().deserialize(
+                            ChatColor.RED + "⚖ Політ заборонено!"
+                    ));
                     player.playSound(player.getLocation(), Sound.ENTITY_BAT_DEATH, 1.0f, 0.8f);
 
                     notifyCasterOfViolation(context, zone, player, "спробував летіти");
@@ -362,17 +357,13 @@ public class PowerProhibition extends ActiveAbility {
     }
 
     private void subscribeWeaponUseBlocking(IAbilityContext context, ProhibitionZone zone) {
-        // Блокуємо використання зброї ТІЛЬКИ при атаці когось
         context.subscribeToEvent(
                 EntityDamageByEntityEvent.class,
                 event -> {
                     if (!activeZones.contains(zone)) return false;
                     if (!(event.getDamager() instanceof Player attacker)) return false;
                     if (!zone.isInside(attacker.getLocation())) return false;
-
-                    // Переконаємось, що заборона працює також на кастера навіть якщо щось не так з bannedPlayers
                     if (!zone.isBanned(attacker.getUniqueId()) && !attacker.getUniqueId().equals(zone.casterId)) return false;
-
                     org.bukkit.inventory.ItemStack item = attacker.getInventory().getItemInMainHand();
                     return isBannedWeapon(item.getType());
                 },
@@ -380,11 +371,13 @@ public class PowerProhibition extends ActiveAbility {
                     event.setCancelled(true);
                     Player attacker = (Player) event.getDamager();
 
-                    sendActionBar(attacker, ChatColor.RED + "⚖ Використання зброї заборонено!");
+                    // ACTION BAR: Порушник
+                    context.sendMessageToActionBar(attacker, LegacyComponentSerializer.legacySection().deserialize(
+                            ChatColor.RED + "⚖ Використання зброї заборонено!"
+                    ));
                     attacker.playSound(attacker.getLocation(), Sound.BLOCK_CHEST_LOCKED, 1.0f, 1.2f);
 
                     notifyCasterOfViolation(context, zone, attacker, "спробував атакувати забороненою зброєю");
-
                     context.spawnParticle(Particle.SMOKE, attacker.getLocation().add(0, 1, 0), 10, 0.3, 0.3, 0.3);
                 },
                 DURATION_TICKS + 20
@@ -392,7 +385,6 @@ public class PowerProhibition extends ActiveAbility {
     }
 
     private void subscribeEnvironmentLock(IAbilityContext context, ProhibitionZone zone) {
-        // existing code unchanged
         context.subscribeToEvent(
                 ExplosionPrimeEvent.class,
                 ev -> activeZones.contains(zone) && zone.isInside(ev.getEntity().getLocation()),
@@ -417,7 +409,9 @@ public class PowerProhibition extends ActiveAbility {
                     ev.setCancelled(true);
                     Player p = ev.getPlayer();
                     if (zone.isBanned(p.getUniqueId())) {
-                        sendActionBar(p, ChatColor.RED + "⚖ Зміни блоків заборонені!");
+                        context.sendMessageToActionBar(p, LegacyComponentSerializer.legacySection().deserialize(
+                                ChatColor.RED + "⚖ Зміни блоків заборонені!"
+                        ));
                         notifyCasterOfViolation(context, zone, p, "спробував зруйнувати блок");
                     }
                 },
@@ -431,7 +425,9 @@ public class PowerProhibition extends ActiveAbility {
                     ev.setCancelled(true);
                     Player p = ev.getPlayer();
                     if (zone.isBanned(p.getUniqueId())) {
-                        sendActionBar(p, ChatColor.RED + "⚖ Зміни блоків заборонені!");
+                        context.sendMessageToActionBar(p, LegacyComponentSerializer.legacySection().deserialize(
+                                ChatColor.RED + "⚖ Зміни блоків заборонені!"
+                        ));
                         notifyCasterOfViolation(context, zone, p, "спробував поставити блок");
                     }
                 },
@@ -453,29 +449,20 @@ public class PowerProhibition extends ActiveAbility {
 
     private boolean isBannedWeapon(org.bukkit.Material material) {
         String name = material.name();
-        return name.contains("SWORD") ||
-                name.contains("AXE") ||
-                name.contains("BOW") ||
-                name.contains("CROSSBOW") ||
-                name.contains("TRIDENT");
+        return name.contains("SWORD") || name.contains("AXE") || name.contains("BOW") || name.contains("CROSSBOW") || name.contains("TRIDENT");
     }
 
-    private void notifyCasterOfViolation(IAbilityContext context, ProhibitionZone zone,
-                                         Player violator, String action) {
+    private void notifyCasterOfViolation(IAbilityContext context, ProhibitionZone zone, Player violator, String action) {
         Player caster = context.getCaster().getServer().getPlayer(zone.casterId);
-
-        // Не повідомляємо якщо сам кастер порушив
         if (violator.getUniqueId().equals(zone.casterId)) return;
-
         if (caster == null || !caster.isOnline()) return;
 
-        // Повідомлення кастеру в action bar
-        String casterMsg = ChatColor.GOLD + "⚖ " + ChatColor.YELLOW + violator.getName() +
-                ChatColor.GRAY + " " + action;
-        sendActionBar(caster, casterMsg);
+        // ACTION BAR: Кастер (Сповіщення про порушення)
+        context.sendMessageToActionBar(caster, LegacyComponentSerializer.legacySection().deserialize(
+                ChatColor.GOLD + "⚖ " + ChatColor.YELLOW + violator.getName() + ChatColor.GRAY + " " + action
+        ));
         caster.playSound(caster.getLocation(), Sound.BLOCK_NOTE_BLOCK_BELL, 0.5f, 1.5f);
 
-        // Тригеримо Punishment якщо кастер має sequence <= 5
         Beyonder casterBeyonder = context.getBeyonderFromEntity(zone.casterId);
         if (casterBeyonder != null && casterBeyonder.getSequenceLevel() <= 5) {
             Punishment.registerViolation(context, zone.casterId, violator.getUniqueId(), action);
@@ -486,29 +473,31 @@ public class PowerProhibition extends ActiveAbility {
         for (UUID playerId : zone.bannedPlayers) {
             Player player = context.getCaster().getServer().getPlayer(playerId);
             if (player != null && player.isOnline()) {
-                player.sendMessage(ChatColor.GRAY + "⚖ Заборона знята.");
-                context.spawnParticle(Particle.END_ROD, player.getLocation().add(0, 1, 0),
-                        10, 0.3, 0.5, 0.3);
+                // ACTION BAR: Закінчення дії
+                context.sendMessageToActionBar(player, LegacyComponentSerializer.legacySection().deserialize(
+                        ChatColor.GRAY + "⚖ Заборона знята."
+                ));
+                context.spawnParticle(Particle.END_ROD, player.getLocation().add(0, 1, 0), 10, 0.3, 0.5, 0.3);
             }
         }
     }
 
     private void showActivationEffect(IAbilityContext context, ProhibitionMode mode) {
         Location loc = context.getCasterLocation();
-
         context.playSphereEffect(loc.clone().add(0, 1, 0), RADIUS, mode.getParticle(), 40);
         context.playWaveEffect(loc, RADIUS, Particle.CRIT, 30);
-
         context.playSoundToCaster(Sound.ENTITY_EVOKER_PREPARE_ATTACK, 1.0f, 0.7f);
         context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 0.8f, 1.5f);
 
-        context.sendMessageToCaster(ChatColor.GOLD + "⚖ Активовано заборону: " +
-                ChatColor.YELLOW + mode.getDisplayName());
+        // ACTION BAR: Кастер (Активація)
+        context.sendMessageToActionBar(
+                Component.text("⚖ Активовано заборону: ", NamedTextColor.GOLD)
+                        .append(LegacyComponentSerializer.legacySection().deserialize(mode.getDisplayName()))
+        );
     }
 
     private void showProhibitionEffect(IAbilityContext context, Player target, ProhibitionMode mode) {
         Location loc = target.getLocation().add(0, 1, 0);
-
         context.spawnParticle(mode.getParticle(), loc, 30, 0.5, 0.5, 0.5);
         context.spawnParticle(Particle.CRIT, loc, 20, 0.3, 0.5, 0.3);
         context.playSound(loc, Sound.ENTITY_EVOKER_CAST_SPELL, 1.0f, 0.8f);
@@ -520,49 +509,36 @@ public class PowerProhibition extends ActiveAbility {
         context.playSound(loc, Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1.0f, 1.5f);
     }
 
-    private void sendProhibitionMessage(Player target, ProhibitionMode mode, boolean isCaster) {
+    private void sendProhibitionMessage(IAbilityContext context, Player target, ProhibitionMode mode, boolean isCaster) {
         String prefix = isCaster ?
-                ChatColor.GOLD + "⚖ Ви накладаєте на себе заборону: " :
+                ChatColor.GOLD + "⚖ Ви наклали заборону: " :
                 ChatColor.RED + "⚖ На вас накладено заборону: ";
 
-        target.sendMessage(prefix + ChatColor.YELLOW + mode.getDisplayName());
-        target.sendMessage(ChatColor.GRAY + mode.getDescription());
+        // ACTION BAR: Ціль (або Кастер про себе)
+        // Об'єднуємо назву і опис, щоб помістилося в одну стрічку actionbar
+        context.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
+                prefix + ChatColor.YELLOW + mode.getDisplayName()
+        ));
     }
 
-    private void showResultStatistics(IAbilityContext context, ProhibitionMode mode,
-                                      Set<UUID> affected, Set<UUID> resisted) {
+    private void showResultStatistics(IAbilityContext context, ProhibitionMode mode, Set<UUID> affected, Set<UUID> resisted) {
         int total = affected.size() + resisted.size();
-
         if (total == 0) {
             context.sendMessageToCaster(ChatColor.YELLOW + "У зоні дії немає цілей");
             return;
         }
 
+        // Статистика залишається в чаті, оскільки вона занадто велика для Action Bar
         StringBuilder message = new StringBuilder();
         message.append(ChatColor.GOLD).append("═══ Результат Заборони ═══\n");
-
         if (!affected.isEmpty()) {
-            message.append(ChatColor.RED)
-                    .append("✓ Під забороною: ")
-                    .append(ChatColor.WHITE)
-                    .append(affected.size())
-                    .append("\n");
+            message.append(ChatColor.RED).append("✓ Під забороною: ").append(ChatColor.WHITE).append(affected.size()).append("\n");
         }
-
         if (!resisted.isEmpty()) {
-            message.append(ChatColor.GREEN)
-                    .append("✗ Опиралися: ")
-                    .append(ChatColor.WHITE)
-                    .append(resisted.size())
-                    .append("\n");
+            message.append(ChatColor.GREEN).append("✗ Опиралися: ").append(ChatColor.WHITE).append(resisted.size()).append("\n");
         }
-
         int successRate = total == 0 ? 0 : (int) ((affected.size() * 100.0) / total);
-        message.append(ChatColor.GRAY)
-                .append("Успішність: ")
-                .append(ChatColor.YELLOW)
-                .append(successRate)
-                .append("%");
+        message.append(ChatColor.GRAY).append("Успішність: ").append(ChatColor.YELLOW).append(successRate).append("%");
 
         context.sendMessageToCaster(message.toString());
     }
@@ -577,24 +553,21 @@ public class PowerProhibition extends ActiveAbility {
     private void drawZoneBoundary(IAbilityContext context, ProhibitionZone zone) {
         Location center = zone.center;
         double radius = zone.radius;
-
         for (int angle = 0; angle < 360; angle += 20) {
             double radians = Math.toRadians(angle);
             double x = center.getX() + radius * Math.cos(radians);
             double z = center.getZ() + radius * Math.sin(radians);
-
             Location particleLoc = new Location(center.getWorld(), x, center.getY(), z);
             context.spawnParticle(zone.mode.getParticle(), particleLoc, 1, 0.0, 0.0, 0.0);
         }
     }
-
-    private static void sendActionBar(Player p, String message) {
-        if (p == null || !p.isOnline()) return;
-        try {
-            p.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
-        } catch (NoClassDefFoundError | NoSuchMethodError ex) {
-            p.sendMessage(message);
-        }
+    // Метод для визначення радіусу згідно з логікою AreaOfJurisdiction
+    private double getJurisdictionRadius(int sequence) {
+        return switch (sequence) {
+            case 6 -> 60.0;
+            case 5 -> 100.0; // Рівень напівбога і вище
+            default -> sequence < 5 ? 150.0 : 15.0;
+        };
     }
 
     @Override
@@ -605,38 +578,13 @@ public class PowerProhibition extends ActiveAbility {
         intrusionRemainingSeconds.clear();
     }
 
-    // enums and ProhibitionZone unchanged
     public enum ProhibitionMode {
-        TELEPORT_BAN(
-                "Заборона телепортації",
-                "Телепортація в зоні неможлива",
-                Particle.PORTAL
-        ),
-        KILL_BAN(
-                "Заборона вбивств",
-                "Вбивство гравців неможливе (дамаг дозволено)",
-                Particle.TOTEM_OF_UNDYING
-        ),
-        JURISDICTION_ENTRY_BAN(
-                "Заборона входу в домен",
-                "Вхід у чужий домен заборонено",
-                Particle.SOUL
-        ),
-        FLIGHT_BAN(
-                "Заборона польоту",
-                "Політ в зоні неможливий",
-                Particle.CLOUD
-        ),
-        WEAPON_USE_BAN(
-                "Заборона зброї",
-                "Використання зброї повністю заблоковано",
-                Particle.SMOKE
-        ),
-        ENVIRONMENT_LOCK(
-                "Блокування середовища",
-                "Підриви, спавн, зміни блоків та погода заблоковані",
-                Particle.WITCH
-        );
+        TELEPORT_BAN("Заборона телепортації", "Телепортація в зоні неможлива", Particle.ENCHANT),
+        KILL_BAN("Заборона вбивств", "Вбивство гравців неможливе", Particle.ENCHANT),
+        JURISDICTION_ENTRY_BAN("Заборона входу в Cферу Юрисдикції", "Вхід у чужий домен заборонено", Particle.ENCHANT),
+        FLIGHT_BAN("Заборона польоту", "Політ в зоні неможливий", Particle.ENCHANT),
+        WEAPON_USE_BAN("Заборона зброї", "Використання зброї заблоковано", Particle.ENCHANT),
+        ENVIRONMENT_LOCK("Блокування середовища", "Зміни блоків заблоковані", Particle.ENCHANT);
 
         private final String displayName;
         private final String description;
@@ -648,17 +596,9 @@ public class PowerProhibition extends ActiveAbility {
             this.particle = particle;
         }
 
-        public String getDisplayName() {
-            return displayName;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        public Particle getParticle() {
-            return particle;
-        }
+        public String getDisplayName() { return displayName; }
+        public String getDescription() { return description; }
+        public Particle getParticle() { return particle; }
     }
 
     public static class ProhibitionZone {
@@ -670,8 +610,7 @@ public class PowerProhibition extends ActiveAbility {
         final long expirationTime;
         final Set<UUID> bannedPlayers;
 
-        public ProhibitionZone(Location center, double radius, ProhibitionMode mode,
-                               int casterSequence, UUID casterId, long expirationTime) {
+        public ProhibitionZone(Location center, double radius, ProhibitionMode mode, int casterSequence, UUID casterId, long expirationTime) {
             this.center = center;
             this.radius = radius;
             this.mode = mode;
@@ -681,34 +620,22 @@ public class PowerProhibition extends ActiveAbility {
             this.bannedPlayers = ConcurrentHashMap.newKeySet();
         }
 
-        public void addBannedPlayer(UUID playerId) {
-            bannedPlayers.add(playerId);
-        }
-
-        public boolean isBanned(UUID playerId) {
-            return bannedPlayers.contains(playerId);
-        }
-
+        public void addBannedPlayer(UUID playerId) { bannedPlayers.add(playerId); }
+        public boolean isBanned(UUID playerId) { return bannedPlayers.contains(playerId); }
         public boolean isInside(Location loc) {
             if (!loc.getWorld().equals(center.getWorld())) return false;
             return loc.distance(center) <= radius;
         }
-
-        public boolean isExpired() {
-            return System.currentTimeMillis() > expirationTime;
-        }
+        public boolean isExpired() { return System.currentTimeMillis() > expirationTime; }
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (!(o instanceof ProhibitionZone that)) return false;
-            return Objects.equals(center, that.center) &&
-                    expirationTime == that.expirationTime;
+            return Objects.equals(center, that.center) && expirationTime == that.expirationTime;
         }
 
         @Override
-        public int hashCode() {
-            return Objects.hash(center, expirationTime);
-        }
+        public int hashCode() { return Objects.hash(center, expirationTime); }
     }
 }

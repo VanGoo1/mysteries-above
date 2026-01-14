@@ -22,6 +22,8 @@ public class Telepathy extends ActiveAbility {
 
     private static final Material CATALYST = Material.FERMENTED_SPIDER_EYE;
     private static final Material REAGENT = Material.GLOWSTONE_DUST;
+    private static final Material CANDLE = Material.CANDLE;
+
 
     @Override
     public String getName() {
@@ -65,13 +67,14 @@ public class Telepathy extends ActiveAbility {
             return AbilityResult.failure("Не можна читати свої думки.");
         }
 
-        if (!context.hasItem(CATALYST, 1) || !context.hasItem(REAGENT, 1)) {
+        if (!context.hasItem(CATALYST, 1) || !context.hasItem(REAGENT, 1) || !context.hasItem(CANDLE, 1)) {
             return AbilityResult.failure("Немає інгредієнтів (Свічка + Світлопил + Ферментоване око).");
         }
 
         // ВИПРАВЛЕННЯ: витрачаємо обидва інгредієнти
         context.consumeItem(CATALYST, 1);
         context.consumeItem(REAGENT, 1);
+        context.consumeItem(CANDLE, 1);
 
         int seq = context.getCasterBeyonder().getSequenceLevel();
         int waitTicks = WAIT_TIME_SECONDS * 20;

@@ -6,6 +6,7 @@ import de.slikey.effectlib.effect.*;
 import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.MysteriesAbovePlugin;
 import me.vangoo.domain.abilities.core.Ability;
+import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.events.AbilityDomainEvent;
@@ -399,6 +400,16 @@ public class BukkitAbilityContext implements IAbilityContext {
         }
     }
     @Override
+    public void sendMessageToActionBar(Player target, Component message) {
+        if (target != null && target.isOnline()) {
+            // Конвертуємо сучасний Component в старий формат для Spigot API
+            String legacy = LegacyComponentSerializer.legacySection().serialize(message);
+
+            // Відправляємо
+            target.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(legacy));
+        }
+    }
+    @Override
     public void spawnTemporaryHologram(Location location, Component text, long durationTicks) {
         // 1. Спавнимо ArmorStand
         ArmorStand holo = (ArmorStand) location.getWorld().spawnEntity(location, EntityType.ARMOR_STAND);
@@ -421,6 +432,48 @@ public class BukkitAbilityContext implements IAbilityContext {
             }
         }, durationTicks);
     }
+    public void spawnFollowingHologramForPlayer(Player viewer, Player target, Component text, long durationTicks, long updateIntervalTicks) {
+        if (viewer == null || !viewer.isOnline()) return;
+        if (target == null || !target.isOnline()) return;
+
+        Location start = target.getLocation().clone().add(0, target.getEyeHeight() + 0.5, 0);
+        ArmorStand holo = (ArmorStand) start.getWorld().spawnEntity(start, EntityType.ARMOR_STAND);
+        holo.setVisible(false);
+        holo.setGravity(false);
+        holo.setMarker(true);
+        holo.setCustomNameVisible(true);
+        holo.setInvulnerable(true);
+
+        String serialized = LegacyComponentSerializer.legacySection().serialize(text);
+        holo.setCustomName(serialized);
+
+        // Робимо ArmorStand невидимим для всіх, крім глядача
+        for (Player p : target.getWorld().getPlayers()) {
+            if (!p.equals(viewer)) p.hideEntity(plugin, holo); // plugin = твій JavaPlugin
+        }
+
+        final long[] elapsed = {0};
+
+        scheduleRepeating(() -> {
+            if (!holo.isValid() || !target.isOnline() || target.isDead() || !viewer.isOnline()) {
+                if (holo.isValid()) holo.remove();
+                return;
+            }
+
+            // Слідкуємо за гравцем
+            holo.teleport(target.getLocation().clone().add(0, target.getEyeHeight() + 0.5, 0));
+
+            elapsed[0] += updateIntervalTicks;
+            if (elapsed[0] >= durationTicks) {
+                if (holo.isValid()) holo.remove();
+            }
+        }, 0L, updateIntervalTicks);
+
+        scheduleDelayed(() -> {
+            if (holo.isValid()) holo.remove();
+        }, durationTicks);
+    }
+
 
     // ==========================================
     // BEYONDER
@@ -719,8 +772,7 @@ public class BukkitAbilityContext implements IAbilityContext {
         effectManager.start(effect);
     }
 
-    @Override
-    public void playExplosionRingEffect(Location center, double radius, Particle particle) {
+    public void playExplosionRingEffect(Location center, double radius, Particle particle, Particle.DustOptions options) {
         final double[] currentRadius = {0.1};
         final double radiusStep = radius / 20;
 
@@ -733,14 +785,13 @@ public class BukkitAbilityContext implements IAbilityContext {
                     return;
                 }
 
-                // Draw circle at current radius
                 for (int i = 0; i < 50; i++) {
                     double angle = 2 * Math.PI * i / 50;
                     double x = currentRadius[0] * Math.cos(angle);
                     double z = currentRadius[0] * Math.sin(angle);
 
                     Location particleLoc = center.clone().add(x, 0, z);
-                    world.spawnParticle(particle, particleLoc, 1, 0, 0, 0, 0);
+                    world.spawnParticle(particle, particleLoc, 1, 0, 0, 0, 0, options); // передаємо DustOptions
                 }
 
                 currentRadius[0] += radiusStep;
@@ -964,6 +1015,24 @@ public class BukkitAbilityContext implements IAbilityContext {
             int durationTicks
     ) {
         eventManager.subscribe(getCasterId(), eventClass, filter, handler, durationTicks);
+    }
+
+    @Override
+    public void publishAbilityUsedEvent(ActiveAbility activeAbility) {
+        Beyonder caster = getCasterBeyonder();
+        boolean isOffPathway = caster.getOffPathwayActiveAbilities()
+                .stream()
+                .anyMatch(a -> a.getIdentity().equals(activeAbility.getIdentity()));
+
+        eventPublisher.publishAbility(
+                new AbilityDomainEvent.AbilityUsed(
+                        caster.getPlayerId(),
+                        activeAbility.getName(),
+                        caster.getPathway().getName(),
+                        caster.getSequenceLevel(),
+                        isOffPathway
+                )
+        );
     }
 
     @Override

@@ -4,6 +4,8 @@ import me.vangoo.domain.abilities.core.*;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.valueobjects.*;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -124,10 +126,15 @@ public class PsychicCue extends ActiveAbility {
         Sequence casterSeq = ctx.getCasterBeyonder().getSequence();
         int maxRange = scaleValue(BASE_NAVIGATION_RANGE, casterSeq, SequenceScaler.ScalingStrategy.MODERATE);
 
-        ctx.sendMessageToCaster(ChatColor.GOLD + "▶ Режим навігації активовано");
-        ctx.sendMessageToCaster(ChatColor.GRAY + "Клацніть ПКМ по блоку щоб задати точку призначення");
-        ctx.sendMessageToCaster(ChatColor.GRAY + "Максимальна дальність: " + ChatColor.YELLOW + maxRange + " блоків");
-        ctx.sendMessageToCaster(ChatColor.GRAY + "Shift + ПКМ для скасування");
+        // Відправляємо кастеру action-bar повідомлення
+        ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
+                ChatColor.GOLD + "▶ Режим навігації активовано"));
+        ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
+                ChatColor.GRAY + "Клацніть ПКМ по блоку щоб задати точку призначення"));
+        ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
+                ChatColor.GRAY + "Максимальна дальність: " + ChatColor.YELLOW + maxRange + " блоків"));
+        ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
+                ChatColor.GRAY + "Shift + ПКМ для скасування"));
 
         ctx.playSoundToCaster(Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.5f);
 
@@ -142,7 +149,8 @@ public class PsychicCue extends ActiveAbility {
 
                     // Скасування - НЕ споживає ресурси
                     if (e.getPlayer().isSneaking()) {
-                        ctx.sendMessageToCaster(ChatColor.YELLOW + "✗ Навігація скасована");
+                        ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
+                                ChatColor.YELLOW + "✗ Навігація скасована"));
                         ctx.playSoundToCaster(Sound.ENTITY_VILLAGER_NO, 0.7f, 1.0f);
                         return;
                     }
@@ -153,8 +161,9 @@ public class PsychicCue extends ActiveAbility {
                         double distance = destination.distance(ctx.getCasterLocation());
 
                         if (distance > maxRange) {
-                            ctx.sendMessageToCaster(ChatColor.RED + "✗ Занадто далеко! (" +
-                                    (int)distance + "/" + maxRange + " блоків)");
+                            ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
+                                    ChatColor.RED + "✗ Занадто далеко! (" +
+                                            (int) distance + "/" + maxRange + " блоків)"));
                             ctx.playSoundToCaster(Sound.ENTITY_VILLAGER_NO, 0.7f, 1.0f);
                             return;
                         }
@@ -175,9 +184,11 @@ public class PsychicCue extends ActiveAbility {
 
         // КРИТИЧНО: Споживаємо ресурси ТІЛЬКИ ЗАРАЗ
         if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
-            ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
+            ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
+                    ChatColor.RED + "Недостатньо духовності!"));
             return;
         }
+        ctx.publishAbilityUsedEvent(this);
 
         // Візуальні ефекти
         ctx.spawnParticle(Particle.WITCH, target.getEyeLocation(), 15, 0.4, 0.4, 0.4);
@@ -190,12 +201,17 @@ public class PsychicCue extends ActiveAbility {
             target.leaveVehicle();
         }
 
-        // Повідомлення
-        ctx.sendMessageToCaster(ChatColor.DARK_PURPLE + "Навіяно: " + ChatColor.GOLD + "Навігаційний імператив");
+        // Повідомлення (кастер)
+        ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
+                ChatColor.DARK_PURPLE + "Навіяно: " + ChatColor.GOLD + "Навігаційний імператив"));
+
         ctx.playSoundToCaster(Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1f, 1.6f);
 
-        target.sendMessage(ChatColor.DARK_PURPLE + "✦ Ваша свідомість отримала новий імператив...");
-        target.sendMessage(ChatColor.GRAY + "Щось притягує вас до певної точці...");
+        // Повідомлення цілі (action bar)
+        ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
+                ChatColor.DARK_PURPLE + "✦ Ваша свідомість отримала новий імператив..."));
+        ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
+                ChatColor.GRAY + "Щось притягує вас до певної точці..."));
 
         // Стан активності
         final boolean[] isActive = {true};
@@ -206,7 +222,8 @@ public class PsychicCue extends ActiveAbility {
                 e -> e.getEntered().getUniqueId().equals(target.getUniqueId()) && isActive[0],
                 e -> {
                     e.setCancelled(true);
-                    ctx.sendMessage(target.getUniqueId(), ChatColor.ITALIC + "Імператив змушує вас йти пішки...");
+                    ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
+                            ChatColor.ITALIC + "Імператив змушує вас йти пішки..."));
                 },
                 DURATION_TICKS
         );
@@ -240,7 +257,8 @@ public class PsychicCue extends ActiveAbility {
                 if (ticksPassed >= DURATION_TICKS) {
                     if (isActive[0]) {
                         isActive[0] = false;
-                        target.sendMessage(ChatColor.YELLOW + "✓ Імператив згас...");
+                        ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
+                                ChatColor.YELLOW + "✓ Імператив згас..."));
                         ctx.playSound(target.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 0.8f);
                         ctx.removeEffect(target.getUniqueId(), PotionEffectType.SLOWNESS);
                     }
@@ -259,7 +277,8 @@ public class PsychicCue extends ActiveAbility {
                 if (distance <= COMPLETION_RADIUS) {
                     if (isActive[0]) {
                         isActive[0] = false;
-                        target.sendMessage(ChatColor.GREEN + "✓ Ви досягли пункту призначення");
+                        ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
+                                ChatColor.GREEN + "✓ Ви досягли пункту призначення"));
                         ctx.spawnParticle(Particle.TOTEM_OF_UNDYING, currentLoc, 20, 0.5, 1, 0.5);
                         ctx.playSound(currentLoc, Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.2f);
                         ctx.removeEffect(target.getUniqueId(), PotionEffectType.SLOWNESS);
@@ -314,8 +333,9 @@ public class PsychicCue extends ActiveAbility {
                     ctx.playSound(currentLoc, Sound.ENTITY_VEX_AMBIENT, 0.2f, 0.8f);
 
                     String arrow = getDirectionArrow(currentLoc, destination);
-                    target.sendMessage(ChatColor.DARK_PURPLE + arrow + " " + ChatColor.GRAY +
-                            "Імператив тягне вас... (" + (int)distance + "м)");
+                    ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
+                            ChatColor.DARK_PURPLE + arrow + " " + ChatColor.GRAY +
+                                    "Імператив тягне вас... (" + (int) distance + "м)"));
                 }
 
                 ticksPassed += CHECK_INTERVAL;
@@ -361,9 +381,11 @@ public class PsychicCue extends ActiveAbility {
 
         // КРИТИЧНО: Споживаємо ресурси ТІЛЬКИ ЗАРАЗ, коли сигнал застосовується
         if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
-            ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
+            ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
+                    ChatColor.RED + "Недостатньо духовності!"));
             return;
         }
+        ctx.publishAbilityUsedEvent(this);
 
         switch (type) {
             case HUNGER -> ctx.subscribeToEvent(
@@ -371,8 +393,8 @@ public class PsychicCue extends ActiveAbility {
                     e -> e.getPlayer().equals(target),
                     e -> {
                         e.setCancelled(true);
-                        ctx.sendMessage(target.getUniqueId(),
-                                ChatColor.ITALIC + "Їжа викликає огиду...");
+                        ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
+                                ChatColor.ITALIC + "Їжа викликає огиду..."));
                     },
                     DURATION_TICKS
             );
@@ -390,8 +412,8 @@ public class PsychicCue extends ActiveAbility {
                         e -> e.getPlayer().equals(target) && e.isSprinting(),
                         e -> {
                             e.setCancelled(true);
-                            ctx.sendMessage(target.getUniqueId(),
-                                    ChatColor.ITALIC + "Ноги занадто важкі...");
+                            ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
+                                    ChatColor.ITALIC + "Ноги занадто важкі..."));
                         },
                         DURATION_TICKS
                 );
@@ -402,8 +424,8 @@ public class PsychicCue extends ActiveAbility {
                     e -> e.getDamager().equals(target),
                     e -> {
                         e.setCancelled(true);
-                        ctx.sendMessage(target.getUniqueId(),
-                                ChatColor.ITALIC + "Агресія покинула вас...");
+                        ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
+                                ChatColor.ITALIC + "Агресія покинула вас..."));
                     },
                     DURATION_TICKS
             );
@@ -413,8 +435,8 @@ public class PsychicCue extends ActiveAbility {
                     e -> e.getPlayer().equals(target),
                     e -> {
                         e.setCancelled(true);
-                        ctx.sendMessage(target.getUniqueId(),
-                                ChatColor.ITALIC + "Слова застрягають...");
+                        ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
+                                ChatColor.ITALIC + "Слова застрягають..."));
                     },
                     DURATION_TICKS
             );
@@ -426,8 +448,8 @@ public class PsychicCue extends ActiveAbility {
                             e.getAction().name().contains("RIGHT"),
                     e -> {
                         e.setCancelled(true);
-                        ctx.sendMessage(target.getUniqueId(),
-                                ChatColor.ITALIC + "Байдуже до всього...");
+                        ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
+                                ChatColor.ITALIC + "Байдуже до всього..."));
                     },
                     DURATION_TICKS
             );
@@ -437,10 +459,9 @@ public class PsychicCue extends ActiveAbility {
     }
 
     private void showSuccessEffects(IAbilityContext ctx, Player target, PsychicCueType type) {
-        ctx.sendMessageToCaster(ChatColor.DARK_PURPLE + "Навіяно: " + type.getDisplayName());
+        ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
+                ChatColor.DARK_PURPLE + "Навіяно: " + type.getDisplayName()));
         ctx.playSoundToCaster(Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1f, 1.6f);
-        ctx.spawnParticle(Particle.WITCH, target.getEyeLocation(), 15, 0.4, 0.4, 0.4);
-        ctx.playSound(target.getLocation(), Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.5f, 0.8f);
     }
 
     private ItemStack createMenuItem(PsychicCueType type) {

@@ -101,7 +101,11 @@ public interface IAbilityContext {
 
     void sendMessageToActionBar(Component message);
 
+    void sendMessageToActionBar(Player target, Component message);
+
     void spawnTemporaryHologram(Location location, Component text, long durationTicks);
+
+    void spawnFollowingHologramForPlayer(Player viewer, Player target, Component text, long durationTicks, long updateIntervalTicks);
 
     // ==================== BEYONDER ====================
     void updateSanityLoss(UUID playerId, int change);
@@ -267,7 +271,7 @@ public interface IAbilityContext {
      * @param radius   Ring radius
      * @param particle Particle type
      */
-    void playExplosionRingEffect(Location center, double radius, Particle particle);
+    void playExplosionRingEffect(Location center, double radius, Particle particle, Particle.DustOptions options);
 
     /**
      * Стежить за гравцем протягом певного часу.
@@ -297,6 +301,8 @@ public interface IAbilityContext {
             Consumer<T> handler,
             int durationTicks
     );
+
+    void publishAbilityUsedEvent(ActiveAbility activeAbility);
 
     int getMinedAmount(UUID targetId, Material oreType);
 

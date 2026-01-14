@@ -5,7 +5,7 @@ import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.valueobjects.Sequence;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -16,10 +16,11 @@ import org.bukkit.potion.PotionEffectType;
 import java.util.List;
 
 public class Appeasement extends ActiveAbility {
-    private static final int RANGE = 4;
+
+    private static final int BASE_RANGE = 4;
     private static final int COOLDOWN = 40;
-    private static final int SANITY_REDUCTION = 25;
-    private static final int REGENERATION_SECONDS = 7;
+    private static final int BASE_SANITY_REDUCTION = 25;
+    private static final int BASE_REGEN_SECONDS = 7;
 
     @Override
     public String getName() {
@@ -27,15 +28,15 @@ public class Appeasement extends ActiveAbility {
     }
 
     @Override
-    public String getDescription(Sequence userSequence) {
-        int range = scaleValue(RANGE, userSequence, SequenceScaler.ScalingStrategy.MODERATE);
-        int regenSeconds = scaleValue(REGENERATION_SECONDS, userSequence, SequenceScaler.ScalingStrategy.WEAK);
-        int sanityReduction = scaleValue(SANITY_REDUCTION, userSequence, SequenceScaler.ScalingStrategy.MODERATE);
+    public String getDescription(Sequence sequence) {
+        int range = scaleValue(BASE_RANGE, sequence, SequenceScaler.ScalingStrategy.MODERATE);
+        int regen = scaleValue(BASE_REGEN_SECONDS, sequence, SequenceScaler.ScalingStrategy.WEAK);
+        int sanity = scaleValue(BASE_SANITY_REDUCTION, sequence, SequenceScaler.ScalingStrategy.MODERATE);
 
         return String.format(
-                "В радіусі %d блоків прибирає всі небажані ефекти, " +
-                        "надає Регенерацію I на %d секунд та зменшує втрату контролю на %d (собі та іншим).",
-                range, regenSeconds, sanityReduction
+                "В радіусі %d бл. очищає розум, знімає негативні ефекти, " +
+                        "дає Регенерацію I (%d с) та зменшує Sanity на %d.",
+                range, regen, sanity
         );
     }
 
@@ -46,91 +47,90 @@ public class Appeasement extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Sequence userSequence = context.getCasterBeyonder().getSequence();
+        Sequence seq = context.getCasterBeyonder().getSequence();
 
-        // Масштабовані значення
-        int range = scaleValue(RANGE, userSequence, SequenceScaler.ScalingStrategy.MODERATE);
-        int sanityReduction = scaleValue(SANITY_REDUCTION, userSequence, SequenceScaler.ScalingStrategy.MODERATE);
-        int regenSeconds = scaleValue(REGENERATION_SECONDS, userSequence, SequenceScaler.ScalingStrategy.WEAK);
-        int regenDurationTicks = 20 * regenSeconds;
+        int range = scaleValue(BASE_RANGE, seq, SequenceScaler.ScalingStrategy.MODERATE);
+        int sanityReduction = scaleValue(BASE_SANITY_REDUCTION, seq, SequenceScaler.ScalingStrategy.MODERATE);
+        int regenSeconds = scaleValue(BASE_REGEN_SECONDS, seq, SequenceScaler.ScalingStrategy.WEAK);
+        int regenTicks = regenSeconds * 20;
 
-        Location casterLoc = context.getCasterLocation();
+        Location center = context.getCasterLocation();
+        Player caster = context.getCaster();
 
-        // --- Візуальні ефекти (Particles & Sounds) ---
-        context.spawnParticle(Particle.END_ROD, casterLoc, 100, range, 1, range);
-        context.spawnParticle(Particle.ENCHANT, casterLoc, 50, range * 0.7, 1, range * 0.7);
-        context.spawnParticle(Particle.FIREWORK, casterLoc, 50, range * 0.8, 1.5, range * 0.8);
-        context.spawnParticle(Particle.SOUL, casterLoc, 30, range, 0.5, range);
+        // === ВІЗУАЛ НА СТАРТ ===
+        context.spawnParticle(Particle.END_ROD, center, 80, range, 1.0, range);
+        context.spawnParticle(Particle.SOUL, center, 40, range * 0.7, 0.8, range * 0.7);
+        context.spawnParticle(Particle.HAPPY_VILLAGER, center, 60, range, 1.2, range);
 
-        context.playSound(casterLoc, Sound.BLOCK_BEACON_ACTIVATE, 1.5f, 1.2f);
-        context.playSound(casterLoc, Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1.0f, 1.5f);
-        context.playSound(casterLoc, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1.0f, 1.3f);
+        context.playSound(center, Sound.BLOCK_BEACON_ACTIVATE, 1.2f, 1.3f);
+        context.playSound(center, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1.0f, 1.6f);
 
+        // === КАСТЕР ===
+        context.updateSanityLoss(caster.getUniqueId(), -sanityReduction);
+        context.removeAllEffects(caster.getUniqueId());
+        context.applyEffect(caster.getUniqueId(), PotionEffectType.REGENERATION, regenTicks, 0);
 
-        // === ОБРОБКА КАСТЕРА (СЕБЕ) ===
-        // 1. Зменшуємо Sanity Loss
-        context.updateSanityLoss(context.getCasterId(), -sanityReduction);
+        boolean selfRescued = context.rescueFromRampage(caster.getUniqueId(), caster.getUniqueId());
 
-        // 2. Знімаємо негативні ефекти та даємо регенерацію
-        context.removeAllEffects(context.getCasterId());
-        context.applyEffect(context.getCasterId(), PotionEffectType.REGENERATION, regenDurationTicks, 0);
+        context.sendMessageToActionBar(
+                caster,
+                Component.text(
+                        selfRescued
+                                ? "✦ Розум стабілізовано"
+                                : "✦ Внутрішній спокій відновлено"
+                )
+        );
 
-        // 3. Перевірка на Rampage (Вже була, але тепер логічно вписана сюди)
-        boolean selfRescued = context.rescueFromRampage(context.getCasterId(), context.getCasterId());
         if (selfRescued) {
-            showRescueEffects(context, context.getCaster());
-        } else {
-            // Якщо не в rampage, просто красиве повідомлення
-            context.sendMessage(context.getCasterId(), ChatColor.GREEN + "✦ Ви заспокоїли свій розум.");
+            showRescueEffects(context, caster);
         }
 
+        // === ІНШІ ЦІЛІ ===
+        List<LivingEntity> entities = context.getNearbyEntities(range);
+        int affected = 0;
 
-        // === ОБРОБКА ІНШИХ СУТНОСТЕЙ ===
-        List<LivingEntity> nearbyEntities = context.getNearbyEntities(range);
-        int affectedCount = 0;
-
-        for (LivingEntity entity : nearbyEntities) {
-            // Пропускаємо кастера, щоб не накладати ефекти двічі (якщо getNearbyEntities повертає і його)
-            if (entity.getUniqueId().equals(context.getCasterId())) continue;
+        for (LivingEntity entity : entities) {
+            if (entity.getUniqueId().equals(caster.getUniqueId())) continue;
 
             context.removeAllEffects(entity.getUniqueId());
-            context.applyEffect(entity.getUniqueId(), PotionEffectType.REGENERATION, regenDurationTicks, 0);
+            context.applyEffect(entity.getUniqueId(), PotionEffectType.REGENERATION, regenTicks, 0);
 
-            if (entity instanceof Player) {
-                // Зменшуємо Sanity іншим гравцям
-                context.updateSanityLoss(entity.getUniqueId(), -sanityReduction);
+            Location loc = entity.getLocation();
+            context.spawnParticle(Particle.HAPPY_VILLAGER, loc.add(0, 1, 0), 12, 0.5, 0.5, 0.5);
 
-                boolean rescued = context.rescueFromRampage(context.getCasterId(), entity.getUniqueId());
+            if (entity instanceof Player player) {
+                context.updateSanityLoss(player.getUniqueId(), -sanityReduction);
+
+                boolean rescued = context.rescueFromRampage(caster.getUniqueId(), player.getUniqueId());
                 if (rescued) {
-                    showRescueEffects(context, (Player) entity);
+                    showRescueEffects(context, player);
                 }
 
-                Location entityLoc = entity.getLocation();
-                context.spawnParticle(Particle.HEART, entityLoc, 5, 0.5, 0.5, 0.5);
-                context.spawnParticle(Particle.HAPPY_VILLAGER, entityLoc.clone().add(0, 1, 0), 15, 0.5, 0.5, 0.5);
-                context.playSound(entityLoc, Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 2.0f);
+                context.sendMessageToActionBar(
+                        player,
+                        Component.text("✦ Розум очищено • +" + sanityReduction + " Sanity")
+                );
 
-                context.sendMessage(entity.getUniqueId(), ChatColor.GREEN + "✦ Ви відчуваєте спокій і ясність розуму");
-            } else {
-                // Ефекти для мобів
-                Location entityLoc = entity.getLocation();
-                context.spawnParticle(Particle.HAPPY_VILLAGER, entityLoc.clone().add(0, 1, 0), 10, 0.5, 0.5, 0.5);
-                context.spawnParticle(Particle.END_ROD, entityLoc.clone().add(0, 0.5, 0), 5, 0.3, 0.3, 0.3);
+                context.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.4f, 1.8f);
             }
 
-            affectedCount++;
+            affected++;
         }
 
-        context.sendMessageToCaster(ChatColor.GREEN + "✦ Умиротворення вплинуло на вас та " + affectedCount + " істот");
+        // === ФІНАЛ ДЛЯ КАСТЕРА ===
+        context.sendMessageToActionBar(
+                caster,
+                Component.text("✦ Умиротворення • Цілей: " + affected)
+        );
 
         return AbilityResult.success();
     }
 
-    private void showRescueEffects(IAbilityContext context, Player rescued) {
-        Location loc = rescued.getLocation();
-        context.spawnParticle(Particle.END_ROD, loc.clone().add(0, 1, 0), 30, 0.5, 1.0, 0.5);
-        context.spawnParticle(Particle.SOUL, loc.clone().add(0, 1, 0), 20, 0.3, 0.5, 0.3);
-        context.playSound(loc, Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f);
+    private void showRescueEffects(IAbilityContext context, Player player) {
+        Location loc = player.getLocation();
+        context.spawnParticle(Particle.END_ROD, loc.add(0, 1, 0), 25, 0.4, 0.8, 0.4);
+        context.spawnParticle(Particle.SOUL, loc, 20, 0.3, 0.5, 0.3);
+        context.playSound(loc, Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8f, 1.2f);
     }
 
     @Override
