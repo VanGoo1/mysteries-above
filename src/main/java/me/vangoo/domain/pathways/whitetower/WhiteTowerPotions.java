@@ -27,18 +27,13 @@ public class WhiteTowerPotions extends PathwayPotions {
         var astralMistEssence = itemResolver.createItemStack("astral_mist_essence");
         var wayfinderTreeRoot = itemResolver.createItemStack("wayfinder_tree_root");
 
-        if (dimensionalWandererEye.isPresent() && everShiftingLotus.isPresent() &&
-                spiritEaterPouch.isPresent() && deepSeaMarlinBlood.isPresent() && stringGrassPowder.isPresent()
-                && redChestnutFlower.isPresent() && meteoriteCrystal.isPresent()
-                && lavosSquidBlood.isPresent() && starfacedStone.isPresent() && asmannCompleteBrain.isPresent()
-                && cursedWraithArtifact.isPresent() && imbuedInkSac.isPresent() && voidDrifterHeart.isPresent()
-                && astralMistEssence.isPresent() && wayfinderTreeRoot.isPresent()) {
+        if (dimensionalWandererEye.isPresent()) {
 
-            addIngredientsRecipe(9, dimensionalWandererEye.get(), everShiftingLotus.get());
-            addIngredientsRecipe(8, spiritEaterPouch.get(), deepSeaMarlinBlood.get(), stringGrassPowder.get(), redChestnutFlower.get());
-            addIngredientsRecipe(7, meteoriteCrystal.get(), lavosSquidBlood.get(), starfacedStone.get());
-            addIngredientsRecipe(6, asmannCompleteBrain.get(), cursedWraithArtifact.get(), imbuedInkSac.get());
-            addIngredientsRecipe(5, voidDrifterHeart.get(), astralMistEssence.get(), wayfinderTreeRoot.get());
+            addIngredientsRecipe(9);
+            addIngredientsRecipe(8);
+            addIngredientsRecipe(7);
+            addIngredientsRecipe(6);
+            addIngredientsRecipe(5);
         }
     }
 }

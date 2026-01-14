@@ -1,18 +1,15 @@
-package me.vangoo.domain.pathways.justiciar.abilities; // Зміни пакет, якщо клас буде спільним
+package me.vangoo.domain.pathways.justiciar.abilities;
 
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.abilities.core.PermanentPassiveAbility;
 import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.valueobjects.Sequence;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.JoinConfiguration;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,21 +18,13 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
 
     private final String abilityName;
     private final String descriptionTemplate;
-    private final int hpCalculationBase; // Базове число для формули HP (наприклад, 4 або 6)
+    private final int hpCalculationBase;
     private final List<PotionEffectType> effectTypes;
 
     private static final double DEFAULT_HEALTH = 20.0;
-    private static final int REFRESH_PERIOD_TICKS = 5 * 20; // Оновлюємо кожні 5 сек
-    private static final int EFFECT_DURATION_TICKS = 6 * 20; // Тривалість ефекту 6 сек (щоб не мигало)
+    private static final int REFRESH_PERIOD_TICKS = 100; // 5 секунд
+    private static final int EFFECT_DURATION_TICKS = 120; // 6 секунд
 
-    /**
-     * Конструктор для створення універсального посилення.
-     *
-     * @param name Назва здібності (напр. "Тіло Воїна", "Фізичні посилення")
-     * @param description Опис (текст). Статистика буде додана автоматично.
-     * @param hpCalculationBase Базове значення для скалювання HP (зазвичай 4 або 6). 0 - якщо HP не додається.
-     * @param effects Типи ефектів, які треба накладати (напр. PotionEffectType.SPEED).
-     */
     public PhysicalEnhancement(String name, String description, int hpCalculationBase, PotionEffectType... effects) {
         this.abilityName = name;
         this.descriptionTemplate = description;
@@ -53,7 +42,6 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
         int bonusHp = calculateBonusHP(userSequence);
         int amplifier = calculateAmplifier(userSequence);
 
-        // Формуємо красивий список ефектів для опису
         String effectList = effectTypes.isEmpty()
                 ? "немає"
                 : effectTypes.stream()
@@ -66,15 +54,16 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
                         "§a+%.1f ❤ Здоров'я\n" +
                         "§bЕфекти: §f%s",
                 descriptionTemplate,
-                bonusHp / 2.0, // Конвертуємо в серця для відображення
+                bonusHp / 2.0,
                 effectList
         );
     }
 
     @Override
     public void onActivate(IAbilityContext context) {
-        applyEffects(context);
+        // Спочатку оновлюємо HP, щоб при вході одразу виставити правильне значення
         updateHealth(context);
+        applyEffects(context);
     }
 
     @Override
@@ -82,10 +71,11 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
         Player player = context.getCaster();
         if (player == null || !player.isValid() || player.isDead()) return;
 
-        // 1. Оновлення HP (перевірка кожного тіка, але зміна тільки при необхідності)
-        updateHealth(context);
+        // Перевіряємо HP рідше (раз на секунду), щоб не навантажувати сервер
+        if (player.getTicksLived() % 20 == 0) {
+            updateHealth(context);
+        }
 
-        // 2. Оновлення Ефектів (періодично)
         if (player.getTicksLived() % REFRESH_PERIOD_TICKS == 0) {
             applyEffects(context);
         }
@@ -96,28 +86,33 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
         Player player = context.getCaster();
         if (player == null) return;
 
-        // Скидання HP до стандарту (якщо це єдиний модифікатор)
+        // ВАЖЛИВО: Ми прибираємо ефекти, але з HP треба бути обережним.
+        // Якщо гравець просто виходить з гри, нам НЕ треба скидати HP до 20,
+        // інакше це запишеться в файл гравця.
+        // Але оскільки ми не знаємо причину деактивації (вихід чи зміна класу),
+        // ми скидаємо HP, але пропорційно зменшуємо поточне, щоб не було глітчів.
+
         AttributeInstance healthAttr = player.getAttribute(Attribute.MAX_HEALTH);
-        if (healthAttr != null) {
-            // Тут обережно: ми скидаємо на дефолт.
-            // Якщо у гравця є інші джерела HP, треба складнішу логіку (AttributeModifier),
-            // але для простоти поки залишаємо так.
+        if (healthAttr != null && healthAttr.getBaseValue() > DEFAULT_HEALTH) {
+            double oldMax = healthAttr.getBaseValue();
+            double currentHp = player.getHealth();
+            double percent = currentHp / oldMax;
+
             healthAttr.setBaseValue(DEFAULT_HEALTH);
-            if (player.getHealth() > DEFAULT_HEALTH) {
-                player.setHealth(DEFAULT_HEALTH);
-            }
+
+            // Масштабуємо здоров'я вниз, щоб зберегти відсоток
+            player.setHealth(Math.max(1, DEFAULT_HEALTH * percent));
         }
 
-        // Прибираємо всі ефекти, які контролює ця здібність
         for (PotionEffectType type : effectTypes) {
             player.removePotionEffect(type);
         }
     }
 
-    // --- Логіка ---
+    // --- Виправлена логіка HP ---
 
     private void updateHealth(IAbilityContext context) {
-        if (hpCalculationBase <= 0) return; // Якщо HP не налаштовано
+        if (hpCalculationBase <= 0) return;
 
         Player player = context.getCaster();
         Sequence sequence = context.getCasterBeyonder().getSequence();
@@ -129,12 +124,25 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
         double targetMaxHealth = DEFAULT_HEALTH + bonusHp;
         double currentMaxBase = healthAttr.getBaseValue();
 
-        // Оновлюємо тільки якщо значення змінилося (оптимізація)
+        // Оновлюємо тільки якщо значення змінилося
         if (Math.abs(currentMaxBase - targetMaxHealth) > 0.1) {
+
+            // 1. Запам'ятовуємо поточний відсоток здоров'я
+            double currentHealth = player.getHealth();
+            double healthPercentage = currentHealth / currentMaxBase;
+
+            // 2. Встановлюємо новий максимум
             healthAttr.setBaseValue(targetMaxHealth);
-            if (player.getHealth() > targetMaxHealth) {
-                player.setHealth(targetMaxHealth);
-            }
+
+            // 3. Масштабуємо поточне здоров'я відповідно до нового максимуму
+            // Це запобігає необхідності регенерувати "порожні" серця
+            double newHealth = targetMaxHealth * healthPercentage;
+
+            // Безпечна перевірка, щоб не вбити гравця і не перевищити ліміт
+            if (newHealth > targetMaxHealth) newHealth = targetMaxHealth;
+            if (newHealth < 1.0 && currentHealth >= 1.0) newHealth = 1.0; // Не вбивати при зміні статів
+
+            player.setHealth(newHealth);
         }
     }
 
@@ -146,7 +154,6 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
         int amplifier = calculateAmplifier(sequence);
 
         for (PotionEffectType type : effectTypes) {
-            // force=true перезаписує старий ефект
             player.addPotionEffect(new PotionEffect(type, EFFECT_DURATION_TICKS, amplifier, false, false, true));
         }
     }
@@ -155,24 +162,16 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
 
     private int calculateBonusHP(Sequence sequence) {
         if (hpCalculationBase <= 0) return 0;
-        // Використовуємо DIVINE стратегію як універсальну для фізичних бафів
         return scaleValue(hpCalculationBase, sequence, SequenceScaler.ScalingStrategy.DIVINE);
     }
 
     private int calculateAmplifier(Sequence sequence) {
         int power = SequenceScaler.getSequencePower(sequence.level());
-
-        // Універсальна шкала сили ефектів:
-        // High Sequence (2-0): Amplifier 2 (Рівень 3)
-        // Mid Sequence (4-3): Amplifier 1 (Рівень 2)
-        // Low Sequence (9-5): Amplifier 0 (Рівень 1)
-
         if (power >= 8) return 2;
         if (power >= 5) return 1;
         return 0;
     }
 
-    // Утиліта для красивої назви в описі
     private String formatEffectName(PotionEffectType type) {
         String name = type.getName().toLowerCase().replace("_", " ");
         return name.substring(0, 1).toUpperCase() + name.substring(1);

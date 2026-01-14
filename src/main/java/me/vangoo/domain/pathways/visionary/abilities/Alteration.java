@@ -243,6 +243,7 @@ public class Alteration extends ActiveAbility {
             ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності для створення модифікації!");
             return;
         }
+        ctx.publishAbilityUsedEvent(this);
 
         // Створюємо модифікацію
         long expirationTime = System.currentTimeMillis() + (MODIFICATION_DURATION_TICKS * 50L);

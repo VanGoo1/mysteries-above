@@ -1,14 +1,10 @@
 package me.vangoo.domain.pathways.visionary.abilities;
 
-import me.vangoo.domain.abilities.core.AbilityResult;
-import me.vangoo.domain.abilities.core.ActiveAbility;
-import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.abilities.core.*;
 import me.vangoo.domain.valueobjects.Sequence;
-import org.bukkit.ChatColor;
-import org.bukkit.Color;
-import org.bukkit.Location;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.*;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
@@ -46,7 +42,9 @@ public class IntentReader extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        context.sendMessageToCaster(ChatColor.AQUA + "👁 Ви бачите справжні наміри істот (" + DURATION_SECONDS + "с)...");
+        context.sendMessageToActionBar(context.getCaster(),
+                Component.text("👁 Ви бачите справжні наміри істот (" + DURATION_SECONDS + "с)...")
+                        .color(NamedTextColor.AQUA));
         context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 1.5f);
 
         final Map<UUID, IntentState> lastIntents = new HashMap<>();
@@ -125,29 +123,24 @@ public class IntentReader extends ActiveAbility {
 
     private void visualizeIntent(IAbilityContext context, LivingEntity entity, IntentState intent) {
         Location headLoc = entity.getEyeLocation().add(0, 0.5, 0);
-        Location bodyLoc = entity.getLocation().add(0, 1.0, 0);
 
         switch (intent) {
             case AGGRESSIVE:
-                // Червона пульсуюча аура - використовуємоWorld API напряму
                 Particle.DustOptions redDust = new Particle.DustOptions(Color.fromRGB(220, 20, 20), 1.2f);
                 entity.getWorld().spawnParticle(Particle.DUST, headLoc, 8, 0.25, 0.25, 0.25, 0, redDust);
                 break;
 
             case OBSERVING:
-                // Синя спокійна аура
                 Particle.DustOptions blueDust = new Particle.DustOptions(Color.fromRGB(50, 120, 255), 1.0f);
                 entity.getWorld().spawnParticle(Particle.DUST, headLoc, 6, 0.2, 0.2, 0.2, 0, blueDust);
                 break;
 
             case FLEEING:
-                // Жовта тривожна аура
                 Particle.DustOptions yellowDust = new Particle.DustOptions(Color.fromRGB(255, 220, 50), 1.0f);
                 entity.getWorld().spawnParticle(Particle.DUST, headLoc, 6, 0.25, 0.25, 0.25, 0, yellowDust);
                 break;
 
             case NEUTRAL:
-                // Біла ледь помітна аура
                 Particle.DustOptions whiteDust = new Particle.DustOptions(Color.fromRGB(240, 240, 240), 0.8f);
                 entity.getWorld().spawnParticle(Particle.DUST, headLoc, 4, 0.15, 0.15, 0.15, 0, whiteDust);
                 break;
@@ -159,10 +152,15 @@ public class IntentReader extends ActiveAbility {
         String entityName = entity instanceof Player ? entity.getName() : entity.getType().name();
 
         if (current == IntentState.AGGRESSIVE) {
-            context.sendMessageToCaster(ChatColor.RED + "⚠ " + entityName + " готується до атаки!");
+            context.sendMessageToActionBar(context.getCaster(),
+                    Component.text("⚠ " + entityName + " готується до атаки!").color(NamedTextColor.RED));
             context.playSoundToCaster(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 0.5f);
         } else if (current == IntentState.FLEEING && previous == IntentState.AGGRESSIVE) {
-            context.sendMessageToCaster(ChatColor.YELLOW + "⬇ " + entityName + " відступає.");
+            context.sendMessageToActionBar(context.getCaster(),
+                    Component.text("⬇ " + entityName + " відступає.").color(NamedTextColor.YELLOW));
+        } else if (current == IntentState.OBSERVING) {
+            context.sendMessageToActionBar(context.getCaster(),
+                    Component.text("👀 " + entityName + " спостерігає.").color(NamedTextColor.BLUE));
         }
     }
 

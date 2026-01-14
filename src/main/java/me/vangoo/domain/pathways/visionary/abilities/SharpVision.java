@@ -6,6 +6,7 @@ import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.valueobjects.Sequence;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.ChatColor;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -98,10 +99,10 @@ public class SharpVision extends ActiveAbility {
         context.setMultipleGlowing(entityIds, ChatColor.WHITE, durationTicks);
 
         // 5. Success message
-        context.sendMessageToCaster(
-                ChatColor.GREEN + "Гострий зір активовано! Підсвічено " +
-                        nearbyEntities.size() + " сутностей на " + durationSeconds + " секунд."
-        );
+        context.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
+                ChatColor.GOLD + "Гострий зір активовано! Підсвічено " +
+                        nearbyEntities.size() + " сутностей на " + durationSeconds + " секунд."));
+
 
         return AbilityResult.success();
     }

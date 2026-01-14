@@ -3,8 +3,10 @@ package me.vangoo.domain.pathways.justiciar.abilities;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.IAbilityContext;
-import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.Sequence;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.entity.CreatureSpawnEvent;
@@ -81,8 +83,11 @@ public class SpawnProhibition extends ActiveAbility {
 
             caster.playSound(caster.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.5f);
 
-            caster.sendMessage(ChatColor.GOLD + "Режим змінено: " +
-                    ChatColor.YELLOW + newMode.getDisplayName());
+            // ACTION BAR: Зміна режиму
+            context.sendMessageToActionBar(
+                    Component.text("⚖ Режим: ", NamedTextColor.GOLD)
+                            .append(LegacyComponentSerializer.legacySection().deserialize(newMode.getDisplayName()))
+            );
 
             // Візуальний ефект
             Particle particle = getParticleForMode(newMode);
@@ -93,7 +98,7 @@ public class SpawnProhibition extends ActiveAbility {
                     0.5, 0.5, 0.5
             );
 
-            return AbilityResult.failure("");
+            return AbilityResult.deferred();
         }
 
         // Отримуємо поточний режим
@@ -124,10 +129,11 @@ public class SpawnProhibition extends ActiveAbility {
         context.scheduleDelayed(() -> {
             activeSpawnBans.remove(zone);
 
-            // Повідомлення гравцю
-            if (caster.isOnline()) {
-                caster.sendMessage(ChatColor.GRAY + "Заборона спавну " +
-                        mode.getDisplayName() + " завершилася");
+            // ACTION BAR: Повідомлення про завершення
+            if (caster != null && caster.isOnline()) {
+                context.sendMessageToActionBar(caster, LegacyComponentSerializer.legacySection().deserialize(
+                        ChatColor.GRAY + "⚖ Заборона спавну " + mode.getDisplayName() + " завершилася"
+                ));
             }
         }, DURATION_TICKS);
 
@@ -225,7 +231,8 @@ public class SpawnProhibition extends ActiveAbility {
                                 0, 0, 0,
                                 0
                         );
-                        world.playSound(loc, Sound.BLOCK_IRON_DOOR_CLOSE, 0.3f, 1.8f);
+                        // Тихий звук, щоб не спамити, якщо спавнів багато
+                        // world.playSound(loc, Sound.BLOCK_IRON_DOOR_CLOSE, 0.1f, 1.8f);
                     }
                 },
                 DURATION_TICKS + 20
@@ -299,17 +306,17 @@ public class SpawnProhibition extends ActiveAbility {
         context.playSoundToCaster(Sound.ENTITY_EVOKER_PREPARE_ATTACK, 1.0f, 0.7f);
         context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 0.8f, 1.5f);
 
-        // Повідомлення
-        context.sendMessageToCaster(
-                ChatColor.GOLD + "✓ Активовано заборону: " +
-                        ChatColor.YELLOW + mode.getDisplayName()
-        );
+        // ACTION BAR: Активація + статистика
+        StringBuilder msg = new StringBuilder();
+        msg.append(ChatColor.GOLD).append("⚖ Активовано: ").append(ChatColor.YELLOW).append(mode.getDisplayName());
 
         if (removedCount > 0) {
-            context.sendMessageToCaster(
-                    ChatColor.GRAY + "Видалено мобів: " + ChatColor.WHITE + removedCount
-            );
+            msg.append(ChatColor.GRAY).append(" (Видалено: ").append(ChatColor.WHITE).append(removedCount).append(")");
         }
+
+        context.sendMessageToActionBar(
+                LegacyComponentSerializer.legacySection().deserialize(msg.toString())
+        );
     }
 
     /**

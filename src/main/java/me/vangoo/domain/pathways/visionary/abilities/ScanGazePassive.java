@@ -5,22 +5,27 @@ import me.vangoo.domain.abilities.core.ToggleablePassiveAbility;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.domain.valueobjects.Sequence;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 
 import java.util.Optional;
-
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class ScanGazePassive extends ToggleablePassiveAbility {
     private static final int RANGE = 10;
     private static final String IDENTITY = "scan_gaze";
     private static final int CHECK_INTERVAL = 20;
 
-    // Track current target to avoid spam
-    private Player lastTarget = null;
-    private int tickCounter = 0;
+    // Перенесли стани на рівень кастера (UUID -> lastTargetUUID / tickCounter)
+    private final ConcurrentMap<UUID, UUID> lastTargets = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, Integer> tickCounters = new ConcurrentHashMap<>();
 
     @Override
     public AbilityIdentity getIdentity() {
@@ -49,7 +54,11 @@ public class ScanGazePassive extends ToggleablePassiveAbility {
 
     @Override
     public void onDisable(IAbilityContext context) {
-        lastTarget = null;
+        UUID casterId = context.getCasterId();
+        // очищуємо стан тільки для цього кастера
+        lastTargets.remove(casterId);
+        tickCounters.remove(casterId);
+
         context.sendMessageToCaster(
                 ChatColor.YELLOW + "✗ Пасивне сканування вимкнено"
         );
@@ -62,32 +71,40 @@ public class ScanGazePassive extends ToggleablePassiveAbility {
 
     @Override
     public void tick(IAbilityContext context) {
-        tickCounter++;
+        UUID casterId = context.getCasterId();
+        if (casterId == null) return;
+
+        int counter = tickCounters.getOrDefault(casterId, 0) + 1;
+        // зберігаємо оновлений лічильник
+        tickCounters.put(casterId, counter);
 
         // Only check periodically to reduce overhead
-        if (tickCounter % CHECK_INTERVAL != 0) {
+        if (counter % CHECK_INTERVAL != 0) {
             return;
         }
+
+        // скидаємо лічильник після перевірки (щоб він не ріс безкінечно)
+        tickCounters.put(casterId, 0);
 
         Optional<Player> targetOpt = context.getTargetedPlayer(RANGE);
 
         if (targetOpt.isEmpty()) {
-            lastTarget = null;
+            lastTargets.remove(casterId);
             return;
         }
 
         Player target = targetOpt.get();
+        UUID last = lastTargets.get(casterId);
 
         // Only show info if target changed
-        if (target.equals(lastTarget)) {
+        if (last != null && last.equals(target.getUniqueId())) {
             return;
         }
 
-        lastTarget = target;
+        lastTargets.put(casterId, target.getUniqueId());
 
-        // Show scan information
+        // Show scan information (now as hologram only for caster)
         showScanInfo(context, target);
-
         // Subtle sound effect
         context.playSoundToCaster(
                 org.bukkit.Sound.BLOCK_NOTE_BLOCK_CHIME,
@@ -97,11 +114,15 @@ public class ScanGazePassive extends ToggleablePassiveAbility {
     }
 
     private void showScanInfo(IAbilityContext context, Player target) {
-        // Enhanced info at higher sequences
         Beyonder caster = context.getCasterBeyonder();
+        if (caster == null) return;
+
+        // отримати Player-об'єкт кастера з context
+        Player casterPlayer = context.getCaster(); // або інший метод, який у вас є
+
         boolean showAdvanced = caster.getSequenceLevel() < 7;
 
-        // Basic info
+        // === БАЗОВІ ДАНІ ===
         double hp = Math.round(target.getHealth() * 10.0) / 10.0;
         double maxHp = target.getAttribute(Attribute.MAX_HEALTH) != null
                 ? Math.round(target.getAttribute(Attribute.MAX_HEALTH).getValue() * 10.0) / 10.0
@@ -109,44 +130,51 @@ public class ScanGazePassive extends ToggleablePassiveAbility {
 
         int hunger = target.getFoodLevel();
 
-        context.sendMessageToCaster(
-                ChatColor.DARK_AQUA + "▶ " + ChatColor.WHITE + target.getName()
-        );
-        context.sendMessageToCaster(
-                ChatColor.GRAY + "HP: " + ChatColor.YELLOW + hp + "/" + maxHp +
-                        ChatColor.GRAY + " | Голод: " + ChatColor.YELLOW + hunger + "/20"
-        );
+        StringBuilder msg = new StringBuilder();
+        msg.append(ChatColor.DARK_AQUA).append("🔍 ")
+                .append(ChatColor.WHITE).append(target.getName()).append("  ")
+                .append(ChatColor.RED).append("❤ ").append(hp).append("/").append(maxHp).append("  ")
+                .append(ChatColor.GOLD).append("🍖 ").append(hunger).append("/20");
 
-        // Advanced info at sequence 6+
+        // === РОЗШИРЕНА ІНФА (Seq < 7) ===
         if (showAdvanced) {
             float saturation = target.getSaturation();
-            context.sendMessageToCaster(
-                    ChatColor.GRAY + "Насичення: " + ChatColor.YELLOW +
-                            Math.round(saturation * 10.0) / 10.0
-            );
+            msg.append(ChatColor.YELLOW)
+                    .append("  ✦ Sat: ")
+                    .append(Math.round(saturation * 10.0) / 10.0);
 
-            // Show active effects
-            var effects = target.getActivePotionEffects();
-            if (!effects.isEmpty()) {
-                StringBuilder effectsStr = new StringBuilder(ChatColor.GRAY + "Ефекти: ");
-                int count = 0;
-                for (PotionEffect effect : effects) {
-                    if (count > 0) effectsStr.append(ChatColor.GRAY).append(", ");
-                    effectsStr.append(ChatColor.YELLOW)
-                            .append(effect.getType().getTranslationKey())
+            if (!target.getActivePotionEffects().isEmpty()) {
+                msg.append(ChatColor.DARK_PURPLE).append("  ✦ ");
+
+                int shown = 0;
+                for (PotionEffect effect : target.getActivePotionEffects()) {
+                    if (shown++ >= 2) break; // не перевантажуємо голограму
+
+                    String name = effect.getType().getKey().getKey();
+                    int amp = effect.getAmplifier() + 1;
+
+                    msg.append(name)
                             .append(" ")
-                            .append(effect.getAmplifier() + 1);
-                    count++;
-                    if (count >= 3) break; // Show max 3 effects
+                            .append(amp)
+                            .append(" ");
                 }
-                context.sendMessageToCaster(effectsStr.toString());
             }
         }
+
+        // === HOLOGRAM (лише для кастера) ===
+        Component comp = LegacyComponentSerializer.legacySection().deserialize(msg.toString());
+
+        long durationTicks = 200L; // 10 секунд
+        long updateIntervalTicks = 1L; // оновлювати кожен тік
+
+        // Передаємо casterPlayer як viewer — голограма буде видима лише йому
+        context.spawnFollowingHologramForPlayer(casterPlayer, target, comp, durationTicks, updateIntervalTicks);
     }
 
     @Override
     public void cleanUp() {
-        lastTarget = null;
-        tickCounter = 0;
+        // повністю очистити всі стани — викликається при деініціалізації/перезавантаженні
+        lastTargets.clear();
+        tickCounters.clear();
     }
 }

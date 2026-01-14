@@ -18,8 +18,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TravellersDoor extends ActiveAbility {
 
-    private static final int COST = 100;
-    private static final int COOLDOWN = 30;
+    private static final int COST = 300;
+    private static final int COOLDOWN = 50;
     private static final int SPECTATOR_DURATION = 1200; // 60 seconds
     private static final int MAX_TELEPORT_DISTANCE = 5000;
     private static final int DOOR_TIMEOUT = 1200; // 60 seconds door lifetime
@@ -81,7 +81,7 @@ public class TravellersDoor extends ActiveAbility {
                 Integer.MAX_VALUE
         );
 
-        // 2. Підписка на ЛКМ для виходу з режиму спостереження
+        // 2. Підписка на exit для виходу з режиму спостереження
         context.subscribeToEvent(
                 AsyncPlayerChatEvent.class,
                 e -> activeSpectators.contains(e.getPlayer().getUniqueId()) &&

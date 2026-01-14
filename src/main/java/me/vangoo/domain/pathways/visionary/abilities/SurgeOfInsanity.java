@@ -1,13 +1,13 @@
 package me.vangoo.domain.pathways.visionary.abilities;
 
-import me.vangoo.domain.abilities.core.AbilityResult;
-import me.vangoo.domain.abilities.core.ActiveAbility;
-import me.vangoo.domain.abilities.core.IAbilityContext;
+import org.bukkit.Color;
+import org.bukkit.Particle;
+
+import me.vangoo.domain.abilities.core.*;
 import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.valueobjects.Sequence;
-import org.bukkit.ChatColor;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
+import net.kyori.adventure.text.Component;
+import org.bukkit.*;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffectType;
@@ -17,7 +17,7 @@ import java.util.List;
 public class SurgeOfInsanity extends ActiveAbility {
 
     private static final int BASE_RANGE = 5;
-    private static final int COOLDOWN = 30; // Тепер просто COOLDOWN
+    private static final int COOLDOWN = 30;
     private static final int BASE_DURATION_SECONDS = 10;
     private static final int BASE_SANITY_INCREASE = 5;
 
@@ -32,13 +32,12 @@ public class SurgeOfInsanity extends ActiveAbility {
     public String getDescription(Sequence userSequence) {
         int range = scaleValue(BASE_RANGE, userSequence, SequenceScaler.ScalingStrategy.MODERATE);
         int duration = scaleValue(BASE_DURATION_SECONDS, userSequence, SequenceScaler.ScalingStrategy.MODERATE);
-        int sanityIncrease = scaleValue(BASE_SANITY_INCREASE, userSequence, SequenceScaler.ScalingStrategy.WEAK);
+        int sanity = scaleValue(BASE_SANITY_INCREASE, userSequence, SequenceScaler.ScalingStrategy.WEAK);
 
         return String.format(
-                "В радіусі %d блоків накладає Слабкість і Сліпоту на %d с. " +
-                        "Потойбічні втрачають %d глузду (Sanity). " +
-                        "Звичайні істоти отримують 4 серця шкоди.",
-                range, duration, sanityIncrease
+                "У радіусі %d блоків накладає Сліпоту та Слабкість на %d с. " +
+                        "Потойбічні втрачають %d Sanity. Інші істоти отримують 4 серця шкоди.",
+                range, duration, sanity
         );
     }
 
@@ -49,53 +48,100 @@ public class SurgeOfInsanity extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Sequence userSequence = context.getCasterBeyonder().getSequence();
+        Sequence sequence = context.getCasterBeyonder().getSequence();
 
-        // Скейлимо параметри ефекту, але НЕ кулдаун
-        int range = scaleValue(BASE_RANGE, userSequence, SequenceScaler.ScalingStrategy.MODERATE);
-        int durationSeconds = scaleValue(BASE_DURATION_SECONDS, userSequence, SequenceScaler.ScalingStrategy.MODERATE);
-        int sanityIncrease = scaleValue(BASE_SANITY_INCREASE, userSequence, SequenceScaler.ScalingStrategy.WEAK);
-
+        int range = scaleValue(BASE_RANGE, sequence, SequenceScaler.ScalingStrategy.MODERATE);
+        int durationSeconds = scaleValue(BASE_DURATION_SECONDS, sequence, SequenceScaler.ScalingStrategy.MODERATE);
+        int sanityLoss = scaleValue(BASE_SANITY_INCREASE, sequence, SequenceScaler.ScalingStrategy.WEAK);
         int durationTicks = durationSeconds * 20;
 
-        // Візуалізація
-        context.spawnParticle(Particle.DRAGON_BREATH, context.getCasterLocation(), 100, range, 1, range);
-        context.playSound(context.getCasterLocation(), Sound.ENTITY_ILLUSIONER_PREPARE_BLINDNESS, 1.0f, 0.5f);
-        context.playSound(context.getCasterLocation(), Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.5f, 0.5f);
-
-        List<LivingEntity> nearbyEntities = context.getNearbyEntities(range);
-
-        if (nearbyEntities.isEmpty()) {
-            return AbilityResult.failure("Немає цілей поблизу.");
+        // --- РЕСУРСИ ---
+        if (!AbilityResourceConsumer.consumeResources(this, context.getCasterBeyonder(), context)) {
+            context.sendMessageToActionBar(Component.text(
+                    ChatColor.RED + "✗ Недостатньо духовності"
+            ));
+            return AbilityResult.failure("No spirituality");
         }
 
-        int affectedPlayers = 0;
-        int affectedMobs = 0;
+        context.publishAbilityUsedEvent(this);
 
-        for (LivingEntity target : nearbyEntities) {
+        Location loc = context.getCasterLocation();
+
+        // --- ВІЗУАЛИ ---
+        context.playSphereEffect(loc, range, Particle.WITCH, Math.min(40, durationTicks));
+        context.playWaveEffect(loc, range, Particle.SMOKE, durationTicks);
+
+        context.playSound(loc, Sound.ENTITY_ILLUSIONER_PREPARE_BLINDNESS, 1.0f, 0.6f);
+        context.playSound(loc, Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.5f, 0.5f);
+
+        List<LivingEntity> targets = context.getNearbyEntities(range);
+
+        if (targets.isEmpty()) {
+            context.sendMessageToActionBar(Component.text(
+                    ChatColor.GRAY + "✦ Поблизу немає цілей"
+            ));
+            return AbilityResult.failure("No targets");
+        }
+
+        int players = 0;
+        int mobs = 0;
+
+        for (LivingEntity target : targets) {
             if (target.getUniqueId().equals(context.getCasterId())) continue;
 
+            try {
+                context.playTrailEffect(target.getUniqueId(), Particle.CRIT, Math.min(60, durationTicks));
+            } catch (Exception ignored) {}
+
             if (target instanceof Player) {
-                // Гравець: Дебафи + Sanity
                 context.applyEffect(target.getUniqueId(), PotionEffectType.WEAKNESS, durationTicks, 0);
                 context.applyEffect(target.getUniqueId(), PotionEffectType.BLINDNESS, durationTicks, 0);
-                context.updateSanityLoss(target.getUniqueId(), sanityIncrease);
+                context.updateSanityLoss(target.getUniqueId(), sanityLoss);
 
-                context.sendMessage(target.getUniqueId(),
-                        ChatColor.DARK_PURPLE + "Ваш розум затьмарюється! (+" + sanityIncrease + " втрати контролю)");
-                context.spawnParticle(Particle.SMOKE, target.getLocation().add(0, 1.8, 0), 10, 0.2, 0.2, 0.2);
-                affectedPlayers++;
+                context.sendMessageToActionBar(
+                        (Player) target,
+                        Component.text(
+                                ChatColor.DARK_PURPLE +
+                                        "🌀 Розум затьмарюється  +" + sanityLoss + " Sanity"
+                        )
+                );
+
+                context.spawnParticle(
+                        Particle.SMOKE,
+                        target.getLocation().add(0, 1.7, 0),
+                        12, 0.2, 0.2, 0.2
+                );
+
+                players++;
             } else {
-                // Моб: Шкода
                 context.damage(target.getUniqueId(), MOB_DAMAGE);
-                context.spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 10, 0.2, 0.2, 0.2);
-                affectedMobs++;
+
+                context.spawnParticle(
+                        Particle.CRIT,
+                        target.getLocation().add(0, 1, 0),
+                        12, 0.2, 0.2, 0.2
+                );
+
+                mobs++;
             }
         }
 
-        context.sendMessageToCaster(
-                ChatColor.DARK_PURPLE + "Вивільнено божевілля! Гравців: " + affectedPlayers + ", Істот: " + affectedMobs
+        Particle.DustOptions dustOptions = new Particle.DustOptions(Color.PURPLE, 1.5f);
+
+        context.playExplosionRingEffect(
+                loc,
+                Math.max(3.0, range / 1.5),
+                Particle.DUST,
+                dustOptions
         );
+
+
+        // --- ФІНАЛЬНИЙ ACTION BAR ДЛЯ КАСТЕРА ---
+        context.sendMessageToActionBar(Component.text(
+                ChatColor.DARK_PURPLE + "🌀 Божевілля вивільнено  " +
+                        ChatColor.GRAY + "Гравців: " + players +
+                        " | Істот: " + mobs
+        ));
 
         return AbilityResult.success();
     }

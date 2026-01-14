@@ -237,6 +237,7 @@ public class DivinationArts extends ActiveAbility {
             ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
             return;
         }
+        ctx.publishAbilityUsedEvent(this);
 
         Player caster = ctx.getCaster();
         ctx.playSoundToCaster(Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1f, 0.8f);
@@ -318,6 +319,7 @@ public class DivinationArts extends ActiveAbility {
             ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
             return;
         }
+        ctx.publishAbilityUsedEvent(this);
 
         for (int i = 0; i < 5; i++) {
             final int tick = i;
@@ -375,6 +377,7 @@ public class DivinationArts extends ActiveAbility {
             ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
             return;
         }
+        ctx.publishAbilityUsedEvent(this);
 
         for (int i = 0; i < 4; i++) {
             ctx.scheduleDelayed(() -> ctx.playSoundToCaster(Sound.BLOCK_NOTE_BLOCK_BELL, 0.3f, 1.5f), i * 8L);
@@ -458,6 +461,7 @@ public class DivinationArts extends ActiveAbility {
             ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
             return;
         }
+        ctx.publishAbilityUsedEvent(this);
 
         Player caster = ctx.getCaster();
         ctx.sendMessageToCaster(ChatColor.GREEN + "🔍 Лозошукальний стрижень активовано!");
@@ -608,6 +612,7 @@ public class DivinationArts extends ActiveAbility {
             ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
             return;
         }
+        ctx.publishAbilityUsedEvent(this);
 
         ctx.playSoundToCaster(Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 0.5f);
         ctx.spawnParticle(Particle.PORTAL, originalLoc, 50, 0.5, 0.5, 0.5);

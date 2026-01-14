@@ -17,7 +17,7 @@ public class AbilityExecutor {
     private final PassiveAbilityManager passiveAbilityManager;
     private final AbilityContextFactory abilityContextFactory;
     private final SanityPenaltyHandler sanityPenaltyHandler;
-    private final DomainEventPublisher EventPublisher;
+    private final DomainEventPublisher eventPublisher;
 
     public AbilityExecutor(BeyonderService beyonderService, AbilityLockManager abilityLockManager,
                            RampageManager rampageManager, PassiveAbilityManager passiveAbilityManager,
@@ -28,7 +28,7 @@ public class AbilityExecutor {
         this.passiveAbilityManager = passiveAbilityManager;
         this.abilityContextFactory = abilityContextFactory;
         this.sanityPenaltyHandler = sanityPenaltyHandler;
-        EventPublisher = eventPublisher;
+        this.eventPublisher = eventPublisher;
     }
 
 
@@ -71,7 +71,7 @@ public class AbilityExecutor {
                     .stream()
                     .anyMatch(a -> a.getIdentity().equals(ability.getIdentity()));
 
-            EventPublisher.publishAbility(
+            eventPublisher.publishAbility(
                     new AbilityDomainEvent.AbilityUsed(
                             beyonder.getPlayerId(),
                             ability.getName(),

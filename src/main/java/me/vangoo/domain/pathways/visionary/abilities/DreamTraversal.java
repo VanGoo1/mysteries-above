@@ -55,7 +55,7 @@ public class DreamTraversal extends ActiveAbility {
 
         if (sleepingPlayers.size() == 1) {
             // Передаємо UUID — пізніше під час виконання не будемо викликати context.getPlayer(...)
-            startTeleportSequence(context, sleepingPlayers.getFirst().getUniqueId(), sleepingPlayers.getFirst().getName());
+            startTeleportSequence(context, sleepingPlayers.getFirst().getUniqueId(), sleepingPlayers.getFirst().getName(), false);
             return AbilityResult.deferred();
         }
 
@@ -100,7 +100,7 @@ public class DreamTraversal extends ActiveAbility {
                 "Блукання у снах",
                 targets,
                 mapper,
-                (Player chosen) -> startTeleportSequence(context, chosen.getUniqueId(), chosen.getName())
+                (Player chosen) -> startTeleportSequence(context, chosen.getUniqueId(), chosen.getName(),true)
         );
     }
 
@@ -146,13 +146,15 @@ public class DreamTraversal extends ActiveAbility {
      * Почати послідовність телепортації з затримкою.
      * Тепер передаємо UUID та відоме ім'я (щоб не звертатись за Player об'єктами пізніше).
      */
-    private void startTeleportSequence(IAbilityContext context, UUID targetId, String targetName) {
+    private void startTeleportSequence(IAbilityContext context, UUID targetId, String targetName, boolean isExecutedFromMenu) {
         Beyonder casterBeyonder = context.getCasterBeyonder();
         if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, context)) {
             context.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
             return;
         }
-
+        if (isExecutedFromMenu) {
+            context.publishAbilityUsedEvent(this);
+        }
         // Закриваємо меню у кастера
         Player caster = context.getCaster();
         caster.closeInventory();

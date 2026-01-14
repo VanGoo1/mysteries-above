@@ -2,6 +2,7 @@ package me.vangoo.domain.pathways.visionary.abilities;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.abilities.core.ToggleablePassiveAbility;
 import me.vangoo.domain.valueobjects.Sequence;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -121,11 +122,13 @@ public class DangerSense extends ToggleablePassiveAbility {
         }
 
         if (foundItems.isEmpty()) {
-            context.sendMessageToCaster(ChatColor.GRAY + "Ви відчули " + ChatColor.WHITE + target.getName() +
-                    ChatColor.GRAY + ", але не знайшли нічого підозрілого.");
+            context.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
+                    ChatColor.GRAY + "Ви відчули " + ChatColor.WHITE + target.getName() +
+                            ChatColor.GRAY + ", але не знайшли нічого підозрілого."));
         } else {
-            context.sendMessageToCaster(ChatColor.RED + "⚠️ Передчуття! У " + ChatColor.YELLOW + target.getName() +
-                    ChatColor.RED + " знайдено: " + ChatColor.GOLD + String.join(", ", foundItems));
+            context.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
+                    ChatColor.RED + "⚠️ Передчуття! У " + ChatColor.YELLOW + target.getName() +
+                            ChatColor.RED + " знайдено: " + ChatColor.GOLD + String.join(", ", foundItems)));
             context.playSoundToCaster(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 0.5f);
 
             // Підсвічуємо небезпечного гравця на 5 секунд
