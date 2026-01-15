@@ -53,7 +53,7 @@ public class WhipOfPain extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
 
         // Тут ми знову шукаємо ціль, бо логіка перевірки та виконання розділена.
         // Якщо ми дійшли сюди, значить перевірка на Послідовність (Sequence Check) вже пройшла успішно.
@@ -102,7 +102,7 @@ public class WhipOfPain extends ActiveAbility {
                 context.sendMessageToCaster(ChatColor.GRAY + "Статус: " + ChatColor.GREEN + "Звичайна людина");
             }
 
-            String heldItem = context.getMainHandItemName(pTarget.getUniqueId());
+            String heldItem = context.playerData().getMainHandItemName((pTarget.getUniqueId()));
             context.sendMessageToCaster(ChatColor.GRAY + "Зброя: " + ChatColor.WHITE + heldItem);
 
             List<String> secretStash = context.getEnderChestContents(pTarget.getUniqueId(), 5);

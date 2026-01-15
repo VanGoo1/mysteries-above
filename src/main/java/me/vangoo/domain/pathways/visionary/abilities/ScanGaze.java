@@ -42,17 +42,17 @@ public class ScanGaze extends ActiveAbility {
 
     @Override
     protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
-        return context.getTargetedPlayer(RANGE)
+        return context.targeting().getTargetedPlayer(RANGE)
                 .filter(p -> context.isBeyonder(p.getUniqueId()))
                 .map(p -> p);
     }
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Optional<Player> targetedPlayer = context.getTargetedPlayer(RANGE);
+        Optional<Player> targetedPlayer = context.targeting().getTargetedPlayer(RANGE);
 
         if (targetedPlayer.isEmpty()) {
-            context.sendMessageToActionBar(
+            context.messaging().sendMessageToActionBar(context.getCasterId(),
                     net.kyori.adventure.text.Component.text(
                             ChatColor.RED + "Немає цілі в радіусі " + RANGE + " блоків"
                     )
@@ -63,13 +63,13 @@ public class ScanGaze extends ActiveAbility {
         Player target = targetedPlayer.get();
 
         // === БАЗОВІ ДАНІ ===
-        double hp = Math.round(target.getHealth() * 10.0) / 10.0;
+        double hp = Math.round(context.playerData().getHealth(target.getUniqueId()) * 10.0) / 10.0;
         double maxHp = 20.0;
         if (target.getAttribute(Attribute.MAX_HEALTH) != null) {
-            maxHp = Math.round(target.getAttribute(Attribute.MAX_HEALTH).getValue() * 10.0) / 10.0;
+            maxHp = Math.round(context.playerData().getMaxHealth(target.getUniqueId()) * 10.0) / 10.0;
         }
 
-        int hunger = target.getFoodLevel();
+        int hunger = context.playerData().getFoodLevel(target.getUniqueId());
 
         int armor = 0;
         if (target.getAttribute(Attribute.ARMOR) != null) {
@@ -85,16 +85,16 @@ public class ScanGaze extends ActiveAbility {
         // === ДОДАТКОВО ДЛЯ SEQ < 9 ===
         Beyonder caster = context.getCasterBeyonder();
         if (caster != null && caster.getSequenceLevel() < 9) {
-            float saturation = target.getSaturation();
+            float saturation = context.playerData().getSaturation(target.getUniqueId());
             message.append(ChatColor.YELLOW)
                     .append("  ✦ Sat: ")
                     .append(Math.round(saturation * 10.0) / 10.0);
 
-            if (!target.getActivePotionEffects().isEmpty()) {
+            if (!context.playerData().getActivePotionEffects(target.getUniqueId()).isEmpty()) {
                 message.append(ChatColor.DARK_PURPLE).append("  ✦ ");
                 int shown = 0;
 
-                for (PotionEffect effect : target.getActivePotionEffects()) {
+                for (PotionEffect effect : context.playerData().getActivePotionEffects(target.getUniqueId())) {
                     if (shown++ >= 2) break; // не перевантажуємо action bar
 
                     String name = effect.getType().getKey().getKey();

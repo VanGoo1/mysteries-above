@@ -66,7 +66,7 @@ public class Guidance extends ActiveAbility {
             hasEnded[0] = true;
             activeGuidanceSessions.remove(casterId);
 
-            context.sendMessageToActionBar(context.getCaster(),
+            context.sendMessageToActionBar(context.getCasterPlayer(),
                     Component.text("Ви розірвали ментальний зв'язок").color(NamedTextColor.YELLOW));
             context.playSoundToCaster(Sound.BLOCK_BEACON_DEACTIVATE, 1f, 1.2f);
             return AbilityResult.success();
@@ -85,7 +85,7 @@ public class Guidance extends ActiveAbility {
 
         UUID targetId = target.getUniqueId();
         // Візуальні ефекти успіху
-        context.sendMessageToActionBar(context.getCaster(),
+        context.sendMessageToActionBar(context.getCasterPlayer(),
                 Component.text("Ви встановили ментальний контроль над " + target.getName())
                         .color(NamedTextColor.AQUA));
         context.sendMessageToActionBar(target,
@@ -182,7 +182,7 @@ public class Guidance extends ActiveAbility {
     private Player getPlayerSafely(IAbilityContext context, UUID playerId) {
         // Використовуємо context для отримання caster
         if (playerId.equals(context.getCasterId())) {
-            return context.getCaster();
+            return context.getCasterPlayer();
         }
 
         // Для інших гравців використовуємо Bukkit (це OK в цьому місці)

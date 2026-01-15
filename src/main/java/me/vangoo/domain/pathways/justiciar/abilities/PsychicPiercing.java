@@ -10,13 +10,9 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.RayTraceResult;
-import org.bukkit.util.Vector;
-
-import java.util.Optional;
 
 public class PsychicPiercing extends ActiveAbility {
 
@@ -48,7 +44,7 @@ public class PsychicPiercing extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
 
         // Візуал підготовки: очі починають світитися
         context.sendMessageToCaster(ChatColor.AQUA + "👁 Ви підготували Психічний Прокол. Подивіться на жертву...");

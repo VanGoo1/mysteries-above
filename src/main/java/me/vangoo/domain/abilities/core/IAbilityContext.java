@@ -1,6 +1,6 @@
 package me.vangoo.domain.abilities.core;
 
-
+import me.vangoo.domain.abilities.context.*;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.events.AbilityDomainEvent;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
@@ -10,281 +10,223 @@ import org.bukkit.*;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-
 import org.bukkit.event.Event;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 public interface IAbilityContext {
+
     // ==================== CASTER ====================
+
     UUID getCasterId();
 
     Beyonder getCasterBeyonder();
 
     Location getCasterLocation();
 
-    Player getCaster();  // ← Повний доступ до Bukkit Player!
+    Player getCasterPlayer();
+
+    IVisualEffectsContext effects();
+    ISchedulingContext scheduling();
+    IDataContext playerData();
+    IBeyonderContext beyonder();
+    IUIContext ui();
+    ITargetContext targeting();
+    IEventContext events();
+    ICooldownContext cooldown();
+    IRampageContext rampage();
+    IEntityContext entity();
+    IGlowingContext glowing();
+    IMessagingContext messaging();
 
     // ==================== TARGETING ====================
+
+    @Deprecated
     List<LivingEntity> getNearbyEntities(double radius);
 
+    @Deprecated
     List<Player> getNearbyPlayers(double radius);
 
+    @Deprecated
     Optional<LivingEntity> getTargetedEntity(double maxRange);
 
+    @Deprecated
     Optional<Player> getTargetedPlayer(double maxRange);
 
-    boolean rescueFromRampage(UUID casterId, UUID targetId);
-
-    boolean isSneaking(UUID targetId);
-
+    @Deprecated
     boolean hasItem(Material material, int amount);
 
-    void consumeItem(Material material, int amount);
-
-    Map<String, String> getTargetAnalysis(UUID targetId);
-
     // ==================== EFFECTS (Bukkit types!) ====================
+
+    @Deprecated
     void spawnParticle(Particle type, Location loc, int count);
 
+    @Deprecated
     void spawnParticle(Particle type, Location loc, int count,
                        double offsetX, double offsetY, double offsetZ);
 
+    @Deprecated
     void playSound(Location loc, Sound sound, float volume, float pitch);
 
+    @Deprecated
     void playSoundToCaster(Sound sound, float volume, float pitch);
 
+    @Deprecated
     void applyEffect(UUID entityId, PotionEffectType effect, int durationTicks, int amplifier);
 
+    @Deprecated
     void removeEffect(UUID entityId, PotionEffectType effect);
 
+    @Deprecated
     void removeAllEffects(UUID entityId);
 
     // ==================== ACTIONS ====================
+
+    @Deprecated
     void teleport(UUID entityId, Location location);
 
+    @Deprecated
     void damage(UUID entityId, double amount);
 
+    @Deprecated
     void heal(UUID entityId, double amount);
 
     // ==================== SCHEDULING ====================
+
+    @Deprecated
     BukkitTask scheduleDelayed(Runnable task, long delayTicks);
 
+    @Deprecated
     BukkitTask scheduleRepeating(Runnable task, long delayTicks, long periodTicks);
 
+    @Deprecated
     void runAsync(Runnable task);
 
     // ==================== COOLDOWN ====================
+
+    @Deprecated
     boolean hasCooldown(Ability ability);
 
+    @Deprecated
     long getRemainingCooldownSeconds(Ability ability);
 
+    @Deprecated
     void setCooldown(Ability ability, long durationTicks);
 
-    void clearCooldown(Ability ability);
-
     // ==================== MESSAGES ====================
+
+    @Deprecated
     void sendMessage(UUID playerId, String message);
 
+    @Deprecated
     void sendMessageToCaster(String message);
 
+    @Deprecated
     void sendMessageToActionBar(Component message);
 
+    @Deprecated
     void sendMessageToActionBar(Player target, Component message);
 
+    @Deprecated
     void spawnTemporaryHologram(Location location, Component text, long durationTicks);
 
-    void spawnFollowingHologramForPlayer(Player viewer, Player target, Component text, long durationTicks, long updateIntervalTicks);
+    @Deprecated
+    void spawnFollowingHologramForPlayer(Player viewer, Player target, Component text,
+                                         long durationTicks, long updateIntervalTicks);
 
     // ==================== BEYONDER ====================
+
+    @Deprecated
     void updateSanityLoss(UUID playerId, int change);
 
+    @Deprecated
     void lockAbilities(UUID playerId, int durationSeconds);
 
+    @Deprecated
     @Nullable
     Beyonder getBeyonderFromEntity(UUID entityId);
 
+    @Deprecated
     boolean isBeyonder(UUID entityId);
 
+    @Deprecated
     Optional<Integer> getEntitySequenceLevel(UUID entityId);
 
-    // =INVENTORY AND ITEMS=
+    // ==================== INVENTORY ====================
+
+    @Deprecated
     void giveItem(HumanEntity entity, ItemStack item);
 
+    @Deprecated
     boolean removeItem(HumanEntity entity, ItemStack item);
 
-    // ==================== GLOWING ENTITIES ====================
+    // ==================== GLOWING ====================
+
+    @Deprecated
     void setGlowing(UUID entityId, ChatColor color, int durationTicks);
 
-    void setGlowingPermanent(UUID entityId, ChatColor color);
-
+    @Deprecated
     void removeGlowing(UUID entityId);
 
+    @Deprecated
     void setMultipleGlowing(List<UUID> entityIds, ChatColor color, int durationTicks);
 
-    // ==================== SURFACE DATA ====================
-    Location getBedSpawnLocation(UUID targetId);
-
-    long getPlayTimeHours(UUID targetId);
-
-    String getMainHandItemName(UUID targetId);
-
-    int getDeathsStatistic(UUID targetId);
-
     // ==================== DEEP DATA ====================
+
+    @Deprecated
     List<String> getEnderChestContents(UUID targetId, int limit);
 
-    int getPlayerKills(UUID targetId);
+    // ==================== VISUAL EFFECTS (EffectLib) ====================
 
-    int getVillagerKills(UUID targetId);
-
-    Location getLastDeathLocation(UUID targetId);
-
-    int getExperienceLevel(UUID targetId);
-
-    double getBeyonderMastery(UUID targetId);
-
-    // ==========================================
-    // VISUAL EFFECTS (EffectLib)
-    // ==========================================
-
-    /**
-     * Create a sphere effect at location
-     *
-     * @param location      Center of sphere
-     * @param radius        Radius of sphere
-     * @param particle      Particle type to use
-     * @param durationTicks How long effect lasts
-     */
+    @Deprecated
     void playSphereEffect(Location location, double radius, Particle particle, int durationTicks);
 
-    /**
-     * Create a helix/spiral effect between two points
-     *
-     * @param start         Start location
-     * @param end           End location
-     * @param particle      Particle type
-     * @param durationTicks Duration
-     */
+    @Deprecated
     void playHelixEffect(Location start, Location end, Particle particle, int durationTicks);
 
-    /**
-     * Create a circle effect at location
-     *
-     * @param location      Center of circle
-     * @param radius        Radius
-     * @param particle      Particle type
-     * @param durationTicks Duration
-     */
+    @Deprecated
     void playCircleEffect(Location location, double radius, Particle particle, int durationTicks);
 
-    /**
-     * Create a line effect between two points
-     *
-     * @param start    Start location
-     * @param end      End location
-     * @param particle Particle type
-     */
+    @Deprecated
     void playLineEffect(Location start, Location end, Particle particle);
 
-    /**
-     * Create a cone effect (useful for directional abilities)
-     *
-     * @param apex          Tip of cone
-     * @param direction     Direction cone points
-     * @param angle         Cone opening angle in degrees
-     * @param length        Length of cone
-     * @param particle      Particle type
-     * @param durationTicks Duration
-     */
+    @Deprecated
     void playConeEffect(Location apex, org.bukkit.util.Vector direction, double angle,
                         double length, Particle particle, int durationTicks);
 
-    /**
-     * Create a vortex/tornado effect
-     *
-     * @param location      Center location
-     * @param height        Height of vortex
-     * @param radius        Base radius
-     * @param particle      Particle type
-     * @param durationTicks Duration
-     */
+    @Deprecated
     void playVortexEffect(Location location, double height, double radius,
                           Particle particle, int durationTicks);
 
-    /**
-     * Create a wave effect emanating from location
-     *
-     * @param center        Center point
-     * @param radius        Wave radius
-     * @param particle      Particle type
-     * @param durationTicks Duration
-     */
+    @Deprecated
     void playWaveEffect(Location center, double radius, Particle particle, int durationTicks);
 
-    /**
-     * Create a cube outline effect
-     *
-     * @param location      Center of cube
-     * @param size          Size of cube edges
-     * @param particle      Particle type
-     * @param durationTicks Duration
-     */
+    @Deprecated
     void playCubeEffect(Location location, double size, Particle particle, int durationTicks);
 
-    /**
-     * Create an animated trail effect following an entity
-     *
-     * @param entityId      Entity to follow
-     * @param particle      Particle type
-     * @param durationTicks Duration
-     */
+    @Deprecated
     void playTrailEffect(UUID entityId, Particle particle, int durationTicks);
 
-    /**
-     * Create a beam effect between two locations (laser-like)
-     *
-     * @param start         Start location
-     * @param end           End location
-     * @param particle      Particle type
-     * @param width         Beam width
-     * @param durationTicks Duration
-     */
+    @Deprecated
     void playBeamEffect(Location start, Location end, Particle particle,
                         double width, int durationTicks);
 
-    /**
-     * Create an explosion ring effect
-     *
-     * @param center   Center of explosion
-     * @param radius   Ring radius
-     * @param particle Particle type
-     */
-    void playExplosionRingEffect(Location center, double radius, Particle particle, Particle.DustOptions options);
+    @Deprecated
+    void playExplosionRingEffect(Location center, double radius,
+                                 Particle particle, Particle.DustOptions options);
 
-    /**
-     * Стежить за гравцем протягом певного часу.
-     *
-     * @param targetId      кого перевіряємо
-     * @param durationTicks скільки часу чекаємо (у тіках)
-     * @param callback      викликається з true, якщо гравець присів, і false, якщо час вийшов
-     */
-    void monitorSneaking(UUID targetId, int durationTicks, Consumer<Boolean> callback);
+    // ==================== UI / EVENTS ====================
 
-    /**
-     * Відкрити GUI вибору
-     */
+    @Deprecated
     <T> void openChoiceMenu(
             String title,
             List<T> choices,
@@ -292,9 +234,7 @@ public interface IAbilityContext {
             Consumer<T> onSelect
     );
 
-    /**
-     * Підписатися на тимчасову подію
-     */
+    @Deprecated
     <T extends Event> void subscribeToEvent(
             Class<T> eventClass,
             Predicate<T> filter,
@@ -302,34 +242,36 @@ public interface IAbilityContext {
             int durationTicks
     );
 
+    @Deprecated
     void publishAbilityUsedEvent(ActiveAbility activeAbility);
 
-    int getMinedAmount(UUID targetId, Material oreType);
-
-    int getUsedAmount(UUID targetId, Material itemType);
-
+    @Deprecated
     void showPlayerToTarget(Player target, Player playerToShow);
 
+    @Deprecated
     void hidePlayerFromTarget(Player target, Player playerToHide);
 
-    void setHidden(Player player, boolean hidden);
-
+    @Deprecated
     boolean isAbilityActivated(UUID entityId, AbilityIdentity abilityIdentity);
 
+    @Deprecated
     void removeOffPathwayAbility(AbilityIdentity identity);
 
+    @Deprecated
     void subscribeToAbilityEvents(Consumer<AbilityDomainEvent> handler);
 
+    @Deprecated
     void subscribeToAbilityEvents(
             Function<AbilityDomainEvent, Boolean> handler,
             int durationTicks
     );
 
+    @Deprecated
     Optional<AbilityDomainEvent> getLastAbilityEvent(UUID casterId, int maxAgeSeconds);
 
-    List<AbilityDomainEvent> getAbilityEventHistory(UUID casterId, int maxAgeSeconds);
-
+    @Deprecated
     List<RecordedEvent> getPastEvents(Location location, int radius, int timeSeconds);
 
+    @Deprecated
     int getKnownRecipeCount(String pathwayName);
 }

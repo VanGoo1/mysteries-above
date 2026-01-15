@@ -57,7 +57,7 @@ public class PsychologicalInvisibility extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         UUID id = caster.getUniqueId();
         Beyonder beyonder = context.getCasterBeyonder();
 
@@ -82,7 +82,7 @@ public class PsychologicalInvisibility extends ActiveAbility {
     private void enable(IAbilityContext context, Player caster) {
         UUID id = caster.getUniqueId();
 
-        context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 1f, 1.8f);
+        context.effects().playSoundForPlayer(context.getCasterId(), Sound.BLOCK_BEACON_ACTIVATE, 1f, 1.8f);
         context.sendMessageToActionBar(
                 caster,
                 Component.text("✦ Ви зникли зі сприйняття світу")

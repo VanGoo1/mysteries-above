@@ -8,7 +8,6 @@ import me.vangoo.domain.valueobjects.Sequence;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
@@ -59,9 +58,6 @@ public class ScanGazePassive extends ToggleablePassiveAbility {
         lastTargets.remove(casterId);
         tickCounters.remove(casterId);
 
-        context.sendMessageToCaster(
-                ChatColor.YELLOW + "✗ Пасивне сканування вимкнено"
-        );
         context.playSoundToCaster(
                 org.bukkit.Sound.BLOCK_BEACON_DEACTIVATE,
                 0.5f,
@@ -118,7 +114,7 @@ public class ScanGazePassive extends ToggleablePassiveAbility {
         if (caster == null) return;
 
         // отримати Player-об'єкт кастера з context
-        Player casterPlayer = context.getCaster(); // або інший метод, який у вас є
+        Player casterPlayer = context.getCasterPlayer(); // або інший метод, який у вас є
 
         boolean showAdvanced = caster.getSequenceLevel() < 7;
 

@@ -70,7 +70,7 @@ public class Punishment extends ActiveAbility {
      */
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         UUID casterId = caster.getUniqueId();
 
         // ПКМ — перемикання режиму (не витрачає ресурси, не накладає кулдаун)
@@ -115,8 +115,8 @@ public class Punishment extends ActiveAbility {
 
         if (lastPunishmentTime != null && (currentTime - lastPunishmentTime) < PUNISHMENT_COOLDOWN_MS) {
             // Покарання на кулдауні - тільки повідомляємо про порушення
-            Player caster = context.getCaster().getServer().getPlayer(casterId);
-            Player violator = context.getCaster().getServer().getPlayer(violatorId);
+            Player caster = context.getCasterPlayer().getServer().getPlayer(casterId);
+            Player violator = context.getCasterPlayer().getServer().getPlayer(violatorId);
 
             if (violator != null && violator.isOnline()) {
                 sendActionBar(violator, ChatColor.YELLOW + "⚖ Порушення зафіксовано: " + action);
@@ -130,8 +130,8 @@ public class Punishment extends ActiveAbility {
         }
 
         // Отримуємо кастера та ціль
-        Player caster = context.getCaster().getServer().getPlayer(casterId);
-        Player violator = context.getCaster().getServer().getPlayer(violatorId);
+        Player caster = context.getCasterPlayer().getServer().getPlayer(casterId);
+        Player violator = context.getCasterPlayer().getServer().getPlayer(violatorId);
 
         // Якщо кастер відсутній чи не онлайн — немає кого інформувати, але покарання все одно може застосуватись:
         PunishmentMode mode = chosenMode.getOrDefault(casterId, PunishmentMode.TELEPORT_STRIKE);
@@ -170,8 +170,8 @@ public class Punishment extends ActiveAbility {
      * Застосування покарання. Використовує context.lockAbilities(...) для DISABLE_ABILITIES.
      */
     private static void applyPunishment(IAbilityContext context, UUID casterId, UUID violatorId, PunishmentMode mode) {
-        Player caster = context.getCaster().getServer().getPlayer(casterId);
-        Player violator = context.getCaster().getServer().getPlayer(violatorId);
+        Player caster = context.getCasterPlayer().getServer().getPlayer(casterId);
+        Player violator = context.getCasterPlayer().getServer().getPlayer(violatorId);
 
         if (violator == null || !violator.isOnline()) return;
 

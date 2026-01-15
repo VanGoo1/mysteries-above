@@ -30,12 +30,12 @@ public class Agility extends PermanentPassiveAbility {
 
     @Override
     public void onActivate(IAbilityContext context) {
-        applySpeed(context.getCaster());
+        applySpeed(context.getCasterPlayer());
     }
 
     @Override
     public void onDeactivate(IAbilityContext context) {
-        Player player = context.getCaster();
+        Player player = context.getCasterPlayer();
         if (player != null) {
             player.removePotionEffect(PotionEffectType.SPEED);
         }
@@ -43,7 +43,7 @@ public class Agility extends PermanentPassiveAbility {
 
     @Override
     public void tick(IAbilityContext context) {
-        Player player = context.getCaster();
+        Player player = context.getCasterPlayer();
         if (player == null || !player.isOnline()) return;
 
         // 1. Підтримка Швидкості

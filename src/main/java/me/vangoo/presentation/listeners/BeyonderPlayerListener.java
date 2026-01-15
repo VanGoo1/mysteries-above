@@ -131,7 +131,6 @@ public class BeyonderPlayerListener implements Listener {
         }
 
         showResultToPlayer(player, result);
-        logger.info(result.toString());
     }
 
     private void showResultToPlayer(Player player, AbilityResult result) {

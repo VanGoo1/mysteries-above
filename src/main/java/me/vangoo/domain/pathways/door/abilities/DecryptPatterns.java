@@ -52,7 +52,7 @@ public class DecryptPatterns extends PermanentPassiveAbility {
      * Обробляє подію використання здібності
      */
     private void handleAbilityUsed(IAbilityContext context, AbilityDomainEvent.AbilityUsed event) {
-        Player owner = context.getCaster();
+        Player owner = context.getCasterPlayer();
 
         // Не показувати власні здібності
         if (event.casterId().equals(owner.getUniqueId())) {

@@ -82,21 +82,21 @@ public class DreamTraversal extends ActiveAbility {
     }
     private List<Player> findSleepingPlayers(IAbilityContext context, int range) {
         Location casterLoc = context.getCasterLocation();
-        return context.getNearbyPlayers(range).stream()
+        return context.targeting().getNearbyPlayers(range).stream()
                 .filter(Player::isSleeping)
                 .sorted(Comparator.comparingDouble(p -> p.getLocation().distance(casterLoc)))
                 .collect(Collectors.toList());
     }
 
     private void openDreamTargetMenu(IAbilityContext context, List<Player> targets) {
-        context.sendMessageToCaster(ChatColor.DARK_PURPLE + "✦ Ви відчуваєте " + targets.size() + " сплячих свідомостей...");
-        context.playSoundToCaster(Sound.BLOCK_BEACON_AMBIENT, 0.7f, 1.5f);
+        context.messaging().sendMessage(context.getCasterId(), ChatColor.DARK_PURPLE + "✦ Ви відчуваєте " + targets.size() + " сплячих свідомостей...");
+        context.effects().playSoundForPlayer(context.getCasterId(), Sound.BLOCK_BEACON_AMBIENT, 0.7f, 1.5f);
 
         // Ми передаємо у меню самі Player-об'єкти (щоб створити гарні ItemStack'и),
         // але при виборі віддаємо лише UUID та ім'я (щоб уникнути подальшого звернення до Bukkit)
         Function<Player, ItemStack> mapper = p -> createTargetMenuItem(context, p.getUniqueId(), p.getName(), p.getLocation());
 
-        context.openChoiceMenu(
+        context.ui().openChoiceMenu(
                 "Блукання у снах",
                 targets,
                 mapper,
@@ -110,14 +110,14 @@ public class DreamTraversal extends ActiveAbility {
         if (meta != null) {
             meta.setDisplayName(ChatColor.AQUA + knownName);
 
-            Location bedLoc = context.getBedSpawnLocation(targetId);
+            Location bedLoc = context.playerData().getBedSpawnLocation(context.getCasterId());
             String bedInfo = bedLoc != null
                     ? String.format("%s [%d, %d, %d]", bedLoc.getWorld().getName(), bedLoc.getBlockX(), bedLoc.getBlockY(), bedLoc.getBlockZ())
                     : "Невідомо";
 
-            long hoursPlayed = context.getPlayTimeHours(targetId);
-            String mainHand = context.getMainHandItemName(targetId);
-            int playerKills = context.getPlayerKills(targetId);
+            long hoursPlayed = context.playerData().getPlayTimeHours(context.getCasterId());
+            String mainHand = context.playerData().getMainHandItemName(context.getCasterId());
+            int playerKills = context.playerData().getPlayerKills(context.getCasterId());
 
             String distanceText = "Невідомо";
             Location casterLoc = context.getCasterLocation();
@@ -149,40 +149,40 @@ public class DreamTraversal extends ActiveAbility {
     private void startTeleportSequence(IAbilityContext context, UUID targetId, String targetName, boolean isExecutedFromMenu) {
         Beyonder casterBeyonder = context.getCasterBeyonder();
         if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, context)) {
-            context.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
+            context.messaging().sendMessage(context.getCasterId(), ChatColor.RED + "Недостатньо духовності!");
             return;
         }
         if (isExecutedFromMenu) {
-            context.publishAbilityUsedEvent(this);
+            context.events().publishAbilityUsedEvent(this, casterBeyonder);
         }
         // Закриваємо меню у кастера
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         caster.closeInventory();
 
-        context.sendMessageToCaster(ChatColor.DARK_PURPLE + "✦ Ви проникаєте у сон " + ChatColor.WHITE + targetName + ChatColor.DARK_PURPLE + "...");
-        context.sendMessage(targetId, "" + ChatColor.GRAY + ChatColor.ITALIC + "У вашому сні з'являється невідома присутність...");
+        context.messaging().sendMessage(context.getCasterId(), ChatColor.DARK_PURPLE + "✦ Ви проникаєте у сон " + ChatColor.WHITE + targetName + ChatColor.DARK_PURPLE + "...");
+        context.messaging().sendMessage(targetId, "" + ChatColor.GRAY + ChatColor.ITALIC + "У вашому сні з'являється невідома присутність...");
 
-        context.playSoundToCaster(Sound.BLOCK_PORTAL_TRIGGER, 1.0f, 0.8f);
-        context.spawnParticle(Particle.PORTAL, context.getCasterLocation().add(0, 1, 0), 50, 0.5, 1, 0.5);
+        context.effects().playSoundForPlayer(context.getCasterId(), Sound.BLOCK_PORTAL_TRIGGER, 1.0f, 0.8f);
+        context.effects().spawnParticle(Particle.PORTAL, context.getCasterLocation().add(0, 1, 0), 50, 0.5, 1, 0.5);
 
         showCountdown(context, TELEPORT_DELAY_SECONDS);
 
-        context.scheduleDelayed(() -> {
+        context.scheduling().scheduleDelayed(() -> {
             // Під час виконання ми НЕ викликаємо context.getPlayer(...)
             // Натомість знаходимо кращу доступну локацію через методи контексту
             Optional<Location> maybeTeleportLoc = resolveTeleportLocation(context, targetId);
 
             if (maybeTeleportLoc.isEmpty()) {
-                context.sendMessageToCaster(ChatColor.RED + "✗ Не вдалося знайти придатну локацію для телепортації (ціль недоступна).");
-                context.playSoundToCaster(Sound.ENTITY_VILLAGER_NO, 1.0f, 0.8f);
+                context.messaging().sendMessage(context.getCasterId(), ChatColor.RED + "✗ Не вдалося знайти придатну локацію для телепортації (ціль недоступна).");
+                context.effects().playSoundForPlayer(context.getCasterId(), Sound.ENTITY_VILLAGER_NO, 1.0f, 0.8f);
                 return;
             }
 
             Location teleportLoc = maybeTeleportLoc.get();
 
             // Ефекти перед телепортацією (у кастера)
-            context.spawnParticle(Particle.PORTAL, context.getCasterLocation().add(0, 1, 0), 100, 0.5, 1, 0.5);
-            context.playSound(context.getCasterLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.5f, 0.5f);
+            context.effects().spawnParticle(Particle.PORTAL, context.getCasterLocation().add(0, 1, 0), 100, 0.5, 1, 0.5);
+            context.effects().playSound(context.getCasterLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.5f, 0.5f);
 
             // Додаємо невеликий випадковий офсет поруч із ціллю
             teleportLoc = teleportLoc.clone().add(Math.random() * 4 - 2, 0, Math.random() * 4 - 2);
@@ -190,13 +190,13 @@ public class DreamTraversal extends ActiveAbility {
             context.teleport(context.getCasterId(), teleportLoc);
 
             // Ефекти після телепортації
-            context.spawnParticle(Particle.PORTAL, teleportLoc.clone().add(0, 1, 0), 100, 0.5, 1, 0.5);
-            context.spawnParticle(Particle.SOUL_FIRE_FLAME, teleportLoc, 30, 0.5, 0.5, 0.5);
-            context.playSound(teleportLoc, Sound.ENTITY_ENDERMAN_TELEPORT, 1.5f, 0.5f);
-            context.playSound(teleportLoc, Sound.BLOCK_PORTAL_TRAVEL, 0.7f, 1.5f);
+            context.effects().spawnParticle(Particle.PORTAL, teleportLoc.clone().add(0, 1, 0), 100, 0.5, 1, 0.5);
+            context.effects().spawnParticle(Particle.SOUL_FIRE_FLAME, teleportLoc, 30, 0.5, 0.5, 0.5);
+            context.effects().playSound(teleportLoc, Sound.ENTITY_ENDERMAN_TELEPORT, 1.5f, 0.5f);
+            context.effects().playSound(teleportLoc, Sound.BLOCK_PORTAL_TRAVEL, 0.7f, 1.5f);
 
-            context.sendMessageToCaster(ChatColor.GREEN + "✓ Ви проникли у світ снів " + targetName);
-            context.sendMessage(targetId, ChatColor.DARK_PURPLE + "✦ У ваш сон хтось увійшов...");
+            context.messaging().sendMessage(context.getCasterId(), ChatColor.GREEN + "✓ Ви проникли у світ снів " + targetName);
+            context.messaging().sendMessage(targetId, ChatColor.DARK_PURPLE + "✦ У ваш сон хтось увійшов...");
 
             context.applyEffect(context.getCasterId(), PotionEffectType.BLINDNESS, 20, 0);
 
@@ -212,15 +212,15 @@ public class DreamTraversal extends ActiveAbility {
      */
     private Optional<Location> resolveTeleportLocation(IAbilityContext context, UUID targetId) {
         // 1) Bed spawn
-        Location bed = context.getBedSpawnLocation(targetId);
+        Location bed = context.playerData().getBedSpawnLocation(targetId);
         if (bed != null) return Optional.of(bed);
 
         // 2) Last death
-        Location lastDeath = context.getLastDeathLocation(targetId);
+        Location lastDeath = context.playerData().getLastDeathLocation(targetId);
         if (lastDeath != null) return Optional.of(lastDeath);
 
         // 3) Пошук серед nearby players (великий радіус) — тільки якщо гравець близько до кастера
-        List<Player> nearby = context.getNearbyPlayers(3000);
+        List<Player> nearby = context.targeting().getNearbyPlayers(3000);
         for (Player p : nearby) {
             if (p.getUniqueId().equals(targetId)) {
                 return Optional.of(p.getLocation());
@@ -236,15 +236,15 @@ public class DreamTraversal extends ActiveAbility {
             final int currentSecond = i;
             final int remaining = seconds - i + 1;
 
-            context.scheduleDelayed(() -> {
+            context.scheduling().scheduleDelayed(() -> {
                 float pitch = 0.8f + (currentSecond * 0.2f);
-                context.playSoundToCaster(Sound.BLOCK_NOTE_BLOCK_PLING, 0.5f, pitch);
+                context.effects().playSoundForPlayer(context.getCasterId(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.5f, pitch);
 
                 int particleCount = 10 + (currentSecond * 5);
-                context.spawnParticle(Particle.SOUL, context.getCasterLocation().add(0, 1, 0), particleCount, 0.3, 0.5, 0.3);
+                context.effects().spawnParticle(Particle.SOUL, context.getCasterLocation().add(0, 1, 0), particleCount, 0.3, 0.5, 0.3);
 
                 if (remaining <= 3) {
-                    context.sendMessageToCaster(ChatColor.DARK_PURPLE + "✦ " + ChatColor.WHITE + remaining + "...");
+                    context.messaging().sendMessage(context.getCasterId(), ChatColor.DARK_PURPLE + "✦ " + ChatColor.WHITE + remaining + "...");
                 }
 
             }, currentSecond * 20L);

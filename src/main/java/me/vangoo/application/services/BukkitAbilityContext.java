@@ -5,6 +5,8 @@ import de.slikey.effectlib.EffectManager;
 import de.slikey.effectlib.effect.*;
 import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.MysteriesAbovePlugin;
+import me.vangoo.application.services.context.*;
+import me.vangoo.domain.abilities.context.*;
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
@@ -58,6 +60,19 @@ public class BukkitAbilityContext implements IAbilityContext {
     private final DomainEventPublisher eventPublisher;
     private final RecipeUnlockService recipeUnlockService;
 
+    private IVisualEffectsContext visualEffectsContext;
+    private ISchedulingContext schedulingContext;
+    private IDataContext dataContext;
+    private IBeyonderContext beyonderContext;
+    private IUIContext uiContext;
+    private ITargetContext targetContext;
+    private IEventContext eventContext;
+    private ICooldownContext cooldownContext;
+    private IRampageContext rampageContext;
+    private IEntityContext entityContext;
+    private IGlowingContext glowingContext;
+    private IMessagingContext messagingContext;
+
     public BukkitAbilityContext(
             Player caster,
             MysteriesAbovePlugin plugin,
@@ -102,8 +117,104 @@ public class BukkitAbilityContext implements IAbilityContext {
     }
 
     @Override
-    public Player getCaster() {
+    public Player getCasterPlayer() {
         return caster;
+    }
+
+    @Override
+    public IVisualEffectsContext effects() {
+        if (visualEffectsContext == null) {
+            visualEffectsContext = new VisualEffectsContext(effectManager, plugin);
+        }
+        return visualEffectsContext;
+    }
+
+    @Override
+    public ISchedulingContext scheduling() {
+        if (schedulingContext == null) {
+            schedulingContext = new SchedulingContext(plugin);
+        }
+        return schedulingContext;
+    }
+
+    @Override
+    public IDataContext playerData() {
+        if (dataContext == null) {
+            dataContext = new DataContext();
+        }
+        return dataContext;
+    }
+
+    @Override
+    public IBeyonderContext beyonder() {
+        if (beyonderContext == null) {
+            beyonderContext = new BeyonderContext(beyonderService, passiveAbilityManager, recipeUnlockService);
+        }
+        return beyonderContext;
+    }
+
+    @Override
+    public IUIContext ui() {
+        if (uiContext == null) {
+            uiContext = new UIContext(caster, plugin);
+        }
+        return uiContext;
+    }
+
+    @Override
+    public ITargetContext targeting() {
+        if (targetContext == null) {
+            targetContext = new TargetContext(caster);
+        }
+        return targetContext;
+    }
+
+    @Override
+    public IEventContext events() {
+        if (eventContext == null) {
+            eventContext = new EventContext(eventPublisher);
+        }
+        return eventContext;
+    }
+
+    @Override
+    public ICooldownContext cooldown() {
+        if (cooldownContext == null) {
+            cooldownContext = new CooldownContext(cooldownManager, lockManager);
+        }
+        return cooldownContext;
+    }
+
+    @Override
+    public IRampageContext rampage() {
+        if (rampageContext == null) {
+            rampageContext = new RampageContext(rampageManager);
+        }
+        return rampageContext;
+    }
+
+    @Override
+    public IEntityContext entity() {
+        if (entityContext == null) {
+            entityContext = new EntityContext(plugin);
+        }
+        return entityContext;
+    }
+
+    @Override
+    public IGlowingContext glowing() {
+        if (glowingContext == null) {
+            glowingContext = new GlowingContext(glowingEntities, plugin, LOGGER);
+        }
+        return glowingContext;
+    }
+
+    @Override
+    public IMessagingContext messaging() {
+        if (messagingContext == null) {
+            messagingContext = new MessagingContext(plugin, scheduling());
+        }
+        return messagingContext;
     }
 
     // ==========================================
@@ -181,71 +292,8 @@ public class BukkitAbilityContext implements IAbilityContext {
     }
 
     @Override
-    public boolean rescueFromRampage(UUID casterId, UUID targetId) {
-        if (rampageManager.isInRampage(targetId)) {
-            return rampageManager.rescueFromRampage(targetId, casterId);
-        }
-        return false;
-    }
-
-    @Override
-    public boolean isSneaking(UUID targetId) {
-        Entity entity = getEntity(targetId);
-        return entity instanceof Player p && p.isSneaking();
-    }
-
-    @Override
     public boolean hasItem(Material material, int amount) {
         return caster.getInventory().contains(material, amount);
-    }
-
-    @Override
-    public void consumeItem(Material material, int amount) {
-        if (!hasItem(material, amount)) return;
-
-        for (ItemStack item : caster.getInventory().getContents()) {
-            if (item != null && item.getType() == material) {
-                int newAmount = item.getAmount() - amount;
-                if (newAmount > 0) item.setAmount(newAmount);
-                else caster.getInventory().remove(item);
-                break;
-            }
-        }
-    }
-
-    @Override
-    public Map<String, String> getTargetAnalysis(UUID targetId) {
-        Entity entity = getEntity(targetId);
-        if (!(entity instanceof Player target)) {
-            return Map.of("Error", "Not a player");
-        }
-
-        // 1. Статистика
-        int kills = target.getStatistic(Statistic.PLAYER_KILLS);
-        int deaths = target.getStatistic(Statistic.DEATHS);
-        int mobKills = target.getStatistic(Statistic.MOB_KILLS);
-        long hours = target.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20 / 60 / 60;
-
-        // 2. Зброя в руках
-        ItemStack handItem = target.getInventory().getItemInMainHand();
-        String weaponName = "Нічого/Кулаки";
-        if (handItem.getType() != Material.AIR) {
-            if (handItem.hasItemMeta() && handItem.getItemMeta().hasDisplayName()) {
-                weaponName = handItem.getItemMeta().getDisplayName();
-            } else {
-                weaponName = handItem.getType().name().replace("_", " ").toLowerCase();
-            }
-        }
-
-        // 3. Формуємо Map
-        Map<String, String> data = new HashMap<>();
-        data.put("Kills", String.valueOf(kills));
-        data.put("Deaths", String.valueOf(deaths));
-        data.put("MobKills", String.valueOf(mobKills));
-        data.put("Hours", String.valueOf(hours));
-        data.put("Weapon", weaponName);
-
-        return data;
     }
 
     // ==========================================
@@ -366,11 +414,6 @@ public class BukkitAbilityContext implements IAbilityContext {
     @Override
     public void setCooldown(Ability ability, long durationTicks) {
         cooldownManager.setCooldown(caster.getUniqueId(), ability);
-    }
-
-    @Override
-    public void clearCooldown(Ability ability) {
-        cooldownManager.clearCooldown(caster.getUniqueId(), ability);
     }
 
     // ==========================================
@@ -584,18 +627,6 @@ public class BukkitAbilityContext implements IAbilityContext {
 
         } catch (ReflectiveOperationException e) {
             LOGGER.warning("Failed to set glowing for entity " + entityId + ": " + e.getMessage());
-        }
-    }
-
-    @Override
-    public void setGlowingPermanent(UUID entityId, ChatColor color) {
-        Entity entity = getEntity(entityId);
-        if (entity == null) return;
-
-        try {
-            glowingEntities.setGlowing(entity, caster, color);
-        } catch (ReflectiveOperationException e) {
-            LOGGER.warning("Failed to set permanent glowing for entity " + entityId + ": " + e.getMessage());
         }
     }
 
@@ -827,46 +858,6 @@ public class BukkitAbilityContext implements IAbilityContext {
     }
 
     @Override
-    public Location getBedSpawnLocation(UUID targetId) {
-        Entity entity = getEntity(targetId);
-        if (entity instanceof Player p) {
-            return p.getRespawnLocation();
-        }
-        return null;
-    }
-
-    @Override
-    public long getPlayTimeHours(UUID targetId) {
-        Entity entity = getEntity(targetId);
-        if (entity instanceof Player p) {
-            // PLAY_ONE_MINUTE це тіки (1/20 сек)
-            return p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20 / 60 / 60;
-        }
-        return 0;
-    }
-
-    @Override
-    public String getMainHandItemName(UUID targetId) {
-        Entity entity = getEntity(targetId);
-        if (entity instanceof Player p) {
-            ItemStack item = p.getInventory().getItemInMainHand();
-            if (item.getType() == Material.AIR) return "Нічого";
-
-            if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
-                return item.getItemMeta().getDisplayName();
-            }
-            return item.getType().name().replace("_", " ").toLowerCase();
-        }
-        return "Невідомо";
-    }
-
-    @Override
-    public int getDeathsStatistic(UUID targetId) {
-        Entity entity = getEntity(targetId);
-        return (entity instanceof Player p) ? p.getStatistic(Statistic.DEATHS) : 0;
-    }
-
-    @Override
     public List<String> getEnderChestContents(UUID targetId, int limit) {
         Player player = Bukkit.getPlayer(targetId);
         if (player == null) return Collections.emptyList();
@@ -900,101 +891,6 @@ public class BukkitAbilityContext implements IAbilityContext {
     private String formatMaterialName(Material material) {
         String name = material.name().toLowerCase().replace("_", " ");
         return name.substring(0, 1).toUpperCase() + name.substring(1);
-    }
-
-    @Override
-    public int getPlayerKills(UUID targetId) {
-        Entity entity = getEntity(targetId);
-        return (entity instanceof Player p) ? p.getStatistic(Statistic.PLAYER_KILLS) : 0;
-    }
-
-    @Override
-    public int getVillagerKills(UUID targetId) {
-        Entity entity = getEntity(targetId);
-        return (entity instanceof Player p) ? p.getStatistic(Statistic.KILL_ENTITY, EntityType.VILLAGER) : 0;
-    }
-
-    @Override
-    public Location getLastDeathLocation(UUID targetId) {
-        Entity entity = getEntity(targetId);
-        return (entity instanceof Player p) ? p.getLastDeathLocation() : null;
-    }
-
-    @Override
-    public int getExperienceLevel(UUID targetId) {
-        Entity entity = getEntity(targetId);
-        return (entity instanceof Player p) ? p.getLevel() : 0;
-    }
-
-    @Override
-    public double getBeyonderMastery(UUID targetId) {
-        Beyonder b = beyonderService.getBeyonder(targetId);
-
-        if (b == null) return 0.0; // Повертаємо 0.0 для коректності
-        return b.getMasteryValue();
-    }
-    @Override
-    public void monitorSneaking(UUID targetId, int durationTicks, Consumer<Boolean> callback) {
-        new BukkitRunnable() {
-            int currentTick = 0;
-
-            @Override
-            public void run() {
-                Player player = Bukkit.getPlayer(targetId);
-
-                // Якщо гравець вийшов з гри - вважаємо це відмовою
-                if (player == null || !player.isOnline()) {
-                    callback.accept(false);
-                    this.cancel();
-                    return;
-                }
-
-                // ПЕРЕВІРКА: Чи гравець присів?
-                if (player.isSneaking()) {
-                    callback.accept(true); // Успіх!
-                    this.cancel();
-                    return;
-                }
-
-                currentTick += 5; // Ми перевіряємо кожні 5 тіків
-                if (currentTick >= durationTicks) {
-                    callback.accept(false); // Час вийшов - відмова
-                    this.cancel();
-                }
-            }
-        }.runTaskTimer(plugin, 0L, 5L); // Запуск таймера: перевірка кожні 5 тіків
-    }
-
-    @Override
-    public int getMinedAmount(UUID targetId, Material oreType) {
-        Entity entity = getEntity(targetId);
-        if (!(entity instanceof Player p)) return 0;
-        try {
-            return p.getStatistic(Statistic.MINE_BLOCK, oreType);
-        } catch (Exception e) {
-            return 0;
-        }
-    }
-
-    @Override
-    public int getUsedAmount(UUID targetId, Material itemType) {
-        Entity entity = getEntity(targetId);
-        if (!(entity instanceof Player p)) return 0;
-
-        int crafted = 0;
-        int used = 0;
-
-        try {
-            crafted = p.getStatistic(Statistic.CRAFT_ITEM, itemType);
-        } catch (Exception ignored) {
-        }
-
-        try {
-            used = p.getStatistic(Statistic.USE_ITEM, itemType);
-        } catch (Exception ignored) {
-        }
-
-        return crafted + used;
     }
 
     @Override
@@ -1033,23 +929,6 @@ public class BukkitAbilityContext implements IAbilityContext {
                         isOffPathway
                 )
         );
-    }
-
-    @Override
-    public void setHidden(Player player, boolean hidden) {
-        if (hidden) {
-            // Приховати від усіх онлайн гравців
-            for (Player target : Bukkit.getOnlinePlayers()) {
-                if (!target.getUniqueId().equals(player.getUniqueId())) {
-                    target.hidePlayer(plugin, player);
-                }
-            }
-        } else {
-            // Показати всім
-            for (Player target : Bukkit.getOnlinePlayers()) {
-                target.showPlayer(plugin, player);
-            }
-        }
     }
 
     @Override
@@ -1108,10 +987,7 @@ public class BukkitAbilityContext implements IAbilityContext {
         return eventPublisher.getLastAbilityEvent(casterId, maxAgeSeconds);
     }
 
-    @Override
-    public List<AbilityDomainEvent> getAbilityEventHistory(UUID casterId, int maxAgeSeconds) {
-        return eventPublisher.getAbilityEventHistory(casterId, maxAgeSeconds);
-    }
+
     @Override
     public List<RecordedEvent> getPastEvents(Location location, int radius, int timeSeconds) {
         // Делегуємо виконання нашому сервісу в Application Layer

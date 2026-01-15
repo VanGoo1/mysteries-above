@@ -59,7 +59,7 @@ public class BrandOfRestraint extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
 
         // 1. Шукаємо ціль (повторно, бо це етап виконання)
         Optional<LivingEntity> targetOpt = context.getTargetedEntity(RANGE);

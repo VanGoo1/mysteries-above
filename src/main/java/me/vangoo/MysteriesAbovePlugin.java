@@ -98,11 +98,6 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         );
     }
 
-    private void initializeCustomItems() {
-        // Custom items are already initialized in ServiceContainer
-        // This method is kept for logging purposes
-    }
-
     @Override
     public void onDisable() {
         // Stop schedulers

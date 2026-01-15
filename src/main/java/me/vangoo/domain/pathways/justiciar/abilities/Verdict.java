@@ -84,7 +84,7 @@ public class Verdict extends ActiveAbility {
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
         UUID casterId = context.getCasterId();
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
 
         // 1. Переключення режиму (Shift + PKM)
         if (caster != null && caster.isSneaking()) {
@@ -120,7 +120,7 @@ public class Verdict extends ActiveAbility {
     // ===========================================
 
     private AbilityResult executeExile(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         Location center = caster.getLocation();
 
         List<Player> targets = context.getNearbyPlayers(EXILE_RADIUS).stream()
@@ -160,7 +160,7 @@ public class Verdict extends ActiveAbility {
     }
 
     private AbilityResult executeRestriction(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         Location center = caster.getLocation();
 
         RestrictionZone zone = new RestrictionZone(center.clone(), RESTRICTION_SIZE, caster.getUniqueId());
@@ -217,7 +217,7 @@ public class Verdict extends ActiveAbility {
             activeRestrictions.remove(casterId);
 
             // ACTION BAR: Кастер
-            Player caster = context.getCaster();
+            Player caster = context.getCasterPlayer();
             if (caster != null && caster.isOnline()) {
                 context.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
                         ChatColor.GRAY + "⚖ Зона обмеження зникла."

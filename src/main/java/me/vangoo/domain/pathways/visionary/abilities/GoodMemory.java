@@ -110,7 +110,7 @@ public class GoodMemory extends ToggleablePassiveAbility {
         ObservationState state = observations.get(casterId);
         if (state == null) return;
 
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         if (caster == null || !caster.isOnline()) return;
 
         updateMarkDurations(casterId, context);
@@ -120,7 +120,7 @@ public class GoodMemory extends ToggleablePassiveAbility {
             return;
         }
 
-        Optional<LivingEntity> targetOpt = context.getTargetedEntity(OBSERVATION_RANGE);
+        Optional<LivingEntity> targetOpt = context.targeting().getTargetedEntity(OBSERVATION_RANGE);
         if (!targetOpt.isPresent()) { handleNoTarget(state); return; }
 
         LivingEntity target = targetOpt.get();
@@ -144,7 +144,7 @@ public class GoodMemory extends ToggleablePassiveAbility {
         }
         state.incrementProgress();
         // Show actionbar progress
-        context.sendMessageToActionBar(context.getCaster(),
+        context.messaging().sendMessageToActionBar(context.getCasterId(),
                 Component.text("👁 Запам'ятовування: " + state.getProgressPercentage() + "%")
                         .color(NamedTextColor.AQUA));
 
@@ -164,15 +164,14 @@ public class GoodMemory extends ToggleablePassiveAbility {
         durations.put(targetId, GLOW_DURATION_TICKS);
 
         ChatColor color = getHealthColor(target);
-        context.setGlowing(targetId, color, GLOW_DURATION_TICKS);
+        context.glowing().setGlowing(targetId, context.getCasterId(), color, GLOW_DURATION_TICKS);
 
         // Actionbar notify
-        String healthInfo = String.format("[HP: %d%%]", getHealthPercentage(target));
-        context.sendMessageToActionBar(context.getCaster(),
-                Component.text("✓ Запам'ятовано: " + getEntityName(target) + " " + healthInfo)
+        context.messaging().sendMessageToActionBar(context.getCasterId(),
+                Component.text("✓ Зафіксовано")
                         .color(NamedTextColor.GREEN));
 
-        context.playSoundToCaster(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.5f);
+        context.effects().playSoundForPlayer(context.getCasterId(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.5f);
     }
 
     private void updateMarkDurations(UUID casterId, IAbilityContext context) {

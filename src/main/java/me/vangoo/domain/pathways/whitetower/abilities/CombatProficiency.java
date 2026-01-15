@@ -3,7 +3,6 @@ package me.vangoo.domain.pathways.whitetower.abilities;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.abilities.core.PermanentPassiveAbility;
 import me.vangoo.domain.valueobjects.Sequence;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -37,7 +36,7 @@ public class CombatProficiency extends PermanentPassiveAbility {
 
     @Override
     public void tick(IAbilityContext context) {
-        Player player = context.getCaster();
+        Player player = context.getCasterPlayer();
         if (player == null || !player.isOnline()) return;
 
         // Оновлюємо підписку на події раз на секунду

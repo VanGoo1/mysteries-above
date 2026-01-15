@@ -147,7 +147,7 @@ public class Recognition extends ToggleablePassiveAbility {
             return;
         }
 
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         if (caster == null || !caster.isOnline()) {
             return;
         }

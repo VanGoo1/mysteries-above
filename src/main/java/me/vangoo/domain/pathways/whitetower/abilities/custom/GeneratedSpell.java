@@ -18,7 +18,6 @@ import org.bukkit.util.Vector;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -105,7 +104,7 @@ public class GeneratedSpell extends ActiveAbility {
     }
 
     private AbilityResult executeProjectile(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         Location start = caster.getEyeLocation();
         Vector direction = start.getDirection();
 
@@ -143,7 +142,7 @@ public class GeneratedSpell extends ActiveAbility {
     }
 
     private AbilityResult executeAoe(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         Location center = caster.getLocation();
 
         // Ефект розширення сфери
@@ -169,7 +168,7 @@ public class GeneratedSpell extends ActiveAbility {
     }
 
     private AbilityResult executeSelf(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
 
         if (heal > 0) {
             context.heal(caster.getUniqueId(), heal);
@@ -184,7 +183,7 @@ public class GeneratedSpell extends ActiveAbility {
     }
 
     private AbilityResult executeBuff(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
 
         if (potionEffect != null && duration > 0) {
             caster.addPotionEffect(new PotionEffect(potionEffect, duration, potionAmplifier));
@@ -200,7 +199,7 @@ public class GeneratedSpell extends ActiveAbility {
     }
 
     private AbilityResult executeTeleport(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
 
         // Raytrace для безпечного телепорту
         Block targetBlock = caster.getTargetBlockExact((int) (radius <= 0 ? 10 : radius)); // radius тут як дальність
@@ -245,7 +244,7 @@ public class GeneratedSpell extends ActiveAbility {
         direction.normalize().multiply(step); // Крок переміщення
         final Location currentLocation = start.clone();
         final double maxRangeSquared = maxRange * maxRange;
-        final Player caster = context.getCaster();
+        final Player caster = context.getCasterPlayer();
 
         // Для оптимізації, щоб не бити одну ціль двічі одним снарядом
         Set<Integer> hitEntities = new HashSet<>();

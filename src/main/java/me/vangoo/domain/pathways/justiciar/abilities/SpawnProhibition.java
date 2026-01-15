@@ -71,7 +71,7 @@ public class SpawnProhibition extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         UUID casterId = caster.getUniqueId();
 
         // Якщо Shift натиснуто - це перемикання режиму (безкоштовно)

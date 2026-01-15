@@ -10,7 +10,6 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -39,7 +38,7 @@ public class MysticalReenactment extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Location center = context.getCaster().getLocation();
+        Location center = context.getCasterPlayer().getLocation();
 
         context.sendMessageToActionBar(Component.text("Зчитування містичних слідів...", NamedTextColor.AQUA));
         context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 0.8f);

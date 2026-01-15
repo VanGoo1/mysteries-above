@@ -68,21 +68,21 @@ public class ArbitersGaze extends PermanentPassiveAbility {
 
     @Override
     public void onActivate(IAbilityContext context) {
-        UUID casterId = context.getCaster().getUniqueId();
+        UUID casterId = context.getCasterPlayer().getUniqueId();
         stareStates.put(casterId, new StareState());
         gazeAccumulators.put(casterId, new ConcurrentHashMap<>());
     }
 
     @Override
     public void onDeactivate(IAbilityContext context) {
-        UUID casterId = context.getCaster().getUniqueId();
+        UUID casterId = context.getCasterPlayer().getUniqueId();
         stareStates.remove(casterId);
         gazeAccumulators.remove(casterId);
     }
 
     @Override
     public void tick(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         UUID casterId = caster.getUniqueId();
 
         StareState state = stareStates.computeIfAbsent(casterId, k -> new StareState());
@@ -213,7 +213,7 @@ public class ArbitersGaze extends PermanentPassiveAbility {
 
         // Очищуємо акумулятори гравців що вийшли з зони або офлайн
         accumulators.entrySet().removeIf(entry -> {
-            Player p = context.getCaster().getServer().getPlayer(entry.getKey());
+            Player p = context.getCasterPlayer().getServer().getPlayer(entry.getKey());
             return p == null || !p.isOnline() || p.getLocation().distance(arbiter.getLocation()) > GAZE_AVERSION_DISTANCE;
         });
     }

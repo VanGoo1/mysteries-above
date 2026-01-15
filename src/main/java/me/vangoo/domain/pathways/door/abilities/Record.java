@@ -118,7 +118,7 @@ public class Record extends ActiveAbility {
     }
 
     private void startRecording(IAbilityContext context, Player target) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
 
         Beyonder targetBeyonder = context.getBeyonderFromEntity(target.getUniqueId());
         if (targetBeyonder == null) {
@@ -186,7 +186,7 @@ public class Record extends ActiveAbility {
             Beyonder targetBeyonder,
             AbilityDomainEvent.AbilityUsed recordedEvent
     ) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         Beyonder casterBeyonder = context.getCasterBeyonder();
 
         if (recordedEvent == null) {

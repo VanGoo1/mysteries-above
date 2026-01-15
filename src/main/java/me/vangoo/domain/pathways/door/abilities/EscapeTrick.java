@@ -37,7 +37,7 @@ public class EscapeTrick extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         World world = caster.getWorld();
 
         Location start = caster.getLocation();

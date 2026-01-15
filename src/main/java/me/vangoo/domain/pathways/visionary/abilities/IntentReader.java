@@ -42,7 +42,7 @@ public class IntentReader extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        context.sendMessageToActionBar(context.getCaster(),
+        context.sendMessageToActionBar(context.getCasterPlayer(),
                 Component.text("👁 Ви бачите справжні наміри істот (" + DURATION_SECONDS + "с)...")
                         .color(NamedTextColor.AQUA));
         context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 1.5f);
@@ -85,7 +85,7 @@ public class IntentReader extends ActiveAbility {
     }
 
     private IntentState analyzeIntent(LivingEntity suspect, IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         Vector toCaster = caster.getLocation().toVector().subtract(suspect.getLocation().toVector());
         double distance = toCaster.length();
         toCaster.normalize();
@@ -152,14 +152,14 @@ public class IntentReader extends ActiveAbility {
         String entityName = entity instanceof Player ? entity.getName() : entity.getType().name();
 
         if (current == IntentState.AGGRESSIVE) {
-            context.sendMessageToActionBar(context.getCaster(),
+            context.sendMessageToActionBar(context.getCasterPlayer(),
                     Component.text("⚠ " + entityName + " готується до атаки!").color(NamedTextColor.RED));
             context.playSoundToCaster(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 0.5f);
         } else if (current == IntentState.FLEEING && previous == IntentState.AGGRESSIVE) {
-            context.sendMessageToActionBar(context.getCaster(),
+            context.sendMessageToActionBar(context.getCasterPlayer(),
                     Component.text("⬇ " + entityName + " відступає.").color(NamedTextColor.YELLOW));
         } else if (current == IntentState.OBSERVING) {
-            context.sendMessageToActionBar(context.getCaster(),
+            context.sendMessageToActionBar(context.getCasterPlayer(),
                     Component.text("👀 " + entityName + " спостерігає.").color(NamedTextColor.BLUE));
         }
     }
