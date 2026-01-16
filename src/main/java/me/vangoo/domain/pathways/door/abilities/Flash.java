@@ -37,7 +37,7 @@ public class Flash extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         Location center = caster.getEyeLocation();
         context.spawnParticle(Particle.END_ROD, center, 5
         );

@@ -38,7 +38,7 @@ public class Blink extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player player = context.getCaster();
+        Player player = context.getCasterPlayer();
         Location startLoc = player.getEyeLocation();
         Vector direction = startLoc.getDirection();
         World world = player.getWorld();

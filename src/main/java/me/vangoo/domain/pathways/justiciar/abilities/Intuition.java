@@ -62,7 +62,7 @@ public class Intuition extends ToggleablePassiveAbility {
             return;
         }
 
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
 
         List<LivingEntity> nearbyEntities = context.getNearbyEntities(DETECTION_RADIUS);
 

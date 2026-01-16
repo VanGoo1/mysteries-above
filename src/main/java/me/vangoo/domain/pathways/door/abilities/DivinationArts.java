@@ -239,7 +239,7 @@ public class DivinationArts extends ActiveAbility {
         }
         ctx.publishAbilityUsedEvent(this);
 
-        Player caster = ctx.getCaster();
+        Player caster = ctx.getCasterPlayer();
         ctx.playSoundToCaster(Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1f, 0.8f);
         ctx.spawnParticle(Particle.END_ROD, ctx.getCasterLocation().add(0, 1.5, 0), 30, 0.5, 0.5, 0.5);
 
@@ -271,7 +271,7 @@ public class DivinationArts extends ActiveAbility {
         }
 
         ctx.scheduleDelayed(() -> {
-            Map<String, String> analysis = ctx.getTargetAnalysis(target.getUniqueId());
+            Map<String, String> analysis = ctx.playerData().getTargetAnalysis(target.getUniqueId());
 
             ctx.sendMessageToCaster(ChatColor.LIGHT_PURPLE + "═══════════════════════════════");
             ctx.sendMessageToCaster(ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "🔮 БАЧЕННЯ КРИСТАЛЬНОГО ШАРУ");
@@ -286,7 +286,7 @@ public class DivinationArts extends ActiveAbility {
     }
 
     private void revealWeatherPrediction(IAbilityContext ctx) {
-        World world = ctx.getCaster().getWorld();
+        World world = ctx.getCasterPlayer().getWorld();
         long timeUntilClear = world.getClearWeatherDuration();
         long timeUntilRain = world.getWeatherDuration();
         boolean isRaining = world.hasStorm();
@@ -458,7 +458,7 @@ public class DivinationArts extends ActiveAbility {
         }
         ctx.publishAbilityUsedEvent(this);
 
-        Player caster = ctx.getCaster();
+        Player caster = ctx.getCasterPlayer();
         ctx.sendMessageToCaster(ChatColor.GREEN + "🔍 Лозошукальний стрижень активовано!");
         ctx.sendMessageToCaster(ChatColor.GRAY + "Шукаємо: " + ChatColor.GOLD + target.name);
         ctx.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 0.7f, 1.3f);
@@ -562,7 +562,7 @@ public class DivinationArts extends ActiveAbility {
 
     private void openDreamVisionMenu(IAbilityContext ctx) {
         List<Player> targets = ctx.getNearbyPlayers(10000);
-        targets.removeIf(p -> p.equals(ctx.getCaster()));
+        targets.removeIf(p -> p.equals(ctx.getCasterPlayer()));
 
         if (targets.isEmpty()) {
             ctx.sendMessageToCaster(ChatColor.YELLOW + "⚠ Немає гравців для спостереження");
@@ -590,7 +590,7 @@ public class DivinationArts extends ActiveAbility {
 
     private void startDreamVisionSpectate(IAbilityContext ctx, Player target) {
         Beyonder casterBeyonder = ctx.getCasterBeyonder();
-        Player caster = ctx.getCaster();
+        Player caster = ctx.getCasterPlayer();
 
         GameMode originalMode = caster.getGameMode();
         Location originalLoc = caster.getLocation().clone();

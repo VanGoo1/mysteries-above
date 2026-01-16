@@ -85,7 +85,7 @@ public class Analysis extends ActiveAbility {
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
         UUID casterId = context.getCasterId();
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
 
         if (caster != null && caster.isSneaking()) {
             AnalysisMode currentMode = getCurrentMode(casterId);
@@ -145,7 +145,7 @@ public class Analysis extends ActiveAbility {
                 this::createDeleteIcon,
                 selectedAbility -> {
                     boolean removed = casterBeyonder.removeAbility(selectedAbility.getIdentity());
-                    Player caster = context.getCaster();
+                    Player caster = context.getCasterPlayer();
                     if (removed) {
                         context.sendMessageToCaster(ChatColor.GREEN + "Здібність '" + selectedAbility.getName() + "' успішно видалена.");
                         caster.playSound(caster.getLocation(), Sound.BLOCK_ANVIL_DESTROY, 1f, 1.2f);
@@ -160,7 +160,7 @@ public class Analysis extends ActiveAbility {
     }
 
     private void startAnalysisPhase(IAbilityContext context, Player target) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         context.playConeEffect(caster.getEyeLocation(), caster.getLocation().getDirection(), 30, 5, Particle.ENCHANT, 40);
         context.scheduleDelayed(() -> openAbilitySelectionMenu(context, target, context.getBeyonderFromEntity(target.getUniqueId())), ANALYSIS_DELAY_SECONDS * 20L);
     }
@@ -191,7 +191,7 @@ public class Analysis extends ActiveAbility {
 
     private void attemptToCopyAbility(IAbilityContext context, Beyonder targetBeyonder, Ability ability) {
         Beyonder casterBeyonder = context.getCasterBeyonder();
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
 
         if (casterBeyonder.getAbilityByName(ability.getName()).isPresent()) {
             context.sendMessageToCaster(ChatColor.RED + "Ви вже знаєте цю здібність!");

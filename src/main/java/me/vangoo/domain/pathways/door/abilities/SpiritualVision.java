@@ -39,7 +39,7 @@ public class SpiritualVision extends ToggleablePassiveAbility {
         context.sendMessageToCaster(ChatColor.DARK_PURPLE + "✦ Духовне бачення активовано");
         context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 0.5f, 1.8f);
 
-        UUID casterId = context.getCaster().getUniqueId();
+        UUID casterId = context.getCasterPlayer().getUniqueId();
         gazeDuration.put(casterId, new HashMap<>());
         activeAuras.put(casterId, new HashSet<>());
     }
@@ -49,14 +49,14 @@ public class SpiritualVision extends ToggleablePassiveAbility {
         context.sendMessageToCaster(ChatColor.GRAY + "✦ Духовне бачення деактивовано");
         context.playSoundToCaster(Sound.BLOCK_BEACON_DEACTIVATE, 0.5f, 1.5f);
 
-        UUID casterId = context.getCaster().getUniqueId();
+        UUID casterId = context.getCasterPlayer().getUniqueId();
         gazeDuration.remove(casterId);
         activeAuras.remove(casterId);
     }
 
     @Override
     public void tick(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         UUID casterId = caster.getUniqueId();
         Location eyeLocation = caster.getEyeLocation();
         Vector lookDirection = eyeLocation.getDirection();
@@ -152,7 +152,7 @@ public class SpiritualVision extends ToggleablePassiveAbility {
      * Тільки кастер бачить ці партікли
      */
     private void spawnAuraParticles(IAbilityContext context, Player target) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         Color color = getHealthColor(target);
         Particle.DustOptions dustOptions = new Particle.DustOptions(color, 0.8f);
 

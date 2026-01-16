@@ -4,7 +4,6 @@ import me.vangoo.domain.abilities.core.*;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.valueobjects.*;
-import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.*;
 import org.bukkit.entity.*;
@@ -141,7 +140,7 @@ public class PsychicCue extends ActiveAbility {
         // Підписуємось на клік гравця
         ctx.subscribeToEvent(
                 PlayerInteractEvent.class,
-                e -> e.getPlayer().equals(ctx.getCaster()) &&
+                e -> e.getPlayer().equals(ctx.getCasterPlayer()) &&
                         (e.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK ||
                                 e.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_AIR),
                 e -> {

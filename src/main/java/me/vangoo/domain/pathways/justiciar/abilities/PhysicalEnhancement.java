@@ -68,7 +68,7 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
 
     @Override
     public void tick(IAbilityContext context) {
-        Player player = context.getCaster();
+        Player player = context.getCasterPlayer();
         if (player == null || !player.isValid() || player.isDead()) return;
 
         // Перевіряємо HP рідше (раз на секунду), щоб не навантажувати сервер
@@ -83,7 +83,7 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
 
     @Override
     public void onDeactivate(IAbilityContext context) {
-        Player player = context.getCaster();
+        Player player = context.getCasterPlayer();
         if (player == null) return;
 
         // ВАЖЛИВО: Ми прибираємо ефекти, але з HP треба бути обережним.
@@ -114,7 +114,7 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
     private void updateHealth(IAbilityContext context) {
         if (hpCalculationBase <= 0) return;
 
-        Player player = context.getCaster();
+        Player player = context.getCasterPlayer();
         Sequence sequence = context.getCasterBeyonder().getSequence();
         AttributeInstance healthAttr = player.getAttribute(Attribute.MAX_HEALTH);
 
@@ -149,7 +149,7 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
     private void applyEffects(IAbilityContext context) {
         if (effectTypes.isEmpty()) return;
 
-        Player player = context.getCaster();
+        Player player = context.getCasterPlayer();
         Sequence sequence = context.getCasterBeyonder().getSequence();
         int amplifier = calculateAmplifier(sequence);
 

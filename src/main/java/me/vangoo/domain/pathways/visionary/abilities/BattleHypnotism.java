@@ -14,6 +14,8 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.RayTraceResult;
 
+import java.util.UUID;
+
 public class BattleHypnotism extends ActiveAbility {
 
     private static final int BASE_COST = 100;
@@ -55,7 +57,7 @@ public class BattleHypnotism extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         Beyonder beyonder = context.getCasterBeyonder();
 
         int range = getRange(beyonder.getSequence().level());
@@ -72,35 +74,33 @@ public class BattleHypnotism extends ActiveAbility {
             return AbilityResult.failure("✖ Ви не дивитесь на живу ціль");
         }
 
-        applyHypnosis(context, caster, target);
+        applyHypnosis(context, caster.getUniqueId(), target);
         return AbilityResult.success();
     }
 
-    private void applyHypnosis(IAbilityContext context, Player caster, Player target) {
+    private void applyHypnosis(IAbilityContext context, UUID casterId, Player target) {
 
         // ───── ВІЗУАЛ + ЗВУК ─────
-        caster.getWorld().spawnParticle(
+        context.effects().spawnParticle(
                 Particle.SOUL,
                 target.getEyeLocation(),
                 30,
-                0.4, 0.6, 0.4,
-                0.01
+                0.4, 0.6, 0.4
         );
 
-        caster.getWorld().spawnParticle(
+        context.effects().spawnParticle(
                 Particle.WITCH,
                 target.getLocation().add(0, 1, 0),
                 20,
-                0.3, 0.5, 0.3,
-                0.02
+                0.3, 0.5, 0.3
         );
 
-        context.playSoundToCaster(Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1f, 0.6f);
-        target.playSound(target.getLocation(), Sound.ENTITY_ELDER_GUARDIAN_CURSE, 1f, 0.5f);
+        context.effects().playSoundForPlayer(casterId, Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1f, 0.6f);
+        context.effects().playSound(target.getLocation(), Sound.ENTITY_ELDER_GUARDIAN_CURSE, 1f, 0.5f);
 
         // ───── ACTIONBAR ─────
-        context.sendMessageToActionBar(
-                caster,
+        context.messaging().sendMessageToActionBar(
+                casterId,
                 Component.text("🧠 Ви занурили ")
                         .color(NamedTextColor.DARK_PURPLE)
                         .append(Component.text(target.getName())
@@ -109,43 +109,44 @@ public class BattleHypnotism extends ActiveAbility {
                         .append(Component.text(" у гіпноз"))
         );
 
-        context.sendMessageToActionBar(
-                target,
+        context.messaging().sendMessageToActionBar(
+                target.getUniqueId(),
                 Component.text("🌫 Ваша свідомість розчиняється…")
                         .color(NamedTextColor.DARK_PURPLE)
                         .decorate(TextDecoration.ITALIC)
         );
 
         // ───── ЕФЕКТИ ─────
-        target.addPotionEffect(new PotionEffect(
+        context.entity().applyPotionEffect(target.getUniqueId(),
                 PotionEffectType.SLOWNESS,
                 EFFECT_DURATION_SECONDS * 20,
                 1
-        ));
+        );
 
-        target.addPotionEffect(new PotionEffect(
+        context.entity().applyPotionEffect(target.getUniqueId(),
                 PotionEffectType.NAUSEA,
                 EFFECT_DURATION_SECONDS * 20,
                 0
-        ));
+        );
 
         // ───── ЛОГІКА ГІПНОЗУ ─────
-        context.hidePlayerFromTarget(target, caster);
+        context.entity().hidePlayerFromTarget(target.getUniqueId(), casterId);
 
-        context.scheduleDelayed(() -> {
-            if (!target.isOnline() || !caster.isOnline()) return;
+        context.scheduling().scheduleDelayed(() -> {
+            if (!context.playerData().isOnline(target.getUniqueId()) || !context.playerData().isOnline(casterId))
+                return;
 
-            context.showPlayerToTarget(target, caster);
+            context.entity().showPlayerToTarget(target.getUniqueId(), casterId);
 
-            target.playSound(
+            context.effects().playSound(
                     target.getLocation(),
                     Sound.ENTITY_EXPERIENCE_ORB_PICKUP,
                     1f,
                     1.2f
             );
 
-            context.sendMessageToActionBar(
-                    target,
+            context.messaging().sendMessageToActionBar(
+                    target.getUniqueId(),
                     Component.text("👁 Реальність повертається")
                             .color(NamedTextColor.YELLOW)
             );

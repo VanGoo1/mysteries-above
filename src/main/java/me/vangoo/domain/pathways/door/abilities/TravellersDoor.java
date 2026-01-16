@@ -8,7 +8,6 @@ import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
-import org.bukkit.event.block.Action;
 import org.bukkit.event.player.*;
 import org.bukkit.util.Vector;
 import org.bukkit.Particle.DustOptions;
@@ -56,7 +55,7 @@ public class TravellersDoor extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
 
         // Перевірка: Якщо гравець вже у спектаторі і використовує предмет - теж викидаємо
         if (activeSpectators.contains(caster.getUniqueId())) {

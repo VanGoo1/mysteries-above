@@ -34,7 +34,7 @@ public class Burning extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         World world = caster.getWorld();
 
         RayTraceResult result = world.rayTrace(

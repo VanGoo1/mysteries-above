@@ -5,7 +5,6 @@ import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.Sequence;
-import me.vangoo.domain.pathways.justiciar.abilities.AreaOfJurisdiction;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -75,7 +74,7 @@ public class PowerProhibition extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         UUID casterId = caster.getUniqueId();
 
         // 1. Shift - Перемикання режиму
@@ -335,7 +334,7 @@ public class PowerProhibition extends ActiveAbility {
         context.scheduleRepeating(() -> {
             if (!activeZones.contains(zone)) return;
             for (UUID playerId : zone.bannedPlayers) {
-                Player player = context.getCaster().getServer().getPlayer(playerId);
+                Player player = context.getCasterPlayer().getServer().getPlayer(playerId);
                 if (player == null || !player.isOnline()) continue;
                 if (!zone.isInside(player.getLocation())) continue;
 
@@ -453,7 +452,7 @@ public class PowerProhibition extends ActiveAbility {
     }
 
     private void notifyCasterOfViolation(IAbilityContext context, ProhibitionZone zone, Player violator, String action) {
-        Player caster = context.getCaster().getServer().getPlayer(zone.casterId);
+        Player caster = context.getCasterPlayer().getServer().getPlayer(zone.casterId);
         if (violator.getUniqueId().equals(zone.casterId)) return;
         if (caster == null || !caster.isOnline()) return;
 
@@ -471,7 +470,7 @@ public class PowerProhibition extends ActiveAbility {
 
     private void announceZoneExpiration(IAbilityContext context, ProhibitionZone zone) {
         for (UUID playerId : zone.bannedPlayers) {
-            Player player = context.getCaster().getServer().getPlayer(playerId);
+            Player player = context.getCasterPlayer().getServer().getPlayer(playerId);
             if (player != null && player.isOnline()) {
                 // ACTION BAR: Закінчення дії
                 context.sendMessageToActionBar(player, LegacyComponentSerializer.legacySection().deserialize(

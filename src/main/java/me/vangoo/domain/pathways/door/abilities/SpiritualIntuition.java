@@ -65,7 +65,7 @@ public class SpiritualIntuition extends ToggleablePassiveAbility {
     @Override
     public void tick(IAbilityContext context) {
         // Очищуємо старі записи раз на секунду (кожні 20 тіків)
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         if (caster == null || caster.getTicksLived() % 20 != 0) {
             return;
         }
@@ -96,7 +96,7 @@ public class SpiritualIntuition extends ToggleablePassiveAbility {
                     }
 
                     // Перевіряємо відстань
-                    Player caster = context.getCaster();
+                    Player caster = context.getCasterPlayer();
                     if (caster == null || !caster.isOnline()) {
                         return false;
                     }
@@ -229,7 +229,7 @@ public class SpiritualIntuition extends ToggleablePassiveAbility {
      * Показуємо попередження в actionbar
      */
     private void showIntuitionWarning(IAbilityContext context, Player attacker, String abilityName) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         if (caster == null || !caster.isOnline()) {
             return;
         }

@@ -127,7 +127,7 @@ public class ShadowTheft extends ActiveAbility {
 
         // Використання методів контексту для маніпуляції інвентарем
         if (context.removeItem(human, toSteal)) {
-            context.giveItem(context.getCaster(), toSteal);
+            context.giveItem(context.getCasterPlayer(), toSteal);
 
             if (human instanceof Player victim) {
                 context.sendMessage(victim.getUniqueId(), ChatColor.RED + "Ви відчули, як хтось порпався у ваших речах...");

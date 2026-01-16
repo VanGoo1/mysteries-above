@@ -107,7 +107,7 @@ public class Spellcasting extends ActiveAbility {
     }
 
     private void openBuilderGui(IAbilityContext context, SpellBuilderState state) {
-        Player player = context.getCaster();
+        Player player = context.getCasterPlayer();
         Gui gui = Gui.gui()
                 .title(Component.text("Конструктор Заклинань"))
                 .rows(GUI_ROWS)

@@ -6,7 +6,6 @@ import me.vangoo.domain.valueobjects.Sequence;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -75,7 +74,7 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
     @Override
     public void tick(IAbilityContext context) {
         tickCounter++;
-        Player player = context.getCaster();
+        Player player = context.getCasterPlayer();
         if (player == null || !player.isOnline()) return;
 
         int currentSeq = context.getEntitySequenceLevel(context.getCasterId()).orElse(9);

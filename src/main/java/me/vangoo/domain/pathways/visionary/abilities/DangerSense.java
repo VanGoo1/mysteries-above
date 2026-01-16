@@ -53,7 +53,7 @@ public class DangerSense extends ToggleablePassiveAbility {
         observationProgress.put(casterId, new ConcurrentHashMap<>());
         targetCooldowns.putIfAbsent(casterId, new ConcurrentHashMap<>());
 
-        context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 1.5f);
+        context.effects().playSoundForPlayer(context.getCasterId(), Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 1.5f);
     }
 
     @Override
@@ -62,7 +62,7 @@ public class DangerSense extends ToggleablePassiveAbility {
         observationProgress.remove(casterId);
         // Кулдауни зазвичай краще залишати до рестарту або очищувати окремо,
         // щоб не аб'юзити вимкненням/увімкненням.
-        context.playSoundToCaster(Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 0.5f);
+        context.effects().playSoundForPlayer(context.getCasterId(), Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 0.5f);
     }
 
     @Override
@@ -73,7 +73,7 @@ public class DangerSense extends ToggleablePassiveAbility {
 
         if (myTargets == null) return;
 
-        List<Player> nearbyPlayers = context.getNearbyPlayers(RANGE);
+        List<Player> nearbyPlayers = context.targeting().getNearbyPlayers(RANGE);
         long currentTime = System.currentTimeMillis();
 
         // 1. Очищуємо прогрес для тих, хто відійшов задалеко
@@ -103,7 +103,7 @@ public class DangerSense extends ToggleablePassiveAbility {
 
                 // Візуальний ефект підказки (раз на 2 секунди)
                 if (currentTicks % 40 == 0) {
-                    context.playSoundToCaster(Sound.BLOCK_NOTE_BLOCK_CHIME, 0.5f, 0.8f + (currentTicks / 400f));
+                    context.effects().playSoundForPlayer(context.getCasterId(), Sound.BLOCK_NOTE_BLOCK_CHIME, 0.5f, 0.8f + (currentTicks / 400f));
                 }
             }
         }
@@ -112,7 +112,7 @@ public class DangerSense extends ToggleablePassiveAbility {
     private void revealDanger(IAbilityContext context, Player target) {
         List<String> foundItems = new ArrayList<>();
 
-        for (ItemStack item : target.getInventory().getContents()) {
+        for (ItemStack item : context.playerData().getInventoryContents(target.getUniqueId())) {
             if (item != null && DANGEROUS_ITEMS.contains(item.getType())) {
                 String itemName = item.getType().toString().replace("_", " ").toLowerCase();
                 if (!foundItems.contains(itemName)) {
@@ -122,17 +122,17 @@ public class DangerSense extends ToggleablePassiveAbility {
         }
 
         if (foundItems.isEmpty()) {
-            context.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
+            context.messaging().sendMessageToActionBar(context.getCasterId(), LegacyComponentSerializer.legacySection().deserialize(
                     ChatColor.GRAY + "Ви відчули " + ChatColor.WHITE + target.getName() +
                             ChatColor.GRAY + ", але не знайшли нічого підозрілого."));
         } else {
-            context.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
+            context.messaging().sendMessageToActionBar(context.getCasterId(), LegacyComponentSerializer.legacySection().deserialize(
                     ChatColor.RED + "⚠️ Передчуття! У " + ChatColor.YELLOW + target.getName() +
                             ChatColor.RED + " знайдено: " + ChatColor.GOLD + String.join(", ", foundItems)));
-            context.playSoundToCaster(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 0.5f);
+            context.effects().playSoundForPlayer(context.getCasterId(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 0.5f);
 
             // Підсвічуємо небезпечного гравця на 5 секунд
-            context.setGlowing(target.getUniqueId(), ChatColor.RED, 100);
+            context.glowing().setGlowing(target.getUniqueId(), context.getCasterId(), ChatColor.RED, 100);
         }
     }
 

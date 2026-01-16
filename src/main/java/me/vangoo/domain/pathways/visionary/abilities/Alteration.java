@@ -54,12 +54,12 @@ public class Alteration extends ActiveAbility {
 
     @Override
     protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
-        return context.getTargetedEntity(RANGE);
+        return context.targeting().getTargetedEntity(RANGE);
     }
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Optional<LivingEntity> targetOpt = context.getTargetedEntity(RANGE);
+        Optional<LivingEntity> targetOpt = context.targeting().getTargetedEntity(RANGE);
 
         if (targetOpt.isEmpty() || !(targetOpt.get() instanceof Player target)) {
             return AbilityResult.failure("Ціль має бути гравцем поруч");
@@ -83,8 +83,8 @@ public class Alteration extends ActiveAbility {
         if (!mods.isEmpty()) options.add(MainMenuOption.REMOVE);
         options.add(MainMenuOption.CANCEL);
 
-        ctx.sendMessageToCaster(ChatColor.DARK_PURPLE + "→ Видозміна: " + target.getName());
-        ctx.openChoiceMenu("Видозміна", options, this::createMainMenuMenuItem,
+        ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.DARK_PURPLE + "→ Видозміна: " + target.getName());
+        ctx.ui().openChoiceMenu("Видозміна", options, this::createMainMenuMenuItem,
                 opt -> handleMainMenuChoice(ctx, target, opt));
     }
 
@@ -100,7 +100,7 @@ public class Alteration extends ActiveAbility {
                 // Removing doesn't consume resources
             }
             case CANCEL -> {
-                ctx.sendMessageToCaster(ChatColor.GRAY + "Скасовано");
+                ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.GRAY + "Скасовано");
                 // Cancelling doesn't consume resources
             }
         }
@@ -114,29 +114,29 @@ public class Alteration extends ActiveAbility {
         List<ModificationData> mods = activeModifications.getOrDefault(targetId, new ArrayList<>());
 
         if (mods.isEmpty()) {
-            ctx.sendMessageToCaster(ChatColor.YELLOW + "→ Немає активних модифікацій на цій цілі");
-            ctx.playSoundToCaster(Sound.BLOCK_NOTE_BLOCK_BASS, 1f, 0.5f);
+            ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.YELLOW + "→ Немає активних модифікацій на цій цілі");
+            ctx.effects().playSoundForPlayer(ctx.getCasterId(), Sound.BLOCK_NOTE_BLOCK_BASS, 1f, 0.5f);
             return;
         }
 
-        ctx.sendMessageToCaster(ChatColor.DARK_PURPLE + "═══════════════════════════════");
-        ctx.sendMessageToCaster(ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "АКТИВНІ ВИДОЗМІНИ");
-        ctx.sendMessageToCaster(ChatColor.GRAY + "Ціль: " + ChatColor.WHITE + target.getName());
+        ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.DARK_PURPLE + "═══════════════════════════════");
+        ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "АКТИВНІ ВИДОЗМІНИ");
+        ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.GRAY + "Ціль: " + ChatColor.WHITE + target.getName());
 
         for (int i = 0; i < mods.size(); i++) {
             ModificationData mod = mods.get(i);
-            ctx.sendMessageToCaster("");
-            ctx.sendMessageToCaster(ChatColor.GOLD + "" + ChatColor.BOLD + "Модифікація #" + (i + 1) + ":");
-            ctx.sendMessageToCaster(ChatColor.GRAY + "  Тригер: " + mod.trigger.getColor() + mod.trigger.getDisplayName());
-            ctx.sendMessageToCaster(ChatColor.GRAY + "  Наслідок: " + mod.effect.getColor() + mod.effect.getDisplayName());
+            ctx.messaging().sendMessage(ctx.getCasterId(), "");
+            ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.GOLD + "" + ChatColor.BOLD + "Модифікація #" + (i + 1) + ":");
+            ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.GRAY + "  Тригер: " + mod.trigger.getColor() + mod.trigger.getDisplayName());
+            ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.GRAY + "  Наслідок: " + mod.effect.getColor() + mod.effect.getDisplayName());
 
             long remainingMs = mod.expirationTime - System.currentTimeMillis();
             int remainingSeconds = (int) (Math.max(0, remainingMs) / 1000);
             if (remainingSeconds > 0) {
-                ctx.sendMessageToCaster(ChatColor.GRAY + "  Залишилось: " + ChatColor.YELLOW + remainingSeconds + "с");
+                ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.GRAY + "  Залишилось: " + ChatColor.YELLOW + remainingSeconds + "с");
             }
         }
-        ctx.sendMessageToCaster(ChatColor.DARK_PURPLE + "═══════════════════════════════");
+        ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.DARK_PURPLE + "═══════════════════════════════");
     }
 
     // ==========================================
@@ -147,7 +147,7 @@ public class Alteration extends ActiveAbility {
         List<ModificationData> mods = activeModifications.getOrDefault(targetId, new ArrayList<>());
 
         if (mods.isEmpty()) {
-            ctx.sendMessageToCaster(ChatColor.YELLOW + "→ Немає модифікацій для видалення");
+            ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.YELLOW + "→ Немає модифікацій для видалення");
             return;
         }
 
@@ -159,7 +159,7 @@ public class Alteration extends ActiveAbility {
         options.add("Видалити всі");
         options.add("Скасувати");
 
-        ctx.openChoiceMenu("Видалення модифікацій", options,
+        ctx.ui().openChoiceMenu("Видалення модифікацій", options,
                 optionText -> {
                     ItemStack item = new ItemStack(Material.BARRIER);
                     ItemMeta meta = item.getItemMeta();
@@ -178,15 +178,15 @@ public class Alteration extends ActiveAbility {
         List<ModificationData> mods = activeModifications.getOrDefault(targetId, new ArrayList<>());
 
         if (choice.equals("Скасувати")) {
-            ctx.sendMessageToCaster(ChatColor.GRAY + "Скасовано");
+            ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.GRAY + "Скасовано");
             return;
         }
 
         if (choice.equals("Видалити всі")) {
             mods.clear();
             activeModifications.remove(targetId);
-            ctx.sendMessageToCaster(ChatColor.GREEN + "✓ Всі модифікації видалено");
-            ctx.playSoundToCaster(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 0.8f);
+            ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.GREEN + "✓ Всі модифікації видалено");
+            ctx.effects().playSoundForPlayer(ctx.getCasterId(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 0.8f);
             return;
         }
 
@@ -196,8 +196,8 @@ public class Alteration extends ActiveAbility {
                     ModificationData removed = mods.remove(i);
                     if (mods.isEmpty()) activeModifications.remove(targetId);
 
-                    ctx.sendMessageToCaster(ChatColor.GREEN + "✓ Видалено: " + removed.trigger.getDisplayName());
-                    ctx.playSoundToCaster(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
+                    ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.GREEN + "✓ Видалено: " + removed.trigger.getDisplayName());
+                    ctx.effects().playSoundForPlayer(ctx.getCasterId(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
                 }
                 break;
             }
@@ -208,13 +208,13 @@ public class Alteration extends ActiveAbility {
     // СТВОРЕННЯ
     // ==========================================
     private void openModificationCreationMenu(IAbilityContext ctx, Player target) {
-        ctx.openChoiceMenu("Видозміна: Тригер", Arrays.asList(TriggerType.values()),
+        ctx.ui().openChoiceMenu("Видозміна: Тригер", Arrays.asList(TriggerType.values()),
                 this::createTriggerMenuItem,
                 trigger -> openEffectSelectionMenu(ctx, target, trigger));
     }
 
     private void openEffectSelectionMenu(IAbilityContext ctx, Player target, TriggerType trigger) {
-        ctx.openChoiceMenu("Видозміна: Наслідок", Arrays.asList(EffectType.values()),
+        ctx.ui().openChoiceMenu("Видозміна: Наслідок", Arrays.asList(EffectType.values()),
                 this::createEffectMenuItem,
                 effect -> applyModification(ctx, target, trigger, effect));
     }
@@ -224,7 +224,7 @@ public class Alteration extends ActiveAbility {
     // ==========================================
     private void applyModification(IAbilityContext ctx, Player target, TriggerType trigger, EffectType effect) {
         UUID targetId = target.getUniqueId();
-        Player caster = ctx.getCaster();
+        Player caster = ctx.getCasterPlayer();
         Beyonder casterBeyonder = ctx.getCasterBeyonder();
 
         caster.closeInventory();
@@ -233,17 +233,17 @@ public class Alteration extends ActiveAbility {
 
         // Перевірка ліміту
         if (mods.size() >= MAX_MODIFICATIONS_PER_TARGET) {
-            ctx.sendMessageToCaster(ChatColor.RED + "✗ Досягнуто ліміт модифікацій на цій цілі!");
-            ctx.playSoundToCaster(Sound.BLOCK_ANVIL_LAND, 1f, 2f);
+            ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.RED + "✗ Досягнуто ліміт модифікацій на цій цілі!");
+            ctx.effects().playSoundForPlayer(ctx.getCasterId(), Sound.BLOCK_ANVIL_LAND, 1f, 2f);
             return;
         }
 
         // КРИТИЧНО: Споживаємо ресурси ТІЛЬКИ ЗАРАЗ, коли модифікація справді створюється
         if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
-            ctx.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності для створення модифікації!");
+            ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.RED + "Недостатньо духовності для створення модифікації!");
             return;
         }
-        ctx.publishAbilityUsedEvent(this);
+        ctx.events().publishAbilityUsedEvent(this, ctx.getCasterBeyonder());
 
         // Створюємо модифікацію
         long expirationTime = System.currentTimeMillis() + (MODIFICATION_DURATION_TICKS * 50L);
@@ -253,13 +253,11 @@ public class Alteration extends ActiveAbility {
         subscribeTriggerEvent(ctx, targetId, trigger, effect, mod);
 
         // Таймер на видалення модифікації через 3 хвилини
-        ctx.scheduleDelayed(() -> removeModification(targetId, mod), MODIFICATION_DURATION_TICKS);
+        ctx.scheduling().scheduleDelayed(() -> removeModification(targetId, mod), MODIFICATION_DURATION_TICKS);
 
         // Фідбек
-        ctx.sendMessageToCaster(ChatColor.GREEN + "✓ Видозміну успішно створено!");
-        ctx.playSoundToCaster(Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1f, 1.5f);
-
-        ctx.getCaster().spawnParticle(Particle.WITCH, target.getEyeLocation().add(0, 0.5, 0), 10, 0.2, 0.2, 0.2, 0);
+        ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.GREEN + "✓ Видозміну успішно створено!");
+        ctx.effects().playSoundForPlayer(ctx.getCasterId(), Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1f, 1.5f);
     }
 
     // ==========================================
@@ -301,7 +299,7 @@ public class Alteration extends ActiveAbility {
                     e -> applyEffect(ctx, targetId, effect, mod), MODIFICATION_DURATION_TICKS);
             case CHAT -> ctx.subscribeToEvent(AsyncPlayerChatEvent.class,
                     e -> e.getPlayer().getUniqueId().equals(targetId),
-                    e -> Bukkit.getScheduler().runTask(ctx.getCaster().getServer().getPluginManager().getPlugin("Mysteries-Above"),
+                    e -> Bukkit.getScheduler().runTask(ctx.getCasterPlayer().getServer().getPluginManager().getPlugin("Mysteries-Above"),
                             () -> applyEffect(ctx, targetId, effect, mod)), MODIFICATION_DURATION_TICKS);
         }
     }
@@ -315,44 +313,43 @@ public class Alteration extends ActiveAbility {
             return;
         }
         mod.lastTriggerTime = System.currentTimeMillis();
-        Player target = Bukkit.getPlayer(targetId);
-        if (target == null || !target.isOnline()) return;
+
+        if (ctx.playerData().isOnline(targetId)) return;
 
         switch (effect) {
             case BLINDNESS -> {
-                ctx.applyEffect(targetId, PotionEffectType.BLINDNESS, EFFECT_DURATION_TICKS, 0);
-                ctx.sendMessage(targetId, ChatColor.GRAY + "Раптова темрява...");
+                ctx.entity().applyPotionEffect(targetId, PotionEffectType.BLINDNESS, EFFECT_DURATION_TICKS, 0);
+                ctx.messaging().sendMessage(targetId, ChatColor.GRAY + "Раптова темрява...");
             }
             case WEAKNESS -> {
-                ctx.applyEffect(targetId, PotionEffectType.WEAKNESS, EFFECT_DURATION_TICKS, 1);
-                ctx.sendMessage(targetId, ChatColor.GRAY + "Сили покидають вас...");
+                ctx.entity().applyPotionEffect(targetId, PotionEffectType.WEAKNESS, EFFECT_DURATION_TICKS, 1);
+                ctx.messaging().sendMessage(targetId, ChatColor.GRAY + "Сили покидають вас...");
             }
             case HUNGER -> {
-                ctx.applyEffect(targetId, PotionEffectType.HUNGER, EFFECT_DURATION_TICKS, 1);
-                ctx.sendMessage(targetId, ChatColor.GOLD + "Раптовий голод...");
+                ctx.entity().applyPotionEffect(targetId, PotionEffectType.HUNGER, EFFECT_DURATION_TICKS, 1);
+                ctx.messaging().sendMessage(targetId, ChatColor.GOLD + "Раптовий голод...");
             }
             case DROP_ITEM -> {
-                ItemStack hand = target.getInventory().getItemInMainHand();
+                ItemStack hand = ctx.playerData().getMainHandItem(targetId);
                 if (hand != null && hand.getType() != Material.AIR) {
-                    target.getWorld().dropItem(target.getLocation(), hand.clone());
-                    target.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
-                    ctx.sendMessage(targetId, ChatColor.RED + "Предмет випадає з рук...");
+                    ctx.entity().dropItem(targetId, hand.clone());
+                    ctx.messaging().sendMessage(targetId, ChatColor.RED + "Предмет випадає з рук...");
                 }
             }
             case CONFUSION -> {
-                ctx.applyEffect(targetId, PotionEffectType.NAUSEA, EFFECT_DURATION_TICKS, 0);
-                ctx.sendMessage(targetId, ChatColor.DARK_GRAY + "Голова крутиться...");
+                ctx.entity().applyPotionEffect(targetId, PotionEffectType.NAUSEA, EFFECT_DURATION_TICKS, 0);
+                ctx.messaging().sendMessage(targetId, ChatColor.DARK_GRAY + "Голова крутиться...");
             }
             case FREEZE -> {
-                ctx.applyEffect(targetId, PotionEffectType.SLOWNESS, EFFECT_DURATION_TICKS, 255);
-                ctx.sendMessage(targetId, ChatColor.BLUE + "Тіло застигає...");
+                ctx.entity().applyPotionEffect(targetId, PotionEffectType.SLOWNESS, EFFECT_DURATION_TICKS, 255);
+                ctx.messaging().sendMessage(targetId, ChatColor.BLUE + "Тіло застигає...");
             }
             case DAMAGE -> {
-                ctx.damage(targetId, 2.0);
-                ctx.sendMessage(targetId, ChatColor.RED + "Різкий біль...");
+                ctx.entity().damage(targetId, 2.0);
+                ctx.messaging().sendMessage(targetId, ChatColor.RED + "Різкий біль...");
             }
         }
-        target.getWorld().playSound(target.getLocation(), Sound.ENTITY_ELDER_GUARDIAN_CURSE, 1f, 1f);
+        ctx.effects().playSound(ctx.playerData().getCurrentLocation(targetId), Sound.ENTITY_ELDER_GUARDIAN_CURSE, 1f, 1f);
     }
 
     private ItemStack createMainMenuMenuItem(MainMenuOption option) {

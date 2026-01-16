@@ -56,7 +56,6 @@ public class DragonScale extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCaster();
         Beyonder beyonder = context.getCasterBeyonder();
         int sequenceVal = beyonder.getSequence().level();
 
@@ -68,53 +67,51 @@ public class DragonScale extends ActiveAbility {
         int durationTicks = durationSeconds * 20;
 
         // ───── ЕФЕКТИ ─────
-        caster.addPotionEffect(new PotionEffect(
+        context.entity().applyPotionEffect(context.getCasterId(),
                 PotionEffectType.RESISTANCE,
                 durationTicks,
                 1
-        ));
+        );
 
-        caster.addPotionEffect(new PotionEffect(
+        context.entity().applyPotionEffect(context.getCasterId(),
                 PotionEffectType.FIRE_RESISTANCE,
                 durationTicks,
                 0
-        ));
+        );
 
         // ───── ЗВУК ─────
-        context.playSoundToCaster(Sound.ENTITY_ENDER_DRAGON_GROWL, 0.9f, 0.6f);
-        context.playSoundToCaster(Sound.ITEM_ARMOR_EQUIP_NETHERITE, 1f, 0.5f);
-        context.playSoundToCaster(Sound.BLOCK_LAVA_POP, 0.6f, 0.8f);
+        context.effects().playSoundForPlayer(context.getCasterId(), Sound.ENTITY_ENDER_DRAGON_GROWL, 0.9f, 0.6f);
+        context.effects().playSoundForPlayer(context.getCasterId(), Sound.ITEM_ARMOR_EQUIP_NETHERITE, 1f, 0.5f);
+        context.effects().playSoundForPlayer(context.getCasterId(), Sound.BLOCK_LAVA_POP, 0.6f, 0.8f);
 
         // ───── ACTIONBAR ─────
-        context.sendMessageToActionBar(
-                caster,
+        context.messaging().sendMessageToActionBar(
+                context.getCasterId(),
                 Component.text("🐉 Луска дракона вкриває ваше тіло")
                         .color(NamedTextColor.GOLD)
                         .decorate(TextDecoration.BOLD)
         );
 
         // ───── ВІЗУАЛ ─────
-        caster.getWorld().spawnParticle(
+        context.effects().spawnParticle(
                 Particle.FLAME,
-                caster.getLocation().add(0, 1, 0),
+                context.getCasterLocation().add(0, 1, 0),
                 40,
-                0.6, 1.0, 0.6,
-                0.02
+                0.6, 1.0, 0.6
         );
 
-        caster.getWorld().spawnParticle(
+        context.effects().spawnParticle(
                 Particle.LAVA,
-                caster.getLocation().add(0, 1, 0),
+                context.getCasterLocation().add(0, 1, 0),
                 12,
                 0.5, 1.0, 0.5
         );
 
-        caster.getWorld().spawnParticle(
+        context.effects().spawnParticle(
                 Particle.DRAGON_BREATH,
-                caster.getLocation().add(0, 1.2, 0),
+                context.getCasterLocation().add(0, 1.2, 0),
                 25,
-                0.4, 0.8, 0.4,
-                0.01
+                0.4, 0.8, 0.4
         );
 
         return AbilityResult.success();

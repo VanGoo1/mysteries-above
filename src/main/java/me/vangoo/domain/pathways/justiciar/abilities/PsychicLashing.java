@@ -60,7 +60,7 @@ public class PsychicLashing extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
 
         // 1. Знаходимо початкову ціль (тут вона вже гарантовано пройшла перевірку на Seq Resistance, якщо це Beyonder)
         Optional<LivingEntity> primaryTargetOpt = context.getTargetedEntity(CAST_RANGE);

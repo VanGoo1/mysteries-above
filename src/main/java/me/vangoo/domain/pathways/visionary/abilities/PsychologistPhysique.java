@@ -46,12 +46,8 @@ public class PsychologistPhysique extends PermanentPassiveAbility {
 
     @Override
     public void tick(IAbilityContext context) {
-        Player player = context.getCaster();
+        Player player = context.getCasterPlayer();
         if (player == null || !player.isValid() || player.isDead()) return;
-
-        // 1. ХП перевіряємо КОЖЕН тік.
-        // Це гарантує, що при зміні послідовності (0 -> 8) ХП впаде миттєво.
-        // Операція getAttribute дуже швидка, це не навантажить сервер.
         updateHealth(context);
 
         // 2. Ефекти оновлюємо раз на 7 секунд (циклічно)
@@ -62,7 +58,7 @@ public class PsychologistPhysique extends PermanentPassiveAbility {
 
     @Override
     public void onDeactivate(IAbilityContext context) {
-        Player player = context.getCaster();
+        Player player = context.getCasterPlayer();
         if (player == null) return;
 
         // ЖОРСТКЕ СКИДАННЯ ПРИ ВИДАЛЕННІ ЗДІБНОСТІ
@@ -86,7 +82,7 @@ public class PsychologistPhysique extends PermanentPassiveAbility {
      * Перевіряє поточний sequence гравця і порівнює з реальним атрибутом.
      */
     private void updateHealth(IAbilityContext context) {
-        Player player = context.getCaster();
+        Player player = context.getCasterPlayer();
         Sequence sequence = context.getCasterBeyonder().getSequence();
         AttributeInstance healthAttr = player.getAttribute(Attribute.MAX_HEALTH);
 
@@ -110,7 +106,7 @@ public class PsychologistPhysique extends PermanentPassiveAbility {
     }
 
     private void applyPotionEffects(IAbilityContext context) {
-        Player player = context.getCaster();
+        Player player = context.getCasterPlayer();
         Sequence sequence = context.getCasterBeyonder().getSequence();
         int amplifier = calculateAmplifier(sequence);
 

@@ -58,7 +58,7 @@ public class AreaOfJurisdiction extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
         Beyonder beyonder = context.getCasterBeyonder();
         Location center = caster.getLocation();
 

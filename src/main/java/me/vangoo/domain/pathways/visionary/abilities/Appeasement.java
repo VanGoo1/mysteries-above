@@ -55,25 +55,25 @@ public class Appeasement extends ActiveAbility {
         int regenTicks = regenSeconds * 20;
 
         Location center = context.getCasterLocation();
-        Player caster = context.getCaster();
+        Player caster = context.getCasterPlayer();
 
         // === ВІЗУАЛ НА СТАРТ ===
-        context.spawnParticle(Particle.END_ROD, center, 80, range, 1.0, range);
-        context.spawnParticle(Particle.SOUL, center, 40, range * 0.7, 0.8, range * 0.7);
-        context.spawnParticle(Particle.HAPPY_VILLAGER, center, 60, range, 1.2, range);
+        context.effects().spawnParticle(Particle.END_ROD, center, 80, range, 1.0, range);
+        context.effects().spawnParticle(Particle.SOUL, center, 40, range * 0.7, 0.8, range * 0.7);
+        context.effects().spawnParticle(Particle.HAPPY_VILLAGER, center, 60, range, 1.2, range);
 
-        context.playSound(center, Sound.BLOCK_BEACON_ACTIVATE, 1.2f, 1.3f);
-        context.playSound(center, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1.0f, 1.6f);
+        context.effects().playSound(center, Sound.BLOCK_BEACON_ACTIVATE, 1.2f, 1.3f);
+        context.effects().playSound(center, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1.0f, 1.6f);
 
         // === КАСТЕР ===
-        context.updateSanityLoss(caster.getUniqueId(), -sanityReduction);
-        context.removeAllEffects(caster.getUniqueId());
-        context.applyEffect(caster.getUniqueId(), PotionEffectType.REGENERATION, regenTicks, 0);
+        context.beyonder().updateSanityLoss(caster.getUniqueId(), -sanityReduction);
+        context.entity().removeAllPotionEffects(caster.getUniqueId());
+        context.entity().applyPotionEffect(context.getCasterId(), PotionEffectType.REGENERATION, regenTicks, 0);
 
-        boolean selfRescued = context.rescueFromRampage(caster.getUniqueId(), caster.getUniqueId());
+        boolean selfRescued = context.rampage().rescueFromRampage(caster.getUniqueId(), caster.getUniqueId());
 
-        context.sendMessageToActionBar(
-                caster,
+        context.messaging().sendMessageToActionBar(
+                caster.getUniqueId(),
                 Component.text(
                         selfRescued
                                 ? "✦ Розум стабілізовано"
@@ -86,40 +86,40 @@ public class Appeasement extends ActiveAbility {
         }
 
         // === ІНШІ ЦІЛІ ===
-        List<LivingEntity> entities = context.getNearbyEntities(range);
+        List<LivingEntity> entities = context.targeting().getNearbyEntities(range);
         int affected = 0;
 
         for (LivingEntity entity : entities) {
             if (entity.getUniqueId().equals(caster.getUniqueId())) continue;
 
             context.removeAllEffects(entity.getUniqueId());
-            context.applyEffect(entity.getUniqueId(), PotionEffectType.REGENERATION, regenTicks, 0);
+            context.entity().applyPotionEffect(entity.getUniqueId(), PotionEffectType.REGENERATION, regenTicks, 0);
 
             Location loc = entity.getLocation();
-            context.spawnParticle(Particle.HAPPY_VILLAGER, loc.add(0, 1, 0), 12, 0.5, 0.5, 0.5);
+            context.effects().spawnParticle(Particle.HAPPY_VILLAGER, loc.add(0, 1, 0), 12, 0.5, 0.5, 0.5);
 
             if (entity instanceof Player player) {
-                context.updateSanityLoss(player.getUniqueId(), -sanityReduction);
+                context.beyonder().updateSanityLoss(player.getUniqueId(), -sanityReduction);
 
-                boolean rescued = context.rescueFromRampage(caster.getUniqueId(), player.getUniqueId());
+                boolean rescued = context.rampage().rescueFromRampage(caster.getUniqueId(), player.getUniqueId());
                 if (rescued) {
                     showRescueEffects(context, player);
                 }
 
-                context.sendMessageToActionBar(
-                        player,
+                context.messaging().sendMessageToActionBar(
+                        player.getUniqueId(),
                         Component.text("✦ Розум очищено • +" + sanityReduction + " Sanity")
                 );
 
-                context.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.4f, 1.8f);
+                context.effects().playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.4f, 1.8f);
             }
 
             affected++;
         }
 
         // === ФІНАЛ ДЛЯ КАСТЕРА ===
-        context.sendMessageToActionBar(
-                caster,
+        context.messaging().sendMessageToActionBar(
+                caster.getUniqueId(),
                 Component.text("✦ Умиротворення • Цілей: " + affected)
         );
 
@@ -128,9 +128,9 @@ public class Appeasement extends ActiveAbility {
 
     private void showRescueEffects(IAbilityContext context, Player player) {
         Location loc = player.getLocation();
-        context.spawnParticle(Particle.END_ROD, loc.add(0, 1, 0), 25, 0.4, 0.8, 0.4);
-        context.spawnParticle(Particle.SOUL, loc, 20, 0.3, 0.5, 0.3);
-        context.playSound(loc, Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8f, 1.2f);
+        context.effects().spawnParticle(Particle.END_ROD, loc.add(0, 1, 0), 25, 0.4, 0.8, 0.4);
+        context.effects().spawnParticle(Particle.SOUL, loc, 20, 0.3, 0.5, 0.3);
+        context.effects().playSound(loc, Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8f, 1.2f);
     }
 
     @Override
