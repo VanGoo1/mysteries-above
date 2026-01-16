@@ -42,8 +42,10 @@ public class GeneratedSpell extends ActiveAbility {
     private final PotionEffectType potionEffect;
     private final int potionAmplifier;
 
-    public GeneratedSpell(AbilityIdentity identity, String name, String description, int spiritualityCost, int cooldown,
-                          EffectType effectType, Particle particle, double damage, double radius, double heal,
+    public GeneratedSpell(AbilityIdentity identity, String name, String description,
+                          int spiritualityCost, int cooldown,
+                          EffectType effectType, Particle particle, double damage,
+                          double radius, double heal,
                           int duration, PotionEffectType potionEffect, int potionAmplifier) {
         this.identity = identity;
         this.name = name;
@@ -58,6 +60,44 @@ public class GeneratedSpell extends ActiveAbility {
         this.duration = duration;
         this.potionEffect = potionEffect;
         this.potionAmplifier = potionAmplifier;
+    }
+
+    // Getters для infrastructure layer (серіалізації)
+    public EffectType getEffectType() {
+        return effectType;
+    }
+
+    public Particle getParticle() {
+        return particle;
+    }
+
+    public double getDamage() {
+        return damage;
+    }
+
+    public double getRadius() {
+        return radius;
+    }
+
+    public double getHeal() {
+        return heal;
+    }
+
+    public int getDuration() {
+        return duration;
+    }
+
+    public PotionEffectType getPotionEffect() {
+        return potionEffect;
+    }
+
+    public int getPotionAmplifier() {
+        return potionAmplifier;
+    }
+
+    @Override
+    public AbilityIdentity getIdentity() {
+        return identity;
     }
 
     @Override
@@ -78,11 +118,6 @@ public class GeneratedSpell extends ActiveAbility {
     @Override
     public int getCooldown(Sequence userSequence) {
         return cooldown;
-    }
-
-    @Override
-    public AbilityIdentity getIdentity() {
-        return identity;
     }
 
     @Override
@@ -146,7 +181,7 @@ public class GeneratedSpell extends ActiveAbility {
         Location center = caster.getLocation();
 
         // Ефект розширення сфери
-        context.playSphereEffect(center.add(0,1,0), radius, particle, (int)(radius * 10));
+        context.playSphereEffect(center.add(0, 1, 0), radius, particle, (int) (radius * 10));
         context.playSound(center, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 0.8f);
 
         Collection<LivingEntity> targets = context.getNearbyEntities(radius);
@@ -221,12 +256,12 @@ public class GeneratedSpell extends ActiveAbility {
             targetLoc.add(0, 1, 0); // Підняти, якщо в ногах блок
         }
 
-        context.spawnParticle(Particle.REVERSE_PORTAL, caster.getLocation().add(0,1,0), 20, 0.3, 0.5, 0.3);
+        context.spawnParticle(Particle.REVERSE_PORTAL, caster.getLocation().add(0, 1, 0), 20, 0.3, 0.5, 0.3);
         context.playSound(caster.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1f);
 
         caster.teleport(targetLoc);
 
-        context.spawnParticle(particle, targetLoc.add(0,1,0), 20, 0.3, 0.5, 0.3);
+        context.spawnParticle(particle, targetLoc.add(0, 1, 0), 20, 0.3, 0.5, 0.3);
         context.playSound(targetLoc, Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1f);
 
         return AbilityResult.success();

@@ -24,7 +24,7 @@ public class DivinationArts extends ActiveAbility {
     private int BASE_COST = 120;
     private final int BASE_COOLDOWN = 60;
     private final int ANTI_DIVINATION_UNLOCK_SEQUENCE = 7;
-    private final int DIVINING_ROD_DURATION_TICKS = 400; // 20 секунд замість 60
+    private final int DIVINING_ROD_DURATION_TICKS = 1200; // 20 секунд замість 60
 
     private final List<PendulumQuestion> pendulumQuestions = new ArrayList<>();
     private final List<DivinationTarget> diviningRodTargets = new ArrayList<>();
@@ -338,7 +338,7 @@ public class DivinationArts extends ActiveAbility {
             if (positive) {
                 ctx.applyEffect(ctx.getCasterId(), PotionEffectType.HASTE, 12000, 0);
                 ctx.sendMessageToCaster(ChatColor.GREEN + "✦ Зірки прихильні до вас!");
-                ctx.sendMessageToCaster(ChatColor.GRAY + "Швидкість +1 (10 хв)");
+                ctx.sendMessageToCaster(ChatColor.GRAY + "Квапливість +1 (10 хв)");
                 ctx.playSoundToCaster(Sound.ENTITY_PLAYER_LEVELUP, 1f, 2f);
             } else {
                 ctx.applyEffect(ctx.getCasterId(), PotionEffectType.WEAKNESS, 12000, 0);
@@ -444,11 +444,6 @@ public class DivinationArts extends ActiveAbility {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(ChatColor.GOLD + "Шукати: " + target.name);
-
-            List<String> lore = new ArrayList<>();
-            lore.add(ChatColor.GRAY + "Мінімальна послідовність: " + ChatColor.AQUA + target.requiredSequence);
-            meta.setLore(lore);
-
             item.setItemMeta(meta);
         }
         return item;
