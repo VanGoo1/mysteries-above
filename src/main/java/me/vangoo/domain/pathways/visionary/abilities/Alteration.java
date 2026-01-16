@@ -65,7 +65,7 @@ public class Alteration extends ActiveAbility {
             return AbilityResult.failure("Ціль має бути гравцем поруч");
         }
 
-        openMainMenu(context, target);
+        openMainMenu(context, target.getUniqueId());
         // Return deferred - spirituality will be consumed when modification is actually applied
         return AbilityResult.deferred();
     }
@@ -73,8 +73,7 @@ public class Alteration extends ActiveAbility {
     // ==========================================
     // ГОЛОВНЕ МЕНЮ
     // ==========================================
-    private void openMainMenu(IAbilityContext ctx, Player target) {
-        UUID targetId = target.getUniqueId();
+    private void openMainMenu(IAbilityContext ctx, UUID targetId) {
         List<ModificationData> mods = activeModifications.getOrDefault(targetId, new ArrayList<>());
         List<MainMenuOption> options = new ArrayList<>();
 
@@ -83,20 +82,20 @@ public class Alteration extends ActiveAbility {
         if (!mods.isEmpty()) options.add(MainMenuOption.REMOVE);
         options.add(MainMenuOption.CANCEL);
 
-        ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.DARK_PURPLE + "→ Видозміна: " + target.getName());
+        ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.DARK_PURPLE + "→ Видозміна: " + ctx.playerData().getName(targetId));
         ctx.ui().openChoiceMenu("Видозміна", options, this::createMainMenuMenuItem,
-                opt -> handleMainMenuChoice(ctx, target, opt));
+                opt -> handleMainMenuChoice(ctx, targetId, opt));
     }
 
-    private void handleMainMenuChoice(IAbilityContext ctx, Player target, MainMenuOption option) {
+    private void handleMainMenuChoice(IAbilityContext ctx, UUID targetId, MainMenuOption option) {
         switch (option) {
-            case ADD_NEW -> openModificationCreationMenu(ctx, target);
+            case ADD_NEW -> openModificationCreationMenu(ctx, targetId);
             case VIEW_LIST -> {
-                openModificationListMenu(ctx, target);
+                openModificationListMenu(ctx, targetId);
                 // Viewing doesn't consume resources - just show info
             }
             case REMOVE -> {
-                openRemovalMenu(ctx, target);
+                openRemovalMenu(ctx, targetId);
                 // Removing doesn't consume resources
             }
             case CANCEL -> {
@@ -109,8 +108,7 @@ public class Alteration extends ActiveAbility {
     // ==========================================
     // ПЕРЕГЛЯД СПИСКУ
     // ==========================================
-    private void openModificationListMenu(IAbilityContext ctx, Player target) {
-        UUID targetId = target.getUniqueId();
+    private void openModificationListMenu(IAbilityContext ctx, UUID targetId) {
         List<ModificationData> mods = activeModifications.getOrDefault(targetId, new ArrayList<>());
 
         if (mods.isEmpty()) {
@@ -121,7 +119,7 @@ public class Alteration extends ActiveAbility {
 
         ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.DARK_PURPLE + "═══════════════════════════════");
         ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "АКТИВНІ ВИДОЗМІНИ");
-        ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.GRAY + "Ціль: " + ChatColor.WHITE + target.getName());
+        ctx.messaging().sendMessage(ctx.getCasterId(), ChatColor.GRAY + "Ціль: " + ChatColor.WHITE + ctx.playerData().getName(targetId));
 
         for (int i = 0; i < mods.size(); i++) {
             ModificationData mod = mods.get(i);
@@ -142,8 +140,7 @@ public class Alteration extends ActiveAbility {
     // ==========================================
     // ВИДАЛЕННЯ
     // ==========================================
-    private void openRemovalMenu(IAbilityContext ctx, Player target) {
-        UUID targetId = target.getUniqueId();
+    private void openRemovalMenu(IAbilityContext ctx, UUID targetId) {
         List<ModificationData> mods = activeModifications.getOrDefault(targetId, new ArrayList<>());
 
         if (mods.isEmpty()) {
@@ -169,12 +166,11 @@ public class Alteration extends ActiveAbility {
                     }
                     return item;
                 },
-                optionText -> handleRemovalChoice(ctx, target, optionText, options)
+                optionText -> handleRemovalChoice(ctx, targetId, optionText, options)
         );
     }
 
-    private void handleRemovalChoice(IAbilityContext ctx, Player target, String choice, List<String> options) {
-        UUID targetId = target.getUniqueId();
+    private void handleRemovalChoice(IAbilityContext ctx, UUID targetId, String choice, List<String> options) {
         List<ModificationData> mods = activeModifications.getOrDefault(targetId, new ArrayList<>());
 
         if (choice.equals("Скасувати")) {
@@ -207,23 +203,23 @@ public class Alteration extends ActiveAbility {
     // ==========================================
     // СТВОРЕННЯ
     // ==========================================
-    private void openModificationCreationMenu(IAbilityContext ctx, Player target) {
+    private void openModificationCreationMenu(IAbilityContext ctx, UUID targetId) {
         ctx.ui().openChoiceMenu("Видозміна: Тригер", Arrays.asList(TriggerType.values()),
                 this::createTriggerMenuItem,
-                trigger -> openEffectSelectionMenu(ctx, target, trigger));
+                trigger -> openEffectSelectionMenu(ctx, targetId, trigger));
     }
 
-    private void openEffectSelectionMenu(IAbilityContext ctx, Player target, TriggerType trigger) {
+    private void openEffectSelectionMenu(IAbilityContext ctx, UUID targetId, TriggerType trigger) {
         ctx.ui().openChoiceMenu("Видозміна: Наслідок", Arrays.asList(EffectType.values()),
                 this::createEffectMenuItem,
-                effect -> applyModification(ctx, target, trigger, effect));
+                effect -> applyModification(ctx, targetId, trigger, effect));
     }
 
     // ==========================================
     // ЗАСТОСУВАННЯ (З ВИПРАВЛЕННЯМ КУЛДАУНУ)
     // ==========================================
-    private void applyModification(IAbilityContext ctx, Player target, TriggerType trigger, EffectType effect) {
-        UUID targetId = target.getUniqueId();
+    private void applyModification(IAbilityContext ctx, UUID targetId, TriggerType trigger, EffectType effect) {
+
         Player caster = ctx.getCasterPlayer();
         Beyonder casterBeyonder = ctx.getCasterBeyonder();
 
@@ -273,31 +269,31 @@ public class Alteration extends ActiveAbility {
 
     private void subscribeTriggerEvent(IAbilityContext ctx, UUID targetId, TriggerType trigger, EffectType effect, ModificationData mod) {
         switch (trigger) {
-            case PICKUP_ITEM -> ctx.subscribeToEvent(EntityPickupItemEvent.class,
+            case PICKUP_ITEM -> ctx.events().subscribeToTemporaryEvent(ctx.getCasterId(),EntityPickupItemEvent.class,
                     e -> e.getEntity().getUniqueId().equals(targetId),
                     e -> applyEffect(ctx, targetId, effect, mod), MODIFICATION_DURATION_TICKS);
-            case TOUCH_WATER -> ctx.subscribeToEvent(PlayerMoveEvent.class,
+            case TOUCH_WATER -> ctx.events().subscribeToTemporaryEvent(ctx.getCasterId(),PlayerMoveEvent.class,
                     e -> e.getPlayer().getUniqueId().equals(targetId) && e.getPlayer().isInWater(),
                     e -> applyEffect(ctx, targetId, effect, mod), MODIFICATION_DURATION_TICKS);
-            case ATTACK -> ctx.subscribeToEvent(org.bukkit.event.entity.EntityDamageByEntityEvent.class,
-                    e -> e.getDamager() != null && e.getDamager().getUniqueId().equals(targetId),
+            case ATTACK -> ctx.events().subscribeToTemporaryEvent(ctx.getCasterId(),org.bukkit.event.entity.EntityDamageByEntityEvent.class,
+                    e -> e.getDamager().getUniqueId().equals(targetId),
                     e -> applyEffect(ctx, targetId, effect, mod), MODIFICATION_DURATION_TICKS);
-            case BREAK_BLOCK -> ctx.subscribeToEvent(org.bukkit.event.block.BlockBreakEvent.class,
+            case BREAK_BLOCK -> ctx.events().subscribeToTemporaryEvent(ctx.getCasterId(),org.bukkit.event.block.BlockBreakEvent.class,
                     e -> e.getPlayer().getUniqueId().equals(targetId),
                     e -> applyEffect(ctx, targetId, effect, mod), MODIFICATION_DURATION_TICKS);
-            case OPEN_CHEST -> ctx.subscribeToEvent(PlayerInteractEvent.class,
+            case OPEN_CHEST -> ctx.events().subscribeToTemporaryEvent(ctx.getCasterId(),PlayerInteractEvent.class,
                     e -> e.getPlayer().getUniqueId().equals(targetId) && e.getClickedBlock() != null && e.getClickedBlock().getType() == Material.CHEST,
                     e -> applyEffect(ctx, targetId, effect, mod), MODIFICATION_DURATION_TICKS);
-            case EAT_FOOD -> ctx.subscribeToEvent(PlayerItemConsumeEvent.class,
+            case EAT_FOOD -> ctx.events().subscribeToTemporaryEvent(ctx.getCasterId(),PlayerItemConsumeEvent.class,
                     e -> e.getPlayer().getUniqueId().equals(targetId),
                     e -> applyEffect(ctx, targetId, effect, mod), MODIFICATION_DURATION_TICKS);
-            case SNEAK -> ctx.subscribeToEvent(PlayerToggleSneakEvent.class,
+            case SNEAK -> ctx.events().subscribeToTemporaryEvent(ctx.getCasterId(),PlayerToggleSneakEvent.class,
                     e -> e.getPlayer().getUniqueId().equals(targetId) && e.isSneaking(),
                     e -> applyEffect(ctx, targetId, effect, mod), MODIFICATION_DURATION_TICKS);
-            case TAKE_DAMAGE -> ctx.subscribeToEvent(org.bukkit.event.entity.EntityDamageEvent.class,
-                    e -> e.getEntity() != null && e.getEntity().getUniqueId().equals(targetId),
+            case TAKE_DAMAGE -> ctx.events().subscribeToTemporaryEvent(ctx.getCasterId(),org.bukkit.event.entity.EntityDamageEvent.class,
+                    e -> e.getEntity().getUniqueId().equals(targetId),
                     e -> applyEffect(ctx, targetId, effect, mod), MODIFICATION_DURATION_TICKS);
-            case CHAT -> ctx.subscribeToEvent(AsyncPlayerChatEvent.class,
+            case CHAT -> ctx.events().subscribeToTemporaryEvent(ctx.getCasterId(),AsyncPlayerChatEvent.class,
                     e -> e.getPlayer().getUniqueId().equals(targetId),
                     e -> Bukkit.getScheduler().runTask(ctx.getCasterPlayer().getServer().getPluginManager().getPlugin("Mysteries-Above"),
                             () -> applyEffect(ctx, targetId, effect, mod)), MODIFICATION_DURATION_TICKS);

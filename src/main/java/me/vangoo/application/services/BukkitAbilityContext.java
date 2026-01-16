@@ -53,7 +53,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     private final EffectManager effectManager;
     private final Logger LOGGER;
     private final RampageManager rampageManager;
-    private final TemporaryEventManager eventManager;
+    private final TemporaryEventManager temporaryEventManager;
     // Cache for performance (valid only during single ability execution)
     private final Map<UUID, Entity> entityCache = new HashMap<>();
     private final PassiveAbilityManager passiveAbilityManager;
@@ -79,7 +79,7 @@ public class BukkitAbilityContext implements IAbilityContext {
             CooldownManager cooldownManager,
             BeyonderService beyonderService,
             AbilityLockManager lockManager, GlowingEntities glowingEntities, EffectManager effectManager,
-            RampageManager rampageManager, TemporaryEventManager eventManager, PassiveAbilityManager passiveAbilityManager, DomainEventPublisher eventPublisher,
+            RampageManager rampageManager, TemporaryEventManager temporaryEventManager, PassiveAbilityManager passiveAbilityManager, DomainEventPublisher eventPublisher,
             RecipeUnlockService recipeUnlockService) {
         this.caster = caster;
         this.world = caster.getWorld();
@@ -91,7 +91,7 @@ public class BukkitAbilityContext implements IAbilityContext {
         this.effectManager = effectManager;
         this.LOGGER = plugin.getLogger();
         this.rampageManager = rampageManager;
-        this.eventManager = eventManager;
+        this.temporaryEventManager = temporaryEventManager;
         this.passiveAbilityManager = passiveAbilityManager;
         this.eventPublisher = eventPublisher;
         this.recipeUnlockService = recipeUnlockService;
@@ -119,6 +119,11 @@ public class BukkitAbilityContext implements IAbilityContext {
     @Override
     public Player getCasterPlayer() {
         return caster;
+    }
+
+    @Override
+    public Location getCasterEyeLocation() {
+        return caster.getEyeLocation();
     }
 
     @Override
@@ -172,7 +177,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     @Override
     public IEventContext events() {
         if (eventContext == null) {
-            eventContext = new EventContext(eventPublisher);
+            eventContext = new EventContext(eventPublisher, plugin, temporaryEventManager);
         }
         return eventContext;
     }
@@ -391,6 +396,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     public BukkitTask scheduleRepeating(Runnable task, long delayTicks, long periodTicks) {
         return Bukkit.getScheduler().runTaskTimer(plugin, task, delayTicks, periodTicks);
     }
+
     // У файлі BukkitAbilityContext.java
     @Override
     public void runAsync(Runnable task) {
@@ -438,10 +444,11 @@ public class BukkitAbilityContext implements IAbilityContext {
     public void sendMessageToActionBar(Component message) {
         if (caster != null && caster.isOnline()) {
             String legacy = LegacyComponentSerializer.legacySection().serialize(message);
-            BaseComponent[] components = new BaseComponent[] {new TextComponent(legacy)};
+            BaseComponent[] components = new BaseComponent[]{new TextComponent(legacy)};
             caster.spigot().sendMessage(ChatMessageType.ACTION_BAR, components);
         }
     }
+
     @Override
     public void sendMessageToActionBar(Player target, Component message) {
         if (target != null && target.isOnline()) {
@@ -452,6 +459,7 @@ public class BukkitAbilityContext implements IAbilityContext {
             target.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(legacy));
         }
     }
+
     @Override
     public void spawnTemporaryHologram(Location location, Component text, long durationTicks) {
         // 1. Спавнимо ArmorStand
@@ -475,6 +483,7 @@ public class BukkitAbilityContext implements IAbilityContext {
             }
         }, durationTicks);
     }
+
     public void spawnFollowingHologramForPlayer(Player viewer, Player target, Component text, long durationTicks, long updateIntervalTicks) {
         if (viewer == null || !viewer.isOnline()) return;
         if (target == null || !target.isOnline()) return;
@@ -904,16 +913,6 @@ public class BukkitAbilityContext implements IAbilityContext {
     }
 
     @Override
-    public <T extends Event> void subscribeToEvent(
-            Class<T> eventClass,
-            Predicate<T> filter,
-            Consumer<T> handler,
-            int durationTicks
-    ) {
-        eventManager.subscribe(getCasterId(), eventClass, filter, handler, durationTicks);
-    }
-
-    @Override
     public void publishAbilityUsedEvent(ActiveAbility activeAbility) {
         Beyonder caster = getCasterBeyonder();
         boolean isOffPathway = caster.getOffPathwayActiveAbilities()
@@ -945,6 +944,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     public boolean isAbilityActivated(UUID entityId, AbilityIdentity abilityIdentity) {
         return passiveAbilityManager.isToggleableEnabled(entityId, abilityIdentity);
     }
+
     @Override
     public void removeOffPathwayAbility(AbilityIdentity identity) {
         Beyonder beyonder = beyonderService.getBeyonder(caster.getUniqueId());
@@ -982,6 +982,7 @@ public class BukkitAbilityContext implements IAbilityContext {
             eventPublisher.unsubscribeFromAbility(wrapper);
         }, durationTicks);
     }
+
     @Override
     public Optional<AbilityDomainEvent> getLastAbilityEvent(UUID casterId, int maxAgeSeconds) {
         return eventPublisher.getLastAbilityEvent(casterId, maxAgeSeconds);

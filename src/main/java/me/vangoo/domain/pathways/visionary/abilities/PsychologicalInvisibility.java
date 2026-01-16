@@ -109,14 +109,14 @@ public class PsychologicalInvisibility extends ActiveAbility {
         final boolean[] projectileHit = {false};
 
         // Відстеження снарядів
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 ProjectileLaunchEvent.class,
                 e -> e.getEntity().getShooter() instanceof Player p && p.getUniqueId().equals(id),
                 e -> trackedProjectiles.add(e.getEntity().getUniqueId()),
                 Integer.MAX_VALUE
         );
 
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 EntityDamageByEntityEvent.class,
                 e -> e.getDamager() instanceof Projectile pr && trackedProjectiles.contains(pr.getUniqueId()),
                 e -> {

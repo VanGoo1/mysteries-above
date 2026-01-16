@@ -3,6 +3,7 @@ package me.vangoo.application.services.context;
 import me.vangoo.MysteriesAbovePlugin;
 import me.vangoo.domain.abilities.context.IEntityContext;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -14,6 +15,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
 
 import java.util.HashMap;
 import java.util.Objects;
@@ -60,7 +62,7 @@ public class EntityContext implements IEntityContext {
     public void applyPotionEffect(UUID entityId, PotionEffectType effect, int durationTicks, int amplifier) {
         Entity entity = getEntity(entityId);
         if (entity instanceof LivingEntity living) {
-            living.addPotionEffect(new PotionEffect(effect, durationTicks, amplifier));
+            living.addPotionEffect(new PotionEffect(effect, durationTicks, amplifier, false, false));
         }
     }
 
@@ -163,6 +165,38 @@ public class EntityContext implements IEntityContext {
 
         if (player != null && toShow != null) {
             player.showPlayer(plugin, toShow);
+        }
+    }
+
+    @Override
+    public void setGameMode(UUID entityId, GameMode gameMode) {
+        Player player = Bukkit.getPlayer(entityId);
+        if (player != null) {
+            player.setGameMode(gameMode);
+        }
+    }
+
+    @Override
+    public void leaveVehicle(UUID targetId) {
+        Player player = Bukkit.getPlayer(targetId);
+        if (player != null) {
+            player.leaveVehicle();
+        }
+    }
+
+    @Override
+    public void setVelocity(UUID targetId, Vector vector) {
+        Player player = Bukkit.getPlayer(targetId);
+        if (player != null) {
+            player.setVelocity(vector);
+        }
+    }
+
+    @Override
+    public void setSprinting(UUID targetId, boolean value) {
+        Player player = Bukkit.getPlayer(targetId);
+        if (player != null) {
+            player.setSprinting(value);
         }
     }
 }

@@ -80,7 +80,7 @@ public class SpiritualIntuition extends ToggleablePassiveAbility {
         UUID casterId = context.getCasterId();
 
         // Підписуємось на PlayerItemHeldEvent - коли гравець перемикає слоти хотбару
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(casterId,
                 PlayerItemHeldEvent.class,
                 event -> {
                     Player eventPlayer = event.getPlayer();

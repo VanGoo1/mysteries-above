@@ -1,9 +1,11 @@
 package me.vangoo.domain.abilities.context;
 
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.util.Vector;
 
 import java.util.List;
 import java.util.Map;
@@ -53,4 +55,14 @@ public interface IDataContext {
     List<ItemStack> getInventoryContents(UUID playerId);
 
     List<PotionEffect> getActivePotionEffects(UUID playerId);
+
+    String getName(UUID targetId);
+
+    boolean isSneaking(UUID targetId);
+
+    Location getEyeLocation(UUID playerId);
+
+    boolean isInsideVehicle(UUID targetId);
+
+    Vector getVelocity(UUID targetId);
 }

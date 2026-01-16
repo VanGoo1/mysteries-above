@@ -1,8 +1,10 @@
 package me.vangoo.domain.abilities.context;
 
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
 
 import java.util.UUID;
 
@@ -31,4 +33,12 @@ public interface IEntityContext {
     void hidePlayerFromTarget(UUID playerId, UUID playerToHide);
 
     void showPlayerToTarget(UUID playerId, UUID playerToShowId);
+
+    void setGameMode(UUID entityId, GameMode gameMode);
+
+    void leaveVehicle(UUID targetId);
+
+    void setVelocity(UUID targetId, Vector vector);
+
+    void setSprinting(UUID targetId, boolean value);
 }

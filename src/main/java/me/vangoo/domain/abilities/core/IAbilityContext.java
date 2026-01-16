@@ -35,6 +35,8 @@ public interface IAbilityContext {
 
     Player getCasterPlayer();
 
+    Location getCasterEyeLocation();
+
     IVisualEffectsContext effects();
     ISchedulingContext scheduling();
     IDataContext playerData();
@@ -232,14 +234,6 @@ public interface IAbilityContext {
             List<T> choices,
             Function<T, ItemStack> itemMapper,
             Consumer<T> onSelect
-    );
-
-    @Deprecated
-    <T extends Event> void subscribeToEvent(
-            Class<T> eventClass,
-            Predicate<T> filter,
-            Consumer<T> handler,
-            int durationTicks
     );
 
     @Deprecated

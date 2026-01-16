@@ -16,14 +16,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Domain Ability: Spawn Prohibition (Заборона Спавну)
- *
  * Активна здібність з різними режимами:
  * 1. Заборона зомбі - видаляє зомбі в радіусі та блокує їх спавн
  * 2. Заборона скелетів - видаляє скелетів в радіусі та блокує їх спавн
  * 3. Заборона пауків - видаляє пауків в радіусі та блокує їх спавн
  * 4. Заборона криперів - видаляє криперів в радіусі та блокує їх спавн
  * 5. Заборона ворожих мобів - видаляє всіх ворожих мобів та блокує їх спавн
- *
  * Shift+ПКМ - переключення режиму
  * ПКМ - використання вибраного режиму
  */
@@ -47,7 +45,7 @@ public class SpawnProhibition extends ActiveAbility {
     @Override
     public String getDescription(Sequence userSequence) {
         return "Накладає заборону на спавн мобів.\n" +
-                ChatColor.GRAY + "▪ Радіус: " + ChatColor.WHITE + (int)RADIUS + " блоків\n" +
+                ChatColor.GRAY + "▪ Радіус: " + ChatColor.WHITE + (int) RADIUS + " блоків\n" +
                 ChatColor.GRAY + "▪ Тривалість: " + ChatColor.WHITE + DURATION_SECONDS + " секунд\n" +
                 ChatColor.GRAY + "▪ Shift+ПКМ: " + ChatColor.WHITE + "переключити режим\n" +
                 ChatColor.GRAY + "▪ ПКМ: " + ChatColor.WHITE + "використати заборону\n" +
@@ -84,14 +82,15 @@ public class SpawnProhibition extends ActiveAbility {
             caster.playSound(caster.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.5f);
 
             // ACTION BAR: Зміна режиму
-            context.sendMessageToActionBar(
+            context.messaging().sendMessageToActionBar(
+                    casterId,
                     Component.text("⚖ Режим: ", NamedTextColor.GOLD)
                             .append(LegacyComponentSerializer.legacySection().deserialize(newMode.getDisplayName()))
             );
 
             // Візуальний ефект
             Particle particle = getParticleForMode(newMode);
-            context.spawnParticle(
+            context.effects().spawnParticle(
                     particle,
                     caster.getLocation().add(0, 1, 0),
                     20,
@@ -126,12 +125,12 @@ public class SpawnProhibition extends ActiveAbility {
         showActivationEffect(context, mode, removedCount);
 
         // Автоматичне видалення зони після закінчення часу
-        context.scheduleDelayed(() -> {
+        context.scheduling().scheduleDelayed(() -> {
             activeSpawnBans.remove(zone);
 
             // ACTION BAR: Повідомлення про завершення
-            if (caster != null && caster.isOnline()) {
-                context.sendMessageToActionBar(caster, LegacyComponentSerializer.legacySection().deserialize(
+            if (context.playerData().isOnline(casterId)) {
+                context.messaging().sendMessageToActionBar(casterId, LegacyComponentSerializer.legacySection().deserialize(
                         ChatColor.GRAY + "⚖ Заборона спавну " + mode.getDisplayName() + " завершилася"
                 ));
             }
@@ -179,7 +178,7 @@ public class SpawnProhibition extends ActiveAbility {
         return switch (mode) {
             case ZOMBIE -> entity instanceof Zombie;
             case SKELETON -> entity instanceof Skeleton;
-            case SPIDER -> entity instanceof Spider || entity instanceof CaveSpider;
+            case SPIDER -> entity instanceof Spider;
             case CREEPER -> entity instanceof Creeper;
             case HOSTILE -> entity instanceof Monster;
         };
@@ -189,7 +188,7 @@ public class SpawnProhibition extends ActiveAbility {
      * Підписка на блокування спавну
      */
     private void subscribeSpawnBlocking(IAbilityContext context, SpawnBanZone zone) {
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 CreatureSpawnEvent.class,
                 event -> {
                     // Перевіряємо чи зона ще активна
@@ -243,7 +242,7 @@ public class SpawnProhibition extends ActiveAbility {
      * Підтримка візуалізації зони заборони
      */
     private void maintainZoneVisuals(IAbilityContext context, SpawnBanZone zone) {
-        context.scheduleRepeating(() -> {
+        context.scheduling().scheduleRepeating(() -> {
             if (!activeSpawnBans.contains(zone)) {
                 return;
             }
@@ -270,7 +269,7 @@ public class SpawnProhibition extends ActiveAbility {
 
             Location particleLoc = new Location(center.getWorld(), x, center.getY() + 0.2, z);
 
-            context.spawnParticle(
+            context.effects().spawnParticle(
                     particle,
                     particleLoc,
                     1,
@@ -287,7 +286,7 @@ public class SpawnProhibition extends ActiveAbility {
         Particle particle = getParticleForMode(mode);
 
         // Сфера що розширюється
-        context.playSphereEffect(
+        context.effects().playSphereEffect(
                 loc.clone().add(0, 1, 0),
                 RADIUS,
                 particle,
@@ -295,7 +294,7 @@ public class SpawnProhibition extends ActiveAbility {
         );
 
         // Хвиля на землі
-        context.playWaveEffect(
+        context.effects().playWaveEffect(
                 loc,
                 RADIUS,
                 Particle.SWEEP_ATTACK,
@@ -303,8 +302,8 @@ public class SpawnProhibition extends ActiveAbility {
         );
 
         // Звуки
-        context.playSoundToCaster(Sound.ENTITY_EVOKER_PREPARE_ATTACK, 1.0f, 0.7f);
-        context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 0.8f, 1.5f);
+        context.effects().playSoundForPlayer(context.getCasterId(), Sound.ENTITY_EVOKER_PREPARE_ATTACK, 1.0f, 0.7f);
+        context.effects().playSoundForPlayer(context.getCasterId(), Sound.BLOCK_BEACON_ACTIVATE, 0.8f, 1.5f);
 
         // ACTION BAR: Активація + статистика
         StringBuilder msg = new StringBuilder();
@@ -314,7 +313,8 @@ public class SpawnProhibition extends ActiveAbility {
             msg.append(ChatColor.GRAY).append(" (Видалено: ").append(ChatColor.WHITE).append(removedCount).append(")");
         }
 
-        context.sendMessageToActionBar(
+        context.messaging().sendMessageToActionBar(
+                context.getCasterId(),
                 LegacyComponentSerializer.legacySection().deserialize(msg.toString())
         );
     }
@@ -346,8 +346,7 @@ public class SpawnProhibition extends ActiveAbility {
             if (zone.isInside(location)) {
                 if (entity instanceof Zombie && zone.mode == ProhibitionMode.ZOMBIE) return false;
                 if (entity instanceof Skeleton && zone.mode == ProhibitionMode.SKELETON) return false;
-                if ((entity instanceof Spider || entity instanceof CaveSpider) &&
-                        zone.mode == ProhibitionMode.SPIDER) return false;
+                if (entity instanceof Spider && zone.mode == ProhibitionMode.SPIDER) return false;
                 if (entity instanceof Creeper && zone.mode == ProhibitionMode.CREEPER) return false;
                 if (entity instanceof Monster && zone.mode == ProhibitionMode.HOSTILE) return false;
             }
@@ -398,7 +397,7 @@ public class SpawnProhibition extends ActiveAbility {
         }
 
         public boolean isInside(Location loc) {
-            if (!loc.getWorld().equals(center.getWorld())) {
+            if (!Objects.equals(loc.getWorld(), center.getWorld())) {
                 return false;
             }
             return loc.distance(center) <= radius;

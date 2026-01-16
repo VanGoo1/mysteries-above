@@ -118,10 +118,10 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
 
     private void registerPolymathEvents(IAbilityContext context) {
         // "Ерудит знає, як використовувати речі ефективно" -> Збереження міцності
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 PlayerItemDamageEvent.class,
                 event -> {
-                    int seq = context.getEntitySequenceLevel(event.getPlayer().getUniqueId()).orElse(9);
+                    int seq = context.beyonder().getBeyonder(event.getPlayer().getUniqueId()).getSequenceLevel();
                     return seq <= 6;
                 },
                 event -> {
@@ -130,7 +130,7 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
                         // Візуальний ефект "розумного використання" (іскра)
                         if (random.nextDouble() < 0.1) {
                             // Використовуємо event.getPlayer().getLocation(), бо це надійніше всередині події
-                            context.spawnParticle(
+                            context.effects().spawnParticle(
                                     Particle.WAX_OFF,
                                     event.getPlayer().getLocation().add(0, 1, 0),
                                     20,

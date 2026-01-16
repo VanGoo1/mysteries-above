@@ -96,7 +96,7 @@ public class Guidance extends ActiveAbility {
         context.spawnParticle(Particle.HAPPY_VILLAGER, target.getLocation().add(0, 1, 0), 20, 0.5, 0.5, 0.5);
 
         // Блокуємо посадку в транспорт
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 VehicleEnterEvent.class,
                 e -> e.getEntered().getUniqueId().equals(targetId),
                 e -> {

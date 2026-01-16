@@ -12,6 +12,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class CombatProficiency extends PermanentPassiveAbility {
@@ -47,19 +48,18 @@ public class CombatProficiency extends PermanentPassiveAbility {
 
     private void registerCombatEvents(IAbilityContext context, Player player) {
         // 1. АТАКА
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 EntityDamageByEntityEvent.class,
                 event -> {
                     if (event.getDamager().equals(player)) return true;
-                    if (event.getDamager() instanceof Arrow arrow && arrow.getShooter().equals(player)) return true;
-                    return false;
+                    return event.getDamager() instanceof Arrow arrow && Objects.equals(arrow.getShooter(), player);
                 },
                 event -> handleAttack(context, player, event),
                 25
         );
 
         // 2. ЗАХИСТ
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 EntityDamageEvent.class,
                 event -> event.getEntity().equals(player),
                 event -> handleDefense(context, player, event),

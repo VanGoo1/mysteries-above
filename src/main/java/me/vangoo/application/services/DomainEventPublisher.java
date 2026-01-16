@@ -1,4 +1,3 @@
-// src/main/java/me/vangoo/application/services/DomainEventPublisher.java
 package me.vangoo.application.services;
 
 import me.vangoo.domain.events.AbilityDomainEvent;

@@ -185,7 +185,7 @@ public class Verdict extends ActiveAbility {
     private void startRestrictionMonitoring(IAbilityContext context, RestrictionZone zone, List<Player> trapped) {
         UUID casterId = context.getCasterId();
 
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 PlayerMoveEvent.class,
                 (PlayerMoveEvent event) -> {
                     Player player = event.getPlayer();
@@ -272,14 +272,14 @@ public class Verdict extends ActiveAbility {
         target.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, IMPRISONMENT_DURATION_TICKS, 250, false, false));
         target.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, IMPRISONMENT_DURATION_TICKS, 5, false, false));
 
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 PlayerTeleportEvent.class,
                 (PlayerTeleportEvent event) -> event.getPlayer().getUniqueId().equals(targetId),
                 (PlayerTeleportEvent event) -> event.setCancelled(true),
                 IMPRISONMENT_DURATION_TICKS
         );
 
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 PlayerMoveEvent.class,
                 (PlayerMoveEvent event) -> {
                     if (!event.getPlayer().getUniqueId().equals(targetId)) return false;

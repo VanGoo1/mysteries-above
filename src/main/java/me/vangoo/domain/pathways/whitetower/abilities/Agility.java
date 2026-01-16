@@ -8,8 +8,9 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+
+import java.util.UUID;
 
 public class Agility extends PermanentPassiveAbility {
 
@@ -39,7 +40,7 @@ public class Agility extends PermanentPassiveAbility {
     @Override
     public void onActivate(IAbilityContext context) {
         // Отримуємо послідовність при активації
-        applySpeed(context.getCaster(), context.getCasterBeyonder().getSequence());
+        applySpeed(context);
     }
 
     @Override
@@ -52,24 +53,27 @@ public class Agility extends PermanentPassiveAbility {
 
     @Override
     public void tick(IAbilityContext context) {
-        Player player = context.getCasterPlayer();
-        if (player == null || !player.isOnline()) return;
+        UUID playerId = context.getCasterId();
+        Location loc = context.getCasterLocation();
+        if (loc.getWorld() == null) return;
+
+        if (!context.playerData().isOnline(playerId)) return;
 
         // 1. Підтримка Швидкості (зі скейлінгом)
-        if (player.getTicksLived() % REFRESH_PERIOD_TICKS == 0) {
-            applySpeed(player, context.getCasterBeyonder().getSequence());
+        if (loc.getWorld().getFullTime() % REFRESH_PERIOD_TICKS == 0) {
+            applySpeed(context);
         }
 
         // 2. Обробка падіння
-        if (player.getTicksLived() % 20 == 0) {
-            registerFallProtection(context, player);
+        if (loc.getWorld().getFullTime() % 20 == 0) {
+            registerFallProtection(context, playerId);
         }
     }
 
-    private void applySpeed(Player player, Sequence sequence) {
-        int amplifier = getSpeedAmplifier(sequence);
+    private void applySpeed(IAbilityContext context) {
+        int amplifier = getSpeedAmplifier(context.getCasterBeyonder().getSequence());
         // addPotionEffect автоматично оновлює ефект, якщо новий сильніший або такий самий
-        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, EFFECT_DURATION_TICKS, amplifier, false, false));
+        context.entity().applyPotionEffect(context.getCasterId(), PotionEffectType.SPEED, EFFECT_DURATION_TICKS, amplifier);
     }
 
     /**
@@ -90,10 +94,10 @@ public class Agility extends PermanentPassiveAbility {
         }
     }
 
-    private void registerFallProtection(IAbilityContext context, Player player) {
-        context.subscribeToEvent(
+    private void registerFallProtection(IAbilityContext context, UUID playerId) {
+        context.events().subscribeToTemporaryEvent(playerId,
                 EntityDamageEvent.class,
-                event -> event.getEntity().equals(player) && event.getCause() == EntityDamageEvent.DamageCause.FALL,
+                event -> event.getEntity().getUniqueId().equals(playerId) && event.getCause() == EntityDamageEvent.DamageCause.FALL,
                 event -> {
                     double originalDamage = event.getDamage();
                     double newDamage = Math.max(0, originalDamage - FALL_DAMAGE_REDUCTION);
@@ -102,30 +106,28 @@ public class Agility extends PermanentPassiveAbility {
                         event.setCancelled(true);
 
                         // Локація трохи вище землі для кращого візуалу
-                        Location landLocation = player.getLocation().add(0, 0.2, 0);
+                        Location landLocation = context.getCasterLocation().add(0, 0.2, 0);
 
-
-                        context.playWaveEffect(
+                        context.effects().playWaveEffect(
                                 landLocation,
                                 2.5,
                                 Particle.CLOUD,
                                 10
                         );
 
-
-                        context.playSphereEffect(
+                        context.effects().playSphereEffect(
                                 landLocation,
                                 1.2,
                                 Particle.WHITE_ASH,
                                 15
                         );
 
-                        context.playSound(landLocation, Sound.ENTITY_PHANTOM_FLAP, 1.0f, 1.6f);
-                        context.playSound(landLocation, Sound.BLOCK_WOOL_STEP, 1.4f, 1.0f);
+                        context.effects().playSound(landLocation, Sound.ENTITY_PHANTOM_FLAP, 1.0f, 1.6f);
+                        context.effects().playSound(landLocation, Sound.BLOCK_WOOL_STEP, 1.4f, 1.0f);
 
                     } else {
                         event.setDamage(newDamage);
-                        context.playSound(player.getLocation(), Sound.ENTITY_GENERIC_SMALL_FALL, 1.0f, 0.8f);
+                        context.effects().playSound(context.getCasterLocation(), Sound.ENTITY_GENERIC_SMALL_FALL, 1.0f, 0.8f);
                     }
                 },
                 25

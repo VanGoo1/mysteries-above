@@ -4,6 +4,9 @@ import me.vangoo.domain.abilities.core.*;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.valueobjects.*;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.*;
 import org.bukkit.entity.*;
@@ -55,12 +58,12 @@ public class PsychicCue extends ActiveAbility {
 
     @Override
     protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
-        return context.getTargetedEntity(BASE_RANGE);
+        return context.targeting().getTargetedEntity(BASE_RANGE);
     }
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Optional<LivingEntity> targetOpt = context.getTargetedEntity(BASE_RANGE);
+        Optional<LivingEntity> targetOpt = context.targeting().getTargetedEntity(BASE_RANGE);
 
         if (targetOpt.isEmpty() || !(targetOpt.get() instanceof Player target)) {
             return AbilityResult.failure("Ціль має бути гравцем поруч");
@@ -69,9 +72,9 @@ public class PsychicCue extends ActiveAbility {
 
         // Seq 6+ отримує доступ до навігації
         if (casterSequence.level() <= 6) {
-            openAdvancedMenu(context, target);
+            openAdvancedMenu(context, target.getUniqueId());
         } else {
-            openBasicMenu(context, target);
+            openBasicMenu(context, target.getUniqueId());
         }
 
         // КРИТИЧНО: Повертаємо deferred - ресурси будуть спожиті пізніше
@@ -81,19 +84,19 @@ public class PsychicCue extends ActiveAbility {
     /**
      * Базове меню для послідовностей 7-9
      */
-    private void openBasicMenu(IAbilityContext ctx, Player target) {
+    private void openBasicMenu(IAbilityContext ctx, UUID targetId) {
         ctx.openChoiceMenu(
                 "Психічний сигнал",
                 Arrays.asList(PsychicCueType.values()),
                 this::createMenuItem,
-                cue -> applyCue(ctx, target, cue)
+                cue -> applyCue(ctx, targetId, cue)
         );
     }
 
     /**
      * Розширене меню для послідовностей 6 і вище
      */
-    private void openAdvancedMenu(IAbilityContext ctx, Player target) {
+    private void openAdvancedMenu(IAbilityContext ctx, UUID targetId) {
         List<AdvancedCueOption> options = new ArrayList<>();
 
         // Додаємо базові опції
@@ -110,9 +113,9 @@ public class PsychicCue extends ActiveAbility {
                 this::createAdvancedMenuItem,
                 option -> {
                     if (option.isNavigation) {
-                        startNavigationSetup(ctx, target);
+                        startNavigationSetup(ctx, targetId);
                     } else {
-                        applyCue(ctx, target, option.cueType);
+                        applyCue(ctx, targetId, option.cueType);
                     }
                 }
         );
@@ -121,24 +124,24 @@ public class PsychicCue extends ActiveAbility {
     /**
      * Запустити процес встановлення точки навігації
      */
-    private void startNavigationSetup(IAbilityContext ctx, Player target) {
+    private void startNavigationSetup(IAbilityContext ctx, UUID targetId) {
         Sequence casterSeq = ctx.getCasterBeyonder().getSequence();
         int maxRange = scaleValue(BASE_NAVIGATION_RANGE, casterSeq, SequenceScaler.ScalingStrategy.MODERATE);
 
         // Відправляємо кастеру action-bar повідомлення
-        ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
+        ctx.messaging().sendMessageToActionBar(ctx.getCasterId(), LegacyComponentSerializer.legacySection().deserialize(
                 ChatColor.GOLD + "▶ Режим навігації активовано"));
-        ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
+        ctx.messaging().sendMessageToActionBar(ctx.getCasterId(), LegacyComponentSerializer.legacySection().deserialize(
                 ChatColor.GRAY + "Клацніть ПКМ по блоку щоб задати точку призначення"));
-        ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
+        ctx.messaging().sendMessageToActionBar(ctx.getCasterId(), LegacyComponentSerializer.legacySection().deserialize(
                 ChatColor.GRAY + "Максимальна дальність: " + ChatColor.YELLOW + maxRange + " блоків"));
-        ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
+        ctx.messaging().sendMessageToActionBar(ctx.getCasterId(), LegacyComponentSerializer.legacySection().deserialize(
                 ChatColor.GRAY + "Shift + ПКМ для скасування"));
 
-        ctx.playSoundToCaster(Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.5f);
+        ctx.effects().playSoundForPlayer(ctx.getCasterId(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.5f);
 
         // Підписуємось на клік гравця
-        ctx.subscribeToEvent(
+        ctx.events().subscribeToTemporaryEvent(ctx.getCasterId(),
                 PlayerInteractEvent.class,
                 e -> e.getPlayer().equals(ctx.getCasterPlayer()) &&
                         (e.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK ||
@@ -148,9 +151,8 @@ public class PsychicCue extends ActiveAbility {
 
                     // Скасування - НЕ споживає ресурси
                     if (e.getPlayer().isSneaking()) {
-                        ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
-                                ChatColor.YELLOW + "✗ Навігація скасована"));
-                        ctx.playSoundToCaster(Sound.ENTITY_VILLAGER_NO, 0.7f, 1.0f);
+                        ctx.messaging().sendMessageToActionBar(ctx.getCasterId(), Component.text("✗ Навігація скасована").color(NamedTextColor.YELLOW));
+                        ctx.effects().playSoundForPlayer(ctx.getCasterId(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1.0f);
                         return;
                     }
 
@@ -160,15 +162,14 @@ public class PsychicCue extends ActiveAbility {
                         double distance = destination.distance(ctx.getCasterLocation());
 
                         if (distance > maxRange) {
-                            ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
-                                    ChatColor.RED + "✗ Занадто далеко! (" +
-                                            (int) distance + "/" + maxRange + " блоків)"));
-                            ctx.playSoundToCaster(Sound.ENTITY_VILLAGER_NO, 0.7f, 1.0f);
+                            ctx.messaging().sendMessageToActionBar(ctx.getCasterId(), Component.text("✗ Занадто далеко! (" +
+                                    (int) distance + "/" + maxRange + " блоків)").color(NamedTextColor.RED));
+                            ctx.effects().playSoundForPlayer(ctx.getCasterId(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1.0f);
                             return;
                         }
 
                         // ТІЛЬКИ ТУТ споживаємо ресурси
-                        applyNavigationCue(ctx, target, destination);
+                        applyNavigationCue(ctx, targetId, destination);
                     }
                 },
                 200 // 10 секунд на вибір точки
@@ -178,63 +179,60 @@ public class PsychicCue extends ActiveAbility {
     /**
      * Застосувати сигнал навігації
      */
-    private void applyNavigationCue(IAbilityContext ctx, Player target, Location destination) {
+    private void applyNavigationCue(IAbilityContext ctx, UUID targetId, Location destination) {
         Beyonder casterBeyonder = ctx.getCasterBeyonder();
 
         // КРИТИЧНО: Споживаємо ресурси ТІЛЬКИ ЗАРАЗ
         if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
-            ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
-                    ChatColor.RED + "Недостатньо духовності!"));
+            ctx.messaging().sendMessageToActionBar(ctx.getCasterId(), Component.text("Недостатньо духовності!").color(NamedTextColor.RED));
             return;
         }
-        ctx.publishAbilityUsedEvent(this);
+        ctx.events().publishAbilityUsedEvent(this, casterBeyonder);
 
         // Візуальні ефекти
-        ctx.spawnParticle(Particle.WITCH, target.getEyeLocation(), 15, 0.4, 0.4, 0.4);
-        ctx.playSound(target.getLocation(), Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.5f, 0.8f);
-        ctx.spawnParticle(Particle.END_ROD, destination, 30, 0.3, 0.5, 0.3);
-        ctx.playSound(destination, Sound.BLOCK_BEACON_ACTIVATE, 0.7f, 1.5f);
+        ctx.effects().spawnParticle(Particle.WITCH, ctx.playerData().getEyeLocation(targetId), 15, 0.4, 0.4, 0.4);
+        ctx.effects().playSound(ctx.playerData().getCurrentLocation(targetId), Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.5f, 0.8f);
+        ctx.effects().spawnParticle(Particle.END_ROD, destination, 30, 0.3, 0.5, 0.3);
+        ctx.effects().playSound(destination, Sound.BLOCK_BEACON_ACTIVATE, 0.7f, 1.5f);
 
         // Якщо ціль вже в човні/вагонетці — викидаємо
-        if (target.isInsideVehicle()) {
-            target.leaveVehicle();
+        if (ctx.playerData().isInsideVehicle(targetId)) {
+            ctx.entity().leaveVehicle(targetId);
         }
 
         // Повідомлення (кастер)
-        ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
-                ChatColor.DARK_PURPLE + "Навіяно: " + ChatColor.GOLD + "Навігаційний імператив"));
-
-        ctx.playSoundToCaster(Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1f, 1.6f);
+        ctx.messaging().sendMessageToActionBar(ctx.getCasterId(), Component.text("Навіяно: ").color(NamedTextColor.DARK_PURPLE).append(Component.text("Навігаційний імператив").color(NamedTextColor.GOLD)));
+        ctx.effects().playSoundForPlayer(targetId, Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1f, 1.6f);
 
         // Повідомлення цілі (action bar)
-        ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
+        ctx.messaging().sendMessageToActionBar(targetId, LegacyComponentSerializer.legacySection().deserialize(
                 ChatColor.DARK_PURPLE + "✦ Ваша свідомість отримала новий імператив..."));
-        ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
+        ctx.messaging().sendMessageToActionBar(targetId, LegacyComponentSerializer.legacySection().deserialize(
                 ChatColor.GRAY + "Щось притягує вас до певної точці..."));
 
         // Стан активності
         final boolean[] isActive = {true};
 
         // Заборона сідати в транспорт
-        ctx.subscribeToEvent(
+        ctx.events().subscribeToTemporaryEvent(targetId,
                 VehicleEnterEvent.class,
-                e -> e.getEntered().getUniqueId().equals(target.getUniqueId()) && isActive[0],
+                e -> e.getEntered().getUniqueId().equals(targetId) && isActive[0],
                 e -> {
                     e.setCancelled(true);
-                    ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
+                    ctx.messaging().sendMessageToActionBar(targetId, LegacyComponentSerializer.legacySection().deserialize(
                             ChatColor.ITALIC + "Імператив змушує вас йти пішки..."));
                 },
                 DURATION_TICKS
         );
 
         // Запускаємо цикл навігації
-        startNavigationLoop(ctx, target, destination, isActive);
+        startNavigationLoop(ctx, targetId, destination, isActive);
     }
 
     /**
      * Цикл навігації - ФІЗИЧНО притягує гравця до точки
      */
-    private void startNavigationLoop(IAbilityContext ctx, Player target, Location destination, boolean[] isActive) {
+    private void startNavigationLoop(IAbilityContext ctx, UUID targetId, Location destination, boolean[] isActive) {
         final int CHECK_INTERVAL = 5;
         final double COMPLETION_RADIUS = 2.0;
         final double PULL_STRENGTH = 0.3;
@@ -256,31 +254,31 @@ public class PsychicCue extends ActiveAbility {
                 if (ticksPassed >= DURATION_TICKS) {
                     if (isActive[0]) {
                         isActive[0] = false;
-                        ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
+                        ctx.messaging().sendMessageToActionBar(targetId, LegacyComponentSerializer.legacySection().deserialize(
                                 ChatColor.YELLOW + "✓ Імператив згас..."));
-                        ctx.playSound(target.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 0.8f);
-                        ctx.removeEffect(target.getUniqueId(), PotionEffectType.SLOWNESS);
+                        ctx.effects().playSoundForPlayer(targetId, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 0.8f);
+                        ctx.entity().removePotionEffect(targetId, PotionEffectType.SLOWNESS);
                     }
                     return;
                 }
 
-                if (!target.isOnline()) {
+                if (!ctx.playerData().isOnline(targetId)) {
                     isActive[0] = false;
                     return;
                 }
 
                 drawTargetMarker(ctx, destination);
-                Location currentLoc = target.getLocation();
+                Location currentLoc = ctx.playerData().getCurrentLocation(targetId);
                 double distance = currentLoc.distance(destination);
 
                 if (distance <= COMPLETION_RADIUS) {
                     if (isActive[0]) {
                         isActive[0] = false;
-                        ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
+                        ctx.messaging().sendMessageToActionBar(targetId, LegacyComponentSerializer.legacySection().deserialize(
                                 ChatColor.GREEN + "✓ Ви досягли пункту призначення"));
-                        ctx.spawnParticle(Particle.TOTEM_OF_UNDYING, currentLoc, 20, 0.5, 1, 0.5);
-                        ctx.playSound(currentLoc, Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.2f);
-                        ctx.removeEffect(target.getUniqueId(), PotionEffectType.SLOWNESS);
+                        ctx.effects().spawnParticle(Particle.TOTEM_OF_UNDYING, currentLoc, 20, 0.5, 1, 0.5);
+                        ctx.effects().playSoundForPlayer(targetId, Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.2f);
+                        ctx.entity().removePotionEffect(targetId, PotionEffectType.SLOWNESS);
                     }
                     return;
                 }
@@ -301,25 +299,25 @@ public class PsychicCue extends ActiveAbility {
                     }
 
                     Vector pullVelocity = direction.multiply(adaptivePullStrength);
-                    Vector currentVelocity = target.getVelocity();
+                    Vector currentVelocity = ctx.playerData().getVelocity(targetId);
                     pullVelocity.setY(currentVelocity.getY());
 
-                    target.setVelocity(pullVelocity);
+                    ctx.entity().setVelocity(targetId, pullVelocity);
 
-                    ctx.spawnParticle(Particle.WITCH, currentLoc.clone().add(0, 1, 0), 2, 0.2, 0.2, 0.2);
-                    ctx.spawnParticle(Particle.END_ROD,
+                    ctx.effects().spawnParticle(Particle.WITCH, currentLoc.clone().add(0, 1, 0), 2, 0.2, 0.2, 0.2);
+                    ctx.effects().spawnParticle(Particle.END_ROD,
                             currentLoc.clone().add(direction.multiply(1.5)).add(0, 1, 0),
                             1, 0.1, 0.1, 0.1);
                 }
 
                 if (ticksPassed % 80 == 0 && !lastSlownessApplied[0]) {
-                    ctx.applyEffect(target.getUniqueId(), PotionEffectType.SLOWNESS, 100, 0);
+                    ctx.entity().applyPotionEffect(targetId, PotionEffectType.SLOWNESS, 100, 0);
                     lastSlownessApplied[0] = true;
                 } else if (ticksPassed % 80 != 0) {
                     lastSlownessApplied[0] = false;
                 }
 
-                int currentBracket = (int)(distance / 10);
+                int currentBracket = (int) (distance / 10);
 
                 if (ticksPassed % 40 == 0 && currentBracket != lastDistanceBracket[0]) {
                     lastDistanceBracket[0] = currentBracket;
@@ -327,12 +325,12 @@ public class PsychicCue extends ActiveAbility {
                     Vector direction = destination.toVector().subtract(currentLoc.toVector()).normalize();
                     Location particleLoc = currentLoc.clone().add(direction.multiply(2)).add(0, 1.5, 0);
 
-                    ctx.spawnParticle(Particle.SOUL_FIRE_FLAME, particleLoc, 8, 0.2, 0.2, 0.2);
-                    ctx.playSound(currentLoc, Sound.BLOCK_NOTE_BLOCK_BELL, 0.4f, 1.5f);
-                    ctx.playSound(currentLoc, Sound.ENTITY_VEX_AMBIENT, 0.2f, 0.8f);
+                    ctx.effects().spawnParticle(Particle.SOUL_FIRE_FLAME, particleLoc, 8, 0.2, 0.2, 0.2);
+                    ctx.effects().playSound(currentLoc, Sound.BLOCK_NOTE_BLOCK_BELL, 0.4f, 1.5f);
+                    ctx.effects().playSound(currentLoc, Sound.ENTITY_VEX_AMBIENT, 0.2f, 0.8f);
 
                     String arrow = getDirectionArrow(currentLoc, destination);
-                    ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
+                    ctx.messaging().sendMessageToActionBar(targetId, LegacyComponentSerializer.legacySection().deserialize(
                             ChatColor.DARK_PURPLE + arrow + " " + ChatColor.GRAY +
                                     "Імператив тягне вас... (" + (int) distance + "м)"));
                 }
@@ -375,92 +373,85 @@ public class PsychicCue extends ActiveAbility {
     /**
      * Застосувати базовий сигнал (для всіх послідовностей)
      */
-    private void applyCue(IAbilityContext ctx, Player target, PsychicCueType type) {
+    private void applyCue(IAbilityContext ctx, UUID targetId, PsychicCueType type) {
         Beyonder casterBeyonder = ctx.getCasterBeyonder();
 
         // КРИТИЧНО: Споживаємо ресурси ТІЛЬКИ ЗАРАЗ, коли сигнал застосовується
         if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
-            ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
-                    ChatColor.RED + "Недостатньо духовності!"));
+            ctx.messaging().sendMessageToActionBar(ctx.getCasterId(), Component.text("Недостатньо духовності!").color(NamedTextColor.RED));
             return;
         }
-        ctx.publishAbilityUsedEvent(this);
+        ctx.events().publishAbilityUsedEvent(this, casterBeyonder);
 
         switch (type) {
-            case HUNGER -> ctx.subscribeToEvent(
+            case HUNGER -> ctx.events().subscribeToTemporaryEvent(targetId,
                     PlayerItemConsumeEvent.class,
-                    e -> e.getPlayer().equals(target),
+                    e -> e.getPlayer().getUniqueId().equals(targetId),
                     e -> {
                         e.setCancelled(true);
-                        ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
-                                ChatColor.ITALIC + "Їжа викликає огиду..."));
+                        ctx.messaging().sendMessageToActionBar(targetId, Component.text("Їжа викликає огиду..."));
                     },
                     DURATION_TICKS
             );
 
             case SLOTH -> {
-                target.setSprinting(false);
-                ctx.subscribeToEvent(
+                ctx.entity().setSprinting(targetId, false);
+                ctx.events().subscribeToTemporaryEvent(targetId,
                         PlayerMoveEvent.class,
-                        e -> e.getPlayer().equals(target) && e.getPlayer().isSprinting(),
-                        e -> e.getPlayer().setSprinting(false),
+                        e -> e.getPlayer().getUniqueId().equals(targetId) && e.getPlayer().isSprinting(),
+                        e -> ctx.entity().setSprinting(targetId, false),
                         DURATION_TICKS
                 );
-                ctx.subscribeToEvent(
+                ctx.events().subscribeToTemporaryEvent(targetId,
                         PlayerToggleSprintEvent.class,
-                        e -> e.getPlayer().equals(target) && e.isSprinting(),
+                        e -> e.getPlayer().getUniqueId().equals(targetId) && e.isSprinting(),
                         e -> {
                             e.setCancelled(true);
-                            ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
-                                    ChatColor.ITALIC + "Ноги занадто важкі..."));
+                            ctx.messaging().sendMessageToActionBar(targetId, Component.text("Ноги занадто важкі..."));
                         },
                         DURATION_TICKS
                 );
             }
 
-            case PACIFISM -> ctx.subscribeToEvent(
+            case PACIFISM -> ctx.events().subscribeToTemporaryEvent(targetId,
                     EntityDamageByEntityEvent.class,
-                    e -> e.getDamager().equals(target),
+                    e -> e.getDamager().getUniqueId().equals(targetId),
                     e -> {
                         e.setCancelled(true);
-                        ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
-                                ChatColor.ITALIC + "Агресія покинула вас..."));
+                        ctx.messaging().sendMessageToActionBar(targetId, Component.text("Агресія покинула вас..."));
                     },
                     DURATION_TICKS
             );
 
-            case SILENCE -> ctx.subscribeToEvent(
+            case SILENCE -> ctx.events().subscribeToTemporaryEvent(targetId,
                     AsyncPlayerChatEvent.class,
-                    e -> e.getPlayer().equals(target),
+                    e -> e.getPlayer().getUniqueId().equals(targetId),
                     e -> {
                         e.setCancelled(true);
-                        ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
-                                ChatColor.ITALIC + "Слова застрягають..."));
+                        ctx.messaging().sendMessageToActionBar(targetId, Component.text("Слова застрягають..."));
                     },
                     DURATION_TICKS
             );
 
-            case APATHY -> ctx.subscribeToEvent(
+            case APATHY -> ctx.events().subscribeToTemporaryEvent(targetId,
                     PlayerInteractEvent.class,
-                    e -> e.getPlayer().equals(target) &&
+                    e -> e.getPlayer().getUniqueId().equals(targetId) &&
                             e.hasBlock() &&
                             e.getAction().name().contains("RIGHT"),
                     e -> {
                         e.setCancelled(true);
-                        ctx.sendMessageToActionBar(target, LegacyComponentSerializer.legacySection().deserialize(
-                                ChatColor.ITALIC + "Байдуже до всього..."));
+                        ctx.messaging().sendMessageToActionBar(targetId, Component.text("Байдуже до всього..."));
                     },
                     DURATION_TICKS
             );
         }
 
-        showSuccessEffects(ctx, target, type);
+        showSuccessEffects(ctx, type);
     }
 
-    private void showSuccessEffects(IAbilityContext ctx, Player target, PsychicCueType type) {
-        ctx.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
-                ChatColor.DARK_PURPLE + "Навіяно: " + type.getDisplayName()));
-        ctx.playSoundToCaster(Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1f, 1.6f);
+    private void showSuccessEffects(IAbilityContext ctx, PsychicCueType type) {
+        ctx.messaging().sendMessageToActionBar(ctx.getCasterId(), Component.text("Навіяно: " + type.getDisplayName()).color(NamedTextColor.DARK_PURPLE));
+        ctx.effects().playSoundForPlayer(ctx.getCasterId(), Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1f, 1.6f);
     }
 
     private ItemStack createMenuItem(PsychicCueType type) {

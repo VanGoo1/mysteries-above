@@ -159,6 +159,14 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                         services.getLootGenerationService(),
                         services.getLootTableConfigLoader().getGlobalLootTable()
                 );
+
+        ArchaeologyLootListener archaeologyLootListener =
+                new ArchaeologyLootListener(
+                        this,
+                        services.getLootGenerationService(),
+                        services.getLootTableConfigLoader().getGlobalLootTable()
+                );
+
         getServer().getPluginManager().registerEvents(abilityMenuListener, this);
         getServer().getPluginManager().registerEvents(beyonderPlayerListener, this);
         getServer().getPluginManager().registerEvents(pathwayPotionListener, this);
@@ -169,6 +177,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(potionCraftingListener, this);
         getServer().getPluginManager().registerEvents(masterRecipeBookListener, this);
         getServer().getPluginManager().registerEvents(vanillaStructureLootListener, this);
+        getServer().getPluginManager().registerEvents(archaeologyLootListener, this);
     }
 
     private void registerCommands() {

@@ -9,6 +9,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.util.Vector;
 
 import java.util.*;
 
@@ -300,9 +301,46 @@ public class DataContext implements IDataContext {
         return new ArrayList<>(player.getActivePotionEffects());
     }
 
+    @Override
+    public String getName(UUID targetId) {
+        Player player = Bukkit.getPlayer(targetId);
+        if (player == null) return "";
+        return player.getName();
+    }
+
+    @Override
+    public boolean isSneaking(UUID targetId) {
+        Player player = Bukkit.getPlayer(targetId);
+        if (player == null) return false;
+        return player.isSneaking();
+    }
+
+    @Override
+    public Location getEyeLocation(UUID playerId) {
+        Player player = Bukkit.getPlayer(playerId);
+
+        if (player == null) {
+            return null;
+        }
+        return player.getEyeLocation();
+    }
+
+    @Override
+    public boolean isInsideVehicle(UUID targetId) {
+        Player player = Bukkit.getPlayer(targetId);
+        return player != null && player.getVehicle() != null;
+    }
+
+    @Override
+    public Vector getVelocity(UUID targetId) {
+        Player player = Bukkit.getPlayer(targetId);
+        return player != null ? player.getVelocity() : null;
+    }
 
     private String formatMaterialName(Material material) {
         String name = material.name().toLowerCase().replace("_", " ");
         return name.substring(0, 1).toUpperCase() + name.substring(1);
     }
+
+
 }

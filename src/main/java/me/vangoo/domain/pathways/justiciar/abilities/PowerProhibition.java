@@ -187,7 +187,7 @@ public class PowerProhibition extends ActiveAbility {
     }
 
     private void subscribeTeleportBlocking(IAbilityContext context, ProhibitionZone zone) {
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 PlayerTeleportEvent.class,
                 event -> activeZones.contains(zone) && zone.isBanned(event.getPlayer().getUniqueId()) && zone.isInside(event.getPlayer().getLocation()),
                 event -> {
@@ -201,14 +201,14 @@ public class PowerProhibition extends ActiveAbility {
                     player.playSound(player.getLocation(), Sound.BLOCK_CHEST_LOCKED, 1.0f, 1.0f);
 
                     notifyCasterOfViolation(context, zone, player, "спробував телепортуватися");
-                    context.spawnParticle(Particle.SMOKE, player.getLocation().add(0, 1, 0), 10, 0.3, 0.3, 0.3);
+                    context.effects().spawnParticle(Particle.SMOKE, player.getLocation().add(0, 1, 0), 10, 0.3, 0.3, 0.3);
                 },
                 DURATION_TICKS + 20
         );
     }
 
     private void subscribeKillBlocking(IAbilityContext context, ProhibitionZone zone) {
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 EntityDamageByEntityEvent.class,
                 event -> {
                     // 1. Базові перевірки
@@ -275,7 +275,7 @@ public class PowerProhibition extends ActiveAbility {
     }
 
     private void subscribeEntryBlocking(IAbilityContext context, ProhibitionZone zone) {
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 PlayerMoveEvent.class,
                 event -> {
                     // 1. Перевірка активності зони
@@ -356,7 +356,7 @@ public class PowerProhibition extends ActiveAbility {
     }
 
     private void subscribeWeaponUseBlocking(IAbilityContext context, ProhibitionZone zone) {
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 EntityDamageByEntityEvent.class,
                 event -> {
                     if (!activeZones.contains(zone)) return false;
@@ -384,7 +384,7 @@ public class PowerProhibition extends ActiveAbility {
     }
 
     private void subscribeEnvironmentLock(IAbilityContext context, ProhibitionZone zone) {
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 ExplosionPrimeEvent.class,
                 ev -> activeZones.contains(zone) && zone.isInside(ev.getEntity().getLocation()),
                 ev -> {
@@ -394,14 +394,14 @@ public class PowerProhibition extends ActiveAbility {
                 DURATION_TICKS + 20
         );
 
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 CreatureSpawnEvent.class,
                 ev -> activeZones.contains(zone) && zone.isInside(ev.getLocation()),
                 ev -> ev.setCancelled(true),
                 DURATION_TICKS + 20
         );
 
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 BlockBreakEvent.class,
                 ev -> activeZones.contains(zone) && zone.isInside(ev.getBlock().getLocation()),
                 ev -> {
@@ -417,7 +417,7 @@ public class PowerProhibition extends ActiveAbility {
                 DURATION_TICKS + 20
         );
 
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 BlockPlaceEvent.class,
                 ev -> activeZones.contains(zone) && zone.isInside(ev.getBlock().getLocation()),
                 ev -> {
@@ -433,7 +433,7 @@ public class PowerProhibition extends ActiveAbility {
                 DURATION_TICKS + 20
         );
 
-        context.subscribeToEvent(
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 WeatherChangeEvent.class,
                 ev -> {
                     if (!activeZones.contains(zone)) return false;
