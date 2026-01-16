@@ -36,8 +36,7 @@ public class SpiritualIntuition extends ToggleablePassiveAbility {
     @Override
     public String getDescription(Sequence userSequence) {
         return String.format(
-                "Відчуваєте, коли інші beyonders беруть АКТИВНІ здібності в руки в радіусі %d блоків. " +
-                        "Показує назву здібності в actionbar.",
+                "Відчуваєте, коли інші потойбічні беруть АКТИВНІ здібності в руки в радіусі %d блоків. ",
                 DETECTION_RANGE
         );
     }

@@ -80,7 +80,7 @@ public class VanillaStructureLootListener implements Listener {
         structures.put("shipwreck", 0.10);
         structures.put("mineshaft", 0.10);
         structures.put("simple_dungeon", 0.10);
-        structures.put("ruined_portal", 0.15);
+        structures.put("ruined_portal", 0.20);
         structures.put("mysteries", 0.15);
         structures.put("nova_structures", 0.15);
         structures.put("trial_chambers/supply", 0.10);

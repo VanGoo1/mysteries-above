@@ -114,27 +114,44 @@ public class Authority extends ActiveAbility {
         return AbilityResult.success();
     }
 
+
     /**
      * Перевіряє, чи є сутність мирною/нейтральною
      */
     private boolean isFriendlyEntity(LivingEntity entity) {
-        // Жителі та торговці
+        // 1. ПЕРЕВІРКА НА NAMETAG (Бірка)
+        // Якщо у моба є ім'я, не чіпаємо його
+        if (entity.getCustomName() != null) {
+            return true;
+        }
+
+        // 2. Жителі та торговці
         if (entity instanceof Villager || entity instanceof WanderingTrader) {
             return true;
         }
-        // Захисники поселень
-        if (entity instanceof IronGolem || entity instanceof Snowman) {
+
+        // 3. Захисники
+        if (entity instanceof IronGolem || entity instanceof Snowman || entity instanceof CopperGolem) {
             return true;
         }
-        // Приручені тварини (вовки, коти, папуги), якщо у них є власник
+
+        // 4. Коні та їздові тварини (ВАЖЛИВО: Ця перевірка має бути ПЕРЕД Tameable)
+        // Включає: Horse, SkeletonHorse, ZombieHorse, Donkey, Mule, Llama, Camel
+        // Ми ставимо це тут, щоб навіть дикі коні вважалися мирними.
+        if (entity instanceof AbstractHorse) {
+            return true;
+        }
+
+        // 5. Приручені тварини (Вовки, Коти, Папуги)
+        // Якщо тварина приручена - вона мирна.
+        // Якщо дика (наприклад, дикий вовк) - поверне false і отримає урон.
         if (entity instanceof Tameable) {
             return ((Tameable) entity).isTamed();
         }
-        // Мирні тварини (корови, свині, курки тощо)
-        // Увага: Вовки теж Animals, але ми їх перевірили вище через Tameable.
-        // Дикий вовк не Tamed, тому він не пройде верхню перевірку, але пройде цю.
-        // Якщо хочете бити диких вовків - треба ускладнити логіку.
-        // Поточна логіка: Animals = мирні. (Дикі вовки вважатимуться мирними)
+
+        // 6. Мирні тварини (Корови, Свині, Курки, Черепахи тощо)
+        // Увага: Вовки теж Animals, але вони перехоплюються вище в Tameable.
+        // Тому сюди дійдуть тільки ті Animals, які не Tameable (тобто справді мирна худоба).
         if (entity instanceof Animals) {
             return true;
         }

@@ -308,6 +308,7 @@ public class Record extends ActiveAbility {
 
         return simpleClassName.equalsIgnoreCase("Analysis") ||
                 name.equalsIgnoreCase("Аналіз");
+
     }
 
     private int findAbilitySequence(Beyonder beyonder, Ability ability) {

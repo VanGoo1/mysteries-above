@@ -24,13 +24,22 @@ public class Agility extends PermanentPassiveAbility {
 
     @Override
     public String getDescription(Sequence userSequence) {
+        int speedLvl = getSpeedAmplifier(userSequence) + 1; // +1 для відображення (0 -> I)
+        String roman = switch (speedLvl) {
+            case 1 -> "I";
+            case 2 -> "II";
+            case 3 -> "III";
+            default -> String.valueOf(speedLvl);
+        };
+
         return "Ваше тіло стає легким та швидким.\n" +
-                "Дає постійну Швидкість I та дозволяє падати з висоти до 20 блоків без шкоди.";
+                "Дає постійну Швидкість " + roman + " та дозволяє падати з висоти до 20 блоків без шкоди.";
     }
 
     @Override
     public void onActivate(IAbilityContext context) {
-        applySpeed(context.getCaster());
+        // Отримуємо послідовність при активації
+        applySpeed(context.getCaster(), context.getCasterBeyonder().getSequence());
     }
 
     @Override
@@ -46,9 +55,9 @@ public class Agility extends PermanentPassiveAbility {
         Player player = context.getCaster();
         if (player == null || !player.isOnline()) return;
 
-        // 1. Підтримка Швидкості
+        // 1. Підтримка Швидкості (зі скейлінгом)
         if (player.getTicksLived() % REFRESH_PERIOD_TICKS == 0) {
-            applySpeed(player);
+            applySpeed(player, context.getCasterBeyonder().getSequence());
         }
 
         // 2. Обробка падіння
@@ -57,8 +66,28 @@ public class Agility extends PermanentPassiveAbility {
         }
     }
 
-    private void applySpeed(Player player) {
-        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, EFFECT_DURATION_TICKS, 0, false, false));
+    private void applySpeed(Player player, Sequence sequence) {
+        int amplifier = getSpeedAmplifier(sequence);
+        // addPotionEffect автоматично оновлює ефект, якщо новий сильніший або такий самий
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, EFFECT_DURATION_TICKS, amplifier, false, false));
+    }
+
+    /**
+     * Розраховує рівень ефекту (amplifier) на основі послідовності.
+     * Amplifier 0 = Speed I
+     * Amplifier 1 = Speed II
+     * Amplifier 2 = Speed III
+     */
+    private int getSpeedAmplifier(Sequence sequence) {
+        int level = sequence.level();
+
+        if (level <= 1) { // 1 та 0 послідовність
+            return 2; // Швидкість III
+        } else if (level <= 4) { // 4, 3, 2 послідовність
+            return 1; // Швидкість II
+        } else { // 7 - 5 послідовність
+            return 0; // Швидкість I
+        }
     }
 
     private void registerFallProtection(IAbilityContext context, Player player) {
@@ -72,13 +101,10 @@ public class Agility extends PermanentPassiveAbility {
                     if (newDamage == 0 && originalDamage > 0) {
                         event.setCancelled(true);
 
-                        // --- ВИПРАВЛЕННЯ ТУТ ---
-                        // Беремо локацію і піднімаємо її на 0.2 блоку вгору.
-                        // Це витягне частинки з текстури землі.
+                        // Локація трохи вище землі для кращого візуалу
                         Location landLocation = player.getLocation().add(0, 0.2, 0);
 
-                        // 1. Хвиля (Wave)
-                        // CLOUD - це досить велика частинка, вона добре виглядає над землею
+
                         context.playWaveEffect(
                                 landLocation,
                                 2.5,
@@ -86,19 +112,16 @@ public class Agility extends PermanentPassiveAbility {
                                 10
                         );
 
-                        // 2. Вихор (Vortex)
-                        // Також використовуємо підняту локацію, щоб низ вихора не був у землі
-                        context.playVortexEffect(
+
+                        context.playSphereEffect(
                                 landLocation,
-                                1.5,
-                                1.0,
+                                1.2,
                                 Particle.WHITE_ASH,
                                 15
                         );
 
-                        // Звуки залишаємо на original location (або на новій, різниці для звуку немає)
-                        context.playSound(landLocation, Sound.ENTITY_PHANTOM_FLAP, 1.0f, 1.5f);
-                        context.playSound(landLocation, Sound.BLOCK_WOOL_STEP, 1.5f, 1.0f);
+                        context.playSound(landLocation, Sound.ENTITY_PHANTOM_FLAP, 1.0f, 1.6f);
+                        context.playSound(landLocation, Sound.BLOCK_WOOL_STEP, 1.4f, 1.0f);
 
                     } else {
                         event.setDamage(newDamage);
