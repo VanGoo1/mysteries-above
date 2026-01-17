@@ -1,7 +1,10 @@
 package me.vangoo.presentation.listeners;
 
+import me.vangoo.application.services.BeyonderService;
+import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.infrastructure.structures.LootGenerationService;
 import me.vangoo.domain.valueobjects.LootTableData;
+import me.vangoo.infrastructure.ui.NBTBuilder;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -20,6 +23,7 @@ public class VanillaStructureLootListener implements Listener {
     private final Logger logger;
     private final LootGenerationService lootService;
     private final LootTableData globalLootTable;
+    private final BeyonderService beyonderService;
     private final Random random = new Random();
 
     // Ванільні структури до яких додається лут
@@ -28,10 +32,12 @@ public class VanillaStructureLootListener implements Listener {
     public VanillaStructureLootListener(
             Plugin plugin,
             LootGenerationService lootService,
-            LootTableData globalLootTable) {
+            LootTableData globalLootTable,
+            BeyonderService beyonderService) {
         this.logger = plugin.getLogger();
         this.lootService = lootService;
         this.globalLootTable = globalLootTable;
+        this.beyonderService = beyonderService;
         this.enabledStructures = loadEnabledVanillaStructures();
 
         logger.info("VanillaStructureLootListener initialized for " + enabledStructures.size() + " structure types");
@@ -98,23 +104,25 @@ public class VanillaStructureLootListener implements Listener {
             return;
         }
 
+        Beyonder beyonder = null;
+        if (event.getEntity() != null) {
+            beyonder = beyonderService.getBeyonder(event.getEntity().getUniqueId());
+        }
+
         List<ItemStack> currentLoot = event.getLoot();
 
-        // Визначаємо кількість предметів для додавання (20% шанс на 2 предмети)
+        // Шанс на 2 предмети
         int itemsToAdd = (Math.random() <= 0.20) ? 2 : 1;
 
         logger.fine("Adding " + itemsToAdd + " custom items to " + lootTableKey);
 
-        // Генеруємо лут через LootGenerationService
         List<ItemStack> generatedLoot = lootService.generateLoot(
                 globalLootTable,
                 itemsToAdd,
-                false // не дозволяємо дублікати
+                false,
+                beyonder
         );
 
-        // Додаємо згенеровані предмети до луту події
         currentLoot.addAll(generatedLoot);
-
-        logger.fine("Successfully added " + generatedLoot.size() + " items to vanilla structure");
     }
 }

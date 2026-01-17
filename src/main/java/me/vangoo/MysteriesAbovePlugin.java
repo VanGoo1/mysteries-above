@@ -157,14 +157,16 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 new VanillaStructureLootListener(
                         this,
                         services.getLootGenerationService(),
-                        services.getLootTableConfigLoader().getGlobalLootTable()
+                        services.getLootTableConfigLoader().getGlobalLootTable(),
+                        services.getBeyonderService()
                 );
 
         ArchaeologyLootListener archaeologyLootListener =
                 new ArchaeologyLootListener(
                         this,
                         services.getLootGenerationService(),
-                        services.getLootTableConfigLoader().getGlobalLootTable()
+                        services.getLootTableConfigLoader().getGlobalLootTable(),
+                        services.getBeyonderService()
                 );
 
         getServer().getPluginManager().registerEvents(abilityMenuListener, this);

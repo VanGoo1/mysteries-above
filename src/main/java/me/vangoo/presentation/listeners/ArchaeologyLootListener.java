@@ -1,5 +1,7 @@
 package me.vangoo.presentation.listeners;
 
+import me.vangoo.application.services.BeyonderService;
+import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.infrastructure.structures.LootGenerationService;
 import me.vangoo.domain.valueobjects.LootTableData;
 import org.bukkit.Material;
@@ -28,6 +30,7 @@ public class ArchaeologyLootListener implements Listener {
     private final Logger logger;
     private final LootGenerationService lootService;
     private final LootTableData globalLootTable;
+    private final BeyonderService beyonderService;
     private final Random random = new Random();
 
     // Шанси заміни для різних археологічних структур
@@ -36,10 +39,12 @@ public class ArchaeologyLootListener implements Listener {
     public ArchaeologyLootListener(
             Plugin plugin,
             LootGenerationService lootService,
-            LootTableData globalLootTable) {
+            LootTableData globalLootTable,
+            BeyonderService beyonderService) {
         this.logger = plugin.getLogger();
         this.lootService = lootService;
         this.globalLootTable = globalLootTable;
+        this.beyonderService = beyonderService;
         this.structureReplaceChances = loadStructureReplaceChances();
 
         logger.info("ArchaeologyLootListener initialized - modifies item BEFORE brushing starts");
@@ -105,9 +110,10 @@ public class ArchaeologyLootListener implements Listener {
         if (roll > replaceChance) {
             return; // Залишаємо ванільний лут
         }
+        Beyonder beyonder = beyonderService.getBeyonder(player.getUniqueId());
 
         // ЗАМІНЮЄМО предмет у блоці ДО початку brushing
-        replaceBlockItem(brushableBlock, lootTableKey);
+        replaceBlockItem(brushableBlock, lootTableKey, beyonder);
     }
 
     /**
@@ -145,7 +151,7 @@ public class ArchaeologyLootListener implements Listener {
      * ЗМІНЮЄ предмет всередині BrushableBlock на кастомний
      * Це робиться ДО brushing, тому гравець побачить правильний предмет!
      */
-    private void replaceBlockItem(BrushableBlock brushableBlock, String lootTableKey) {
+    private void replaceBlockItem(BrushableBlock brushableBlock, String lootTableKey, Beyonder beyonder) {
         if (globalLootTable == null || globalLootTable.items().isEmpty()) {
             logger.warning("ArchaeologyLootListener: globalLootTable is null or empty!");
             return;
@@ -155,7 +161,8 @@ public class ArchaeologyLootListener implements Listener {
         List<ItemStack> generatedLoot = lootService.generateLoot(
                 globalLootTable,
                 1,
-                false
+                false,
+                beyonder
         );
 
         if (generatedLoot.isEmpty()) {
