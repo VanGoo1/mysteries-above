@@ -76,6 +76,10 @@ public class EventContext implements IEventContext {
     }
 
     @Override
+    public void unsubscribeAll(UUID subscriptionId) {
+        temporaryEventManager.unsubscribeAll(subscriptionId);
+    }
+    @Override
     public <T extends Event> void subscribeToTemporaryEvent(UUID playerId,Class<T> eventClass, Predicate<T> filter, Consumer<T> handler, int durationTicks) {
         temporaryEventManager.subscribe(playerId, eventClass, filter, handler, durationTicks);
     }

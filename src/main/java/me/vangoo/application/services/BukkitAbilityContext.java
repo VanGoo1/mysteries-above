@@ -59,6 +59,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     private final PassiveAbilityManager passiveAbilityManager;
     private final DomainEventPublisher eventPublisher;
     private final RecipeUnlockService recipeUnlockService;
+    private final PotionManager potionManager;
 
     private IVisualEffectsContext visualEffectsContext;
     private ISchedulingContext schedulingContext;
@@ -80,7 +81,7 @@ public class BukkitAbilityContext implements IAbilityContext {
             BeyonderService beyonderService,
             AbilityLockManager lockManager, GlowingEntities glowingEntities, EffectManager effectManager,
             RampageManager rampageManager, TemporaryEventManager temporaryEventManager, PassiveAbilityManager passiveAbilityManager, DomainEventPublisher eventPublisher,
-            RecipeUnlockService recipeUnlockService) {
+            RecipeUnlockService recipeUnlockService, PotionManager potionManager) {
         this.caster = caster;
         this.world = caster.getWorld();
         this.plugin = plugin;
@@ -95,6 +96,7 @@ public class BukkitAbilityContext implements IAbilityContext {
         this.passiveAbilityManager = passiveAbilityManager;
         this.eventPublisher = eventPublisher;
         this.recipeUnlockService = recipeUnlockService;
+        this.potionManager = potionManager;
     }
 
     // ==========================================
@@ -153,7 +155,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     @Override
     public IBeyonderContext beyonder() {
         if (beyonderContext == null) {
-            beyonderContext = new BeyonderContext(beyonderService, passiveAbilityManager, recipeUnlockService);
+            beyonderContext = new BeyonderContext(beyonderService, passiveAbilityManager, recipeUnlockService, potionManager);
         }
         return beyonderContext;
     }

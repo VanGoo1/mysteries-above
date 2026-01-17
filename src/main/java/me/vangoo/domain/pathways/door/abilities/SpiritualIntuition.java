@@ -5,11 +5,8 @@ import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.abilities.core.ToggleablePassiveAbility;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.Sequence;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerItemHeldEvent;
@@ -25,7 +22,7 @@ public class SpiritualIntuition extends ToggleablePassiveAbility {
     // Відслідковування останніх виявлень для уникнення спаму
     // casterId -> (attackerId -> AbilityDetectionData)
     private final Map<UUID, Map<UUID, AbilityDetectionData>> recentDetections = new ConcurrentHashMap<>();
-
+    private final Map<UUID, UUID> activeSubscriptions = new ConcurrentHashMap<>();
     private static final long DETECTION_COOLDOWN_MS = 5000; // 5 секунд між повідомленнями про ту саму здібність від того самого гравця
 
     @Override
@@ -46,86 +43,66 @@ public class SpiritualIntuition extends ToggleablePassiveAbility {
         UUID casterId = context.getCasterId();
         recentDetections.put(casterId, new ConcurrentHashMap<>());
 
-        context.sendMessageToCaster(ChatColor.DARK_PURPLE + "✦ Духовна інтуїція активована");
-        context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 0.6f, 1.8f);
+        context.effects().playSoundForPlayer(casterId, Sound.BLOCK_BEACON_ACTIVATE, 0.6f, 1.8f);
 
-        // Підписуємось на зміну предмета в руці
-        subscribeToItemHeldChanges(context);
+        // 1. Генеруємо унікальний ID для цієї "сесії" підписки
+        UUID subscriptionKey = UUID.randomUUID();
+        activeSubscriptions.put(casterId, subscriptionKey);
+
+        // 2. Підписуємось, передаючи subscriptionKey замість ID гравця
+        // Це "обманює" менеджер, створюючи окрему групу подій саме для цієї активації
+        context.events().subscribeToTemporaryEvent(
+                subscriptionKey, // <-- ВАЖЛИВО: не casterId
+                PlayerItemHeldEvent.class,
+                event -> shouldProcessEvent(context, event),
+                event -> handleItemHeldChange(context, event),
+                Integer.MAX_VALUE // Працює "вічно", поки не скасуємо
+        );
     }
-
     @Override
     public void onDisable(IAbilityContext context) {
         UUID casterId = context.getCasterId();
-        recentDetections.remove(casterId);
 
-        context.sendMessageToCaster(ChatColor.YELLOW + "✦ Духовна інтуїція вимкнена");
-        context.playSoundToCaster(Sound.BLOCK_BEACON_DEACTIVATE, 0.6f, 1.0f);
+        // 1. Отримуємо ключ підписки
+        UUID subscriptionKey = activeSubscriptions.remove(casterId);
+
+        if (subscriptionKey != null) {
+
+            context.events().unsubscribeAll(subscriptionKey);
+        }
+
+        recentDetections.remove(casterId);
+        context.effects().playSoundForPlayer(casterId, Sound.BLOCK_BEACON_DEACTIVATE, 0.6f, 1.0f);
     }
 
     @Override
     public void tick(IAbilityContext context) {
-        // Очищуємо старі записи раз на секунду (кожні 20 тіків)
-        Player caster = context.getCasterPlayer();
-        if (caster == null || caster.getTicksLived() % 20 != 0) {
-            return;
+        if (context.getCasterPlayer() != null && context.getCasterPlayer().getTicksLived() % 20 == 0) {
+            cleanupOldDetections(context.getCasterId());
         }
-
-        cleanupOldDetections(context.getCasterId());
     }
-
-    /**
-     * Підписуємось на події зміни предмета в руці
-     */
-    private void subscribeToItemHeldChanges(IAbilityContext context) {
+    private boolean shouldProcessEvent(IAbilityContext context, PlayerItemHeldEvent event) {
+        Player eventPlayer = event.getPlayer();
         UUID casterId = context.getCasterId();
 
-        // Підписуємось на PlayerItemHeldEvent - коли гравець перемикає слоти хотбару
-        context.events().subscribeToTemporaryEvent(casterId,
-                PlayerItemHeldEvent.class,
-                event -> {
-                    Player eventPlayer = event.getPlayer();
+        if (eventPlayer.getUniqueId().equals(casterId)) return false;
+        if (!context.beyonder().isBeyonder(eventPlayer.getUniqueId())) return false;
 
-                    // Ігноруємо власні дії
-                    if (eventPlayer.getUniqueId().equals(casterId)) {
-                        return false;
-                    }
+        Player caster = context.getCasterPlayer();
+        if (caster == null || !caster.isOnline()) return false;
 
-                    // Перевіряємо, чи є eventPlayer beyonder'ом
-                    if (!context.isBeyonder(eventPlayer.getUniqueId())) {
-                        return false;
-                    }
+        if (caster.getLocation().getWorld() != eventPlayer.getLocation().getWorld()) return false;
 
-                    // Перевіряємо відстань
-                    Player caster = context.getCasterPlayer();
-                    if (caster == null || !caster.isOnline()) {
-                        return false;
-                    }
-
-                    Location casterLoc = caster.getLocation();
-                    Location eventLoc = eventPlayer.getLocation();
-
-                    if (!casterLoc.getWorld().equals(eventLoc.getWorld())) {
-                        return false;
-                    }
-
-                    double distance = casterLoc.distance(eventLoc);
-                    return distance <= DETECTION_RANGE;
-                },
-                event -> handleItemHeldChange(context, event),
-                Integer.MAX_VALUE // Працює постійно, поки здібність увімкнена
-        );
+        return caster.getLocation().distance(eventPlayer.getLocation()) <= DETECTION_RANGE;
     }
 
-    /**
-     * Обробка зміни предмета в руці
-     */
     private void handleItemHeldChange(IAbilityContext context, PlayerItemHeldEvent event) {
         Player attacker = event.getPlayer();
         UUID attackerId = attacker.getUniqueId();
         UUID casterId = context.getCasterId();
 
         // Отримуємо beyonder атакуючого
-        Beyonder attackerBeyonder = context.getBeyonderFromEntity(attackerId);
+        Beyonder attackerBeyonder = context.beyonder().getBeyonder(attackerId);
         if (attackerBeyonder == null) {
             return;
         }
@@ -229,37 +206,45 @@ public class SpiritualIntuition extends ToggleablePassiveAbility {
      * Показуємо попередження в actionbar
      */
     private void showIntuitionWarning(IAbilityContext context, Player attacker, String abilityName) {
-        Player caster = context.getCasterPlayer();
-        if (caster == null || !caster.isOnline()) {
+        UUID casterId = context.getCasterId();
+        if (casterId == null || !context.playerData().isOnline(casterId)) {
             return;
         }
 
+        UUID caster = context.getCasterId();
+        if (caster == null) return;
+
         // Розраховуємо відстань для інтенсивності попередження
-        double distance = caster.getLocation().distance(attacker.getLocation());
-        ChatColor color = getWarningColor(distance);
+        double distance = context.playerData().getCurrentLocation(casterId).distance(attacker.getLocation());
+        ChatColor chatColor = getWarningColor(distance);
 
         // Формуємо повідомлення
-        String message = color + "⚠ " + ChatColor.WHITE + attacker.getName() +
-                color + " готує " + ChatColor.YELLOW + abilityName;
+        String message = chatColor + "⚠ " + ChatColor.WHITE + attacker.getName() +
+                chatColor + " готує " + ChatColor.YELLOW + abilityName;
 
         // Показуємо в actionbar
-        caster.spigot().sendMessage(
-                ChatMessageType.ACTION_BAR,
-                new TextComponent(message)
-        );
+        context.messaging().sendMessageToActionBar(casterId, Component.text(message));
 
         // Звуковий ефект (тихіший для далеких)
-        float volume = (float) (1.0 - (distance / DETECTION_RANGE)) * 0.5f;
-        context.playSoundToCaster(Sound.BLOCK_NOTE_BLOCK_BELL, volume, 1.8f);
+        float volume = (float) (1.0 - (distance / DETECTION_RANGE));
+        if (volume < 0.1f) volume = 0.1f;
+
+        context.effects().playSoundForPlayer(casterId, Sound.BLOCK_NOTE_BLOCK_BELL, volume, 1.8f);
 
         // Партикли навколо кастера (тільки якщо близько)
-        if (distance <= 10) {
-            context.spawnParticle(
-                    Particle.SOUL_FIRE_FLAME,
-                    caster.getLocation().add(0, 2, 0),
-                    3,
-                    0.3, 0.1, 0.3
-            );
+        if (distance <= 15) { // Збільшив трохи радіус візуалізації
+            // Конвертуємо ChatColor в Bukkit Color для партиклів
+            org.bukkit.Color particleColor;
+            if (chatColor == ChatColor.RED) {
+                particleColor = org.bukkit.Color.RED;
+            } else if (chatColor == ChatColor.GOLD) {
+                particleColor = org.bukkit.Color.ORANGE;
+            } else {
+                particleColor = org.bukkit.Color.YELLOW;
+            }
+
+            // Викликаємо новий метод
+            context.effects().playAlertHalo(context.playerData().getCurrentLocation(casterId), particleColor);
         }
     }
 

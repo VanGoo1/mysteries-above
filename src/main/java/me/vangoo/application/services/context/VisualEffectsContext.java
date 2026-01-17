@@ -268,4 +268,41 @@ public class VisualEffectsContext implements IVisualEffectsContext {
             }
         }.runTaskTimer(plugin, 0L, 1L);
     }
+    @Override
+    public void playAlertHalo(Location location, Color color) {
+        if (location == null || location.getWorld() == null) return;
+
+        // Налаштування "чорнил" для частинок
+        Particle.DustOptions dustOptions = new Particle.DustOptions(color, 1.0f);
+
+        // Центр над головою
+        Location center = location.clone().add(0, 2.2, 0);
+        double radius = 0.4; // Компактний радіус
+
+        // Малюємо коло
+        for (int i = 0; i < 16; i++) {
+            double angle = 2 * Math.PI * i / 16;
+            double x = Math.cos(angle) * radius;
+            double z = Math.sin(angle) * radius;
+
+            // Основне кільце
+            location.getWorld().spawnParticle(
+                    Particle.DUST,
+                    center.clone().add(x, 0, z),
+                    1, // Кількість 1
+                    0, 0, 0, // Offset 0 (щоб не розлітались)
+                    0, // Speed 0 (щоб стояли на місці)
+                    dustOptions
+            );
+
+            // Друге кільце трохи вище і ширше (ефект пульсації)
+            if (i % 2 == 0) { // Менша щільність
+                location.getWorld().spawnParticle(
+                        Particle.DUST,
+                        center.clone().add(x * 1.2, 0.2, z * 1.2),
+                        1, 0, 0, 0, 0, dustOptions
+                );
+            }
+        }
+    }
 }

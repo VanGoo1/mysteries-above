@@ -51,6 +51,8 @@ public interface IEventContext {
             int durationTicks
     );
 
+    void unsubscribeAll(UUID subscriptionId);
+
     /**
      * Temporarily listens to native Minecraft (Bukkit) events.
      * <p>
@@ -70,4 +72,6 @@ public interface IEventContext {
     List<AbilityDomainEvent> getAbilityEventHistory(UUID casterId, int maxAgeSeconds);
 
     List<RecordedEvent> getPastEvents(Location location, int radius, int timeSeconds);
+
+
 }

@@ -21,7 +21,7 @@ public class AbilityContextFactory {
     private final PassiveAbilityManager passiveAbilityManager;
     private final DomainEventPublisher eventPublisher;
     private final RecipeUnlockService recipeUnlockService;
-
+    private final PotionManager potionManager;
 
 
     public AbilityContextFactory(
@@ -32,7 +32,11 @@ public class AbilityContextFactory {
             GlowingEntities glowingEntities,
             EffectManager effectManager,
             RampageManager rampageManager,
-            TemporaryEventManager temporaryEventManager, PassiveAbilityManager passiveAbilityManager, DomainEventPublisher eventPublisher, RecipeUnlockService recipeUnlockService
+            TemporaryEventManager temporaryEventManager,
+            PassiveAbilityManager passiveAbilityManager,
+            DomainEventPublisher eventPublisher,
+            RecipeUnlockService recipeUnlockService,
+            PotionManager potionManager
     ) {
         this.plugin = Objects.requireNonNull(plugin, "Plugin cannot be null");
         this.cooldownManager = Objects.requireNonNull(cooldownManager, "CooldownManager cannot be null");
@@ -45,6 +49,7 @@ public class AbilityContextFactory {
         this.passiveAbilityManager = passiveAbilityManager;
         this.eventPublisher = eventPublisher;
         this.recipeUnlockService = recipeUnlockService;
+        this.potionManager = potionManager;
     }
 
 
@@ -61,7 +66,8 @@ public class AbilityContextFactory {
                 temporaryEventManager,
                 passiveAbilityManager,
                 eventPublisher,
-                recipeUnlockService
+                recipeUnlockService,
+                potionManager
         );
     }
 }
