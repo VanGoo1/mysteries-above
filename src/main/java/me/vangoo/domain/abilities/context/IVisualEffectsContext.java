@@ -1,5 +1,6 @@
 package me.vangoo.domain.abilities.context;
 
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -130,4 +131,6 @@ public interface IVisualEffectsContext {
      * @param particle Particle type
      */
     void playExplosionRingEffect(Location center, double radius, Particle particle, Particle.DustOptions options);
+
+    void playAlertHalo(Location location, Color color);
 }

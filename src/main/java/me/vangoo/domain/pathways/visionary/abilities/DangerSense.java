@@ -1,4 +1,5 @@
 package me.vangoo.domain.pathways.visionary.abilities;
+
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.abilities.core.ToggleablePassiveAbility;
 import me.vangoo.domain.valueobjects.Sequence;
@@ -60,8 +61,7 @@ public class DangerSense extends ToggleablePassiveAbility {
     public void onDisable(IAbilityContext context) {
         UUID casterId = context.getCasterId();
         observationProgress.remove(casterId);
-        // Кулдауни зазвичай краще залишати до рестарту або очищувати окремо,
-        // щоб не аб'юзити вимкненням/увімкненням.
+        // Кулдауни залишаємо, щоб уникнути абузу перезаходом
         context.effects().playSoundForPlayer(context.getCasterId(), Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 0.5f);
     }
 
@@ -76,7 +76,7 @@ public class DangerSense extends ToggleablePassiveAbility {
         List<Player> nearbyPlayers = context.targeting().getNearbyPlayers(RANGE);
         long currentTime = System.currentTimeMillis();
 
-        // 1. Очищуємо прогрес для тих, хто відійшов задалеко
+        // 1. Очищуємо прогрес для тих, хто відійшов задалеко або офлайн
         Set<UUID> nearbyIds = nearbyPlayers.stream().map(Player::getUniqueId).collect(Collectors.toSet());
         myTargets.keySet().removeIf(id -> !nearbyIds.contains(id));
 
@@ -112,7 +112,20 @@ public class DangerSense extends ToggleablePassiveAbility {
     private void revealDanger(IAbilityContext context, Player target) {
         List<String> foundItems = new ArrayList<>();
 
-        for (ItemStack item : context.playerData().getInventoryContents(target.getUniqueId())) {
+        // --- БЕЗПЕЧНИЙ БЛОК ОТРИМАННЯ ІНВЕНТАРЮ ---
+        List<ItemStack> inventoryContents;
+        try {
+            inventoryContents = context.playerData().getInventoryContents(target.getUniqueId());
+        } catch (Exception e) {
+
+            return;
+        }
+
+        if (inventoryContents == null) return;
+        // ------------------------------------------
+
+        for (ItemStack item : inventoryContents) {
+            // Перевірка item != null критично важлива, оскільки в інвентарі можуть бути порожні слоти
             if (item != null && DANGEROUS_ITEMS.contains(item.getType())) {
                 String itemName = item.getType().toString().replace("_", " ").toLowerCase();
                 if (!foundItems.contains(itemName)) {

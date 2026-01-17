@@ -1,7 +1,9 @@
 package me.vangoo.domain.pathways.door.abilities;
 
+import me.vangoo.domain.PathwayPotions;
 import me.vangoo.domain.abilities.core.AbilityResourceConsumer;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
+import me.vangoo.domain.valueobjects.RecordedEvent;
 import me.vangoo.domain.valueobjects.SequenceBasedSuccessChance;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
@@ -50,53 +52,145 @@ public class DivinationArts extends ActiveAbility {
                         ? "Так — діаманти знайдено поблизу (в радіусі 50 блоків)"
                         : "Ні — діамантів не виявлено в околиці"
         ));
+
         pendulumQuestions.add(new PendulumQuestion(
-                "Чи є поблизу портал Незер?",
-                ctx -> findNearbyBlock(ctx, Material.NETHER_PORTAL, 50) != null
-                        ? "Так — портал виявлено неподалік"
-                        : "Ні — порталу Незер не знайдено"
-        ));
-        pendulumQuestions.add(new PendulumQuestion(
-                "Чи є поблизу вороги?",
+                "Чи належить цей інгредієнт до мого шляху?",
                 ctx -> {
-                    List<LivingEntity> ents = ctx.getNearbyEntities(20);
-                    for (LivingEntity e : ents) {
-                        if (e instanceof Monster) {
-                            return "Так — ворожі істоти поблизу, будьте обережні!";
+                    Beyonder beyonder = ctx.getCasterBeyonder();
+                    ItemStack handItem = ctx.playerData().getMainHandItem(ctx.getCasterId());
+
+                    if (handItem.getType() == Material.AIR) {
+                        return "Ні — ви нічого не тримаєте в руці";
+                    }
+
+                    // Використовуємо метод з контексту для перевірки інгредієнта
+                    for (int seq = 9; seq >= 0; seq--) {
+                        var ingredients = ctx.beyonder().getIngredientsForPotion(beyonder.getPathway(), Sequence.of(seq));
+                        if (ingredients != null) {
+                            for (ItemStack ingredient : ingredients) {
+                                if (ingredient != null && ingredient.isSimilar(handItem)) {
+                                    String seqName = beyonder.getPathway().getSequenceName(seq);
+                                    return "Так — цей інгредієнт резонує з " + beyonder.getPathway().getName() +
+                                            " (Послідовність " + seq + ": " + seqName + ")";
+                                }
+                            }
                         }
                     }
-                    return "Ні — немає явних загроз у радіусі 20 блоків";
+                    return "Ні — цей предмет не належить до шляху " + beyonder.getPathway().getName();
                 }
         ));
+
         pendulumQuestions.add(new PendulumQuestion(
-                "Чи є поблизу інші гравці?",
-                ctx -> !ctx.getNearbyPlayers(30).isEmpty()
-                        ? "Так — поблизу є інші гравці"
-                        : "Ні — ви на самоті"
+                "Чи є поблизу інші Beyonder'и?",
+                ctx -> {
+                    List<Player> nearbyPlayers = ctx.getNearbyPlayers(30);
+                    int beyonderCount = 0;
+
+                    for (Player p : nearbyPlayers) {
+                        if (ctx.isBeyonder(p.getUniqueId())) {
+                            beyonderCount++;
+                        }
+                    }
+
+                    if (beyonderCount == 0) {
+                        return "Ні — навколо лише звичайні люди";
+                    } else if (beyonderCount == 1) {
+                        return "Так — відчувається присутність одного Beyonder'а";
+                    } else {
+                        return "Так — поблизу " + beyonderCount + " Beyonder'ів, будьте обережні";
+                    }
+                }
         ));
+
         pendulumQuestions.add(new PendulumQuestion(
-                "Чи варто копати вниз?",
+                "Чи є тут сліди недавніх подій?",
                 ctx -> {
                     Location loc = ctx.getCasterLocation();
-                    int y = loc.getBlockY();
-                    if (y < 0) return "Ні — ви вже надто глибоко";
-                    if (y < 20) return "Так — ви на діамантовому рівні, шукайте ресурси";
-                    if (y < 60) return "Можливо — є шанс знайти корисні руди";
-                    return "Ні — спершу спустіться нижче";
+                    List<RecordedEvent> events = ctx.getPastEvents(loc, 10, 300); // 5 хвилин
+
+                    if (events.isEmpty()) {
+                        return "Ні — це місце спокійне, нічого не відбувалося";
+                    }
+
+                    long recentEvents = events.stream()
+                            .filter(e -> System.currentTimeMillis() - e.getTimestamp() < 60000) // Остання хвилина
+                            .count();
+
+                    if (recentEvents > 0) {
+                        return "Так — духовні сліди свіжі, щось відбулося зовсім недавно";
+                    } else {
+                        return "Так — відчуваються відлуння минулих подій";
+                    }
                 }
         ));
+
         pendulumQuestions.add(new PendulumQuestion(
-                "Чи безпечно тут будувати базу?",
+                "Чи має цей гравець високу послідовність?",
                 ctx -> {
-                    List<LivingEntity> ents = ctx.getNearbyEntities(30);
-                    long monsters = ents.stream().filter(e -> e instanceof Monster).count();
-                    if (monsters > 5) return "Ні — занадто багато ворогів";
-                    if (monsters > 0) return "Обережно — є вороги, спочатку очистіть територію";
-                    return "Так — місце виглядає безпечно";
+                    Optional<Player> targetOpt = ctx.getTargetedPlayer(30);
+
+                    if (targetOpt.isEmpty()) {
+                        return "Ні — ви не дивитесь ні на кого";
+                    }
+
+                    Player target = targetOpt.get();
+                    Beyonder caster = ctx.getCasterBeyonder();
+
+                    if (!ctx.isBeyonder(target.getUniqueId())) {
+                        return "Ні — це звичайна людина без духовної сили";
+                    }
+
+                    Optional<Integer> targetSeqOpt = ctx.getEntitySequenceLevel(target.getUniqueId());
+                    if (targetSeqOpt.isEmpty()) {
+                        return "Невідомо — не вдається прочитати їхню ауру";
+                    }
+
+                    int targetSeq = targetSeqOpt.get();
+                    int casterSeq = caster.getSequenceLevel();
+
+                    if (targetSeq < casterSeq) {
+                        return "Так — їхня духовна аура значно сильніша за вашу, будьте обережні!";
+                    } else if (targetSeq == casterSeq) {
+                        return "Можливо — вони на вашому рівні, рівний супротивник";
+                    } else {
+                        return "Ні — їхня сила слабша за вашу";
+                    }
+                }
+        ));
+
+        pendulumQuestions.add(new PendulumQuestion(
+                "Чи готовий я до просування послідовності?",
+                ctx -> {
+                    Beyonder beyonder = ctx.getCasterBeyonder();
+
+                    if (!beyonder.canAdvance()) {
+                        double mastery = beyonder.getMastery().value();
+                        if (mastery < 50.0) {
+                            return "Ні — ваше засвоєння занадто низьке (" + String.format("%.1f%%", mastery) + "), потрібно більше практики";
+                        } else if (mastery < 80.0) {
+                            return "Майже — засвоєння " + String.format("%.1f%%", mastery) + ", ще трохи практики";
+                        } else {
+                            return "Майже — засвоєння високе (" + String.format("%.1f%%", mastery) + "), але досі недостатнє";
+                        }
+                    }
+
+                    int currentSeq = beyonder.getSequenceLevel();
+                    if (currentSeq == 0) {
+                        return "Так — ви досягли вершини, але це кінець вашого шляху";
+                    }
+
+                    int spirituality = beyonder.getSpiritualityValue();
+                    int maxSpirituality = beyonder.getMaxSpirituality();
+                    double spiritualityPercent = (spirituality * 100.0) / maxSpirituality;
+
+                    if (spiritualityPercent < 80.0) {
+                        return "Так, але — ваша духовність занадто низька (" + String.format("%.0f%%", spiritualityPercent) + "), відновіться перед ритуалом";
+                    }
+
+                    return "Так — ви готові до ритуалу просування, знайдіть відповідне зілля";
                 }
         ));
     }
-
     private void initDiviningRodTargets() {
         // Послідовність 9: Базові ресурси
         diviningRodTargets.add(new DivinationTarget("Залізо", 9, Material.IRON_INGOT, Material.IRON_ORE, Material.DEEPSLATE_IRON_ORE));

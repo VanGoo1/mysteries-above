@@ -161,7 +161,8 @@ public class ServiceContainer {
                 temporaryEventManager,
                 passiveAbilityManager,
                 eventPublisher,
-                recipeUnlockService
+                recipeUnlockService,
+                potionManager
         );
 
         this.abilityExecutor = new AbilityExecutor(
