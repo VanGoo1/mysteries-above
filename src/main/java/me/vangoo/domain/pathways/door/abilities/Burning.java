@@ -11,7 +11,7 @@ public class Burning extends ActiveAbility {
 
     private static final double RANGE = 5.0;
     private static final int COST = 20;
-    private static final int COOLDOWN = 2;
+    private static final int COOLDOWN = 3;
     @Override
     public String getName() {
         return "Підпал";

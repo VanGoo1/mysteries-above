@@ -566,14 +566,6 @@ public class BukkitAbilityContext implements IAbilityContext {
         return beyonderService.getBeyonder(entityId) != null;
     }
 
-    @Override
-    public Optional<Integer> getEntitySequenceLevel(UUID entityId) {
-        Beyonder beyonder = beyonderService.getBeyonder(entityId);
-        if (beyonder == null) {
-            return Optional.empty();
-        }
-        return Optional.of(beyonder.getSequenceLevel());
-    }
 
     // ==========================================
     // INVENTORY

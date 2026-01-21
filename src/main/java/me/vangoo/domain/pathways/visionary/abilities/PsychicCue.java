@@ -24,6 +24,7 @@ public class PsychicCue extends ActiveAbility {
     private static final int BASE_RANGE = 3;
     private static final int BASE_NAVIGATION_RANGE = 50;
     private static final int DURATION_TICKS = 60 * 20;
+    private static final int DURATION_SECONDS = 15;
     private static final int BASE_COOLDOWN = 60;
     private static final int COST = 150;
 
@@ -356,7 +357,7 @@ public class PsychicCue extends ActiveAbility {
             ctx.spawnParticle(Particle.WITCH, point, 1, 0, 0, 0);
         }
 
-        ctx.spawnParticle(Particle.DRAGON_BREATH, floorLoc.clone().add(0, 0.2, 0), 1, 0.1, 0.1, 0.1);
+        ctx.effects().playAlertHalo(floorLoc.clone().add(0, 0.8, 0), Color.RED);
     }
 
     private String getDirectionArrow(Location from, Location to) {
@@ -375,6 +376,7 @@ public class PsychicCue extends ActiveAbility {
      */
     private void applyCue(IAbilityContext ctx, UUID targetId, PsychicCueType type) {
         Beyonder casterBeyonder = ctx.getCasterBeyonder();
+        UUID casterId = ctx.getCasterId();
 
         // КРИТИЧНО: Споживаємо ресурси ТІЛЬКИ ЗАРАЗ, коли сигнал застосовується
         if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
@@ -395,14 +397,15 @@ public class PsychicCue extends ActiveAbility {
             );
 
             case SLOTH -> {
+                // 1. Механічне скидання спринту
                 ctx.entity().setSprinting(targetId, false);
-                ctx.events().subscribeToTemporaryEvent(targetId,
-                        PlayerMoveEvent.class,
-                        e -> e.getPlayer().getUniqueId().equals(targetId) && e.getPlayer().isSprinting(),
-                        e -> ctx.entity().setSprinting(targetId, false),
-                        DURATION_TICKS
-                );
-                ctx.events().subscribeToTemporaryEvent(targetId,
+
+                // 2. Накладання ефекту сповільнення (рівень 5+ повністю блокує можливість спринту в клієнті)
+                // Це найнадійніший спосіб, який не залежить від пінгів
+                ctx.entity().applyPotionEffect(targetId, PotionEffectType.SLOWNESS, DURATION_TICKS, 4);
+
+                // 3. Блокування спроби почати біг (для вірності)
+                ctx.events().subscribeToTemporaryEvent(casterId,
                         PlayerToggleSprintEvent.class,
                         e -> e.getPlayer().getUniqueId().equals(targetId) && e.isSprinting(),
                         e -> {
@@ -423,15 +426,13 @@ public class PsychicCue extends ActiveAbility {
                     DURATION_TICKS
             );
 
-            case SILENCE -> ctx.events().subscribeToTemporaryEvent(targetId,
-                    AsyncPlayerChatEvent.class,
-                    e -> e.getPlayer().getUniqueId().equals(targetId),
-                    e -> {
-                        e.setCancelled(true);
-                        ctx.messaging().sendMessageToActionBar(targetId, Component.text("Слова застрягають..."));
-                    },
-                    DURATION_TICKS
-            );
+            case SILENCE -> {
+                Optional<LivingEntity> targetOpt = ctx.targeting().getTargetedEntity(BASE_RANGE);
+                LivingEntity target = targetOpt.get();
+                if (target instanceof Player) {
+                    ctx.cooldown().lockAbilities(targetId, DURATION_SECONDS);
+                }
+            }
 
             case APATHY -> ctx.events().subscribeToTemporaryEvent(targetId,
                     PlayerInteractEvent.class,
@@ -499,7 +500,7 @@ public class PsychicCue extends ActiveAbility {
         HUNGER("Голод", "Заборонити їсти", Material.BREAD, ChatColor.GOLD),
         SLOTH("Млявість", "Заборонити бігати", Material.LEATHER_BOOTS, ChatColor.GRAY),
         PACIFISM("Пацифізм", "Заборонити атакувати", Material.IRON_SWORD, ChatColor.AQUA),
-        SILENCE("Оніміння", "Заборонити чат", Material.PAPER, ChatColor.YELLOW),
+        SILENCE("Тиша", "Заблокувати здібності (15с)", Material.SCULK_SHRIEKER, ChatColor.DARK_AQUA),
         APATHY("Апатія", "Заборонити взаємодію", Material.BARRIER, ChatColor.DARK_GRAY);
 
         private final String name;

@@ -5,6 +5,7 @@ import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.ChatColor;
+import org.bukkit.Color;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
@@ -12,12 +13,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.Optional;
+import java.util.UUID;
 
-/**
- * Sequence 8 Interrogator: Brand of Restraint
- *
- * Накладає ілюзорне клеймо, яке паралізує тіло і блокує дух.
- */
 public class BrandOfRestraint extends ActiveAbility {
 
     private static final double RANGE = 15.0;
@@ -32,9 +29,9 @@ public class BrandOfRestraint extends ActiveAbility {
     @Override
     public String getDescription(Sequence userSequence) {
         return "Випалює ілюзорне клеймо на душі ворога.\n" +
-                "Ціль " + ChatColor.RED + "знерухомлюється" + ChatColor.RESET + ", " +
-                "її атаки " + ChatColor.GRAY + "сповільнюються" + ChatColor.RESET + ", " +
-                "а здібності " + ChatColor.DARK_PURPLE + "блокуються" + ChatColor.RESET + " на " + DURATION_SECONDS + " сек.";
+                "Ціль §cзнерухомлюється§r, " +
+                "її атаки §7сповільнюються§r, " +
+                "а здібності §5блокуються§r на " + DURATION_SECONDS + " сек.";
     }
 
     @Override
@@ -54,45 +51,123 @@ public class BrandOfRestraint extends ActiveAbility {
      */
     @Override
     protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
-        return context.getTargetedEntity(RANGE);
+        return context.targeting().getTargetedEntity(RANGE);
     }
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCasterPlayer();
+        UUID casterId = context.getCasterId();
 
         // 1. Шукаємо ціль (повторно, бо це етап виконання)
-        Optional<LivingEntity> targetOpt = context.getTargetedEntity(RANGE);
+        Optional<LivingEntity> targetOpt = context.targeting().getTargetedEntity(RANGE);
         if (targetOpt.isEmpty()) {
             return AbilityResult.failure("Ви повинні дивитися на ціль, щоб накласти клеймо.");
         }
+
         LivingEntity target = targetOpt.get();
+        UUID targetId = target.getUniqueId();
 
         // 2. ВІЗУАЛІЗАЦІЯ КЛЕЙМА
-        context.playCircleEffect(target.getEyeLocation().add(0, 0.5, 0), 0.8, Particle.FLAME, 20);
-        context.playHelixEffect(target.getLocation(), target.getEyeLocation().add(0, 1, 0), Particle.CRIT, 20);
-        context.playSound(target.getLocation(), Sound.BLOCK_ANVIL_LAND, 0.8f, 2.0f);
-        context.playSound(target.getLocation(), Sound.BLOCK_FIRE_EXTINGUISH, 1.0f, 1.0f);
+        showBrandingEffect(context, target);
 
         // 3. ЕФЕКТИ КОНТРОЛЮ
+        applyRestraintEffects(context, targetId);
 
-        // Фізичне обмеження (працює на всіх)
-        context.applyEffect(target.getUniqueId(), PotionEffectType.SLOWNESS, DURATION_TICKS, 5);
-        context.applyEffect(target.getUniqueId(), PotionEffectType.JUMP_BOOST, DURATION_TICKS, 200);
-        context.applyEffect(target.getUniqueId(), PotionEffectType.MINING_FATIGUE, DURATION_TICKS, 2);
-        context.applyEffect(target.getUniqueId(), PotionEffectType.WEAKNESS, DURATION_TICKS, 1);
+        // 4. ВІЗУАЛЬНА МІТКА
+        context.glowing().setGlowing(targetId, casterId, ChatColor.GOLD, DURATION_TICKS);
 
-        // Візуальна мітка (тепер працює і на мобах, і на гравцях)
-        context.setGlowing(target.getUniqueId(), ChatColor.GOLD, DURATION_TICKS);
-
-        // Логіка для гравців (блокування магії та чат)
+        // 5. ЛОГІКА ДЛЯ ГРАВЦІВ (блокування магії)
         if (target instanceof Player) {
-            context.lockAbilities(target.getUniqueId(), DURATION_SECONDS);
-            context.sendMessage(target.getUniqueId(), ChatColor.RED + "На вас накладено Клеймо Обмеження! Ви придушені.");
+            context.cooldown().lockAbilities(targetId, DURATION_SECONDS);
+            context.messaging().sendMessage(
+                    targetId,
+                    "§cНа вас накладено Клеймо Обмеження! Ви придушені."
+            );
         }
 
-        context.sendMessageToCaster(ChatColor.GOLD + "Ви обмежили рухи та волю " + target.getName());
+        // Отримуємо ім'я через Data Context
+        String targetName = context.playerData().getName(targetId);
+        context.messaging().sendMessage(
+                casterId,
+                "§6Ви обмежили рухи та волю " + targetName
+        );
 
         return AbilityResult.success();
+    }
+
+    /**
+     * Показує візуальний ефект накладання клейма
+     */
+    private void showBrandingEffect(IAbilityContext context, LivingEntity target) {
+        // Коло навколо голови
+        context.effects().playCircleEffect(
+                target.getEyeLocation().add(0, 0.5, 0),
+                0.8,
+                Particle.FLAME,
+                20
+        );
+
+        // Спіраль від ніг до голови
+        context.effects().playHelixEffect(
+                target.getLocation(),
+                target.getEyeLocation().add(0, 1, 0),
+                Particle.CRIT,
+                20
+        );
+
+        // Звуки
+        context.effects().playSound(
+                target.getLocation(),
+                Sound.BLOCK_ANVIL_LAND,
+                0.8f,
+                2.0f
+        );
+
+        context.effects().playSound(
+                target.getLocation(),
+                Sound.BLOCK_FIRE_EXTINGUISH,
+                1.0f,
+                1.0f
+        );
+
+        // Додатковий ефект "halo" над головою
+        context.effects().playAlertHalo(
+                target.getEyeLocation().add(0, 0.8, 0),
+                Color.ORANGE
+        );
+    }
+
+    /**
+     * Накладає ефекти обмеження на ціль
+     */
+    private void applyRestraintEffects(IAbilityContext context, UUID targetId) {
+        // Фізичне обмеження (працює на всіх)
+        context.entity().applyPotionEffect(
+                targetId,
+                PotionEffectType.SLOWNESS,
+                DURATION_TICKS,
+                5
+        );
+
+        context.entity().applyPotionEffect(
+                targetId,
+                PotionEffectType.JUMP_BOOST,
+                DURATION_TICKS,
+                200 // Від'ємний jump boost = неможливість стрибати
+        );
+
+        context.entity().applyPotionEffect(
+                targetId,
+                PotionEffectType.MINING_FATIGUE,
+                DURATION_TICKS,
+                2
+        );
+
+        context.entity().applyPotionEffect(
+                targetId,
+                PotionEffectType.WEAKNESS,
+                DURATION_TICKS,
+                1
+        );
     }
 }

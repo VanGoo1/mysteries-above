@@ -6,9 +6,7 @@ import me.vangoo.domain.valueobjects.Sequence;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Material;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.Container;
@@ -16,32 +14,32 @@ import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerItemDamageEvent;
-import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.event.enchantment.EnchantItemEvent;
+import org.bukkit.event.inventory.BrewEvent;
+import org.bukkit.event.player.PlayerExpChangeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class EnhancedMentalAttributes extends PermanentPassiveAbility {
 
-    private static final DecimalFormat DF = new DecimalFormat("#.#"); // Більш точний формат для Seq 6
+    private static final DecimalFormat DF = new DecimalFormat("#.#");
     private static final int XP_INTERVAL_TICKS = 600;
     private static final int ANALYSIS_INTERVAL_TICKS = 5;
     private static final int TRACE_INTERVAL_TICKS = 10;
     private static final int TREASURE_INTERVAL_TICKS = 40;
 
-    // Константи для Ерудита
-    private static final double POLYMATH_DURABILITY_SAVE_CHANCE = 0.35; // 35% шанс зберегти міцність
-    private final Random random = new Random();
+    // Polymath константи
+    private static final double POLYMATH_XP_MULTIPLIER = 1.5; // +50% досвіду
+    private static final double POLYMATH_ENCHANT_LUCK = 0.25; // 25% шанс покращити зачарування
+    private static final int POLYMATH_BREWING_BONUS = 1; // +1 пляшка при варінні
 
+    private final Random random = new Random();
     private int tickCounter = 0;
 
     @Override
@@ -51,16 +49,16 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
 
     @Override
     public String getDescription(Sequence userSequence) {
-        StringBuilder sb = new StringBuilder("Пасивно усуває дезорієнтацію, дає досвід і показує ХП цілі.\n");
+        StringBuilder sb = new StringBuilder("Пасивно усуває дезорієнтацію, дає пасивне накопичення досвіду і показує ХП цілі.\n");
 
         if (userSequence.level() <= 8) {
-            sb.append("Розкриває слабкості ворогів, ефекти зілля, підказує розташування скарбів та пасивно накопичує досвід.\n");
+            sb.append("Розкриває слабкості ворогів, ефекти зілля, підказує розташування скарбів\n");
         }
         if (userSequence.level() <= 7) {
-            sb.append("Сліди ворогів, аналіз спорядження, передчуття засідок.\n");
+            sb.append("Відчуття приховавих сутностей, аналіз спорядження, передчуття нападів.\n");
         }
         if (userSequence.level() <= 6) {
-            sb.append("Майстерне володіння інструментами (Квапливість), збереження міцності предметів, глибокий аналіз та прискорене навчання.");
+            sb.append("Збільшена кількість отримання досвіду, шанс покращення атрибуту зачарування, шанс отримати додаткове зілля при звичайому зіллєварінні.");
         }
         return sb.toString();
     }
@@ -68,323 +66,451 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
     @Override
     public void onActivate(IAbilityContext context) {
         super.onActivate(context);
-        registerPolymathEvents(context);
+        int seq = context.beyonder().getBeyonder(context.getCasterId()).getSequenceLevel();
+        if (seq <= 6) {
+            registerPolymathEvents(context);
+        }
     }
 
     @Override
     public void tick(IAbilityContext context) {
         tickCounter++;
-        Player player = context.getCasterPlayer();
-        if (player == null || !player.isOnline()) return;
+        UUID casterId = context.getCasterId();
+        if (!context.playerData().isOnline(casterId)) return;
 
-        int currentSeq = context.getEntitySequenceLevel(context.getCasterId()).orElse(9);
+        int currentSeq = context.beyonder().getBeyonder(casterId).getSequenceLevel();
         boolean isSeq8 = currentSeq <= 8;
         boolean isSeq7 = currentSeq <= 7;
-        boolean isSeq6 = currentSeq <= 6; // Ерудит / Полімат
+        boolean isSeq6 = currentSeq <= 6;
 
-        // --- 1. Mental Clarity & Polymath Efficiency ---
-        removeNegativeEffects(context, player, isSeq8);
-        if (isSeq6) {
-            applyPolymathEfficiency(player);
-        }
+        // --- 1. Mental Clarity ---
+        removeNegativeEffects(context, isSeq8, isSeq6);
 
         // --- 2. Passive Learning ---
         if (tickCounter % XP_INTERVAL_TICKS == 0) {
-            givePassiveXP(context, player, isSeq7, isSeq8, isSeq6);
+            givePassiveXP(context, isSeq7, isSeq8, isSeq6);
         }
 
         // --- 3. Analytical Sight & Danger Sense ---
         if (tickCounter % ANALYSIS_INTERVAL_TICKS == 0) {
-            if (player.isOnGround() || player.isFlying() || player.isGliding()) { // Ерудит аналізує навіть у польоті
-                boolean infoDisplayed = analyzeTarget(context, player, isSeq8, isSeq7, isSeq6);
-                if (!infoDisplayed && isSeq7) {
-                    checkDangerSense(context, player);
-                }
+            analyzeTarget(context, isSeq8, isSeq7, isSeq6);
+            if (isSeq7) {
+                checkDangerSense(context); // Тепер перевіряємо це частіше
             }
         }
 
-        // --- 4. Visual Reconstruction (Traces) ---
-        if (isSeq7 && tickCounter % TRACE_INTERVAL_TICKS == 0) {
-            visualizeTraces(context, player);
+        // --- 4. Reveal Invisible (ЗАМІНА: Сліди ворогів -> Бачення невидимого) ---
+        if (isSeq7 && tickCounter % 10 == 0) {
+            revealInvisibleTargets(context);
         }
 
         // --- 5. Treasure Sense ---
         if (isSeq8 && tickCounter % TREASURE_INTERVAL_TICKS == 0) {
-            detectNearestTreasure(context, player, isSeq6);
+            detectNearestTreasure(context, isSeq6);
         }
     }
 
-    // --- ЛОГІКА ПОЛІМАТА (SEQ 6) ---
+    // --- POLYMATH MECHANICS (SEQ 6) ---
 
+    /**
+     * Реєструє івенти для Полімата
+     */
     private void registerPolymathEvents(IAbilityContext context) {
-        // "Ерудит знає, як використовувати речі ефективно" -> Збереження міцності
-        context.events().subscribeToTemporaryEvent(context.getCasterId(),
-                PlayerItemDamageEvent.class,
-                event -> {
-                    int seq = context.beyonder().getBeyonder(event.getPlayer().getUniqueId()).getSequenceLevel();
-                    return seq <= 6;
-                },
-                event -> {
-                    if (random.nextDouble() < POLYMATH_DURABILITY_SAVE_CHANCE) {
-                        event.setCancelled(true);
-                        // Візуальний ефект "розумного використання" (іскра)
-                        if (random.nextDouble() < 0.1) {
-                            // Використовуємо event.getPlayer().getLocation(), бо це надійніше всередині події
-                            context.effects().spawnParticle(
-                                    Particle.WAX_OFF,
-                                    event.getPlayer().getLocation().add(0, 1, 0),
-                                    20,
-                                    0.3, 0.5, 0.3
-                            );
+        UUID casterId = context.getCasterId();
+
+        // 1. Бонус досвіду від всіх джерел
+        context.events().subscribeToTemporaryEvent(casterId,
+                PlayerExpChangeEvent.class,
+                e -> e.getPlayer().getUniqueId().equals(casterId),
+                e -> {
+                    int originalXP = e.getAmount();
+                    int bonusXP = (int) (originalXP * (POLYMATH_XP_MULTIPLIER - 1.0));
+
+                    if (bonusXP > 0) {
+                        e.setAmount(originalXP + bonusXP);
+
+                        // Візуальний ефект при великому бонусі
+                        if (bonusXP >= 5 && random.nextDouble() < 0.3) {
+                            Location loc = context.playerData().getCurrentLocation(casterId);
+                            if (loc != null) {
+                                context.effects().spawnParticle(
+                                        Particle.ENCHANT,
+                                        loc.add(0, 1.5, 0),
+                                        15,
+                                        0.3, 0.3, 0.3
+                                );
+                                context.effects().playSoundForPlayer(
+                                        casterId,
+                                        Sound.ENTITY_PLAYER_LEVELUP,
+                                        0.3f,
+                                        1.8f
+                                );
+                            }
                         }
                     }
                 },
-                Integer.MAX_VALUE // <--- ДОДАНО 4-й АРГУМЕНТ (Тривалість: назавжди)
+                Integer.MAX_VALUE
+        );
+
+        // 2. Покращення зачарувань
+        context.events().subscribeToTemporaryEvent(casterId,
+                EnchantItemEvent.class,
+                e -> e.getEnchanter().getUniqueId().equals(casterId),
+                e -> {
+                    if (random.nextDouble() < POLYMATH_ENCHANT_LUCK) {
+                        // Збільшуємо рівень одного випадкового зачарування
+                        Map<org.bukkit.enchantments.Enchantment, Integer> enchants = e.getEnchantsToAdd();
+                        if (!enchants.isEmpty()) {
+                            List<org.bukkit.enchantments.Enchantment> enchantList = new ArrayList<>(enchants.keySet());
+                            org.bukkit.enchantments.Enchantment toBoost = enchantList.get(random.nextInt(enchantList.size()));
+
+                            int currentLevel = enchants.get(toBoost);
+                            int maxLevel = toBoost.getMaxLevel();
+
+                            if (currentLevel < maxLevel) {
+                                enchants.put(toBoost, currentLevel + 1);
+
+                                // Ефекти
+                                context.effects().playSound(
+                                        e.getEnchantBlock().getLocation(),
+                                        Sound.BLOCK_ENCHANTMENT_TABLE_USE,
+                                        1.0f,
+                                        1.5f
+                                );
+                                context.effects().spawnParticle(
+                                        Particle.ENCHANT,
+                                        e.getEnchantBlock().getLocation().add(0.5, 1.5, 0.5),
+                                        30,
+                                        0.5, 0.5, 0.5
+                                );
+
+                                context.messaging().sendMessage(
+                                        casterId,
+                                        ChatColor.LIGHT_PURPLE + "✨ Ваші глибокі знання покращили зачарування!"
+                                );
+                            }
+                        }
+                    }
+                },
+                Integer.MAX_VALUE
+        );
+
+        // 3. Бонус при варінні зілля
+        context.events().subscribeToTemporaryEvent(casterId,
+                BrewEvent.class,
+                e -> {
+                    Location brewLoc = e.getBlock().getLocation();
+                    Location playerLoc = context.playerData().getCurrentLocation(casterId);
+                    // Перевірка дистанції (гравець має бути поруч)
+                    return playerLoc != null && brewLoc.distance(playerLoc) < 5.0;
+                },
+                e -> {
+                    // Шанс 35%
+                    if (random.nextDouble() > 0.35) return;
+
+                    context.scheduling().scheduleDelayed(() -> {
+                        var contents = e.getContents();
+                        ItemStack sourcePotion = null;
+                        int emptyStandSlot = -1;
+
+                        // 1. Шукаємо зразок зілля та вільне місце у стійці (тільки нижні слоти 0-2)
+                        for (int i = 0; i < 3; i++) {
+                            ItemStack item = contents.getItem(i);
+                            if (item != null && item.getType().name().contains("POTION")) {
+                                if (sourcePotion == null) sourcePotion = item;
+                            } else if (item == null || item.getType() == Material.AIR) {
+                                if (emptyStandSlot == -1) emptyStandSlot = i;
+                            }
+                        }
+
+                        // Якщо варити було нічого (дивна помилка), виходимо
+                        if (sourcePotion == null) return;
+
+                        ItemStack bonusPotion = sourcePotion.clone();
+                        // СЦЕНАРІЙ А: Є місце у варильній стійці
+                        if (emptyStandSlot != -1) {
+                            contents.setItem(emptyStandSlot, bonusPotion);
+
+                            context.messaging().sendMessage(casterId, ChatColor.AQUA + "⚗ Ваша майстерність створила дублікат у стійці!");
+                        }
+                        // СЦЕНАРІЙ Б: Стійка повна, даємо в інвентар гравця
+                        else if (context.playerData().isOnline(casterId)) {
+                            context.entity().giveItem(casterId, bonusPotion);
+                        }
+
+                        // Візуальні ефекти (спрацьовують у будь-якому випадку)
+                        context.effects().playSound(
+                                e.getBlock().getLocation(),
+                                Sound.BLOCK_BREWING_STAND_BREW,
+                                1.0f,
+                                1.3f
+                        );
+                        context.effects().spawnParticle(
+                                Particle.INSTANT_EFFECT,
+                                e.getBlock().getLocation().add(0.5, 1.0, 0.5),
+                                20,
+                                0.3, 0.3, 0.3
+                        );
+
+                    }, 2L);
+                },
+                Integer.MAX_VALUE
         );
     }
 
-    private void applyPolymathEfficiency(Player player) {
-        // Якщо гравець тримає інструмент -> даємо Haste (ефективність роботи)
-        ItemStack hand = player.getInventory().getItemInMainHand();
-        String type = hand.getType().name();
+    // --- BASE LOGIC ---
 
-        if (type.contains("PICKAXE") || type.contains("AXE") || type.contains("SHOVEL") || type.contains("HOE")) {
-            // Лише якщо немає сильнішого ефекту
-            if (!player.hasPotionEffect(PotionEffectType.HASTE)) {
-                player.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, 10, 0, false, false, true));
-            }
+    private void removeNegativeEffects(IAbilityContext context, boolean isSeq8, boolean isSeq6) {
+        UUID casterId = context.getCasterId();
+        context.entity().removePotionEffect(casterId, PotionEffectType.NAUSEA);
+        context.entity().removePotionEffect(casterId, PotionEffectType.BLINDNESS);
+        context.entity().removePotionEffect(casterId, PotionEffectType.DARKNESS);
+
+        if (isSeq6) {
+            context.entity().removePotionEffect(casterId, PotionEffectType.MINING_FATIGUE);
+        }
+
+        if (isSeq8) {
+            context.entity().removePotionEffect(casterId, PotionEffectType.HUNGER);
         }
     }
 
-    // --- БАЗОВА ЛОГІКА З ПОКРАЩЕННЯМИ ---
+    private void givePassiveXP(IAbilityContext context, boolean isSeq7, boolean isSeq8, boolean isSeq6) {
+        // Базовий XP (без Polymath множника, бо він додається через івент)
+        int xpAmount = isSeq6 ? 4 : (isSeq7 ? 3 : (isSeq8 ? 2 : 1));
 
-    private void removeNegativeEffects(IAbilityContext context, Player player, boolean isSeq8) {
-        if (player.hasPotionEffect(PotionEffectType.NAUSEA)) context.removeEffect(player.getUniqueId(), PotionEffectType.NAUSEA);
-        if (player.hasPotionEffect(PotionEffectType.BLINDNESS)) context.removeEffect(player.getUniqueId(), PotionEffectType.BLINDNESS);
-        if (player.hasPotionEffect(PotionEffectType.DARKNESS)) context.removeEffect(player.getUniqueId(), PotionEffectType.DARKNESS);
-
-        // Полімат також ігнорує сповільнення копання (втому) через ментальну стійкість
-        int seq = context.getEntitySequenceLevel(player.getUniqueId()).orElse(9);
-        if (seq <= 6 && player.hasPotionEffect(PotionEffectType.MINING_FATIGUE)) {
-            context.removeEffect(player.getUniqueId(), PotionEffectType.MINING_FATIGUE);
-        }
-
-        if (isSeq8 && player.hasPotionEffect(PotionEffectType.HUNGER)) {
-            context.removeEffect(player.getUniqueId(), PotionEffectType.HUNGER);
-        }
-    }
-
-    private void givePassiveXP(IAbilityContext context, Player player, boolean isSeq7, boolean isSeq8, boolean isSeq6) {
-        // Ерудит вчиться набагато швидше
-        int xpAmount = isSeq6 ? 8 : (isSeq7 ? 4 : (isSeq8 ? 3 : 2));
-        player.giveExp(xpAmount);
+        context.entity().giveExperience(context.getCasterId(), xpAmount);
 
         float pitch = isSeq6 ? 2.0f : (isSeq8 ? 1.8f : 1.5f);
-        // Менш нав'язливий звук для Ерудита
         if (!isSeq6 || tickCounter % (XP_INTERVAL_TICKS * 2) == 0) {
-            context.playSoundToCaster(Sound.ITEM_BOOK_PAGE_TURN, 0.5f, pitch);
+            context.effects().playSoundForPlayer(context.getCasterId(), Sound.ITEM_BOOK_PAGE_TURN, 0.5f, pitch);
         }
     }
 
-    private boolean analyzeTarget(IAbilityContext context, Player player, boolean isDeepAnalysis, boolean isDetectiveAnalysis, boolean isPolymathAnalysis) {
+    private boolean analyzeTarget(IAbilityContext context, boolean isDeepAnalysis, boolean isDetectiveAnalysis, boolean isPolymathAnalysis) {
         double range = isPolymathAnalysis ? 35.0 : (isDeepAnalysis ? 25.0 : 15.0);
-        RayTraceResult result = player.getWorld().rayTraceEntities(
-                player.getEyeLocation(),
-                player.getEyeLocation().getDirection(),
-                range,
-                isPolymathAnalysis ? 1.0 : 0.5, // Ерудит має ширший фокус
-                entity -> {
-                    if (!(entity instanceof LivingEntity) || entity.getUniqueId().equals(player.getUniqueId())) {
-                        return false;
-                    }
-                    if (entity instanceof ArmorStand) {
-                        ArmorStand as = (ArmorStand) entity;
-                        if (as.isMarker() || !as.isVisible()) {
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-        );
+        Optional<LivingEntity> targetOpt = context.targeting().getTargetedEntity(range);
 
-        if (result != null && result.getHitEntity() instanceof LivingEntity target) {
-            Component info = buildTargetInfo(context, target, isDeepAnalysis, isDetectiveAnalysis, isPolymathAnalysis);
-            context.sendMessageToActionBar(player, info);
+        if (targetOpt.isEmpty()) return false;
 
-            // Ерудит підсвічує ціль для себе
-            if (isPolymathAnalysis) {
-                context.spawnParticle(
-                        Particle.ENCHANT,
-                        context.getCasterLocation().add(0, 1, 0),
-                        20,
-                        0.3, 0.5, 0.3
-                );
-            }
-            return true;
+        LivingEntity target = targetOpt.get();
+        if (target instanceof ArmorStand stand && stand.isMarker()) return false;
+
+        Component info = buildTargetInfo(context, target, isDeepAnalysis, isDetectiveAnalysis, isPolymathAnalysis);
+        context.messaging().sendMessageToActionBar(context.getCasterId(), info);
+
+        if (isPolymathAnalysis && tickCounter % 40 == 0) {
+            context.effects().spawnParticle(Particle.ENCHANT, target.getEyeLocation().add(0, 0.5, 0), 5, 0.3, 0.3, 0.3);
         }
-        return false;
+        return true;
     }
+    private void revealInvisibleTargets(IAbilityContext context) {
+        double range = 20.0;
+        UUID casterId = context.getCasterId();
 
+        context.targeting().getNearbyEntities(range).forEach(entity -> {
+            // Не показувати себе
+            if (entity.getUniqueId().equals(casterId)) return;
+
+            if (entity instanceof LivingEntity living) {
+                // Якщо є ефект невидимості
+                if (living.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
+
+                    // Викликаємо наш НОВИЙ метод
+                    context.effects().spawnParticleForPlayer(
+                            casterId,                      // Хто бачить (тільки ви)
+                            Particle.WHITE_ASH,    // Тип (напівпрозорий дим)
+                            living.getLocation().add(0, 1.0, 0), // Центр (груди/голова)
+                            5,    // Кількість
+                            0.3,  // offsetX (ширина)
+                            0.5,  // offsetY (висота)
+                            0.3   // offsetZ (глибина) - ви забули його минулого разу
+                    );
+                }
+            }
+        });
+    }
     private Component buildTargetInfo(IAbilityContext context, LivingEntity target, boolean isDeepAnalysis, boolean isDetectiveAnalysis, boolean isPolymathAnalysis) {
+        // ВИПРАВЛЕНО: Беремо HP прямо з моба/гравця
         double health = target.getHealth();
-        double maxHealth = target.getAttribute(Attribute.MAX_HEALTH) != null ? target.getAttribute(Attribute.MAX_HEALTH).getValue() : 0;
-        double armor = target.getAttribute(Attribute.ARMOR) != null ? target.getAttribute(Attribute.ARMOR).getValue() : 0;
+        // Отримуємо макс. HP безпечно (деякі моби можуть не мати атрибуту, тому дефолт 20)
+        double maxHealth = target.getAttribute(Attribute.MAX_HEALTH) != null
+                ? target.getAttribute(Attribute.MAX_HEALTH).getValue()
+                : 20.0;
 
-        // Полімат бачить точні цифри, решта - округлені
         String hpStr = isPolymathAnalysis ? String.format("%.1f", health) : DF.format(health);
         String maxHpStr = isPolymathAnalysis ? String.format("%.1f", maxHealth) : DF.format(maxHealth);
 
+        // Визначаємо ім'я (Нік гравця або Назва моба)
+        Component nameComp = target instanceof Player ? Component.text(target.getName()) : Component.text(target.getType().name());
+
         Component info = Component.text()
-                .append(Component.text(target.getName(), NamedTextColor.GOLD))
+                .append(nameComp.color(NamedTextColor.GOLD))
                 .append(Component.text(" | ", NamedTextColor.DARK_GRAY))
                 .append(Component.text("❤ " + hpStr + "/" + maxHpStr,
                         health < maxHealth / 3 ? NamedTextColor.RED : NamedTextColor.GREEN)).build();
 
-        if (armor > 0) {
-            info = info.append(Component.text(" | 🛡 " + DF.format(armor), NamedTextColor.AQUA));
-        }
-
-        // Ерудит бачить резисти (захист від магії/вогню/снарядів - імітація через аналіз атрибутів або ефектів)
-        if (isPolymathAnalysis) {
-            double knockbackRes = target.getAttribute(Attribute.KNOCKBACK_RESISTANCE) != null ? target.getAttribute(Attribute.KNOCKBACK_RESISTANCE).getValue() : 0;
-            if (knockbackRes > 0) {
-                info = info.append(Component.text(" | ⚓", NamedTextColor.GRAY));
-            }
-        }
-
+        // Показ ефектів (Sequence 8+)
         if (isDeepAnalysis && !target.getActivePotionEffects().isEmpty()) {
             List<Component> effectsList = new ArrayList<>();
             for (PotionEffect effect : target.getActivePotionEffects()) {
                 String effectName = formatEffectName(effect.getType());
-                // Ерудит бачить рівень ефекту (II, III)
-                if (isPolymathAnalysis && effect.getAmplifier() > 0) {
-                    effectName += " " + (effect.getAmplifier() + 1);
-                }
-
+                if (isPolymathAnalysis && effect.getAmplifier() > 0) effectName += " " + (effect.getAmplifier() + 1);
                 NamedTextColor color = isPositiveEffect(effect.getType()) ? NamedTextColor.GREEN : NamedTextColor.RED;
                 effectsList.add(Component.text(effectName, color));
             }
-            // Ерудит бачить більше ефектів
-            int limit = isPolymathAnalysis ? 5 : 3;
-            if (effectsList.size() > limit) {
-                effectsList = effectsList.subList(0, limit);
+            if (effectsList.size() > (isPolymathAnalysis ? 5 : 3)) {
+                effectsList = effectsList.subList(0, isPolymathAnalysis ? 5 : 3);
                 effectsList.add(Component.text("...", NamedTextColor.GRAY));
             }
             info = info.append(Component.text(" | ", NamedTextColor.DARK_GRAY))
                     .append(Component.join(JoinConfiguration.separator(Component.text(", ")), effectsList));
         }
 
-        // Логіка спорядження (Детектив+)
+        // Аналіз спорядження (Sequence 7+) - показує зброю в руках
         if (isDetectiveAnalysis) {
-            EntityEquipment eq = target.getEquipment();
-            if (eq != null) {
-                ItemStack hand = eq.getItemInMainHand();
-                if (hand.getType() != Material.AIR) {
-                    String item = hand.getType().name().toLowerCase().replace("_", " ");
-                    // Скорочення назв
-                    if (item.contains("diamond")) item = "dia." + item.split(" ")[1];
-                    else if (item.contains("netherite")) item = "neth." + item.split(" ")[1];
-                    else if (item.contains("iron")) item = "iron." + item.split(" ")[1];
-                    else if (item.contains("golden")) item = "gold." + item.split(" ")[1];
+            ItemStack hand = target.getEquipment() != null ? target.getEquipment().getItemInMainHand() : null;
+            if (hand != null && hand.getType() != Material.AIR) {
+                String item = hand.getType().name().toLowerCase().replace("_", " ");
+                info = info.append(Component.text(" | 🗡 ", NamedTextColor.YELLOW)).append(Component.text(item, NamedTextColor.WHITE));
 
-                    info = info.append(Component.text(" | 🗡 ", NamedTextColor.YELLOW))
-                            .append(Component.text(item, NamedTextColor.WHITE));
-
-                    if (hand.getItemMeta() instanceof Damageable dmg) {
-                        int percent = (int)((1 - (double)dmg.getDamage() / hand.getType().getMaxDurability()) * 100);
-                        NamedTextColor durColor = percent < 30 ? NamedTextColor.RED : NamedTextColor.GREEN;
-                        info = info.append(Component.text("(" + percent + "%)", durColor));
-                    }
-
-                    // Ерудит бачить зачарування на зброї
-                    if (isPolymathAnalysis && hand.hasItemMeta() && hand.getItemMeta().hasEnchants()) {
-                        info = info.append(Component.text(" ✨", NamedTextColor.LIGHT_PURPLE));
-                    }
+                if (hand.getItemMeta() instanceof Damageable dmg && hand.getType().getMaxDurability() > 0) {
+                    int percent = (int)((1 - (double)dmg.getDamage() / hand.getType().getMaxDurability()) * 100);
+                    info = info.append(Component.text("(" + percent + "%)", percent < 30 ? NamedTextColor.RED : NamedTextColor.GREEN));
                 }
             }
         }
-
         return info;
     }
 
-    private void detectNearestTreasure(IAbilityContext context, Player player, boolean isPolymath) {
-        // Ерудит відчуває скарби далі
-        int radius = isPolymath ? 25 : 15;
-        Block center = player.getLocation().getBlock();
-        Block closestBlock = null;
-        double closestDistSq = Double.MAX_VALUE;
+    private void detectNearestTreasure(IAbilityContext context, boolean isPolymath) {
+        int radius = isPolymath ? 10 : 7;
+        Location casterLoc = context.playerData().getCurrentLocation(context.getCasterId());
+        if (casterLoc == null) return;
+        World world = casterLoc.getWorld();
+        if (world == null) return;
 
-        // Оптимізація: перевіряємо не кожен блок, а з кроком, або рідше для далеких дистанцій
-        // Але для простоти залишимо повний перебір у меншому радіусі, якщо це не викликає лагів
+        Location closestContainerLoc = null;
+        double minDistanceSq = Double.MAX_VALUE;
+
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {
                 for (int z = -radius; z <= radius; z++) {
-                    Block block = center.getRelative(x, y, z);
-                    if (isValidContainerType(block.getType())) {
-                        // Ерудит ігнорує порожні скрині ще на етапі "чуття"
-                        if (block.getState() instanceof Container container) {
-                            if (container.getInventory().isEmpty()) continue;
+                    Block block = world.getBlockAt(casterLoc.getBlockX() + x, casterLoc.getBlockY() + y, casterLoc.getBlockZ() + z);
 
-                            double distSq = block.getLocation().distanceSquared(player.getLocation());
-                            if (distSq < closestDistSq) {
-                                closestDistSq = distSq;
-                                closestBlock = block;
+                    // Швидка перевірка матеріалу перед зверненням до стейту
+                    if (isValidContainerType(block.getType())) {
+
+                        // Перевірка стейту - найважча частина. Робимо її тільки якщо блок підходить.
+                        if (isPolymath) {
+                            // Обережно з getState() - це навантажує сервер
+                            if (block.getState() instanceof Container container) {
+                                if (container.getInventory().isEmpty()) {
+                                    continue;
+                                }
                             }
+                        }
+
+                        double distSq = casterLoc.distanceSquared(block.getLocation());
+                        if (distSq < minDistanceSq) {
+                            minDistanceSq = distSq;
+                            closestContainerLoc = block.getLocation();
                         }
                     }
                 }
             }
         }
 
-        if (closestBlock != null) {
-            double distance = Math.sqrt(closestDistSq);
+        if (closestContainerLoc != null) {
+            double distance = Math.sqrt(minDistanceSq);
             NamedTextColor distColor = distance < 5 ? NamedTextColor.RED : NamedTextColor.GOLD;
             Component message = Component.text()
                     .append(Component.text(isPolymath ? "Аналіз місцевості виявив цінності: " : "Ви відчуваєте скарби поруч: ", NamedTextColor.AQUA))
                     .append(Component.text(DF.format(distance) + "м", distColor)).build();
-            context.sendMessageToActionBar(player, message);
+            context.messaging().sendMessageToActionBar(context.getCasterId(), message);
         }
     }
 
-    // --- Допоміжні методи без змін або з мінімальними правками ---
-
-    private void visualizeTraces(IAbilityContext context, Player player) {
+    private void visualizeTraces(IAbilityContext context) {
         double range = 15.0;
-        for (LivingEntity entity : player.getWorld().getLivingEntities()) {
-            if (entity.equals(player)) continue;
-            if (entity.getLocation().distanceSquared(player.getLocation()) > range * range) continue;
-            if (entity.getVelocity().length() > 0.08 || !entity.isOnGround()) {
-                context.spawnParticle(Particle.END_ROD, entity.getLocation(), 0, 0,0,0);
-            }
-        }
-    }
+        UUID casterId = context.getCasterId();
+        context.targeting().getNearbyEntities(range).forEach(entity -> {
+            if (entity.getUniqueId().equals(casterId)) return;
 
-    private boolean checkDangerSense(IAbilityContext context, Player player) {
-        double dangerRange = 10.0;
-        boolean dangerDetected = false;
+            Vector velocity = entity.getVelocity();
+            boolean isOnGround = entity.isOnGround();
 
-        for (LivingEntity entity : player.getWorld().getLivingEntities()) {
-            if (entity.equals(player)) continue;
-            if (entity.getLocation().distanceSquared(player.getLocation()) > dangerRange * dangerRange) continue;
-            if (entity instanceof Mob mob && mob.getTarget() != null && mob.getTarget().equals(player)) {
-                Vector toEntity = entity.getLocation().toVector().subtract(player.getLocation().toVector()).normalize();
-                Vector playerDirection = player.getEyeLocation().getDirection();
-                double angle = toEntity.dot(playerDirection);
-                if (angle < 0.5) {
-                    dangerDetected = true;
-                    break;
+            if (velocity != null && (velocity.length() > 0.08 || !isOnGround)) {
+                Location entityLoc = entity.getLocation();
+                if (entityLoc != null) {
+                    context.effects().spawnParticle(Particle.END_ROD, entityLoc, 0, 0, 0, 0);
                 }
             }
-        }
+        });
+    }
 
-        if (dangerDetected) {
-            Component warning = Component.text("⚠ УВАГА: ", NamedTextColor.RED)
-                    .append(Component.text("Зафіксовано ворожий намір!", NamedTextColor.GOLD));
-            context.sendMessageToActionBar(player, warning);
-            context.playSoundToCaster(Sound.BLOCK_NOTE_BLOCK_BELL, 0.5f, 2.0f);
+    private boolean checkDangerSense(IAbilityContext context) {
+        double dangerRange = 25.0;
+        UUID casterId = context.getCasterId();
+        Location casterLoc = context.playerData().getCurrentLocation(casterId);
+        if (casterLoc == null) return false;
+
+        List<String> threatNames = new ArrayList<>();
+
+        context.targeting().getNearbyEntities(dangerRange).forEach(entity -> {
+            if (entity.getUniqueId().equals(casterId)) return;
+            if (!(entity instanceof LivingEntity)) return;
+
+            // 1. ЛОГІКА ДЛЯ МОБІВ (Якщо заагрений на вас)
+            if (entity instanceof Mob mob) {
+                if (mob.getTarget() != null && mob.getTarget().getUniqueId().equals(casterId)) {
+                    // Використовуємо кастомне ім'я, якщо є, або стандартне (Zombie, Skeleton)
+                    threatNames.add(mob.getName());
+                }
+            }
+            // 2. ЛОГІКА ДЛЯ ГРАВЦІВ (Дивиться на вас + Тримає зброю)
+            else if (entity instanceof Player enemyPlayer) {
+                if (isHoldingWeapon(enemyPlayer)) {
+                    Vector toMe = casterLoc.toVector().subtract(enemyPlayer.getEyeLocation().toVector()).normalize();
+                    Vector enemyLook = enemyPlayer.getEyeLocation().getDirection().normalize();
+
+                    // Кут огляду ~15 градусів (0.96)
+                    if (toMe.dot(enemyLook) > 0.96) {
+                        threatNames.add(enemyPlayer.getName());
+                    }
+                }
+            }
+        });
+
+        if (!threatNames.isEmpty()) {
+            // Об'єднуємо імена через кому
+            String names = String.join(", ", threatNames);
+
+            Component warning = Component.text("⚠ ЗАГРОЗА ВІД: ", NamedTextColor.RED)
+                    .append(Component.text(names, NamedTextColor.YELLOW));
+
+            context.messaging().sendMessageToActionBar(casterId, warning);
+
+            // Тихий звук "клац" (рідко, щоб не спамило)
+            if (tickCounter % 20 == 0) {
+                context.effects().playSoundForPlayer(casterId, Sound.UI_BUTTON_CLICK, 0.5f, 2.0f);
+            }
             return true;
         }
         return false;
+    }
+
+    // Допоміжний метод для перевірки зброї
+    private boolean isHoldingWeapon(Player player) {
+        ItemStack item = player.getInventory().getItemInMainHand();
+        if (item == null || item.getType() == Material.AIR) return false;
+
+        String name = item.getType().name();
+        return name.contains("_SWORD") ||
+                name.contains("_AXE") ||
+                name.equals("BOW") ||
+                name.equals("CROSSBOW") ||
+                name.equals("TRIDENT");
     }
 
     private boolean isValidContainerType(Material type) {

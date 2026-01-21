@@ -17,6 +17,7 @@ public interface IVisualEffectsContext {
     void spawnParticle(Particle type, Location loc, int count,
                        double offsetX, double offsetY, double offsetZ);
 
+    void spawnParticleForPlayer(UUID receiverId, Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ);
 
     /**
      * Create a sphere effect at location

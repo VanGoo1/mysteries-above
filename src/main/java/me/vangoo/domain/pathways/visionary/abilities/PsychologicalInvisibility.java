@@ -23,10 +23,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PsychologicalInvisibility extends ActiveAbility {
 
-    private static final int COST_PER_SECOND = 16;
+    private static final int COST_PER_SECOND = 10;
     private static final int COOLDOWN_SECONDS = 5;
+    // Запобіжник від подвійного кліку (0.5 сек)
+    private static final long TOGGLE_SAFETY_DELAY_MS = 500;
 
     private static final Map<UUID, Runnable> activeCancellers = new ConcurrentHashMap<>();
+    // Зберігаємо час активації
+    private static final Map<UUID, Long> activationTimes = new ConcurrentHashMap<>();
     private static final Set<UUID> trackedProjectiles = ConcurrentHashMap.newKeySet();
 
     @Override
@@ -61,8 +65,18 @@ public class PsychologicalInvisibility extends ActiveAbility {
         UUID id = caster.getUniqueId();
         Beyonder beyonder = context.getCasterBeyonder();
 
-        // Вимкнення вручну
+        // Логіка перемикання (Toggle)
         if (activeCancellers.containsKey(id)) {
+            // ВАЖЛИВО: Перевіряємо, скільки часу пройшло з моменту активації
+            long activatedAt = activationTimes.getOrDefault(id, 0L);
+            long timeDiff = System.currentTimeMillis() - activatedAt;
+
+            // Якщо пройшло менше 0.5 сек - це "фантомний" клік від лівої руки. Ігноруємо його.
+            if (timeDiff < TOGGLE_SAFETY_DELAY_MS) {
+                return AbilityResult.success(); // Нічого не робимо, просто виходимо
+            }
+
+            // Якщо пройшло достатньо часу - це справді бажання гравця вимкнути
             disable(context, caster, "свідоме розкриття", true);
             return AbilityResult.success();
         }
@@ -82,6 +96,9 @@ public class PsychologicalInvisibility extends ActiveAbility {
     private void enable(IAbilityContext context, Player caster) {
         UUID id = caster.getUniqueId();
 
+        // Записуємо час старту
+        activationTimes.put(id, System.currentTimeMillis());
+
         context.effects().playSoundForPlayer(context.getCasterId(), Sound.BLOCK_BEACON_ACTIVATE, 1f, 1.8f);
         context.sendMessageToActionBar(
                 caster,
@@ -96,19 +113,17 @@ public class PsychologicalInvisibility extends ActiveAbility {
                 false
         ));
 
-        // Ховаємо від усіх гравців
         for (Player other : Bukkit.getOnlinePlayers()) {
             if (!other.getUniqueId().equals(id)) {
                 context.hidePlayerFromTarget(other, caster);
             }
         }
 
-        final int startDamage = caster.getStatistic(Statistic.DAMAGE_DEALT);
         final double[] lastHealth = {caster.getHealth()};
         final int[] ticks = {0};
-        final boolean[] projectileHit = {false};
+        final boolean[] aggressiveAction = {false};
 
-        // Відстеження снарядів
+        // 1. Постріли
         context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 ProjectileLaunchEvent.class,
                 e -> e.getEntity().getShooter() instanceof Player p && p.getUniqueId().equals(id),
@@ -116,13 +131,22 @@ public class PsychologicalInvisibility extends ActiveAbility {
                 Integer.MAX_VALUE
         );
 
+        // 2. Влучання снарядом
         context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 EntityDamageByEntityEvent.class,
                 e -> e.getDamager() instanceof Projectile pr && trackedProjectiles.contains(pr.getUniqueId()),
                 e -> {
-                    projectileHit[0] = true;
+                    aggressiveAction[0] = true;
                     trackedProjectiles.remove(e.getDamager().getUniqueId());
                 },
+                Integer.MAX_VALUE
+        );
+
+        // 3. Ближній бій
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
+                EntityDamageByEntityEvent.class,
+                e -> e.getDamager().getUniqueId().equals(id),
+                e -> aggressiveAction[0] = true,
                 Integer.MAX_VALUE
         );
 
@@ -136,20 +160,26 @@ public class PsychologicalInvisibility extends ActiveAbility {
                     return;
                 }
 
-                // Атака
-                if (caster.getStatistic(Statistic.DAMAGE_DEALT) > startDamage || projectileHit[0]) {
+                if (aggressiveAction[0]) {
                     disable(context, caster, "агресія", true);
                     return;
                 }
 
-                // Отримання шкоди
-                if (caster.getHealth() < lastHealth[0]) {
+                // Перевірка шкоди (з невеликим допуском для атрибутів)
+                // Використовуємо epsilon 0.01, щоб уникнути помилок округлення
+                if (lastHealth[0] - caster.getHealth() > 0.01) {
                     disable(context, caster, "отримання шкоди", true);
                     return;
                 }
-                lastHealth[0] = caster.getHealth();
+                // Оновлюємо здоров'я, якщо воно виросло (регенерація) або не змінилось
+                if (caster.getHealth() > lastHealth[0]) {
+                    lastHealth[0] = caster.getHealth();
+                } else {
+                    // Якщо здоров'я впало - це обробиться в наступному тіку або вище,
+                    // але тут ми просто синхронізуємо змінну, якщо перевірка вище не спрацювала (наприклад дуже мала шкода)
+                    lastHealth[0] = caster.getHealth();
+                }
 
-                // Зняття духовності
                 if (ticks[0] % 20 == 0) {
                     Beyonder b = context.getCasterBeyonder();
                     Spirituality sp = b.getSpirituality();
@@ -164,17 +194,19 @@ public class PsychologicalInvisibility extends ActiveAbility {
                     ));
                 }
 
-                // Ховаємо від нових гравців
-                for (Player other : Bukkit.getOnlinePlayers()) {
-                    if (!other.getUniqueId().equals(id)) {
-                        context.hidePlayerFromTarget(other, caster);
+                if (ticks[0] % 10 == 0) {
+                    for (Player other : Bukkit.getOnlinePlayers()) {
+                        if (!other.getUniqueId().equals(id)) {
+                            context.hidePlayerFromTarget(other, caster);
+                        }
                     }
                 }
 
-                // Моби ігнорують
-                for (Entity e : caster.getNearbyEntities(15, 15, 15)) {
-                    if (e instanceof Mob mob && caster.equals(mob.getTarget())) {
-                        mob.setTarget(null);
+                if (ticks[0] % 5 == 0) {
+                    for (Entity e : caster.getNearbyEntities(15, 15, 15)) {
+                        if (e instanceof Mob mob && caster.equals(mob.getTarget())) {
+                            mob.setTarget(null);
+                        }
                     }
                 }
             }
@@ -186,6 +218,9 @@ public class PsychologicalInvisibility extends ActiveAbility {
 
     private void disable(IAbilityContext context, Player caster, String reason, boolean cooldown) {
         UUID id = caster.getUniqueId();
+
+        // Очищаємо таймер активації
+        activationTimes.remove(id);
 
         if (activeCancellers.containsKey(id)) {
             activeCancellers.remove(id).run();

@@ -41,4 +41,6 @@ public interface IEntityContext {
     void setVelocity(UUID targetId, Vector vector);
 
     void setSprinting(UUID targetId, boolean value);
+
+    void giveExperience(UUID entityId, int amount);
 }

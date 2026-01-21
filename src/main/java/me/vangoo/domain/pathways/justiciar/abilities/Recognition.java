@@ -24,9 +24,6 @@ public class Recognition extends ToggleablePassiveAbility {
     private final Map<UUID, Set<UUID>> markedTargets = new ConcurrentHashMap<>();
     private final Map<UUID, Map<UUID, Integer>> markDurations = new ConcurrentHashMap<>();
 
-    /**
-     * Tracks observation progress for a single caster
-     */
     private static class ObservationState {
         private LivingEntity target;
         private UUID targetId;
@@ -47,7 +44,6 @@ public class Recognition extends ToggleablePassiveAbility {
             targetId = null;
             progressTicks = 0;
             graceTicks = 0;
-            // keep cooldownTicks as-is (cooldown preserved until it naturally expires)
         }
 
         void startCooldown() {
@@ -77,11 +73,7 @@ public class Recognition extends ToggleablePassiveAbility {
 
         void incrementProgress() {
             progressTicks++;
-            graceTicks = GRACE_PERIOD_TICKS; // Reset grace on successful observation
-        }
-
-        int getProgressPercentage() {
-            return (progressTicks * 100) / OBSERVE_DURATION_TICKS;
+            graceTicks = GRACE_PERIOD_TICKS;
         }
 
         boolean isComplete() {
@@ -115,7 +107,6 @@ public class Recognition extends ToggleablePassiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        // Toggle handled by PassiveAbilityManager (platform)
         return AbilityResult.success();
     }
 
@@ -134,35 +125,39 @@ public class Recognition extends ToggleablePassiveAbility {
         observations.remove(casterId);
     }
 
-    /**
-     * Main tick called by platform every server tick while ability enabled.
-     * Бизнес-логика: уменьшает марк-таймеры в начале, затем работает с наблюдением.
-     */
     @Override
     public void tick(IAbilityContext context) {
         UUID casterId = context.getCasterId();
         ObservationState state = observations.get(casterId);
 
-        if (state == null) {
-            return;
-        }
+        if (state == null) return;
 
         Player caster = context.getCasterPlayer();
-        if (caster == null || !caster.isOnline()) {
-            return;
-        }
+        if (caster == null || !caster.isOnline()) return;
 
-        // --- ВАЖНО: обновляем время пометок каждый тик, независимо от налаживания прицела ---
+        // Оновлюємо таймери підсвітки
         updateMarkDurations(casterId, context);
 
-        // Handle post-activation cooldown
         if (state.isInCooldown()) {
             state.decrementCooldown();
             return;
         }
 
-        // Try to find target
-        Optional<LivingEntity> targetOpt = context.getTargetedEntity(OBSERVATION_RANGE);
+        // --- ВИПРАВЛЕННЯ ПОМИЛКИ ---
+        // Якщо ціль, за якою ми стежили, втекла в інший світ -> скидаємо стеження
+        if (state.isObserving() && !state.target.getWorld().getUID().equals(caster.getWorld().getUID())) {
+            state.reset();
+        }
+
+        Optional<LivingEntity> targetOpt;
+        try {
+            // Безпечний виклик пошуку цілі.
+            // Якщо гравець переміщується між світами, rayTraceEntities може викинути IllegalArgumentException
+            targetOpt = context.getTargetedEntity(OBSERVATION_RANGE);
+        } catch (IllegalArgumentException e) {
+            // Ігноруємо цей тік, поки світ не синхронізується
+            return;
+        }
 
         if (!targetOpt.isPresent()) {
             handleNoTarget(state);
@@ -172,20 +167,22 @@ public class Recognition extends ToggleablePassiveAbility {
         LivingEntity target = targetOpt.get();
         UUID targetId = target.getUniqueId();
 
-        // Skip if already marked
+        // Перевірка світів перед подальшими діями
+        if (!target.getWorld().getUID().equals(caster.getWorld().getUID())) {
+            handleNoTarget(state);
+            return;
+        }
+
         if (isTargetMarked(casterId, targetId)) {
-            // keep state reset to avoid re-accumulating progress on already marked target
             state.reset();
             return;
         }
 
-        // Check line of sight
         if (!caster.hasLineOfSight(target)) {
             handleLostLineOfSight(state);
             return;
         }
 
-        // Valid target - process observation
         processObservation(state, target, targetId, casterId, context);
     }
 
@@ -211,16 +208,13 @@ public class Recognition extends ToggleablePassiveAbility {
 
     private void processObservation(ObservationState state, LivingEntity target, UUID targetId,
                                     UUID casterId, IAbilityContext context) {
-        // If started observing a new target -> set it and wait for next ticks to accumulate
         if (state.targetId == null || !state.targetId.equals(targetId)) {
             state.setTarget(target);
             return;
         }
 
-        // Continue observing same target
         state.incrementProgress();
 
-        // Check if observation complete
         if (state.isComplete()) {
             markTarget(casterId, target, context);
             state.startCooldown();
@@ -233,19 +227,14 @@ public class Recognition extends ToggleablePassiveAbility {
         Set<UUID> marks = markedTargets.get(casterId);
         Map<UUID, Integer> durations = markDurations.get(casterId);
 
-        if (marks == null || durations == null) {
-            return;
-        }
+        if (marks == null || durations == null) return;
 
-        // add mark and initialise duration counter
         marks.add(targetId);
         durations.put(targetId, GLOW_DURATION_TICKS);
 
-        // apply glowing via context (контекст не должен сам удалять glowing по таймеру)
         ChatColor color = getHealthColor(target);
         context.setGlowing(targetId, color, GLOW_DURATION_TICKS);
 
-        // notify caster
         String healthInfo = String.format("[HP: %d%%]", getHealthPercentage(target));
         context.sendMessage(
                 casterId,
@@ -258,19 +247,12 @@ public class Recognition extends ToggleablePassiveAbility {
         context.playSoundToCaster(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.5f);
     }
 
-    /**
-     * Decrement all mark durations for this caster once per tick.
-     * When duration reaches zero — unmark target (and remove glow via context).
-     */
     private void updateMarkDurations(UUID casterId, IAbilityContext context) {
         Map<UUID, Integer> durations = markDurations.get(casterId);
-        if (durations == null || durations.isEmpty()) {
-            return;
-        }
+        if (durations == null || durations.isEmpty()) return;
 
         Set<UUID> expired = new HashSet<>();
 
-        // Decrement remaining ticks
         for (Map.Entry<UUID, Integer> entry : durations.entrySet()) {
             int remaining = entry.getValue() - 1;
 
@@ -281,7 +263,6 @@ public class Recognition extends ToggleablePassiveAbility {
             }
         }
 
-        // Unmark expired (this will remove from markedTargets and durations, and remove glowing)
         for (UUID targetId : expired) {
             unmarkTarget(casterId, targetId, context);
         }
@@ -289,14 +270,10 @@ public class Recognition extends ToggleablePassiveAbility {
 
     private void unmarkTarget(UUID casterId, UUID targetId, IAbilityContext context) {
         Set<UUID> marks = markedTargets.get(casterId);
-        if (marks != null) {
-            marks.remove(targetId);
-        }
+        if (marks != null) marks.remove(targetId);
 
         Map<UUID, Integer> durations = markDurations.get(casterId);
-        if (durations != null) {
-            durations.remove(targetId);
-        }
+        if (durations != null) durations.remove(targetId);
 
         context.removeGlowing(targetId);
     }
@@ -311,9 +288,7 @@ public class Recognition extends ToggleablePassiveAbility {
         }
 
         Map<UUID, Integer> durations = markDurations.get(casterId);
-        if (durations != null) {
-            durations.clear();
-        }
+        if (durations != null) durations.clear();
 
         markedTargets.remove(casterId);
         markDurations.remove(casterId);
@@ -330,7 +305,6 @@ public class Recognition extends ToggleablePassiveAbility {
 
     private ChatColor getHealthColor(LivingEntity target) {
         int percentage = getHealthPercentage(target);
-
         if (percentage > 75) return ChatColor.GREEN;
         if (percentage > 50) return ChatColor.YELLOW;
         if (percentage > 25) return ChatColor.GOLD;
@@ -338,19 +312,20 @@ public class Recognition extends ToggleablePassiveAbility {
     }
 
     private int getHealthPercentage(LivingEntity target) {
+
         double maxHealth = Objects.requireNonNull(
+
                 target.getAttribute(Attribute.MAX_HEALTH)
+
         ).getValue();
+
         return (int) Math.round((target.getHealth() / maxHealth) * 100);
+
     }
 
     private String getEntityName(LivingEntity entity) {
-        if (entity instanceof Player) {
-            return entity.getName();
-        }
-        if (entity.getCustomName() != null) {
-            return entity.getCustomName();
-        }
+        if (entity instanceof Player) return entity.getName();
+        if (entity.getCustomName() != null) return entity.getCustomName();
         return entity.getType().name();
     }
 

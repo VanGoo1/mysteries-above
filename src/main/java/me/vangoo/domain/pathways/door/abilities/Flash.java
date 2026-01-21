@@ -7,6 +7,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class Flash extends ActiveAbility {
 
@@ -14,6 +16,7 @@ public class Flash extends ActiveAbility {
     private static final int DURATION = 60; // 3 секунди
     private static final int COST = 50;
     private static final int COOLDOWN = 15;
+
     @Override
     public String getName() {
         return "Флешка";
@@ -37,32 +40,62 @@ public class Flash extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCasterPlayer();
-        Location center = caster.getEyeLocation();
-        context.spawnParticle(Particle.END_ROD, center, 5
-        );
-        context.spawnParticle(Particle.END_ROD, caster.getLocation(), 150, 0.0, 0.0, 0.0
-        );
-        context.playSound(caster.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1.5f, 2.3f
-        );
+        UUID casterId = context.getCasterId();
 
-        context.playSound(caster.getLocation(), Sound.BLOCK_BEACON_POWER_SELECT, 1.2f, 2.0f
-        );
+        Location eyeLocation = context.playerData().getEyeLocation(casterId);
+        Location casterLocation = context.playerData().getCurrentLocation(casterId);
 
-        List<Player> players = context.getNearbyPlayers(RADIUS);
+        if (eyeLocation == null || casterLocation == null) {
+            return AbilityResult.failure("Не вдалося визначити позицію");
+        }
 
-        for (Player target : players) {
-            context.applyEffect(target.getUniqueId(), PotionEffectType.BLINDNESS, DURATION, 1
+        // Створюємо сліпучий спалах
+        createFlashEffect(context, eyeLocation, casterLocation);
+
+        // Знаходимо гравців поблизу
+        List<Player> nearbyPlayers = context.targeting().getNearbyPlayers(RADIUS);
+        List<UUID> targetIds = nearbyPlayers.stream()
+                .map(Player::getUniqueId)
+                .collect(Collectors.toList());
+
+        // Застосовуємо ефекти до кожного гравця
+        for (UUID targetId : targetIds) {
+            // Сліпота
+            context.entity().applyPotionEffect(
+                    targetId,
+                    PotionEffectType.BLINDNESS,
+                    DURATION,
+                    1
             );
 
-            context.hidePlayerFromTarget(target, caster);
+            // Ховаємо кастера від цілі
+            context.entity().hidePlayerFromTarget(targetId, casterId);
         }
-        context.scheduleDelayed(() -> {
-            for (Player target : players) {
-                context.showPlayerToTarget(target, caster);
+
+        // Показуємо кастера знову після закінчення ефекту
+        context.scheduling().scheduleDelayed(() -> {
+            for (UUID targetId : targetIds) {
+                context.entity().showPlayerToTarget(targetId, casterId);
             }
         }, DURATION);
 
         return AbilityResult.success();
+    }
+
+    /**
+     * Створює візуальні та звукові ефекти спалаху
+     */
+    private void createFlashEffect(IAbilityContext context, Location eyeLocation, Location casterLocation) {
+        // Частинки на рівні очей
+        context.effects().spawnParticle(Particle.END_ROD, eyeLocation, 5);
+
+        // Вибух частинок навколо гравця
+        context.effects().spawnParticle(Particle.END_ROD, casterLocation, 150, 0.0, 0.0, 0.0);
+
+        // Звук вибуху
+        context.effects().playSound(casterLocation, Sound.ENTITY_GENERIC_EXPLODE, 1.5f, 2.3f);
+
+        // Звук активації маяка (додатковий ефект)
+        context.effects().playSound(casterLocation, Sound.BLOCK_BEACON_POWER_SELECT, 1.2f, 2.0f);
     }
 }

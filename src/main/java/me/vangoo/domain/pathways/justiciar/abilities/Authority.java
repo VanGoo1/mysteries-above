@@ -6,14 +6,15 @@ import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.domain.valueobjects.SequenceBasedSuccessChance;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.*;
@@ -34,12 +35,12 @@ public class Authority extends ActiveAbility {
     @Override
     public String getDescription(Sequence userSequence) {
         return "Випромінюєш ауру неоспорюваного авторитету.\n" +
-                ChatColor.GRAY + "▪ Радіус: " + ChatColor.WHITE + (int)RADIUS + " блоків\n" +
-                ChatColor.GRAY + "▪ Затримка: " + ChatColor.WHITE + "6 секунд\n" +
-                ChatColor.GRAY + "▪ Ефект: Викидання предметів + броні\n" +
-                ChatColor.GRAY + "▪ Дебаф: Повільність I на 10с\n" +
-                ChatColor.GRAY + "▪ Моби: " + ChatColor.WHITE + "8 урону (4 серця)\n" +
-                ChatColor.DARK_GRAY + "▸ Не чіпає мирних жителів та големів";
+                "§7▪ Радіус: §f" + (int)RADIUS + " блоків\n" +
+                "§7▪ Затримка: §f6 секунд\n" +
+                "§7▪ Ефект: Викидання предметів + броні\n" +
+                "§7▪ Дебаф: Повільність I на 10с\n" +
+                "§7▪ Моби: §f8 урону (4 серця)\n" +
+                "§8▸ Не чіпає мирних жителів та големів";
     }
 
     @Override
@@ -54,13 +55,10 @@ public class Authority extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        List<Player> nearbyPlayers = context.getNearbyPlayers(RADIUS);
-        List<LivingEntity> nearbyEntities = context.getNearbyEntities(RADIUS);
+        List<Player> nearbyPlayers = context.targeting().getNearbyPlayers(RADIUS);
+        List<LivingEntity> nearbyEntities = context.targeting().getNearbyEntities(RADIUS);
 
-        // Фільтруємо список:
-        // 1. Прибираємо самого кастера (якщо він раптом потрапив)
-        // 2. Прибираємо інших гравців (вони обробляються окремо в nearbyPlayers)
-        // 3. Прибираємо мирних мобів (жителі, големи, коти, стійки для броні)
+        // Фільтруємо список
         nearbyEntities.removeIf(entity ->
                 entity instanceof Player ||
                         entity instanceof ArmorStand ||
@@ -73,16 +71,16 @@ public class Authority extends ActiveAbility {
         showAuraActivation(context);
 
         if (nearbyPlayers.isEmpty() && nearbyEntities.isEmpty()) {
-            context.sendMessageToCaster(
-                    ChatColor.GOLD + "Аура Авторитету активована! " +
-                            ChatColor.GRAY + "Поруч немає ворогів..."
+            context.messaging().sendMessage(
+                    context.getCasterId(),
+                    "§6Аура Авторитету активована! §7Поруч немає ворогів..."
             );
             return AbilityResult.success();
         }
 
-        context.sendMessageToCaster(
-                ChatColor.GOLD + "Аура Авторитету активована! " +
-                        ChatColor.GRAY + "Ефект через 6 секунд..."
+        context.messaging().sendMessage(
+                context.getCasterId(),
+                "§6Аура Авторитету активована! §7Ефект через 6 секунд..."
         );
 
         Set<UUID> affectedPlayers = new HashSet<>();
@@ -90,7 +88,7 @@ public class Authority extends ActiveAbility {
 
         scheduleBuildupEffects(context, nearbyPlayers);
 
-        context.scheduleDelayed(() -> {
+        context.scheduling().scheduleDelayed(() -> {
             executeAuthorityEffect(
                     context,
                     nearbyPlayers,
@@ -99,10 +97,10 @@ public class Authority extends ActiveAbility {
                     resistedPlayers
             );
 
-            // Атакуємо тільки ворожих мобів (які залишилися після фільтрації)
+            // Атакуємо тільки ворожих мобів
             for (LivingEntity entity : nearbyEntities) {
                 if (entity.isValid() && !entity.isDead()) {
-                    context.damage(entity.getUniqueId(), MOB_DAMAGE);
+                    context.entity().damage(entity.getUniqueId(), MOB_DAMAGE);
                     showMobDamageEffect(context, entity);
                 }
             }
@@ -113,7 +111,6 @@ public class Authority extends ActiveAbility {
 
         return AbilityResult.success();
     }
-
 
     /**
      * Перевіряє, чи є сутність мирною/нейтральною
@@ -160,15 +157,15 @@ public class Authority extends ActiveAbility {
     }
 
     private void scheduleBuildupEffects(IAbilityContext context, List<Player> targets) {
-        context.scheduleDelayed(() -> {
+        context.scheduling().scheduleDelayed(() -> {
             showBuildupWarning(context, targets, 1);
         }, 40L);
 
-        context.scheduleDelayed(() -> {
+        context.scheduling().scheduleDelayed(() -> {
             showBuildupWarning(context, targets, 2);
         }, 80L);
 
-        context.scheduleDelayed(() -> {
+        context.scheduling().scheduleDelayed(() -> {
             showBuildupWarning(context, targets, 3);
         }, 110L);
     }
@@ -182,35 +179,35 @@ public class Authority extends ActiveAbility {
             int particleCount = stage * 10;
             float soundPitch = 0.5f + (stage * 0.3f);
 
-            context.spawnParticle(
+            context.effects().spawnParticle(
                     Particle.ENCHANT,
                     loc,
                     particleCount,
                     0.5, 0.5, 0.5
             );
 
-            context.spawnParticle(
+            context.effects().spawnParticle(
                     Particle.END_ROD,
                     loc,
                     stage * 3,
                     0.3, 0.3, 0.3
             );
 
-            context.playSound(
+            context.effects().playSound(
                     loc,
                     Sound.BLOCK_BELL_USE,
                     0.5f,
                     soundPitch
             );
 
-            String warning = switch (stage) {
-                case 1 -> ChatColor.YELLOW + "⚠ Відчуваєш тиск авторитету...";
-                case 2 -> ChatColor.GOLD + "⚠⚠ Важко опиратися...";
-                case 3 -> ChatColor.RED + "⚠⚠⚠ НЕМОЖЛИВО ОПИРАТИСЯ!";
-                default -> "";
+            Component warning = switch (stage) {
+                case 1 -> Component.text("⚠ Відчуваєш тиск авторитету...", NamedTextColor.YELLOW);
+                case 2 -> Component.text("⚠⚠ Важко опиратися...", NamedTextColor.GOLD);
+                case 3 -> Component.text("⚠⚠⚠ НЕМОЖЛИВО ОПИРАТИСЯ!", NamedTextColor.RED);
+                default -> Component.empty();
             };
 
-            context.sendMessage(target.getUniqueId(), warning);
+            context.messaging().sendMessageToActionBar(target.getUniqueId(), warning);
         }
     }
 
@@ -226,9 +223,7 @@ public class Authority extends ActiveAbility {
 
             UUID targetId = target.getUniqueId();
 
-            Beyonder targetBeyonder = context.getBeyonderFromEntity(targetId);
-
-            boolean resisted = false;
+            Beyonder targetBeyonder = context.beyonder().getBeyonder(targetId);
 
             if (targetBeyonder != null) {
                 int targetSequence = targetBeyonder.getSequenceLevel();
@@ -237,9 +232,7 @@ public class Authority extends ActiveAbility {
                         new SequenceBasedSuccessChance(casterSequence, targetSequence);
 
                 if (!successChance.rollSuccess()) {
-                    resisted = true;
                     resistedPlayers.add(targetId);
-
                     showResistanceEffect(context, target, successChance);
                     continue;
                 }
@@ -252,24 +245,25 @@ public class Authority extends ActiveAbility {
 
     private void applyAuthorityEffect(IAbilityContext context, Player target) {
         UUID targetId = target.getUniqueId();
-        PlayerInventory inv = target.getInventory();
         Location dropLocation = target.getLocation().add(0, 1.5, 0);
 
-        ItemStack mainHand = inv.getItemInMainHand();
+        // Викинути предмети з рук
+        ItemStack mainHand = target.getInventory().getItemInMainHand();
         if (mainHand.getType() != Material.AIR) {
-            target.getWorld().dropItem(dropLocation, mainHand.clone());
-            inv.setItemInMainHand(new ItemStack(Material.AIR));
+            context.entity().dropItem(targetId, mainHand.clone());
+            target.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
         }
 
-        ItemStack offHand = inv.getItemInOffHand();
+        ItemStack offHand = target.getInventory().getItemInOffHand();
         if (offHand.getType() != Material.AIR) {
-            target.getWorld().dropItem(dropLocation, offHand.clone());
-            inv.setItemInOffHand(new ItemStack(Material.AIR));
+            context.entity().dropItem(targetId, offHand.clone());
+            target.getInventory().setItemInOffHand(new ItemStack(Material.AIR));
         }
 
-        removeAndDropArmor(context, target, inv, dropLocation);
+        removeAndDropArmor(context, target, dropLocation);
 
-        context.applyEffect(
+        // Накласти ефект повільності
+        context.entity().applyPotionEffect(
                 targetId,
                 PotionEffectType.SLOWNESS,
                 SLOWNESS_DURATION_TICKS,
@@ -278,27 +272,28 @@ public class Authority extends ActiveAbility {
 
         showAuthorityEffect(context, target);
 
-        context.sendMessage(
+        context.messaging().sendMessage(
                 targetId,
-                ChatColor.RED + "Ти не можеш опиратися цьому авторитету!"
+                "§cТи не можеш опиратися цьому авторитету!"
         );
     }
 
     private void removeAndDropArmor(
             IAbilityContext context,
             Player target,
-            PlayerInventory inv,
             Location dropLocation
     ) {
-        ItemStack helmet = inv.getHelmet();
-        ItemStack chestplate = inv.getChestplate();
-        ItemStack leggings = inv.getLeggings();
-        ItemStack boots = inv.getBoots();
+        UUID targetId = target.getUniqueId();
 
-        inv.setHelmet(null);
-        inv.setChestplate(null);
-        inv.setLeggings(null);
-        inv.setBoots(null);
+        ItemStack helmet = target.getInventory().getHelmet();
+        ItemStack chestplate = target.getInventory().getChestplate();
+        ItemStack leggings = target.getInventory().getLeggings();
+        ItemStack boots = target.getInventory().getBoots();
+
+        target.getInventory().setHelmet(null);
+        target.getInventory().setChestplate(null);
+        target.getInventory().setLeggings(null);
+        target.getInventory().setBoots(null);
 
         List<ItemStack> armorPieces = Arrays.asList(helmet, chestplate, leggings, boots);
 
@@ -307,11 +302,12 @@ public class Authority extends ActiveAbility {
                 continue;
             }
 
-            HashMap<Integer, ItemStack> leftover = inv.addItem(armor);
+            // Спробувати додати в інвентар, якщо не вмістилося - викинути
+            HashMap<Integer, ItemStack> leftover = target.getInventory().addItem(armor);
 
             if (!leftover.isEmpty()) {
                 for (ItemStack drop : leftover.values()) {
-                    target.getWorld().dropItem(dropLocation, drop);
+                    context.entity().dropItem(targetId, drop);
                 }
             }
         }
@@ -320,35 +316,35 @@ public class Authority extends ActiveAbility {
     private void showAuthorityEffect(IAbilityContext context, Player target) {
         Location loc = target.getLocation().add(0, 1, 0);
 
-        context.spawnParticle(
+        context.effects().spawnParticle(
                 Particle.EXPLOSION,
                 loc,
                 1,
                 0, 0, 0
         );
 
-        context.spawnParticle(
+        context.effects().spawnParticle(
                 Particle.CRIT,
                 loc,
                 30,
                 0.5, 1.0, 0.5
         );
 
-        context.spawnParticle(
+        context.effects().spawnParticle(
                 Particle.END_ROD,
                 loc,
                 20,
                 0.3, 0.5, 0.3
         );
 
-        context.playSound(
+        context.effects().playSound(
                 loc,
                 Sound.ENTITY_LIGHTNING_BOLT_THUNDER,
                 0.5f,
                 1.2f
         );
 
-        context.playSound(
+        context.effects().playSound(
                 loc,
                 Sound.ENTITY_WITHER_BREAK_BLOCK,
                 0.7f,
@@ -359,21 +355,21 @@ public class Authority extends ActiveAbility {
     private void showMobDamageEffect(IAbilityContext context, LivingEntity entity) {
         Location loc = entity.getLocation().add(0, 1, 0);
 
-        context.spawnParticle(
+        context.effects().spawnParticle(
                 Particle.DAMAGE_INDICATOR,
                 loc,
                 15,
                 0.3, 0.5, 0.3
         );
 
-        context.spawnParticle(
+        context.effects().spawnParticle(
                 Particle.CRIT,
                 loc,
                 10,
                 0.2, 0.3, 0.2
         );
 
-        context.playSound(
+        context.effects().playSound(
                 loc,
                 Sound.ENTITY_PLAYER_ATTACK_STRONG,
                 0.8f,
@@ -388,55 +384,65 @@ public class Authority extends ActiveAbility {
     ) {
         Location loc = target.getLocation().add(0, 1, 0);
 
-        context.spawnParticle(
+        context.effects().spawnParticle(
                 Particle.FIREWORK,
                 loc,
                 20,
                 0.5, 0.5, 0.5
         );
 
-        context.playSound(
+        context.effects().playSound(
                 loc,
                 Sound.ITEM_SHIELD_BLOCK,
                 1.0f,
                 1.2f
         );
 
-        context.sendMessage(
+        context.messaging().sendMessage(
                 target.getUniqueId(),
-                ChatColor.GREEN + "Ти зміг опиратися! " +
-                        ChatColor.GRAY + "(Шанс: " + successChance.getFormattedChance() + ")"
+                "§aТи зміг опиратися! §7(Шанс: " + successChance.getFormattedChance() + ")"
         );
     }
 
     private void showAuraActivation(IAbilityContext context) {
-        Location centerLoc = context.getCasterLocation();
+        Location centerLoc = context.getCasterLocation().clone();
 
-        context.playSphereEffect(
+        context.effects().playSphereEffect(
                 centerLoc.add(0, 1, 0),
                 RADIUS,
                 Particle.ENCHANT,
                 60
         );
 
-        context.playWaveEffect(
-                centerLoc,
+        context.effects().playWaveEffect(
+                centerLoc.clone(),
                 RADIUS,
                 Particle.GLOW,
                 40
         );
 
-        context.playLineEffect(
-                centerLoc,
+        context.effects().playLineEffect(
+                centerLoc.clone(),
                 centerLoc.clone().add(0, 5, 0),
                 Particle.END_ROD
         );
 
-        context.playSoundToCaster(Sound.ENTITY_EVOKER_PREPARE_ATTACK, 1.0f, 0.8f);
-        context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 0.8f, 1.2f);
+        context.effects().playSoundForPlayer(
+                context.getCasterId(),
+                Sound.ENTITY_EVOKER_PREPARE_ATTACK,
+                1.0f,
+                0.8f
+        );
 
-        context.playCircleEffect(
-                centerLoc,
+        context.effects().playSoundForPlayer(
+                context.getCasterId(),
+                Sound.BLOCK_BEACON_ACTIVATE,
+                0.8f,
+                1.2f
+        );
+
+        context.effects().playCircleEffect(
+                centerLoc.clone(),
                 RADIUS,
                 Particle.SOUL_FIRE_FLAME,
                 80
@@ -452,67 +458,68 @@ public class Authority extends ActiveAbility {
         int total = affectedPlayers.size() + resistedPlayers.size() + affectedMobs;
 
         if (total == 0) {
-            context.sendMessageToCaster(
-                    ChatColor.YELLOW + "Всі цілі покинули радіус дії"
+            context.messaging().sendMessage(
+                    context.getCasterId(),
+                    "§eВсі цілі покинули радіус дії"
             );
             return;
         }
 
         StringBuilder message = new StringBuilder();
-        message.append(ChatColor.GOLD).append("═══ Результат Авторитету ═══\n");
+        message.append("§6═══ Результат Авторитету ═══\n");
 
         if (!affectedPlayers.isEmpty()) {
-            message.append(ChatColor.GREEN)
-                    .append("✓ Гравці підкорено: ")
-                    .append(ChatColor.WHITE)
+            message.append("§a✓ Гравці підкорено: §f")
                     .append(affectedPlayers.size())
                     .append("\n");
         }
 
         if (!resistedPlayers.isEmpty()) {
-            message.append(ChatColor.RED)
-                    .append("✗ Гравці опирались: ")
-                    .append(ChatColor.WHITE)
+            message.append("§c✗ Гравці опирались: §f")
                     .append(resistedPlayers.size())
                     .append("\n");
         }
 
         if (affectedMobs > 0) {
-            message.append(ChatColor.YELLOW)
-                    .append("⚔ Моби атаковано: ")
-                    .append(ChatColor.WHITE)
+            message.append("§e⚔ Моби атаковано: §f")
                     .append(affectedMobs)
                     .append("\n");
         }
 
-        int successRate = (int)((affectedPlayers.size() * 100.0) / Math.max(1, affectedPlayers.size() + resistedPlayers.size()));
-        message.append(ChatColor.GRAY)
-                .append("Успішність: ")
-                .append(ChatColor.YELLOW)
+        int successRate = (int)((affectedPlayers.size() * 100.0) /
+                Math.max(1, affectedPlayers.size() + resistedPlayers.size()));
+        message.append("§7Успішність: §e")
                 .append(successRate)
                 .append("%");
 
-        context.sendMessageToCaster(message.toString());
+        context.messaging().sendMessage(context.getCasterId(), message.toString());
+
+        Location casterLoc = context.getCasterLocation();
 
         if (successRate >= 70 || affectedMobs >= 3) {
-            context.spawnParticle(
+            context.effects().spawnParticle(
                     Particle.TOTEM_OF_UNDYING,
-                    context.getCasterLocation().add(0, 2, 0),
+                    casterLoc.clone().add(0, 2, 0),
                     30,
                     0.5, 0.5, 0.5
             );
-            context.playSoundToCaster(Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.2f);
+            context.effects().playSoundForPlayer(
+                    context.getCasterId(),
+                    Sound.ENTITY_PLAYER_LEVELUP,
+                    1.0f,
+                    1.2f
+            );
         } else if (successRate >= 40) {
-            context.spawnParticle(
+            context.effects().spawnParticle(
                     Particle.HAPPY_VILLAGER,
-                    context.getCasterLocation().add(0, 2, 0),
+                    casterLoc.clone().add(0, 2, 0),
                     20,
                     0.5, 0.5, 0.5
             );
         } else {
-            context.spawnParticle(
+            context.effects().spawnParticle(
                     Particle.SMOKE,
-                    context.getCasterLocation().add(0, 2, 0),
+                    casterLoc.clone().add(0, 2, 0),
                     15,
                     0.5, 0.5, 0.5
             );
