@@ -61,7 +61,7 @@ public class PotionManager {
         ));
         potions.add(new WhiteTowerPotions(
                 pathwayManager.getPathway("WhiteTower"),
-                Color.fromRGB(255, 255, 0),
+                Color.fromRGB(255, 0, 50),
                 customItemService
         ));
     }

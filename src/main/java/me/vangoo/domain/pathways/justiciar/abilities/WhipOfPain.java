@@ -5,14 +5,15 @@ import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public class WhipOfPain extends ActiveAbility {
 
@@ -39,84 +40,88 @@ public class WhipOfPain extends ActiveAbility {
         return 12;
     }
 
-    /**
-     * Цей метод повідомляє батьківському класу Ability, кого ми намагаємось атакувати.
-     * Це вмикає автоматичну перевірку різниці рівнів (Sequence Suppression).
-     * Якщо жертва має значно вищий рівень (меншу цифру Seq), здібність може не спрацювати.
-     */
     @Override
     protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
-        // Ми повертаємо ту саму ціль, яку шукаємо для виконання.
-        // Це дозволяє базовому класу перевірити "Caster Seq vs Target Seq" ПЕРЕД виконанням performExecution.
-        return context.getTargetedEntity(RANGE);
+        return context.targeting().getTargetedEntity(RANGE);
     }
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCasterPlayer();
-
-        // Тут ми знову шукаємо ціль, бо логіка перевірки та виконання розділена.
-        // Якщо ми дійшли сюди, значить перевірка на Послідовність (Sequence Check) вже пройшла успішно.
-        Optional<LivingEntity> targetOpt = context.getTargetedEntity(RANGE);
+        UUID casterId = context.getCasterId();
+        Optional<LivingEntity> targetOpt = context.targeting().getTargetedEntity(RANGE);
 
         if (targetOpt.isEmpty()) {
             return AbilityResult.failure("Немає цілі.");
         }
 
         LivingEntity target = targetOpt.get();
+        UUID targetId = target.getUniqueId();
 
-        // --- ВІЗУАЛ ТА ЕФЕКТИ ---
-        context.playBeamEffect(caster.getEyeLocation().add(0, -0.2, 0), target.getEyeLocation(), Particle.CRIT, 0.2, 5);
-        context.spawnParticle(Particle.ELECTRIC_SPARK, target.getEyeLocation(), 15, 0.5, 0.5, 0.5);
-        context.playSound(target.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 0.5f, 1.5f);
+        Location casterEye = context.playerData().getEyeLocation(casterId);
+        Location targetEye = context.playerData().getEyeLocation(targetId);
 
-        context.damage(target.getUniqueId(), DAMAGE);
-        context.applyEffect(target.getUniqueId(), PotionEffectType.SLOWNESS, 60, 4);
-        context.applyEffect(target.getUniqueId(), PotionEffectType.BLINDNESS, 40, 0);
+        if (casterEye != null && targetEye != null) {
+            context.effects().playBeamEffect(casterEye.add(0, -0.2, 0), targetEye, Particle.CRIT, 0.2, 5);
+            context.effects().spawnParticle(Particle.ELECTRIC_SPARK, targetEye, 15, 0.5, 0.5, 0.5);
+        }
 
-        // --- ГЛИБОКИЙ ДОПИТ ---
-        revealDeepSecrets(context, caster, target);
+        Location targetLoc = context.playerData().getCurrentLocation(targetId);
+        if (targetLoc != null) {
+            context.effects().playSound(targetLoc, Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 0.5f, 1.5f);
+        }
 
-        if (target instanceof Player) {
-            context.sendMessage(target.getUniqueId(), ChatColor.RED + "Ви не можете стримати правду... Біль змушує вас говорити!");
+        context.entity().damage(targetId, DAMAGE);
+        context.entity().applyPotionEffect(targetId, PotionEffectType.SLOWNESS, 60, 4);
+        context.entity().applyPotionEffect(targetId, PotionEffectType.BLINDNESS, 40, 0);
+
+        revealDeepSecrets(context, casterId, targetId);
+
+        if (context.playerData().isOnline(targetId)) {
+            context.messaging().sendMessage(targetId, ChatColor.RED + "Ви не можете стримати правду... Біль змушує вас говорити!");
         }
 
         return AbilityResult.success();
     }
 
-    private void revealDeepSecrets(IAbilityContext context, Player caster, LivingEntity target) {
-        context.sendMessageToCaster(ChatColor.DARK_AQUA + "▬▬▬▬ ПРИМУСОВИЙ ДОПИТ ▬▬▬▬");
+    private void revealDeepSecrets(IAbilityContext context, UUID casterId, UUID targetId) {
+        context.messaging().sendMessage(casterId, ChatColor.DARK_AQUA + "▬▬▬▬ ПРИМУСОВИЙ ДОПИТ ▬▬▬▬");
 
-        String targetName = target.getName();
-        double hp = target.getHealth();
-        context.sendMessageToCaster(ChatColor.GRAY + "Ціль: " + ChatColor.RED + targetName +
+        String targetName = context.playerData().getName(targetId);
+        double hp = context.playerData().getHealth(targetId);
+
+        context.messaging().sendMessage(casterId, ChatColor.GRAY + "Ціль: " + ChatColor.RED + targetName +
                 ChatColor.GRAY + " | HP: " + ChatColor.YELLOW + String.format("%.1f", hp));
 
-        if (target instanceof Player) {
-            Player pTarget = (Player) target;
-
-            Optional<Integer> seqLevel = context.getEntitySequenceLevel(pTarget.getUniqueId());
-            if (seqLevel.isPresent()) {
-                context.sendMessageToCaster(ChatColor.GRAY + "Статус: " + ChatColor.LIGHT_PURPLE + "Потойбічний (Seq " + seqLevel.get() + ")");
-            } else {
-                context.sendMessageToCaster(ChatColor.GRAY + "Статус: " + ChatColor.GREEN + "Звичайна людина");
+        if (context.playerData().isOnline(targetId)) {
+            Optional<Integer> seqLevel = Optional.empty();
+            if (context.beyonder().isBeyonder(targetId)) {
+                var beyonder = context.beyonder().getBeyonder(targetId);
+                if (beyonder != null) {
+                    seqLevel = Optional.of(beyonder.getSequenceLevel());
+                }
             }
 
-            String heldItem = context.playerData().getMainHandItemName((pTarget.getUniqueId()));
-            context.sendMessageToCaster(ChatColor.GRAY + "Зброя: " + ChatColor.WHITE + heldItem);
+            if (seqLevel.isPresent()) {
+                context.messaging().sendMessage(casterId, ChatColor.GRAY + "Статус: " + ChatColor.LIGHT_PURPLE + "Потойбічний (Seq " + seqLevel.get() + ")");
+            } else {
+                context.messaging().sendMessage(casterId, ChatColor.GRAY + "Статус: " + ChatColor.GREEN + "Звичайна людина");
+            }
 
-            List<String> secretStash = context.getEnderChestContents(pTarget.getUniqueId(), 5);
+            String heldItem = context.playerData().getMainHandItemName(targetId);
+            context.messaging().sendMessage(casterId, ChatColor.GRAY + "Зброя: " + ChatColor.WHITE + heldItem);
+
+            List<String> secretStash = context.playerData().getEnderChestContents(targetId, 5);
 
             if (!secretStash.isEmpty()) {
-                context.sendMessageToCaster(ChatColor.GOLD + ">> Потаємні думки (Ender Chest):");
+                context.messaging().sendMessage(casterId, ChatColor.GOLD + ">> Потаємні думки (Ender Chest):");
                 for (String item : secretStash) {
-                    context.sendMessageToCaster(ChatColor.DARK_GRAY + " - " + ChatColor.ITALIC + item);
+                    context.messaging().sendMessage(casterId, ChatColor.DARK_GRAY + " - " + ChatColor.ITALIC + item);
                 }
             } else {
-                context.sendMessageToCaster(ChatColor.GOLD + ">> Потаємні думки: " + ChatColor.GRAY + "Пусто/Чисто");
+                context.messaging().sendMessage(casterId, ChatColor.GOLD + ">> Потаємні думки: " + ChatColor.GRAY + "Пусто/Чисто");
             }
         }
 
-        context.sendMessageToCaster(ChatColor.DARK_AQUA + "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
+        context.messaging().sendMessage(casterId, ChatColor.DARK_AQUA + "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
     }
 }

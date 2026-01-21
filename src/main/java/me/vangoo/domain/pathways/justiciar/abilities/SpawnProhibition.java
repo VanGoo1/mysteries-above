@@ -59,7 +59,7 @@ public class SpawnProhibition extends ActiveAbility {
 
     @Override
     public int getSpiritualityCost() {
-        return 80;
+        return 200;
     }
 
     @Override

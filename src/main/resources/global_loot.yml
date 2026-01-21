@@ -1,234 +1,249 @@
 # global_loot.yml
+# Баланс: "Золота середина" (Balanced RPG)
+# Шанс топ-предметів (Seq 5): ~0.28%
+# Шанс звичайних (Seq 9): ~3.4%
+
 global_loot:
   min_items: 1
   max_items: 2
 
   items:
     # =====================================================================
-    #                               VISIONARY PATHWAY
+    #                          VISIONARY PATHWAY
     # =====================================================================
 
-    # --- Ingredients ---
-    # Збільшив ваги інгредієнтів 9-8 рангу, щоб вони падали частіше за рецепти
+    # --- Seq 9 Ingredients (Вага 60) ---
     manhal_fish_eyeball:
       item_id: "manhal_fish_eyeball"
-      weight: 80  # Було 20
+      weight: 60
       amount_min: 1
       amount_max: 1
     goat_horned_blackfish_blood:
       item_id: "goat_horned_blackfish_blood"
-      weight: 80
+      weight: 60
       amount_min: 1
       amount_max: 1
     autumn_crocus_essence:
       item_id: "autumn_crocus_essence"
-      weight: 80
+      weight: 60
       amount_min: 1
       amount_max: 1
     elf_flower_petals:
       item_id: "elf_flower_petals"
-      weight: 80
+      weight: 60
       amount_min: 1
       amount_max: 1
+
+    # --- Seq 8 Ingredients (Вага 40) ---
     crystalline_moon_orchid:
       item_id: "crystalline_moon_orchid"
-      weight: 50  # Було 15
+      weight: 40
       amount_min: 1
       amount_max: 1
     thought_essence:
       item_id: "thought_essence"
-      weight: 50
+      weight: 40
       amount_min: 1
       amount_max: 1
     iridescent_pearl_dust:
       item_id: "iridescent_pearl_dust"
-      weight: 50
+      weight: 40
       amount_min: 1
       amount_max: 1
+
+    # --- Seq 7 Ingredients (Вага 25) ---
     tree_of_elders_fruit:
       item_id: "tree_of_elders_fruit"
-      weight: 20  # Було 10
+      weight: 25
       amount_min: 1
       amount_max: 1
     mirror_dragon_eyes:
       item_id: "mirror_dragon_eyes"
-      weight: 20
+      weight: 25
       amount_min: 1
       amount_max: 1
     mirror_dragon_blood:
       item_id: "mirror_dragon_blood"
-      weight: 20
+      weight: 25
       amount_min: 1
       amount_max: 1
+
+    # --- Seq 6 Ingredients (Вага 12) ---
     black_hunting_lizard_spinal_fluid:
       item_id: "black_hunting_lizard_spinal_fluid"
-      weight: 8   # Було 7 (трохи збільшив розрив між 7 і 6)
+      weight: 12
       amount_min: 1
       amount_max: 1
     illusory_chime_tree_fruit:
       item_id: "illusory_chime_tree_fruit"
-      weight: 8
+      weight: 12
       amount_min: 1
       amount_max: 1
     mind_crystal_powder:
       item_id: "mind_crystal_powder"
-      weight: 8
+      weight: 12
       amount_min: 1
       amount_max: 1
     split_personality_essence:
       item_id: "split_personality_essence"
-      weight: 8
+      weight: 12
       amount_min: 1
       amount_max: 1
+
+    # --- Seq 5 Ingredients (Вага 5 - Шанс ~0.28%) ---
     dream_catcher_heart:
       item_id: "dream_catcher_heart"
-      weight: 2   # Було 4. Зменшив, щоб Seq 5 був справді рідкісним
+      weight: 5
       amount_min: 1
       amount_max: 1
     mind_illusion_crystal:
       item_id: "mind_illusion_crystal"
-      weight: 2
+      weight: 5
       amount_min: 1
       amount_max: 1
     adult_mind_dragon_blood:
       item_id: "adult_mind_dragon_blood"
-      weight: 1   # Найрідкісніший інгредієнт
+      weight: 5
       amount_min: 1
       amount_max: 1
 
-    # --- Recipes (Rebalanced) ---
-    # ТУТ ОСНОВНА ЗМІНА:
-    # Різниця між 12 і 1 (у вашому варіанті) замала.
-    # Різниця між 60 і 1 (у моєму) забезпечить правильну рідкісність.
+    # --- Visionary Recipes ---
     visionary_recipe_9:
       item_id: "recipe:Visionary:9"
-      weight: 60  # Було 12
+      weight: 45
       amount_min: 1
       amount_max: 1
     visionary_recipe_8:
       item_id: "recipe:Visionary:8"
-      weight: 30  # Було 5
+      weight: 30
       amount_min: 1
       amount_max: 1
     visionary_recipe_7:
       item_id: "recipe:Visionary:7"
-      weight: 10  # Було 3
+      weight: 15
       amount_min: 1
       amount_max: 1
     visionary_recipe_6:
       item_id: "recipe:Visionary:6"
-      weight: 4   # Було 2
+      weight: 8
       amount_min: 1
       amount_max: 1
     visionary_recipe_5:
       item_id: "recipe:Visionary:5"
-      weight: 1   # Лишили 1, але на фоні 60 це буде дуже рідко
+      weight: 4
       amount_min: 1
       amount_max: 1
 
-    # --- Potions (Rebalanced) ---
-    # Виправив проблему однакової ваги для всіх зілль вище 9-го
+    # --- Visionary Potions ---
     visionary_potion_9:
       item_id: "potion:Visionary:9"
-      weight: 15
+      weight: 10
       amount_min: 1
       amount_max: 1
     visionary_potion_8:
       item_id: "potion:Visionary:8"
-      weight: 8   # Було 1. Тепер Seq 8 падає частіше за Seq 5
+      weight: 6
       amount_min: 1
       amount_max: 1
     visionary_potion_7:
       item_id: "potion:Visionary:7"
-      weight: 4   # Було 1
+      weight: 3
       amount_min: 1
       amount_max: 1
 
     # =====================================================================
-    #                                 DOOR PATHWAY
+    #                              DOOR PATHWAY
     # =====================================================================
 
-    # --- Ingredients ---
+    # --- Seq 9 Ingredients ---
     dimensional_wanderer_eye:
       item_id: "dimensional_wanderer_eye"
-      weight: 80
+      weight: 60
       amount_min: 1
       amount_max: 1
     ever_shifting_lotus:
       item_id: "ever_shifting_lotus"
-      weight: 80
+      weight: 60
       amount_min: 1
       amount_max: 1
+
+    # --- Seq 8 Ingredients ---
     spirit_eater_pouch:
       item_id: "spirit_eater_pouch"
-      weight: 50
+      weight: 40
       amount_min: 1
       amount_max: 1
     deep_sea_marlin_blood:
       item_id: "deep_sea_marlin_blood"
-      weight: 50
+      weight: 40
       amount_min: 1
       amount_max: 1
     string_grass_powder:
       item_id: "string_grass_powder"
-      weight: 50
+      weight: 40
       amount_min: 1
       amount_max: 1
     red_chestnut_flower:
       item_id: "red_chestnut_flower"
-      weight: 50
+      weight: 40
       amount_min: 1
       amount_max: 1
+
+    # --- Seq 7 Ingredients ---
     meteorite_crystal:
       item_id: "meteorite_crystal"
-      weight: 20
+      weight: 25
       amount_min: 1
       amount_max: 1
     lavos_squid_blood:
       item_id: "lavos_squid_blood"
-      weight: 20
+      weight: 25
       amount_min: 1
       amount_max: 1
     starfaced_stone:
       item_id: "starfaced_stone"
-      weight: 20
+      weight: 25
       amount_min: 1
       amount_max: 1
+
+    # --- Seq 6 Ingredients ---
     asmann_complete_brain:
       item_id: "asmann_complete_brain"
-      weight: 8
+      weight: 12
       amount_min: 1
       amount_max: 1
     cursed_wraith_artifact:
       item_id: "cursed_wraith_artifact"
-      weight: 8
+      weight: 12
       amount_min: 1
       amount_max: 1
     imbued_ink_sac:
       item_id: "imbued_ink_sac"
-      weight: 8
+      weight: 12
       amount_min: 1
       amount_max: 1
+
+    # --- Seq 5 Ingredients (Вага 5 - Шанс ~0.28%) ---
     void_drifter_heart:
       item_id: "void_drifter_heart"
-      weight: 2
+      weight: 5
       amount_min: 1
       amount_max: 1
     astral_mist_essence:
       item_id: "astral_mist_essence"
-      weight: 2
+      weight: 5
       amount_min: 1
       amount_max: 1
     wayfinder_tree_root:
       item_id: "wayfinder_tree_root"
-      weight: 1
+      weight: 5
       amount_min: 1
       amount_max: 1
 
-    # --- Recipes (Rebalanced) ---
+    # --- Door Recipes ---
     door_recipe_9:
       item_id: "recipe:Door:9"
-      weight: 60
+      weight: 45
       amount_min: 1
       amount_max: 1
     door_recipe_8:
@@ -238,138 +253,145 @@ global_loot:
       amount_max: 1
     door_recipe_7:
       item_id: "recipe:Door:7"
-      weight: 10
+      weight: 15
       amount_min: 1
       amount_max: 1
     door_recipe_6:
       item_id: "recipe:Door:6"
-      weight: 4
+      weight: 8
       amount_min: 1
       amount_max: 1
     door_recipe_5:
       item_id: "recipe:Door:5"
-      weight: 1
-      amount_min: 1
-      amount_max: 1
-
-    # --- Potions (Rebalanced) ---
-    door_potion_9:
-      item_id: "potion:Door:9"
-      weight: 15
-      amount_min: 1
-      amount_max: 1
-    door_potion_8:
-      item_id: "potion:Door:8"
-      weight: 8
-      amount_min: 1
-      amount_max: 1
-    door_potion_7:
-      item_id: "potion:Door:7"
       weight: 4
       amount_min: 1
       amount_max: 1
 
+    # --- Door Potions ---
+    door_potion_9:
+      item_id: "potion:Door:9"
+      weight: 10
+      amount_min: 1
+      amount_max: 1
+    door_potion_8:
+      item_id: "potion:Door:8"
+      weight: 6
+      amount_min: 1
+      amount_max: 1
+    door_potion_7:
+      item_id: "potion:Door:7"
+      weight: 3
+      amount_min: 1
+      amount_max: 1
 
     # =====================================================================
-    #                              JUSTICIAR PATHWAY
+    #                            JUSTICIAR PATHWAY
     # =====================================================================
 
-    # --- Ingredients ---
+    # --- Seq 9 Ingredients ---
     heart_of_unquestioned_command:
       item_id: "heart_of_unquestioned_command"
-      weight: 80
+      weight: 60
       amount_min: 1
       amount_max: 1
     bone_of_the_unyielding_frame:
       item_id: "bone_of_the_unyielding_frame"
-      weight: 80
+      weight: 60
       amount_min: 1
       amount_max: 1
     eye_of_judicial_insight:
       item_id: "eye_of_judicial_insight"
-      weight: 80
+      weight: 60
       amount_min: 1
       amount_max: 1
+
+    # --- Seq 8 Ingredients ---
     pair_of_terror_demon_worms_eyes:
       item_id: "pair_of_terror_demon_worms_eyes"
-      weight: 50
+      weight: 40
       amount_min: 1
       amount_max: 1
     silver_war_bears_right_palm:
       item_id: "silver_war_bears_right_palm"
-      weight: 50
+      weight: 40
       amount_min: 1
       amount_max: 1
     eye_of_perfect_recognition:
       item_id: "eye_of_perfect_recognition"
-      weight: 50
+      weight: 40
       amount_min: 1
       amount_max: 1
     thread_of_supernatural_intuition:
       item_id: "thread_of_supernatural_intuition"
-      weight: 50
+      weight: 40
       amount_min: 1
       amount_max: 1
+
+    # --- Seq 7 Ingredients ---
     horn_of_a_flash_patterned_black_snake:
       item_id: "horn_of_a_flash_patterned_black_snake"
-      weight: 20
+      weight: 25
       amount_min: 1
       amount_max: 1
     dust_of_lake_spirit:
       item_id: "dust_of_lake_spirit"
-      weight: 20
+      weight: 25
       amount_min: 1
       amount_max: 1
     ashes_of_a_broken_oath_seal:
       item_id: "ashes_of_a_broken_oath_seal"
-      weight: 20
+      weight: 25
       amount_min: 1
       amount_max: 1
+
+    # --- Seq 6 Ingredients ---
     heart_of_the_silent_verdict:
       item_id: "heart_of_the_silent_verdict"
-      weight: 8
+      weight: 12
       amount_min: 1
       amount_max: 1
     fragment_of_a_sealed_domain:
       item_id: "fragment_of_a_sealed_domain"
-      weight: 8
+      weight: 12
       amount_min: 1
       amount_max: 1
     ashes_of_a_forbidden_decree:
       item_id: "ashes_of_a_forbidden_decree"
-      weight: 8
+      weight: 12
       amount_min: 1
       amount_max: 1
     chains_of_collective_fear:
       item_id: "chains_of_collective_fear"
-      weight: 8
+      weight: 12
       amount_min: 1
       amount_max: 1
+
+    # --- Seq 5 Ingredients (Вага 5 - Шанс ~0.28%) ---
     core_of_retributive_authority:
       item_id: "core_of_retributive_authority"
-      weight: 2
+      weight: 5
       amount_min: 1
       amount_max: 1
     brand_of_the_unforgiving_oath:
       item_id: "brand_of_the_unforgiving_oath"
-      weight: 2
+      weight: 5
       amount_min: 1
       amount_max: 1
     ashes_of_a_public_execution:
       item_id: "ashes_of_a_public_execution"
-      weight: 2
+      weight: 5
       amount_min: 1
       amount_max: 1
     shackles_of_the_guilty:
       item_id: "shackles_of_the_guilty"
-      weight: 2
+      weight: 5
       amount_min: 1
       amount_max: 1
 
-    # --- Recipes (Rebalanced) ---
+    # --- Justiciar Recipes ---
     justiciar_recipe_9:
       item_id: "recipe:Justiciar:9"
-      weight: 60
+      weight: 45
       amount_min: 1
       amount_max: 1
     justiciar_recipe_8:
@@ -379,33 +401,186 @@ global_loot:
       amount_max: 1
     justiciar_recipe_7:
       item_id: "recipe:Justiciar:7"
-      weight: 10
+      weight: 15
       amount_min: 1
       amount_max: 1
     justiciar_recipe_6:
       item_id: "recipe:Justiciar:6"
-      weight: 4
+      weight: 8
       amount_min: 1
       amount_max: 1
     justiciar_recipe_5:
       item_id: "recipe:Justiciar:5"
-      weight: 1
+      weight: 4
       amount_min: 1
       amount_max: 1
 
-    # --- Potions (Rebalanced) ---
+    # --- Justiciar Potions ---
     justiciar_potion_9:
       item_id: "potion:Justiciar:9"
-      weight: 15
+      weight: 10
       amount_min: 1
       amount_max: 1
     justiciar_potion_8:
       item_id: "potion:Justiciar:8"
-      weight: 8
+      weight: 6
       amount_min: 1
       amount_max: 1
     justiciar_potion_7:
       item_id: "potion:Justiciar:7"
+      weight: 3
+      amount_min: 1
+      amount_max: 1
+
+    # =====================================================================
+    #                            WHITE TOWER PATHWAY
+    # =====================================================================
+
+    # --- Seq 9 Ingredients ---
+    manticore_bird_pituitary_gland:
+      item_id: "manticore_bird_pituitary_gland"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+    light_antelope_blood:
+      item_id: "light_antelope_blood"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+    rock_crystal_powder:
+      item_id: "rock_crystal_powder"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+    peppermint_extract:
+      item_id: "peppermint_extract"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+
+    # --- Seq 8 Ingredients ---
+    crystallized_cave_monkey_brain:
+      item_id: "crystallized_cave_monkey_brain"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+    memory_flower_petals:
+      item_id: "memory_flower_petals"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+    tree_of_wisdom_sap:
+      item_id: "tree_of_wisdom_sap"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+    yellow_amber_powder:
+      item_id: "yellow_amber_powder"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+
+    # --- Seq 7 Ingredients ---
+    phantom_python_vertical_eye:
+      item_id: "phantom_python_vertical_eye"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+    steel_toothed_wolf_heart:
+      item_id: "steel_toothed_wolf_heart"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+    mica_powder:
+      item_id: "mica_powder"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+
+    # --- Seq 6 Ingredients ---
+    prismatic_chameleon_heart:
+      item_id: "prismatic_chameleon_heart"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+    liquid_silver_phantom_residue:
+      item_id: "liquid_silver_phantom_residue"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+    mimicry_moss_spores:
+      item_id: "mimicry_moss_spores"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+    devastated_blank_mask:
+      item_id: "devastated_blank_mask"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+
+    # --- Seq 5 Ingredients (Вага 5 - Шанс ~0.28%) ---
+    void_beholder_petrified_eye:
+      item_id: "void_beholder_petrified_eye"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+    condensed_astral_nebula:
+      item_id: "condensed_astral_nebula"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+    ancient_rune_powder:
+      item_id: "ancient_rune_powder"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+    pure_spirituality_tear:
+      item_id: "pure_spirituality_tear"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+
+    # --- White Tower Recipes ---
+    white_tower_recipe_9:
+      item_id: "recipe:WhiteTower:9"
+      weight: 45
+      amount_min: 1
+      amount_max: 1
+    white_tower_recipe_8:
+      item_id: "recipe:WhiteTower:8"
+      weight: 30
+      amount_min: 1
+      amount_max: 1
+    white_tower_recipe_7:
+      item_id: "recipe:WhiteTower:7"
+      weight: 15
+      amount_min: 1
+      amount_max: 1
+    white_tower_recipe_6:
+      item_id: "recipe:WhiteTower:6"
+      weight: 8
+      amount_min: 1
+      amount_max: 1
+    white_tower_recipe_5:
+      item_id: "recipe:WhiteTower:5"
       weight: 4
+      amount_min: 1
+      amount_max: 1
+
+    # --- White Tower Potions ---
+    white_tower_potion_9:
+      item_id: "potion:WhiteTower:9"
+      weight: 10
+      amount_min: 1
+      amount_max: 1
+    white_tower_potion_8:
+      item_id: "potion:WhiteTower:8"
+      weight: 6
+      amount_min: 1
+      amount_max: 1
+    white_tower_potion_7:
+      item_id: "potion:WhiteTower:7"
+      weight: 3
       amount_min: 1
       amount_max: 1

@@ -7,11 +7,11 @@ import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
-import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class PhysicalEnhancement extends PermanentPassiveAbility {
@@ -24,6 +24,8 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
     private static final double DEFAULT_HEALTH = 20.0;
     private static final int REFRESH_PERIOD_TICKS = 100; // 5 секунд
     private static final int EFFECT_DURATION_TICKS = 120; // 6 секунд
+
+    private int tickCounter = 0;
 
     public PhysicalEnhancement(String name, String description, int hpCalculationBase, PotionEffectType... effects) {
         this.abilityName = name;
@@ -61,6 +63,7 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
 
     @Override
     public void onActivate(IAbilityContext context) {
+        tickCounter = 0;
         // Спочатку оновлюємо HP, щоб при вході одразу виставити правильне значення
         updateHealth(context);
         applyEffects(context);
@@ -68,23 +71,34 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
 
     @Override
     public void tick(IAbilityContext context) {
-        Player player = context.getCasterPlayer();
-        if (player == null || !player.isValid() || player.isDead()) return;
+        UUID playerId = context.getCasterId();
+
+        // Перевіряємо чи гравець онлайн
+        if (!context.playerData().isOnline(playerId)) {
+            return;
+        }
+
+        tickCounter++;
 
         // Перевіряємо HP рідше (раз на секунду), щоб не навантажувати сервер
-        if (player.getTicksLived() % 20 == 0) {
+        if (tickCounter % 20 == 0) {
             updateHealth(context);
         }
 
-        if (player.getTicksLived() % REFRESH_PERIOD_TICKS == 0) {
+        // Оновлюємо ефекти кожні 5 секунд
+        if (tickCounter % REFRESH_PERIOD_TICKS == 0) {
             applyEffects(context);
         }
     }
 
     @Override
     public void onDeactivate(IAbilityContext context) {
-        Player player = context.getCasterPlayer();
-        if (player == null) return;
+        UUID playerId = context.getCasterId();
+
+        // Перевіряємо чи гравець онлайн
+        if (!context.playerData().isOnline(playerId)) {
+            return;
+        }
 
         // ВАЖЛИВО: Ми прибираємо ефекти, але з HP треба бути обережним.
         // Якщо гравець просто виходить з гри, нам НЕ треба скидати HP до 20,
@@ -92,21 +106,8 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
         // Але оскільки ми не знаємо причину деактивації (вихід чи зміна класу),
         // ми скидаємо HP, але пропорційно зменшуємо поточне, щоб не було глітчів.
 
-        AttributeInstance healthAttr = player.getAttribute(Attribute.MAX_HEALTH);
-        if (healthAttr != null && healthAttr.getBaseValue() > DEFAULT_HEALTH) {
-            double oldMax = healthAttr.getBaseValue();
-            double currentHp = player.getHealth();
-            double percent = currentHp / oldMax;
-
-            healthAttr.setBaseValue(DEFAULT_HEALTH);
-
-            // Масштабуємо здоров'я вниз, щоб зберегти відсоток
-            player.setHealth(Math.max(1, DEFAULT_HEALTH * percent));
-        }
-
-        for (PotionEffectType type : effectTypes) {
-            player.removePotionEffect(type);
-        }
+        resetHealth(context, playerId);
+        removeEffects(context, playerId);
     }
 
     // --- Виправлена логіка HP ---
@@ -115,6 +116,10 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
         if (hpCalculationBase <= 0) return;
 
         Player player = context.getCasterPlayer();
+        if (player == null || !player.isValid() || player.isDead()) {
+            return;
+        }
+
         Sequence sequence = context.getCasterBeyonder().getSequence();
         AttributeInstance healthAttr = player.getAttribute(Attribute.MAX_HEALTH);
 
@@ -146,15 +151,56 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
         }
     }
 
+    /**
+     * Скидає здоров'я до стандартного значення при деактивації
+     */
+    private void resetHealth(IAbilityContext context, UUID playerId) {
+        if (hpCalculationBase <= 0) return;
+
+        Player player = context.getCasterPlayer();
+        if (player == null || !player.isValid()) {
+            return;
+        }
+
+        AttributeInstance healthAttr = player.getAttribute(Attribute.MAX_HEALTH);
+        if (healthAttr != null && healthAttr.getBaseValue() > DEFAULT_HEALTH) {
+            double oldMax = healthAttr.getBaseValue();
+            double currentHp = player.getHealth();
+            double percent = currentHp / oldMax;
+
+            healthAttr.setBaseValue(DEFAULT_HEALTH);
+
+            // Масштабуємо здоров'я вниз, щоб зберегти відсоток
+            player.setHealth(Math.max(1, DEFAULT_HEALTH * percent));
+        }
+    }
+
+    /**
+     * Накладає або оновлює поточні ефекти
+     */
     private void applyEffects(IAbilityContext context) {
         if (effectTypes.isEmpty()) return;
 
-        Player player = context.getCasterPlayer();
+        UUID playerId = context.getCasterId();
         Sequence sequence = context.getCasterBeyonder().getSequence();
         int amplifier = calculateAmplifier(sequence);
 
         for (PotionEffectType type : effectTypes) {
-            player.addPotionEffect(new PotionEffect(type, EFFECT_DURATION_TICKS, amplifier, false, false, true));
+            context.entity().applyPotionEffect(
+                    playerId,
+                    type,
+                    EFFECT_DURATION_TICKS,
+                    amplifier
+            );
+        }
+    }
+
+    /**
+     * Видаляє всі ефекти при деактивації
+     */
+    private void removeEffects(IAbilityContext context, UUID playerId) {
+        for (PotionEffectType type : effectTypes) {
+            context.entity().removePotionEffect(playerId, type);
         }
     }
 

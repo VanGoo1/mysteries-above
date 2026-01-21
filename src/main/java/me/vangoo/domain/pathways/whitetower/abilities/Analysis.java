@@ -21,12 +21,12 @@ public class Analysis extends ActiveAbility {
 
     private static final int ANALYSIS_DELAY_SECONDS = 2;
     private static final double DETECTION_RADIUS = 20.0;
-    private static final int COST = 120;
+    private static final int COST = 200;
     private static final int COOLDOWN = 180;
     private static final int MAX_REMEMBERED_ABILITIES = 10;
 
     // --- НАЛАШТУВАННЯ ШАНСІВ ---
-    private static final double BASE_CHANCE = 0.30; // Базовий шанс 30%
+    private static final double BASE_CHANCE = 0.20; // Базовий шанс 30%
     private static final double SEQUENCE_DIFF_MODIFIER = 0.10; // +/- 10% за кожен рівень різниці
     private static final double RECIPE_KNOWLEDGE_BONUS_PER_RECIPE = 0.05;
     private static final double MAX_RECIPE_BONUS = 0.25;
@@ -85,21 +85,19 @@ public class Analysis extends ActiveAbility {
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
         UUID casterId = context.getCasterId();
-        Player caster = context.getCasterPlayer();
-
-        if (caster != null && caster.isSneaking()) {
+        if (casterId != null && context.playerData().isSneaking(casterId)) {
             AnalysisMode currentMode = getCurrentMode(casterId);
             AnalysisMode newMode = currentMode.next();
             playerModes.put(casterId, newMode);
 
-            caster.playSound(caster.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.8f, 1.5f);
+            context.effects().playSoundForPlayer(casterId, Sound.BLOCK_NOTE_BLOCK_PLING, 0.8f, 1.5f);
 
-            context.sendMessageToActionBar(
+            context.messaging().sendMessageToActionBar(casterId,
                     Component.text("Режим Аналізу: ", NamedTextColor.WHITE)
                             .append(Component.text(newMode.getDisplayName() + " - " + newMode.getDescription()))
             );
 
-            context.spawnParticle(Particle.ENCHANT, caster.getLocation().add(0, 1, 0), 20, 0.3, 0.5, 0.3);
+            context.effects().spawnParticle(Particle.ENCHANT, context.playerData().getCurrentLocation(casterId).add(0, 1, 0), 20, 0.3, 0.5, 0.3);
             return AbilityResult.deferred();
         }
 
@@ -117,10 +115,10 @@ public class Analysis extends ActiveAbility {
             return AbilityResult.failure("Ліміт пам'яті досягнуто!");
         }
 
-        List<Player> nearbyPlayers = context.getNearbyPlayers(DETECTION_RADIUS);
+        List<Player> nearbyPlayers = context.targeting().getNearbyPlayers(DETECTION_RADIUS);
         if (nearbyPlayers.isEmpty()) return AbilityResult.failure("Немає цілей поблизу.");
 
-        context.openChoiceMenu(
+        context.ui().openChoiceMenu(
                 "КРОК 1: Виберіть ціль",
                 nearbyPlayers,
                 player -> createPlayerHead(player, context),
@@ -139,19 +137,19 @@ public class Analysis extends ActiveAbility {
 
         List<Ability> copiedAbilitiesList = new ArrayList<>(copiedAbilitiesSet);
 
-        context.openChoiceMenu(
+        context.ui().openChoiceMenu(
                 "ВИДАЛЕННЯ: Оберіть здібність",
                 copiedAbilitiesList,
                 this::createDeleteIcon,
                 selectedAbility -> {
                     boolean removed = casterBeyonder.removeAbility(selectedAbility.getIdentity());
-                    Player caster = context.getCasterPlayer();
+                    UUID casterId = context.getCasterId();
                     if (removed) {
-                        context.sendMessageToCaster(ChatColor.GREEN + "Здібність '" + selectedAbility.getName() + "' успішно видалена.");
-                        caster.playSound(caster.getLocation(), Sound.BLOCK_ANVIL_DESTROY, 1f, 1.2f);
-                        context.playVortexEffect(caster.getLocation(), 1, 0.5, Particle.SMOKE, 50);
+                        context.messaging().sendMessageToActionBar(casterId, Component.text(ChatColor.GREEN + "Здібність '" + selectedAbility.getName() + "' успішно видалена."));
+                        context.effects().playSound(context.playerData().getCurrentLocation(casterId), Sound.BLOCK_ANVIL_DESTROY, 1f, 1.2f);
+                        context.effects().playVortexEffect(context.playerData().getCurrentLocation(casterId), 1, 0.5, Particle.SMOKE, 50);
                     } else {
-                        context.sendMessageToCaster(ChatColor.RED + "Не вдалося видалити здібність '" + selectedAbility.getName() + "'.");
+                        context.messaging().sendMessageToActionBar(casterId, Component.text(ChatColor.RED + "Не вдалося видалити здібність '" + selectedAbility.getName() + "'."));
                     }
                 }
         );
@@ -160,14 +158,14 @@ public class Analysis extends ActiveAbility {
     }
 
     private void startAnalysisPhase(IAbilityContext context, Player target) {
-        Player caster = context.getCasterPlayer();
-        context.playConeEffect(caster.getEyeLocation(), caster.getLocation().getDirection(), 30, 5, Particle.ENCHANT, 40);
-        context.scheduleDelayed(() -> openAbilitySelectionMenu(context, target, context.getBeyonderFromEntity(target.getUniqueId())), ANALYSIS_DELAY_SECONDS * 20L);
+        UUID casterId = context.getCasterId();
+        context.effects().playConeEffect(context.playerData().getEyeLocation(casterId), context.playerData().getCurrentLocation(casterId).getDirection(), 30, 5, Particle.ENCHANT, 40);
+        context.scheduling().scheduleDelayed(() -> openAbilitySelectionMenu(context, target.getUniqueId(), context.beyonder().getBeyonder(target.getUniqueId())), ANALYSIS_DELAY_SECONDS * 20L);
     }
 
-    private void openAbilitySelectionMenu(IAbilityContext context, Player target, Beyonder targetBeyonder) {
-        if (!target.isOnline()) return;
-
+    private void openAbilitySelectionMenu(IAbilityContext context, UUID targetId, Beyonder targetBeyonder) {
+        if (!context.playerData().isOnline(targetId)) return;
+        UUID casterId = context.getCasterId();
         List<Ability> targetAbilities = new ArrayList<>(targetBeyonder.getAbilities());
 
         List<Ability> availableAbilities = targetAbilities.stream()
@@ -177,11 +175,11 @@ public class Analysis extends ActiveAbility {
                 .toList();
 
         if (availableAbilities.isEmpty()) {
-            context.sendMessageToCaster(ChatColor.RED + "Здібностей для копіювання не виявлено.");
+            context.messaging().sendMessageToActionBar(casterId,Component.text(ChatColor.RED + "Здібностей для копіювання не виявлено."));
             return;
         }
 
-        context.openChoiceMenu(
+        context.ui().openChoiceMenu(
                 "КРОК 2: Шанс (База 30%)",
                 availableAbilities,
                 ability -> createAbilityIcon(ability, targetBeyonder, context),
@@ -191,28 +189,28 @@ public class Analysis extends ActiveAbility {
 
     private void attemptToCopyAbility(IAbilityContext context, Beyonder targetBeyonder, Ability ability) {
         Beyonder casterBeyonder = context.getCasterBeyonder();
-        Player caster = context.getCasterPlayer();
+        UUID casterId = context.getCasterId();
 
         if (casterBeyonder.getAbilityByName(ability.getName()).isPresent()) {
-            context.sendMessageToCaster(ChatColor.RED + "Ви вже знаєте цю здібність!");
+            context.messaging().sendMessageToActionBar(casterId, Component.text(ChatColor.RED + "Ви вже знаєте цю здібність!"));
             return;
         }
 
         if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, context)) {
-            context.sendMessageToCaster(ChatColor.RED + "Недостатньо духовності!");
+            context.messaging().sendMessageToActionBar(casterId, Component.text(ChatColor.RED + "Недостатньо духовності!"));
             return;
         }
-        context.publishAbilityUsedEvent(this);
+        context.events().publishAbilityUsedEvent(this, casterBeyonder);
         int abilitySeq = findAbilitySequence(targetBeyonder, ability);
         int casterSeq = casterBeyonder.getSequenceLevel();
-        int knownRecipes = context.getKnownRecipeCount(targetBeyonder.getPathway().getName());
+        int knownRecipes = context.beyonder().getUnlockedRecipesCount(casterId, casterBeyonder.getPathway().getName());
 
         double finalChance = calculateTotalChance(casterSeq, abilitySeq, knownRecipes);
 
         double seqDiff = (abilitySeq - casterSeq) * SEQUENCE_DIFF_MODIFIER;
         double recipeBonus = Math.min(knownRecipes * RECIPE_KNOWLEDGE_BONUS_PER_RECIPE, MAX_RECIPE_BONUS);
 
-        context.sendMessageToCaster(String.format(
+        context.messaging().sendMessage(casterId, String.format(
                 "\n%s=== АНАЛІЗ: %s ===\n" +
                         "%sБазовий шанс: %s%.0f%%\n" +
                         "%sРізниця рівнів: %s%+.0f%%\n" +
@@ -228,16 +226,16 @@ public class Analysis extends ActiveAbility {
         ));
 
         if (Math.random() > finalChance) {
-            caster.playSound(caster.getLocation(), Sound.ENTITY_ITEM_BREAK, 1f, 0.5f);
-            context.sendMessageToCaster(ChatColor.RED + "× Невдача! Структура нестабільна.");
+            context.effects().playSound(context.playerData().getCurrentLocation(casterId), Sound.ENTITY_ITEM_BREAK, 1f, 0.5f);
+            context.messaging().sendMessageToActionBar(casterId, Component.text(ChatColor.RED + "× Невдача! Структура нестабільна."));
             return;
         }
 
         boolean added = casterBeyonder.addOffPathwayAbility(ability);
         if (added) {
-            caster.playSound(caster.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
-            context.playVortexEffect(caster.getLocation(), 2, 1, Particle.END_ROD, 30);
-            context.sendMessageToCaster(ChatColor.GREEN + "✔ Здібність успішно скопійована!");
+            context.effects().playSound(context.playerData().getCurrentLocation(casterId), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
+            context.effects().playVortexEffect(context.playerData().getCurrentLocation(casterId), 2, 1, Particle.END_ROD, 30);
+            context.messaging().sendMessageToActionBar(casterId, Component.text(ChatColor.GREEN + "✔ Здібність успішно скопійована!"));
         }
     }
 
@@ -264,7 +262,7 @@ public class Analysis extends ActiveAbility {
 
             int abilitySeq = findAbilitySequence(target, ability);
             int casterSeq = context.getCasterBeyonder().getSequenceLevel();
-            int recipes = context.getKnownRecipeCount(target.getPathway().getName());
+            int recipes = context.beyonder().getUnlockedRecipesCount(target.getPlayerId(), target.getPathway().getName());
 
             double finalChance = calculateTotalChance(casterSeq, abilitySeq, recipes);
 

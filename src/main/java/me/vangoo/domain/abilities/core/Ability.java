@@ -70,10 +70,8 @@ public abstract class Ability {
         // SEQUENCE-BASED SUCCESS CHECK (Optional)
         AbilityResult sequenceCheckResult = performSequenceBasedSuccessCheck(context);
         if (sequenceCheckResult != null) {
-            // Ability uses sequence-based success and check failed
-            // КРИТИЧНО: НЕ встановлювати кулдаун для deferred здібностей!
-            // Кулдаун буде встановлений пізніше через AbilityResourceConsumer
-            context.setCooldown(this, getCooldown(context.getCasterBeyonder().getSequence()));
+            context.messaging().sendMessage(context.getCasterId(), sequenceCheckResult.getMessage());
+            context.cooldown().setCooldown(this, context.getCasterId());
             return sequenceCheckResult;
         }
 

@@ -199,4 +199,12 @@ public class EntityContext implements IEntityContext {
             player.setSprinting(value);
         }
     }
+
+    @Override
+    public void giveExperience(UUID entityId, int amount) {
+        Player player = Bukkit.getPlayer(entityId);
+        if (player != null) {
+            player.giveExp(amount);
+        }
+    }
 }

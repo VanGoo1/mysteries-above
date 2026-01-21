@@ -4,10 +4,13 @@ import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.abilities.core.ToggleablePassiveAbility;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.domain.valueobjects.Sequence;
+import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+
+import java.util.UUID;
 
 
 public class AntiDivination extends ToggleablePassiveAbility {
@@ -30,7 +33,8 @@ public class AntiDivination extends ToggleablePassiveAbility {
 
     @Override
     public void onEnable(IAbilityContext context) {
-        context.sendMessageToCaster(ChatColor.GRAY + "Ви захищені від чужого ворожіння");
+        UUID casterId = context.getCasterId();
+        context.messaging().sendMessageToActionBar(casterId, Component.text(ChatColor.GRAY + "Ви захищені від чужого ворожіння"));
 
         context.effects().playSoundForPlayer(context.getCasterId(), Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 1.8f);
         context.effects().playSoundForPlayer(context.getCasterId(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 0.8f, 1.5f);
@@ -52,7 +56,8 @@ public class AntiDivination extends ToggleablePassiveAbility {
 
     @Override
     public void onDisable(IAbilityContext context) {
-        context.sendMessageToCaster(ChatColor.GRAY + "Ви знову вразливі до ворожіння");
+        UUID casterId = context.getCasterId();
+        context.messaging().sendMessageToActionBar(casterId, Component.text(ChatColor.GRAY + "Ви знову вразливі до ворожіння"));
 
         context.effects().playSoundForPlayer(context.getCasterId(), Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 0.8f);
 

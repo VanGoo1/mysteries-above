@@ -5,6 +5,7 @@ import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.ChatColor;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -14,11 +15,13 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.RayTraceResult;
 
+import java.util.UUID;
+
 public class PsychicPiercing extends ActiveAbility {
 
-    private static final double MAX_RANGE = 5.0; // Як в описі - 5 метрів
-    private static final double SPIRIT_DAMAGE = 12.0; // 6 сердець чистого урону
-    private static final int PREPARATION_TIME_TICKS = 100; // 5 секунд на пошук цілі
+    private static final double MAX_RANGE = 5.0;
+    private static final double SPIRIT_DAMAGE = 12.0;
+    private static final int PREPARATION_TIME_TICKS = 100; // 5 секунд
 
     @Override
     public String getName() {
@@ -44,108 +47,126 @@ public class PsychicPiercing extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCasterPlayer();
+        UUID casterId = context.getCasterId();
 
-        // Візуал підготовки: очі починають світитися
-        context.sendMessageToCaster(ChatColor.AQUA + "👁 Ви підготували Психічний Прокол. Подивіться на жертву...");
-        context.playSoundToCaster(Sound.BLOCK_BEACON_AMBIENT, 1.0f, 2.0f);
+        // Візуал підготовки
+        context.messaging().sendMessage(casterId, ChatColor.AQUA + "👁 Ви підготували Психічний Прокол. Подивіться на жертву...");
+        context.effects().playSoundForPlayer(casterId, Sound.BLOCK_BEACON_AMBIENT, 1.0f, 2.0f);
 
-        // Запускаємо таймер, який чекає на жертву
-        new MentalStrikeTask(context, caster).start();
+        // Запускаємо таймер сканування
+        new MentalStrikeTask(context, casterId).start();
 
         return AbilityResult.success();
     }
 
     /**
-     * Внутрішній клас завдання, яке сканує погляд гравця
+     * Внутрішній клас для сканування погляду
      */
-    private class MentalStrikeTask {
+    private static class MentalStrikeTask {
         private final IAbilityContext context;
-        private final Player caster;
-        private final BukkitTask task;
+        private final UUID casterId;
         private int ticksRun = 0;
+        private BukkitTask task; // Field to hold the BukkitTask
 
-        public MentalStrikeTask(IAbilityContext context, Player caster) {
+        public MentalStrikeTask(IAbilityContext context, UUID casterId) {
             this.context = context;
-            this.caster = caster;
-            // Запускаємо повторювану задачу кожні 2 тіки (0.1 сек) для швидкої реакції
-            this.task = context.scheduleRepeating(this::tick, 0, 2);
+            this.casterId = casterId;
         }
 
         public void start() {
-            // Логіка вже в конструкторі, але можна додати стартові ефекти
+            // Запускаємо повторювану задачу
+            this.task = context.scheduling().scheduleRepeating(this::tick, 0, 2); // Store the task
         }
 
         private void tick() {
             ticksRun += 2;
 
-            // 1. Перевірка часу дії (якщо нікого не знайшли за 5 сек - скасовуємо)
-            if (ticksRun >= PREPARATION_TIME_TICKS || !caster.isOnline()) {
+            // Перевірка таймауту
+            if (ticksRun >= PREPARATION_TIME_TICKS || !context.playerData().isOnline(casterId)) {
                 cancel(false);
                 return;
             }
 
-            // 2. Візуалізація "Заряджених очей" (частинки біля очей кастера)
+            // Візуалізація "заряджених очей"
             if (ticksRun % 10 == 0) {
-                Location eyeLoc = caster.getEyeLocation();
-                context.spawnParticle(Particle.ELECTRIC_SPARK, eyeLoc, 2, 0.2, 0.1, 0.2);
+                Location eyeLoc = context.playerData().getEyeLocation(casterId);
+                if (eyeLoc != null) {
+                    context.effects().spawnParticle(Particle.ELECTRIC_SPARK, eyeLoc, 2, 0.2, 0.1, 0.2);
+                }
             }
 
-            // 3. Пошук цілі поглядом (RayTrace)
-            RayTraceResult result = caster.getWorld().rayTraceEntities(
-                    caster.getEyeLocation(),
-                    caster.getEyeLocation().getDirection(),
-                    MAX_RANGE,
-                    0.5, // Розмір променя (трохи "товстіший", щоб легше влучити)
-                    entity -> entity instanceof LivingEntity && !entity.getUniqueId().equals(caster.getUniqueId())
-            );
+            // Пошук цілі через RayTrace
+            var targetOpt = context.targeting().getTargetedEntity(MAX_RANGE);
 
-            if (result != null && result.getHitEntity() instanceof LivingEntity) {
-                LivingEntity target = (LivingEntity) result.getHitEntity();
-                triggerPiercing(target);
-                cancel(true); // Успішно спрацювало
+            if (targetOpt.isPresent()) {
+                LivingEntity target = targetOpt.get();
+                triggerPiercing(target.getUniqueId());
+                cancel(true);
             }
         }
 
-        private void triggerPiercing(LivingEntity target) {
-            // === ВІЗУАЛ ===
-            // Блискавка з очей (Beam effect)
-            context.playBeamEffect(caster.getEyeLocation(), target.getEyeLocation(), Particle.FIREWORK, 0.1, 5);
-            context.playSound(caster.getLocation(), Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.5f, 1.5f); // Пронизливий звук
-            context.playSound(target.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.5f, 2.0f);
+        private void triggerPiercing(UUID targetId) {
+            Location casterEye = context.playerData().getEyeLocation(casterId);
+            Location targetEye = context.playerData().getEyeLocation(targetId);
 
-            // === ЕФЕКТИ (ПРОБИТТЯ ЗАХИСТУ) ===
+            if (casterEye == null || targetEye == null) {
+                cancel(false); // Cancel if locations are null to prevent infinite running.
+                return;
+            }
 
-            // 1. Зняття бафів (Invade mental defenses)
-            // Видаляємо Resistance, Regen, FireRes, Absorption
-            context.removeEffect(target.getUniqueId(), PotionEffectType.RESISTANCE);
-            context.removeEffect(target.getUniqueId(), PotionEffectType.REGENERATION);
-            context.removeEffect(target.getUniqueId(), PotionEffectType.ABSORPTION);
+            // === ВІЗУАЛЬНІ ЕФЕКТИ ===
 
-            // 2. Стан вразливості (Subject to counterattack)
-            // Зупиняємо (Slowness) і забороняємо стрибати (Jump Boost negative)
-            context.applyEffect(target.getUniqueId(), PotionEffectType.SLOWNESS, 20, 10); // 1 секунда повного стопу
-            context.applyEffect(target.getUniqueId(), PotionEffectType.JUMP_BOOST, 20, 128); // Заборона стрибка
+            // Блискавка з очей (beam effect)
+            context.effects().playBeamEffect(casterEye, targetEye, Particle.FIREWORK, 0.1, 5);
 
-            // 3. Урон Духовному Тілу (Direct Damage)
-            // Використовуємо damage(), але оскільки це "Spirit Body", можна нанести
-            // трохи Wither ефекту для візуалізації болю
-            context.damage(target.getUniqueId(), SPIRIT_DAMAGE);
-            context.applyEffect(target.getUniqueId(), PotionEffectType.WITHER, 40, 1);
+            // Звуки
+            Location casterLoc = context.playerData().getCurrentLocation(casterId);
+            Location targetLoc = context.playerData().getCurrentLocation(targetId);
 
-            // Повідомлення
-            context.sendMessageToCaster(ChatColor.GOLD + "⚡ Психічний прокол успішний!");
-            if (target instanceof Player) {
-                context.sendMessage(target.getUniqueId(), ChatColor.RED + "Ваш розум пронизав нестерпний біль!");
-                // Ефект тряски камери (легка нудота на 2 сек)
-                context.applyEffect(target.getUniqueId(), PotionEffectType.NAUSEA, 50, 0);
+            if (casterLoc != null) {
+                context.effects().playSound(casterLoc, Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.5f, 1.5f);
+            }
+            if (targetLoc != null) {
+                context.effects().playSound(targetLoc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.5f, 2.0f);
+            }
+
+            // === ЗНЯТТЯ ЗАХИСНИХ БАФІВ ===
+            context.entity().removePotionEffect(targetId, PotionEffectType.RESISTANCE);
+            context.entity().removePotionEffect(targetId, PotionEffectType.REGENERATION);
+            context.entity().removePotionEffect(targetId, PotionEffectType.ABSORPTION);
+
+            // === ПАРАЛІЗАЦІЯ ===
+            // Повна зупинка (Slowness 10)
+            context.entity().applyPotionEffect(targetId, PotionEffectType.SLOWNESS, 20, 10);
+            // Заборона стрибка
+            context.entity().applyPotionEffect(targetId, PotionEffectType.JUMP_BOOST, 20, 128);
+
+            // === УРОН ДУХОВНОМУ ТІЛУ ===
+            context.entity().damage(targetId, SPIRIT_DAMAGE);
+            // Візуалізація болю (Wither effect)
+            context.entity().applyPotionEffect(targetId, PotionEffectType.WITHER, 40, 1);
+
+            // === ПОВІДОМЛЕННЯ ===
+            context.messaging().sendMessage(casterId, ChatColor.GOLD + "⚡ Психічний прокол успішний!");
+
+            if (context.playerData().isOnline(targetId)) {
+                context.messaging().sendMessage(targetId, ChatColor.RED + "Ваш розум пронизав нестерпний біль!");
+                // Ефект тряски камери (нудота)
+                context.entity().applyPotionEffect(targetId, PotionEffectType.NAUSEA, 50, 0);
+            }
+
+            // Візуальний ефект алерту над ціллю
+            if (targetLoc != null) {
+                context.effects().playAlertHalo(targetLoc.clone().add(0, 2.2, 0), Color.RED);
             }
         }
 
         private void cancel(boolean success) {
-            task.cancel();
+            if (this.task != null && !this.task.isCancelled()) {
+                this.task.cancel(); // Actually cancel the task
+            }
             if (!success) {
-                context.sendMessageToCaster(ChatColor.GRAY + "Концентрація розсіялась...");
+                context.messaging().sendMessage(casterId, ChatColor.GRAY + "Концентрація розсіялась...");
             }
         }
     }

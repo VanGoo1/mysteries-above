@@ -160,8 +160,6 @@ public interface IAbilityContext {
     @Deprecated
     boolean isBeyonder(UUID entityId);
 
-    @Deprecated
-    Optional<Integer> getEntitySequenceLevel(UUID entityId);
 
     // ==================== INVENTORY ====================
 

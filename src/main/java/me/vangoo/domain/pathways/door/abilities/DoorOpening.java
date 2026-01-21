@@ -1,5 +1,5 @@
-
 package me.vangoo.domain.pathways.door.abilities;
+
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
@@ -8,8 +8,8 @@ import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.*;
 import org.bukkit.Particle.DustOptions;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import java.util.*;
@@ -65,13 +65,18 @@ public class DoorOpening extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Location playerLoc = context.getCasterLocation();
+        UUID casterId = context.getCasterId();
+        Location playerLoc = context.playerData().getCurrentLocation(casterId);
+        if (playerLoc == null) {
+            return AbilityResult.failure("Не вдалося визначити вашу позицію");
+        }
+
         Vector dir = playerLoc.getDirection().setY(0).normalize();
-        Sequence sequence = context.getCasterBeyonder().getSequence();
+        Sequence sequence = context.beyonder().getBeyonder(casterId).getSequence();
         int sequenceLevel = sequence.level();
 
         // 1) Знайти блок-стіну перед гравцем
-        Block entry = findWallInFront(playerLoc, dir);
+        Block entry = findWallInFront(playerLoc, dir, context);
         if (entry == null) {
             return AbilityResult.failure("Ви повинні стояти близько до стіни.");
         }
@@ -81,7 +86,7 @@ public class DoorOpening extends ActiveAbility {
         Location exit = findExitLocation(entry, dir, currentMaxDist);
 
         if (exit == null) {
-            context.playSoundToCaster(Sound.BLOCK_CHEST_LOCKED, 1.0f, 0.5f);
+            context.effects().playSoundForPlayer(casterId, Sound.BLOCK_CHEST_LOCKED, 1.0f, 0.5f);
             return AbilityResult.failure("Ця стіна занадто товста (макс. " + currentMaxDist + " блоків) або за нею немає місця.");
         }
 
@@ -96,14 +101,15 @@ public class DoorOpening extends ActiveAbility {
         if (sequenceLevel <= 7) {
             // Покращена версія - створюємо портал для всіх
             createSharedPortal(context, entryCenter, exit, dir, seed);
-            context.sendMessageToCaster(ChatColor.AQUA + "Портал створено! Інші гравці можуть пройти через нього");
+            context.messaging().sendMessage(casterId,
+                    ChatColor.AQUA + "Портал створено! Інші гравці можуть пройти через нього");
         } else {
             // Стара версія - тільки для кастера
-            context.scheduleDelayed(() -> {
-                context.playSound(exit, Sound.BLOCK_IRON_DOOR_OPEN, 1.0f, 1.5f);
-                context.playSound(exit, Sound.BLOCK_IRON_DOOR_CLOSE, 1.0f, 1.5f);
-                context.teleport(context.getCasterId(), exit);
-                context.spawnParticle(Particle.FIREWORK, exit.clone().add(0, 1, 0), 10, 0.3, 0.5, 0.3);
+            context.scheduling().scheduleDelayed(() -> {
+                context.effects().playSound(exit, Sound.BLOCK_IRON_DOOR_OPEN, 1.0f, 1.5f);
+                context.effects().playSound(exit, Sound.BLOCK_IRON_DOOR_CLOSE, 1.0f, 1.5f);
+                context.entity().teleport(casterId, exit);
+                context.effects().spawnParticle(Particle.FIREWORK, exit.clone().add(0, 1, 0), 10, 0.3, 0.5, 0.3);
             }, 2L);
         }
 
@@ -116,57 +122,78 @@ public class DoorOpening extends ActiveAbility {
     private void createSharedPortal(IAbilityContext context, Location entry, Location exit, Vector direction, long seed) {
         PortalData portal = new PortalData(entry, exit, direction);
         activePortals.add(portal);
+        UUID casterId = context.getCasterId();
 
         // Миттєво телепортуємо кастера
-        context.scheduleDelayed(() -> {
-            context.playSound(exit, Sound.BLOCK_IRON_DOOR_OPEN, 1.0f, 1.5f);
-            context.teleport(context.getCasterId(), exit);
-            context.spawnParticle(Particle.FIREWORK, exit.clone().add(0, 1, 0), 10, 0.3, 0.5, 0.3);
+        context.scheduling().scheduleDelayed(() -> {
+            context.effects().playSound(exit, Sound.BLOCK_IRON_DOOR_OPEN, 1.0f, 1.5f);
+            context.entity().teleport(casterId, exit);
+            context.effects().spawnParticle(Particle.FIREWORK, exit.clone().add(0, 1, 0), 10, 0.3, 0.5, 0.3);
         }, 2L);
 
         // Моніторинг гравців поблизу порталу
-        BukkitTask monitorTask = context.scheduleRepeating(() -> {
-            List<Player> nearbyPlayers = context.getNearbyPlayers(PORTAL_ACTIVATION_RADIUS);
+        BukkitTask monitorTask = context.scheduling().scheduleRepeating(() -> {
+            List<UUID> nearbyPlayerIds = context.targeting().getNearbyPlayers(PORTAL_ACTIVATION_RADIUS)
+                    .stream()
+                    .map(p -> p.getUniqueId())
+                    .toList();
 
-            for (Player player : nearbyPlayers) {
+            for (UUID playerId : nearbyPlayerIds) {
+                Location playerLoc = context.playerData().getCurrentLocation(playerId);
+                if (playerLoc == null) continue;
+
                 // Перевіряємо чи гравець близько до входу порталу
-                if (player.getLocation().distance(entry) <= PORTAL_ACTIVATION_RADIUS) {
+                if (playerLoc.distance(entry) <= PORTAL_ACTIVATION_RADIUS) {
                     // Перевіряємо чи гравець ще не був телепортований цим порталом
-                    if (!portal.hasTeleported(player.getUniqueId())) {
+                    if (!portal.hasTeleported(playerId)) {
                         // Телепортуємо гравця
                         Location playerExit = exit.clone();
-                        playerExit.setYaw(player.getLocation().getYaw());
-                        playerExit.setPitch(player.getLocation().getPitch());
+                        playerExit.setYaw(playerLoc.getYaw());
+                        playerExit.setPitch(playerLoc.getPitch());
 
-                        player.teleport(playerExit);
-                        player.playSound(playerExit, Sound.BLOCK_IRON_DOOR_OPEN, 1.0f, 1.5f);
-                        player.spawnParticle(Particle.FIREWORK, playerExit.clone().add(0, 1, 0), 10, 0.3, 0.5, 0.3);
-                        player.sendMessage(ChatColor.AQUA + "Ви пройшли через примарні двері!");
+                        context.entity().teleport(playerId, playerExit);
+                        context.effects().playSound(playerExit, Sound.BLOCK_IRON_DOOR_OPEN, 1.0f, 1.5f);
+                        context.effects().spawnParticle(Particle.FIREWORK, playerExit.clone().add(0, 1, 0), 10, 0.3, 0.5, 0.3);
+                        context.messaging().sendMessage(playerId,
+                                ChatColor.AQUA + "Ви пройшли через примарні двері!");
 
-                        portal.markTeleported(player.getUniqueId());
+                        portal.markTeleported(playerId);
                     }
                 }
             }
         }, 0L, 5L); // Перевіряємо кожні 5 тіків
 
         // Закриваємо портал після закінчення часу
-        context.scheduleDelayed(() -> {
+        context.scheduling().scheduleDelayed(() -> {
             activePortals.remove(portal);
             monitorTask.cancel();
 
             // Фінальні ефекти закриття
-            context.playSound(entry, Sound.BLOCK_IRON_DOOR_CLOSE, 1.0f, 0.8f);
-            context.playSound(exit, Sound.BLOCK_IRON_DOOR_CLOSE, 1.0f, 0.8f);
-            context.spawnParticle(Particle.SMOKE, entry, 20, 0.5, 1.0, 0.5);
-            context.spawnParticle(Particle.SMOKE, exit, 20, 0.5, 1.0, 0.5);
+            context.effects().playSound(entry, Sound.BLOCK_IRON_DOOR_CLOSE, 1.0f, 0.8f);
+            context.effects().playSound(exit, Sound.BLOCK_IRON_DOOR_CLOSE, 1.0f, 0.8f);
+            context.effects().spawnParticle(Particle.SMOKE, entry, 20, 0.5, 1.0, 0.5);
+            context.effects().spawnParticle(Particle.SMOKE, exit, 20, 0.5, 1.0, 0.5);
         }, PORTAL_DURATION_TICKS);
     }
 
-    private Block findWallInFront(Location start, Vector dir) {
-        for (int i = 1; i <= ACTIVATION_RANGE; i++) {
-            Location probe = start.clone().add(dir.clone().multiply(i));
-            Block b = probe.getBlock();
-            if (b.getType().isSolid()) return b;
+    private Block findWallInFront(Location start, Vector dir, IAbilityContext context) {
+        if (start == null || start.getWorld() == null) {
+            return null;
+        }
+
+        RayTraceResult result = start.getWorld().rayTraceBlocks(
+                start,
+                dir,
+                ACTIVATION_RANGE,
+                FluidCollisionMode.NEVER,
+                true
+        );
+
+        if (result != null && result.getHitBlock() != null) {
+            Block block = result.getHitBlock();
+            if (block.getType().isSolid()) {
+                return block;
+            }
         }
         return null;
     }
@@ -214,8 +241,9 @@ public class DoorOpening extends ActiveAbility {
         final double actualStepX = w / stepsX;
         final double actualStepY = height / stepsY;
 
-        context.playSoundToCaster(Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1.0f, 1.0f);
-        context.playSoundToCaster(Sound.BLOCK_IRON_DOOR_OPEN, 1.0f, 0.9f);
+        UUID casterId = context.getCasterId();
+        context.effects().playSoundForPlayer(casterId, Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1.0f, 1.0f);
+        context.effects().playSoundForPlayer(casterId, Sound.BLOCK_IRON_DOOR_OPEN, 1.0f, 0.9f);
 
         List<Location> particlePositions = new ArrayList<>();
         for (int layer = 0; layer < depthLayers; layer++) {
@@ -240,7 +268,7 @@ public class DoorOpening extends ActiveAbility {
             }
         }
 
-        context.scheduleRepeating(new Runnable() {
+        context.scheduling().scheduleRepeating(new Runnable() {
             int ticksLeft = durationTicks;
 
             @Override
@@ -252,10 +280,10 @@ public class DoorOpening extends ActiveAbility {
                 Location leftTop = leftBottom.clone().add(0, height, 0);
                 Location rightTop = rightBottom.clone().add(0, height, 0);
 
-                context.playLineEffect(leftBottom, leftTop, Particle.END_ROD);
-                context.playLineEffect(rightBottom, rightTop, Particle.END_ROD);
-                context.playLineEffect(leftTop, rightTop, Particle.END_ROD);
-                context.playLineEffect(leftBottom, rightBottom, Particle.END_ROD);
+                context.effects().playLineEffect(leftBottom, leftTop, Particle.END_ROD);
+                context.effects().playLineEffect(rightBottom, rightTop, Particle.END_ROD);
+                context.effects().playLineEffect(leftTop, rightTop, Particle.END_ROD);
+                context.effects().playLineEffect(leftBottom, rightBottom, Particle.END_ROD);
 
                 World world = center.getWorld();
                 if (world == null) return;
@@ -269,9 +297,11 @@ public class DoorOpening extends ActiveAbility {
                     double zJ = (Math.random() - 0.5) * jitter;
                     Location pJittered = p.clone().add(xJ, yJ, zJ);
                     if (isPurple) {
-                        world.spawnParticle(Particle.DUST, pJittered, 1, 0.0, 0.0, 0.0, 0.0, new DustOptions(purpleDust.getColor(), purpleDust.getSize()));
+                        world.spawnParticle(Particle.DUST, pJittered, 1, 0.0, 0.0, 0.0, 0.0,
+                                new DustOptions(purpleDust.getColor(), purpleDust.getSize()));
                     } else {
-                        world.spawnParticle(Particle.DUST, pJittered, 1, 0.0, 0.0, 0.0, 0.0, new DustOptions(blueDust.getColor(), blueDust.getSize()));
+                        world.spawnParticle(Particle.DUST, pJittered, 1, 0.0, 0.0, 0.0, 0.0,
+                                new DustOptions(blueDust.getColor(), blueDust.getSize()));
                     }
                 }
             }

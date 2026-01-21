@@ -12,6 +12,7 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class MysticalReenactment extends ActiveAbility {
@@ -38,24 +39,29 @@ public class MysticalReenactment extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Location center = context.getCasterPlayer().getLocation();
+        final UUID casterId = context.getCasterId();
+        Location center = context.playerData().getCurrentLocation(casterId);
 
-        context.sendMessageToActionBar(Component.text("Зчитування містичних слідів...", NamedTextColor.AQUA));
-        context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 0.8f);
+        if (center == null) {
+            return AbilityResult.failure("Неможливо отримати локацію гравця.");
+        }
+
+        context.messaging().sendMessageToActionBar(casterId, Component.text("Зчитування містичних слідів...", NamedTextColor.AQUA));
+        context.effects().playSoundForPlayer(casterId, Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 0.8f);
 
         // Затримка для запису БД
-        context.scheduleDelayed(() -> {
-            context.runAsync(() -> {
-                List<RecordedEvent> events = context.getPastEvents(center, 15, 300); // Зменшив радіус до 15
+        context.scheduling().scheduleDelayed(() -> {
+            context.scheduling().runAsync(() -> {
+                List<RecordedEvent> events = context.events().getPastEvents(center, 15, 300); // Зменшив радіус до 15
 
-                context.scheduleDelayed(() -> {
+                context.scheduling().scheduleDelayed(() -> {
                     if (events.isEmpty()) {
-                        context.sendMessageToActionBar(Component.text("Слідів не знайдено.", NamedTextColor.GRAY));
+                        context.messaging().sendMessageToActionBar(casterId, Component.text("Слідів не знайдено.", NamedTextColor.GRAY));
                         return;
                     }
 
                     spawnScanEffect(context, center);
-                    context.playSoundToCaster(Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 1.0f, 1.0f);
+                    context.effects().playSoundForPlayer(casterId, Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 1.0f, 1.0f);
 
                     // === ОБМЕЖЕННЯ КІЛЬКОСТІ ===
                     // Показуємо максимум 5 записів, щоб не було "вежі" з тексту
@@ -82,7 +88,7 @@ public class MysticalReenactment extends ActiveAbility {
                         shownCount++;
                     }
 
-                    context.sendMessageToCaster("§7Показано " + shownCount + " останніх дій.");
+                    context.messaging().sendMessage(casterId, "§7Показано " + shownCount + " останніх дій.");
 
                 }, 0L);
             });
@@ -104,19 +110,19 @@ public class MysticalReenactment extends ActiveAbility {
         // Спавнимо трохи вище, щоб текст не перекривав скриню
         Location displayLoc = loc.clone().add(0.5, 1.3 + yOffset, 0.5);
 
-        context.spawnTemporaryHologram(displayLoc, text, 200L); // 10 секунд
+        context.messaging().spawnTemporaryHologram(displayLoc, text, 200L); // 10 секунд
 
         // Маленька частинка
-        context.spawnParticle(Particle.END_ROD, displayLoc, 1, 0, 0, 0);
+        context.effects().spawnParticle(Particle.END_ROD, displayLoc, 1);
     }
 
     private void spawnScanEffect(IAbilityContext context, Location center) {
         // Простий ефект кола
         for (int i = 0; i < 360; i += 20) {
             double angle = Math.toRadians(i);
-            context.spawnParticle(Particle.FIREWORK,
+            context.effects().spawnParticle(Particle.FIREWORK,
                     center.clone().add(Math.cos(angle) * 5, 1, Math.sin(angle) * 5),
-                    1, 0, 0, 0);
+                    1);
         }
     }
 }

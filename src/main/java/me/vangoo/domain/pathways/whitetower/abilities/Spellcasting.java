@@ -12,6 +12,7 @@ import me.vangoo.domain.pathways.whitetower.abilities.custom.GeneratedSpell;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.infrastructure.mappers.GeneratedSpellSerializer;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -102,12 +103,13 @@ public class Spellcasting extends ActiveAbility {
     protected AbilityResult performExecution(IAbilityContext context) {
         SpellBuilderState state = new SpellBuilderState();
         state.spellName = "Магічний Експеримент";
-        openBuilderGui(context, state);
+        Player player = Bukkit.getPlayer(context.getCasterId());
+        if (player == null) return AbilityResult.failure("Player not online.");
+        openBuilderGui(context, state, player);
         return AbilityResult.deferred();
     }
 
-    private void openBuilderGui(IAbilityContext context, SpellBuilderState state) {
-        Player player = context.getCasterPlayer();
+    private void openBuilderGui(IAbilityContext context, SpellBuilderState state, Player player) {
         Gui gui = Gui.gui()
                 .title(Component.text("Конструктор Заклинань"))
                 .rows(GUI_ROWS)
@@ -234,7 +236,7 @@ public class Spellcasting extends ActiveAbility {
 
         gui.setItem(SLOT_MOD_1, new GuiItem(item, event -> {
             state.selectedBuffIndex = (state.selectedBuffIndex + 1) % effects.length;
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1f, 1.5f);
+            context.effects().playSoundForPlayer(player.getUniqueId(), Sound.UI_BUTTON_CLICK, 1f, 1.5f);
             updateGuiContent(gui, state, player, context);
         }));
     }
@@ -269,12 +271,12 @@ public class Spellcasting extends ActiveAbility {
             if (event.isLeftClick()) {
                 if (currentLvl < maxLvl) {
                     changeParam(state, paramId, 1);
-                    player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 2f);
-                } else player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1f, 1f);
+                    context.effects().playSoundForPlayer(player.getUniqueId(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 2f);
+                } else context.effects().playSoundForPlayer(player.getUniqueId(), Sound.BLOCK_NOTE_BLOCK_BASS, 1f, 1f);
             } else if (event.isRightClick()) {
                 if (currentLvl > 0) {
                     changeParam(state, paramId, -1);
-                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1f, 1f);
+                    context.effects().playSoundForPlayer(player.getUniqueId(), Sound.UI_BUTTON_CLICK, 1f, 1f);
                 }
             }
             updateGuiContent(gui, state, player, context);
@@ -366,27 +368,28 @@ public class Spellcasting extends ActiveAbility {
             if (state.selectedType != null && state.canAfford) {
                 handleCreation(context, state, player, gui);
             } else {
-                player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_LAND, 1f, 1f);
+                context.effects().playSoundForPlayer(player.getUniqueId(), Sound.BLOCK_ANVIL_LAND, 1f, 1f);
             }
         }));
     }
 
     private void handleCreation(IAbilityContext context, SpellBuilderState state, Player player, Gui gui) {
+        final UUID casterId = player.getUniqueId();
         // Отримуємо об'єкт Beyonder
-        Beyonder casterBeyonder = context.getCasterBeyonder();
+        Beyonder casterBeyonder = context.beyonder().getBeyonder(casterId);
 
         // --- ВИПРАВЛЕННЯ: Споживання ресурсів ---
         // Оскільки метод execute() повернув deferred (через меню),
         // система не зняла ману і не поставила кулдаун автоматично.
         // Ми робимо це тут вручну, перед тим як створити спел.
         if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, context)) {
-            player.sendMessage(ChatColor.RED + "Недостатньо духовності для завершення ритуалу!");
-            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1f, 0.5f);
+            context.messaging().sendMessage(casterId, ChatColor.RED + "Недостатньо духовності для завершення ритуалу!");
+            context.effects().playSoundForPlayer(casterId, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, 0.5f);
             return; // Перериваємо, якщо не вистачило мани або кулдаун не пройшов
         }
 
         // Сповіщаємо систему про подію використання (важливо для логів/статистики)
-        context.publishAbilityUsedEvent(this);
+        context.events().publishAbilityUsedEvent(this, casterBeyonder);
 
         // --- Споживання фізичних предметів (Inventory) ---
         Map<Material, Integer> cost = calculateResourceCost(state);
@@ -429,11 +432,11 @@ public class Spellcasting extends ActiveAbility {
 
         // --- Додавання гравцю ---
         if (casterBeyonder.addOffPathwayAbility(newSpell)) {
-            player.sendMessage(ChatColor.GREEN + "Здібність '" + state.spellName + "' створено!");
-            player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
+            context.messaging().sendMessage(casterId, ChatColor.GREEN + "Здібність '" + state.spellName + "' створено!");
+            context.effects().playSoundForPlayer(casterId, Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
             gui.close(player);
         } else {
-            player.sendMessage(ChatColor.RED + "Помилка: Немає місця для нової здібності (макс. ліміт).");
+            context.messaging().sendMessage(casterId, ChatColor.RED + "Помилка: Немає місця для нової здібності (макс. ліміт).");
             // Тут теоретично можна повернути ресурси, якщо хочеш,
             // але зазвичай перевірку на вільне місце роблять до відкриття GUI.
         }
@@ -569,7 +572,7 @@ public class Spellcasting extends ActiveAbility {
             state.spellName = generateRandomName(type);
             // Скидаємо параметри при зміні типу, щоб не було глюків
             state.param1Lvl = 0; state.param2Lvl = 0; state.param5Lvl = 0;
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1f, 1f);
+            context.effects().playSoundForPlayer(player.getUniqueId(), Sound.UI_BUTTON_CLICK, 1f, 1f);
             updateGuiContent(gui, state, player, context);
         }));
     }

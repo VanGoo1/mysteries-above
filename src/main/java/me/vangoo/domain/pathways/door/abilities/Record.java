@@ -5,9 +5,10 @@ import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.events.AbilityDomainEvent;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.domain.valueobjects.SequenceBasedSuccessChance;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -16,6 +17,7 @@ import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -57,7 +59,8 @@ public class Record extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Beyonder caster = context.getCasterBeyonder();
+        UUID casterId = context.getCasterId();
+        Beyonder caster = context.beyonder().getBeyonder(casterId);
 
         int currentCount = caster.getOffPathwayActiveAbilities().size();
         int maxAllowed = calculateMaxRecordedAbilities(caster);
@@ -69,13 +72,13 @@ public class Record extends ActiveAbility {
             ));
         }
 
-        List<Player> nearbyPlayers = context.getNearbyPlayers(DETECTION_RADIUS);
+        List<Player> nearbyPlayers = context.targeting().getNearbyPlayers(DETECTION_RADIUS);
 
         if (nearbyPlayers.isEmpty()) {
             return AbilityResult.failure("Немає гравців поблизу для запису");
         }
 
-        context.openChoiceMenu(
+        context.ui().openChoiceMenu(
                 "Виберіть ціль для запису",
                 nearbyPlayers,
                 this::createPlayerHead,
@@ -118,47 +121,59 @@ public class Record extends ActiveAbility {
     }
 
     private void startRecording(IAbilityContext context, Player target) {
-        Player caster = context.getCasterPlayer();
+        UUID casterId = context.getCasterId();
+        UUID targetId = target.getUniqueId();
 
-        Beyonder targetBeyonder = context.getBeyonderFromEntity(target.getUniqueId());
+        Beyonder targetBeyonder = context.beyonder().getBeyonder(targetId);
         if (targetBeyonder == null) {
-            context.sendMessageToCaster(ChatColor.RED + "Ціль не є Потойбічним!");
+            context.messaging().sendMessage(casterId, ChatColor.RED + "Ціль не є Потойбічним!");
             return;
         }
 
-        caster.spigot().sendMessage(
-                ChatMessageType.ACTION_BAR,
-                new TextComponent(ChatColor.GOLD + "✦ Я прийшов, я побачив, я записав ✦")
+        // Action bar повідомлення
+        context.messaging().sendMessageToActionBar(casterId,
+                Component.text("✦ Я прийшов, я побачив, я записав ✦", NamedTextColor.GOLD)
         );
 
-        Optional<AbilityDomainEvent> recentEvent = context.getLastAbilityEvent(
-                target.getUniqueId(),
+        // Перевіряємо останню здібність з історії
+        Optional<AbilityDomainEvent> recentEvent = context.events().getLastAbilityEvent(
+                targetId,
                 RECORDING_DURATION_SECONDS
         );
 
         if (recentEvent.isPresent() && recentEvent.get() instanceof AbilityDomainEvent.AbilityUsed used) {
-            caster.playSound(caster.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.8f);
-            context.sendMessageToCaster(String.format(
+            Location casterLocation = context.playerData().getCurrentLocation(casterId);
+            if (casterLocation != null) {
+                context.effects().playSound(casterLocation, Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.8f);
+            }
+
+            context.messaging().sendMessage(casterId, String.format(
                     "%sЗнайдено останню здібність %s%s%s з історії!",
                     ChatColor.YELLOW,
                     ChatColor.AQUA, used.abilityName(),
                     ChatColor.YELLOW
             ));
 
-            finalizeRecording(context, target, targetBeyonder, used);
+            finalizeRecording(context, targetId, targetBeyonder, used);
             return;
         }
 
+        // Підписуємося на нові здібності
         AtomicReference<AbilityDomainEvent.AbilityUsed> recordedEvent = new AtomicReference<>();
 
-        context.subscribeToAbilityEvents(
+        context.events().subscribeToAbilityEvents(
                 event -> {
                     if (event instanceof AbilityDomainEvent.AbilityUsed used) {
-                        if (used.casterId().equals(target.getUniqueId())) {
+                        if (used.casterId().equals(targetId)) {
                             recordedEvent.set(used);
-                            caster.playSound(caster.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.5f);
-                            context.sendMessageToCaster(ChatColor.GREEN + "✓ Зафіксовано: " +
-                                    ChatColor.AQUA + used.abilityName());
+
+                            Location casterLocation = context.playerData().getCurrentLocation(casterId);
+                            if (casterLocation != null) {
+                                context.effects().playSound(casterLocation, Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.5f);
+                            }
+
+                            context.messaging().sendMessage(casterId,
+                                    ChatColor.GREEN + "✓ Зафіксовано: " + ChatColor.AQUA + used.abilityName());
                             return true;
                         }
                     }
@@ -167,40 +182,50 @@ public class Record extends ActiveAbility {
                 RECORDING_DURATION_SECONDS * 20
         );
 
-        caster.playSound(caster.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 2.0f);
-        context.sendMessageToCaster(String.format(
+        Location casterLocation = context.playerData().getCurrentLocation(casterId);
+        if (casterLocation != null) {
+            context.effects().playSound(casterLocation, Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 2.0f);
+        }
+
+        String targetName = context.playerData().getName(targetId);
+        context.messaging().sendMessage(casterId, String.format(
                 "%sОчікування здібності від %s%s%s...",
                 ChatColor.YELLOW,
-                ChatColor.AQUA, target.getName(),
+                ChatColor.AQUA, targetName,
                 ChatColor.YELLOW
         ));
 
-        context.scheduleDelayed(() -> {
-            finalizeRecording(context, target, targetBeyonder, recordedEvent.get());
+        context.scheduling().scheduleDelayed(() -> {
+            finalizeRecording(context, targetId, targetBeyonder, recordedEvent.get());
         }, RECORDING_DURATION_SECONDS * 20L);
     }
 
     private void finalizeRecording(
             IAbilityContext context,
-            Player target,
+            UUID targetId,
             Beyonder targetBeyonder,
             AbilityDomainEvent.AbilityUsed recordedEvent
     ) {
-        Player caster = context.getCasterPlayer();
-        Beyonder casterBeyonder = context.getCasterBeyonder();
+        UUID casterId = context.getCasterId();
+        Beyonder casterBeyonder = context.beyonder().getBeyonder(casterId);
+        Location casterLocation = context.playerData().getCurrentLocation(casterId);
 
         if (recordedEvent == null) {
-            caster.playSound(caster.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
-            context.sendMessageToCaster(ChatColor.RED +
-                    target.getName() + " не використав жодної здібності");
+            if (casterLocation != null) {
+                context.effects().playSound(casterLocation, Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
+            }
+
+            String targetName = context.playerData().getName(targetId);
+            context.messaging().sendMessage(casterId,
+                    ChatColor.RED + targetName + " не використав жодної здібності");
             return;
         }
 
         Optional<Ability> abilityOpt = targetBeyonder.getAbilityByName(recordedEvent.abilityName());
 
         if (abilityOpt.isEmpty()) {
-            context.sendMessageToCaster(ChatColor.RED +
-                    "Не вдалося знайти здібність: " + recordedEvent.abilityName());
+            context.messaging().sendMessage(casterId,
+                    ChatColor.RED + "Не вдалося знайти здібність: " + recordedEvent.abilityName());
             return;
         }
 
@@ -208,16 +233,19 @@ public class Record extends ActiveAbility {
 
         // --- БЛОКУВАННЯ ЗАБОРОНЕНИХ ЗДІБНОСТЕЙ (Record / Analysis) ---
         if (isForbiddenAbility(ability)) {
-            caster.playSound(caster.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
-            context.sendMessageToCaster(ChatColor.RED +
-                    "Ця здібність занадто складна або абстрактна для запису!");
+            if (casterLocation != null) {
+                context.effects().playSound(casterLocation, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+            }
+
+            context.messaging().sendMessage(casterId,
+                    ChatColor.RED + "Ця здібність занадто складна або абстрактна для запису!");
             return;
         }
         // -------------------------------------------------------------
 
         if (!(ability instanceof ActiveAbility activeAbility)) {
-            context.sendMessageToCaster(ChatColor.RED +
-                    "Можна записати тільки активні здібності!");
+            context.messaging().sendMessage(casterId,
+                    ChatColor.RED + "Можна записати тільки активні здібності!");
             return;
         }
 
@@ -225,14 +253,15 @@ public class Record extends ActiveAbility {
         int maxAllowed = calculateMaxRecordedAbilities(casterBeyonder);
 
         if (currentCount >= maxAllowed) {
-            context.sendMessageToCaster(ChatColor.RED +
-                    String.format("Досягнуто ліміт записаних здібностей (%d/%d)!", currentCount, maxAllowed));
+            context.messaging().sendMessage(casterId,
+                    ChatColor.RED + String.format("Досягнуто ліміт записаних здібностей (%d/%d)!",
+                            currentCount, maxAllowed));
             return;
         }
 
         if (casterBeyonder.getAbilityByName(ability.getName()).isPresent()) {
-            context.sendMessageToCaster(ChatColor.RED +
-                    "У вас вже є ця здібність!");
+            context.messaging().sendMessage(casterId,
+                    ChatColor.RED + "У вас вже є ця здібність!");
             return;
         }
 
@@ -246,16 +275,19 @@ public class Record extends ActiveAbility {
                 new SequenceBasedSuccessChance(casterSequence, abilitySequence);
 
         if (!successChance.rollSuccess()) {
-            caster.playSound(caster.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
-            context.sendMessageToCaster(String.format(
+            if (casterLocation != null) {
+                context.effects().playSound(casterLocation, Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
+            }
+
+            context.messaging().sendMessage(casterId, String.format(
                     "%sНе вдалося записати здібність! (Шанс: %s)",
                     ChatColor.RED,
                     successChance.getFormattedChance()
             ));
 
             if (abilitySequence <= 4) {
-                context.sendMessageToCaster(ChatColor.YELLOW +
-                        "⚠ Здібності напівбогів надзвичайно важко записати!");
+                context.messaging().sendMessage(casterId,
+                        ChatColor.YELLOW + "⚠ Здібності напівбогів надзвичайно важко записати!");
             }
             return;
         }
@@ -264,22 +296,24 @@ public class Record extends ActiveAbility {
         boolean added = casterBeyonder.addOffPathwayAbility(oneTimeAbility);
 
         if (!added) {
-            context.sendMessageToCaster(ChatColor.RED +
-                    "Не вдалося додати здібність (можливо вона вже існує)");
+            context.messaging().sendMessage(casterId,
+                    ChatColor.RED + "Не вдалося додати здібність (можливо вона вже існує)");
             return;
         }
 
         if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, context)) {
-            context.sendMessageToCaster(ChatColor.RED +
-                    "Недостатньо духовності для завершення запису!");
+            context.messaging().sendMessage(casterId,
+                    ChatColor.RED + "Недостатньо духовності для завершення запису!");
             casterBeyonder.removeAbility(oneTimeAbility.getIdentity());
             return;
         }
 
-        caster.playSound(caster.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.5f);
-        caster.playSound(caster.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 0.7f, 1.2f);
+        if (casterLocation != null) {
+            context.effects().playSound(casterLocation, Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.5f);
+            context.effects().playSound(casterLocation, Sound.BLOCK_ENCHANTMENT_TABLE_USE, 0.7f, 1.2f);
+        }
 
-        context.sendMessageToCaster(String.format(
+        context.messaging().sendMessage(casterId, String.format(
                 "%s✓ Записано здібність: %s%s %s(одноразова)",
                 ChatColor.GREEN,
                 ChatColor.AQUA, recordedEvent.abilityName(),
@@ -287,7 +321,7 @@ public class Record extends ActiveAbility {
         ));
 
         int newCount = casterBeyonder.getOffPathwayActiveAbilities().size();
-        context.sendMessageToCaster(String.format(
+        context.messaging().sendMessage(casterId, String.format(
                 "%sЗаписано здібностей: %s%d/%d",
                 ChatColor.GRAY,
                 ChatColor.YELLOW, newCount, maxAllowed
@@ -307,8 +341,9 @@ public class Record extends ActiveAbility {
         // Record - сам клас запису (щоб не записувати запис)
 
         return simpleClassName.equalsIgnoreCase("Analysis") ||
-                name.equalsIgnoreCase("Аналіз");
-
+                name.equalsIgnoreCase("Аналіз") ||
+                simpleClassName.equalsIgnoreCase("Spellcasting") ||
+                name.equalsIgnoreCase("Створення заклинань");
     }
 
     private int findAbilitySequence(Beyonder beyonder, Ability ability) {

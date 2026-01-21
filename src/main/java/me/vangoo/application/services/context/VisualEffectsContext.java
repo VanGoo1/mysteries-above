@@ -74,6 +74,18 @@ public class VisualEffectsContext implements IVisualEffectsContext {
     }
 
     @Override
+    public void spawnParticleForPlayer(UUID receiverId, Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ) {
+        Player player = Bukkit.getPlayer(receiverId);
+
+        // Перевіряємо, чи гравець онлайн, інакше нема кому показувати
+        if (player != null && player.isOnline()) {
+            // Останній параметр (0.0) - це "extra" (швидкість частинок).
+            // Для більшості ефектів 0 підходить ідеально, щоб вони не розліталися.
+            player.spawnParticle(particle, location, count, offsetX, offsetY, offsetZ, 0.0);
+        }
+    }
+
+    @Override
     public void playSphereEffect(Location location, double radius, Particle particle, int durationTicks) {
         SphereEffect effect = new SphereEffect(effectManager);
         effect.setLocation(location);
