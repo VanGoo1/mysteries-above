@@ -286,7 +286,7 @@ public class Beyonder {
             }
 
             // Set cooldown for immediate (non-deferred) abilities
-            context.setCooldown(ability, ability.getCooldown(sequence));
+            context.cooldown().setCooldown(ability, playerId);
 
             if (spirituality.isCritical()) {
                 increaseSanityLoss(2);

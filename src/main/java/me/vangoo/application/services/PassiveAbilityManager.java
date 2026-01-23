@@ -156,7 +156,6 @@ public class PassiveAbilityManager {
             } catch (Exception e) {
                 System.err.println("Error ticking toggleable ability " +
                         ability.getName() + " for player " + playerId + ": " + e.getMessage());
-                e.printStackTrace();
             }
         }
 
@@ -178,7 +177,6 @@ public class PassiveAbilityManager {
             } catch (Exception e) {
                 System.err.println("Error ticking permanent ability " +
                         ability.getName() + " for player " + playerId + ": " + e.getMessage());
-                e.printStackTrace();
             }
         }
     }
@@ -207,7 +205,6 @@ public class PassiveAbilityManager {
             } catch (Exception e) {
                 System.err.println("Error activating permanent ability " +
                         ability.getName() + ": " + e.getMessage());
-                e.printStackTrace();
             }
         }
     }
@@ -230,7 +227,6 @@ public class PassiveAbilityManager {
             } catch (Exception e) {
                 System.err.println("Error deactivating permanent ability " +
                         ability.getName() + ": " + e.getMessage());
-                e.printStackTrace();
             }
         }
     }
@@ -258,7 +254,6 @@ public class PassiveAbilityManager {
             } catch (Exception e) {
                 System.err.println("Error disabling toggleable ability " +
                         ability.getName() + ": " + e.getMessage());
-                e.printStackTrace();
             }
         }
 
@@ -292,7 +287,6 @@ public class PassiveAbilityManager {
                 } catch (Exception e) {
                     System.err.println("Error cleaning up ability " +
                             ability.getName() + ": " + e.getMessage());
-                    e.printStackTrace();
                 }
             }
         }
@@ -304,7 +298,6 @@ public class PassiveAbilityManager {
             } catch (Exception e) {
                 System.err.println("Error cleaning up ability " +
                         ability.getName() + ": " + e.getMessage());
-                e.printStackTrace();
             }
         }
 

@@ -153,13 +153,13 @@ public class Recognition extends ToggleablePassiveAbility {
         try {
             // Безпечний виклик пошуку цілі.
             // Якщо гравець переміщується між світами, rayTraceEntities може викинути IllegalArgumentException
-            targetOpt = context.getTargetedEntity(OBSERVATION_RANGE);
+            targetOpt = context.targeting().getTargetedEntity(OBSERVATION_RANGE);
         } catch (IllegalArgumentException e) {
             // Ігноруємо цей тік, поки світ не синхронізується
             return;
         }
 
-        if (!targetOpt.isPresent()) {
+        if (targetOpt.isEmpty()) {
             handleNoTarget(state);
             return;
         }
@@ -233,18 +233,18 @@ public class Recognition extends ToggleablePassiveAbility {
         durations.put(targetId, GLOW_DURATION_TICKS);
 
         ChatColor color = getHealthColor(target);
-        context.setGlowing(targetId, color, GLOW_DURATION_TICKS);
+        context.glowing().setGlowing(targetId, casterId,color, GLOW_DURATION_TICKS);
 
         String healthInfo = String.format("[HP: %d%%]", getHealthPercentage(target));
-        context.sendMessage(
+        context.messaging().sendMessage(
                 casterId,
-                ChatColor.GREEN + "✓ Запам'ятано: " +
+                ChatColor.GREEN + "✓ Зафіксував: " +
                         ChatColor.WHITE + getEntityName(target) + " " +
                         ChatColor.GREEN + healthInfo +
                         " [" + (GLOW_DURATION_TICKS / 20) + "с]"
         );
 
-        context.playSoundToCaster(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.5f);
+        context.effects().playSoundForPlayer(casterId,Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.5f);
     }
 
     private void updateMarkDurations(UUID casterId, IAbilityContext context) {
@@ -275,14 +275,14 @@ public class Recognition extends ToggleablePassiveAbility {
         Map<UUID, Integer> durations = markDurations.get(casterId);
         if (durations != null) durations.remove(targetId);
 
-        context.removeGlowing(targetId);
+        context.glowing().removeGlowing(casterId, targetId);
     }
 
     private void removeAllMarks(UUID casterId, IAbilityContext context) {
         Set<UUID> marks = markedTargets.get(casterId);
         if (marks != null) {
             for (UUID targetId : new HashSet<>(marks)) {
-                context.removeGlowing(targetId);
+                context.glowing().removeGlowing(casterId, targetId);
             }
             marks.clear();
         }

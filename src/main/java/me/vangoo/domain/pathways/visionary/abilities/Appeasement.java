@@ -92,7 +92,7 @@ public class Appeasement extends ActiveAbility {
         for (LivingEntity entity : entities) {
             if (entity.getUniqueId().equals(caster.getUniqueId())) continue;
 
-            context.removeAllEffects(entity.getUniqueId());
+            context.entity().removeAllPotionEffects(entity.getUniqueId());
             context.entity().applyPotionEffect(entity.getUniqueId(), PotionEffectType.REGENERATION, regenTicks, 0);
 
             Location loc = entity.getLocation();

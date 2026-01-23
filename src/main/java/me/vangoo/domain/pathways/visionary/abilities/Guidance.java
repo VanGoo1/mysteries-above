@@ -52,7 +52,7 @@ public class Guidance extends ActiveAbility {
 
     @Override
     protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
-        return context.getTargetedEntity(CAST_RANGE);
+        return context.targeting().getTargetedEntity(CAST_RANGE);
     }
 
     @Override
@@ -66,13 +66,13 @@ public class Guidance extends ActiveAbility {
             hasEnded[0] = true;
             activeGuidanceSessions.remove(casterId);
 
-            context.sendMessageToActionBar(context.getCasterPlayer(),
+            context.messaging().sendMessageToActionBar(context.getCasterId(),
                     Component.text("Ви розірвали ментальний зв'язок").color(NamedTextColor.YELLOW));
-            context.playSoundToCaster(Sound.BLOCK_BEACON_DEACTIVATE, 1f, 1.2f);
+            context.effects().playSoundForPlayer(casterId, Sound.BLOCK_BEACON_DEACTIVATE, 1f, 1.2f);
             return AbilityResult.success();
         }
 
-        Optional<LivingEntity> targetOpt = context.getTargetedEntity(CAST_RANGE);
+        Optional<LivingEntity> targetOpt = context.targeting().getTargetedEntity(CAST_RANGE);
 
         if (targetOpt.isEmpty() || !(targetOpt.get() instanceof Player target)) {
             return AbilityResult.failure("Ціль має бути гравцем.");
@@ -85,15 +85,15 @@ public class Guidance extends ActiveAbility {
 
         UUID targetId = target.getUniqueId();
         // Візуальні ефекти успіху
-        context.sendMessageToActionBar(context.getCasterPlayer(),
+        context.messaging().sendMessageToActionBar(context.getCasterId(),
                 Component.text("Ви встановили ментальний контроль над " + target.getName())
                         .color(NamedTextColor.AQUA));
-        context.sendMessageToActionBar(target,
+        context.messaging().sendMessageToActionBar(targetId,
                 Component.text("Ви відчуваєте дивний сон, ніби хтось веде вас за руку...")
                         .color(NamedTextColor.LIGHT_PURPLE));
 
-        context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 1f, 1.5f);
-        context.spawnParticle(Particle.HAPPY_VILLAGER, target.getLocation().add(0, 1, 0), 20, 0.5, 0.5, 0.5);
+        context.effects().playSoundForPlayer(casterId,Sound.BLOCK_BEACON_ACTIVATE, 1f, 1.5f);
+        context.effects().spawnParticle(Particle.HAPPY_VILLAGER, target.getLocation().add(0, 1, 0), 20, 0.5, 0.5, 0.5);
 
         // Блокуємо посадку в транспорт
         context.events().subscribeToTemporaryEvent(context.getCasterId(),
@@ -101,7 +101,7 @@ public class Guidance extends ActiveAbility {
                 e -> e.getEntered().getUniqueId().equals(targetId),
                 e -> {
                     e.setCancelled(true);
-                    context.sendMessageToActionBar(target,
+                    context.messaging().sendMessageToActionBar(targetId,
                             Component.text("Ментальний контроль не дозволяє вам тут сховатись!")
                                     .color(NamedTextColor.RED));
                 },
@@ -125,53 +125,50 @@ public class Guidance extends ActiveAbility {
         // Register this session
         activeGuidanceSessions.put(casterId, hasEnded);
 
-        context.scheduleRepeating(new Runnable() {
-            @Override
-            public void run() {
-                // Check if already ended - prevent spam
-                if (hasEnded[0]) {
-                    activeGuidanceSessions.remove(casterId);
-                    return;
-                }
+        context.scheduling().scheduleRepeating(() -> {
+            // Check if already ended - prevent spam
+            if (hasEnded[0]) {
+                activeGuidanceSessions.remove(casterId);
+                return;
+            }
 
-                long now = System.currentTimeMillis();
+            long now = System.currentTimeMillis();
 
-                // Перевірка закінчення часу
-                if (now >= endTime) {
-                    hasEnded[0] = true;
-                    activeGuidanceSessions.remove(casterId);
-                    // Повідомлення про завершення
-                    context.sendMessage(targetId, ChatColor.GREEN + "Ви відчуваєте полегшення. Ментальний поводок зник.");
-                    context.sendMessage(casterId, ChatColor.GREEN + "Дія 'Керівництва' завершилась.");
-                    return;
-                }
+            // Перевірка закінчення часу
+            if (now >= endTime) {
+                hasEnded[0] = true;
+                activeGuidanceSessions.remove(casterId);
+                // Повідомлення про завершення
+                context.messaging().sendMessage(targetId, ChatColor.GREEN + "Ви відчуваєте полегшення. Ментальний поводок зник.");
+                context.messaging().sendMessage(casterId, ChatColor.GREEN + "Дія 'Керівництва' завершилась.");
+                return;
+            }
 
-                Player target = getPlayerSafely(context, targetId);
-                Player caster = getPlayerSafely(context, casterId);
+            Player target = getPlayerSafely(context, targetId);
+            Player caster = getPlayerSafely(context, casterId);
 
-                // Валідація: чи онлайн обидва гравці
-                if (target == null || caster == null) {
-                    return; // Продовжуємо чекати (можливо тимчасово офлайн)
-                }
+            // Валідація: чи онлайн обидва гравці
+            if (target == null || caster == null) {
+                return; // Продовжуємо чекати (можливо тимчасово офлайн)
+            }
 
-                // Перевірка світів
-                if (!target.getWorld().equals(caster.getWorld())) {
-                    hasEnded[0] = true;
-                    activeGuidanceSessions.remove(casterId);
-                    context.damage(targetId, 2.0);
-                    context.sendMessage(targetId, ChatColor.RED + "Зв'язок розірвано через зміну виміру!");
-                    context.sendMessage(casterId, ChatColor.YELLOW + "Зв'язок з ціллю розірвано (інший світ)");
-                    return;
-                }
+            // Перевірка світів
+            if (!target.getWorld().equals(caster.getWorld())) {
+                hasEnded[0] = true;
+                activeGuidanceSessions.remove(casterId);
+                context.entity().damage(targetId, 2.0);
+                context.messaging().sendMessage(targetId, ChatColor.RED + "Зв'язок розірвано через зміну виміру!");
+                context.messaging().sendMessage(casterId, ChatColor.YELLOW + "Зв'язок з ціллю розірвано (інший світ)");
+                return;
+            }
 
-                // ГОЛОВНА ЛОГІКА: Перевірка відстані
-                Location targetLoc = target.getLocation();
-                Location casterLoc = caster.getLocation();
-                double distance = targetLoc.distance(casterLoc);
+            // ГОЛОВНА ЛОГІКА: Перевірка відстані
+            Location targetLoc = target.getLocation();
+            Location casterLoc = caster.getLocation();
+            double distance = targetLoc.distance(casterLoc);
 
-                if (distance > MAX_DISTANCE) {
-                    applyRestraint(context, targetId, casterId, targetLoc, casterLoc, now, lastMessageTime);
-                }
+            if (distance > MAX_DISTANCE) {
+                applyRestraint(context, targetId, casterId, targetLoc, casterLoc, now, lastMessageTime);
             }
         }, 0L, 10L); // Кожні 0.5 секунди
     }
@@ -215,12 +212,12 @@ public class Guidance extends ActiveAbility {
         }
 
         // Ефекти
-        context.playSound(targetLoc, Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 0.5f);
-        context.spawnParticle(Particle.REVERSE_PORTAL, targetLoc, 15, 0.5, 1, 0.5);
+        context.effects().playSound(targetLoc, Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 0.5f);
+        context.effects().spawnParticle(Particle.REVERSE_PORTAL, targetLoc, 15, 0.5, 1, 0.5);
 
         // Повідомлення (без спаму - раз на 3 секунди)
         if (now - lastMessageTime[0] > 3000) {
-            context.sendMessageToActionBar(target,
+            context.messaging().sendMessageToActionBar(targetId,
                     Component.text("Незрима сила тягне вас назад!").color(NamedTextColor.DARK_PURPLE));
             lastMessageTime[0] = now;
         }

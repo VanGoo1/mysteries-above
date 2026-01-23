@@ -46,9 +46,9 @@ public class AbilityExecutor {
         IAbilityContext context = abilityContextFactory.createContext(player);
 
         // Check cooldowns (for active abilities)
-        if (ability.getType() == AbilityType.ACTIVE && context.hasCooldown(ability)) {
+        if (ability.getType() == AbilityType.ACTIVE && context.cooldown().hasCooldown(beyonder,ability)) {
             return AbilityResult.failure(
-                    "Cooldown: " + context.getRemainingCooldownSeconds(ability) + "с"
+                    "Cooldown: " + context.cooldown().getRemainingCooldownSeconds(beyonder, ability) + "с"
             );
         }
 

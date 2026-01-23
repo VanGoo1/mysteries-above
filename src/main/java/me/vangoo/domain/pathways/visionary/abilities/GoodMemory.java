@@ -193,13 +193,13 @@ public class GoodMemory extends ToggleablePassiveAbility {
         if (marks != null) marks.remove(targetId);
         Map<UUID, Integer> durations = markDurations.get(casterId);
         if (durations != null) durations.remove(targetId);
-        context.removeGlowing(targetId);
+        context.glowing().removeGlowing(casterId,targetId);
     }
 
     private void removeAllMarks(UUID casterId, IAbilityContext context) {
         Set<UUID> marks = markedTargets.get(casterId);
         if (marks != null) {
-            for (UUID targetId : new HashSet<>(marks)) context.removeGlowing(targetId);
+            for (UUID targetId : new HashSet<>(marks)) context.glowing().removeGlowing(casterId,targetId);
             marks.clear();
         }
         Map<UUID, Integer> durations = markDurations.get(casterId);

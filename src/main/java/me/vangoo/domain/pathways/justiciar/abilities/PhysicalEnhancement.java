@@ -219,7 +219,9 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
     }
 
     private String formatEffectName(PotionEffectType type) {
-        String name = type.getName().toLowerCase().replace("_", " ");
+        var key = type.getKeyOrNull();
+        if (key == null) return "";
+        String name = key.getKey().toLowerCase().replace("_", " ");
         return name.substring(0, 1).toUpperCase() + name.substring(1);
     }
 }

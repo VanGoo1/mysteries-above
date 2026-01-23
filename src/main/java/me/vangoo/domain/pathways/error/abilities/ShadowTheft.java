@@ -4,6 +4,8 @@ import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.valueobjects.Sequence;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LivingEntity;
@@ -46,14 +48,14 @@ public class ShadowTheft extends ActiveAbility {
     @Override
     protected void preExecution(IAbilityContext context) {
         Location startLoc = context.getCasterLocation();
-        context.spawnParticle(Particle.PORTAL, startLoc.add(0, 1, 0), 50, 0.5, 0.5, 0.5);
-        context.playSoundToCaster(Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.2f);
+        context.effects().spawnParticle(Particle.PORTAL, startLoc.add(0, 1, 0), 50, 0.5, 0.5, 0.5);
+        context.effects().playSoundForPlayer(context.getCasterId(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.2f);
     }
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
         // 1. Пошук цілі через контекст
-        LivingEntity target = context.getNearbyEntities(RANGE).stream()
+        LivingEntity target = context.targeting().getNearbyEntities(RANGE).stream()
                 .min(Comparator.comparingDouble(e -> e.getLocation().distance(context.getCasterLocation())))
                 .orElse(null);
 
@@ -65,28 +67,27 @@ public class ShadowTheft extends ActiveAbility {
         Location behindTarget = calculateSafeBehindLocation(target);
 
         // 3. Переміщення через контекст
-        context.teleport(context.getCasterId(), behindTarget);
+        context.entity().teleport(context.getCasterId(), behindTarget);
 
         // Візуальні ефекти на місці прибуття
-        context.spawnParticle(Particle.SMOKE, behindTarget, 30, 0.3, 0.5, 0.3);
-        context.playSound(behindTarget, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 0.8f);
+        context.effects().spawnParticle(Particle.SMOKE, behindTarget, 30, 0.3, 0.5, 0.3);
+        context.effects().playSound(behindTarget, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 0.8f);
 
         // 4. Спроба крадіжки
         boolean success = attemptTheft(context, target);
 
         if (success) {
             applyShadowStealth(context);
-            context.sendMessageToCaster(ChatColor.GREEN + "Ви успішно викрали предмет та зникли в тінях!");
             return AbilityResult.success();
         }
 
-        context.sendMessageToCaster(ChatColor.YELLOW + "Телепортація вдалася, але кишені цілі порожні.");
+        context.messaging().sendMessageToActionBar(context.getCasterId(), Component.text("кишені цілі порожні.").color(NamedTextColor.YELLOW));
         return AbilityResult.success();
     }
 
     @Override
     protected void postExecution(IAbilityContext context) {
-        context.playSoundToCaster(Sound.ENTITY_BAT_TAKEOFF, 0.5f, 1.5f);
+        context.effects().playSoundForPlayer(context.getCasterId(), Sound.ENTITY_BAT_TAKEOFF, 0.5f, 1.5f);
     }
 
     // ==========================================
@@ -126,17 +127,14 @@ public class ShadowTheft extends ActiveAbility {
         toSteal.setAmount(1);
 
         // Використання методів контексту для маніпуляції інвентарем
-        if (context.removeItem(human, toSteal)) {
-            context.giveItem(context.getCasterPlayer(), toSteal);
+        context.entity().consumeItem(human.getUniqueId(), toSteal);
+        context.entity().giveItem(context.getCasterId(), toSteal);
 
-            if (human instanceof Player victim) {
-                context.sendMessage(victim.getUniqueId(), ChatColor.RED + "Ви відчули, як хтось порпався у ваших речах...");
-                context.playSound(victim.getLocation(), Sound.ENTITY_ITEM_PICKUP, 0.5f, 0.5f);
-            }
-            return true;
+        if (human instanceof Player victim) {
+            context.messaging().sendMessageToActionBar(victim.getUniqueId(), Component.text("Ви відчули, як хтось порпався у ваших речах...").color(NamedTextColor.RED));
+            context.effects().playSound(victim.getLocation(), Sound.ENTITY_ITEM_PICKUP, 0.5f, 0.5f);
         }
-
-        return false;
+        return true;
     }
 
     private boolean isProtected(ItemStack item) {
@@ -146,14 +144,14 @@ public class ShadowTheft extends ActiveAbility {
 
     private void applyShadowStealth(IAbilityContext context) {
         // Ефекти через контекст
-        context.applyEffect(context.getCasterId(), PotionEffectType.INVISIBILITY, INVISIBILITY_TICKS, 0);
+        context.entity().applyPotionEffect(context.getCasterId(), PotionEffectType.INVISIBILITY, INVISIBILITY_TICKS, 0);
 
         // Повторюваний візуальний ефект (Shadow Trail)
         final int[] elapsed = {0};
-        context.scheduleRepeating(() -> {
+        context.scheduling().scheduleRepeating(() -> {
             if (elapsed[0] >= INVISIBILITY_TICKS) return;
 
-            context.spawnParticle(Particle.SMOKE, context.getCasterLocation().add(0, 0.5, 0), 3, 0.2, 0.2, 0.2);
+            context.effects().spawnParticle(Particle.SMOKE, context.getCasterLocation().add(0, 0.5, 0), 3, 0.2, 0.2, 0.2);
             elapsed[0] += 2;
         }, 0, 2);
     }

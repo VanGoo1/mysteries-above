@@ -86,7 +86,7 @@ public class PsychicCue extends ActiveAbility {
      * Базове меню для послідовностей 7-9
      */
     private void openBasicMenu(IAbilityContext ctx, UUID targetId) {
-        ctx.openChoiceMenu(
+        ctx.ui().openChoiceMenu(
                 "Психічний сигнал",
                 Arrays.asList(PsychicCueType.values()),
                 this::createMenuItem,
@@ -108,7 +108,7 @@ public class PsychicCue extends ActiveAbility {
         // Додаємо опцію навігації
         options.add(new AdvancedCueOption(null, true));
 
-        ctx.openChoiceMenu(
+        ctx.ui().openChoiceMenu(
                 "Психічний сигнал (Розширений)",
                 options,
                 this::createAdvancedMenuItem,
@@ -242,7 +242,7 @@ public class PsychicCue extends ActiveAbility {
         final int[] lastDistanceBracket = {-1};
         final boolean[] lastSlownessApplied = {false};
 
-        ctx.scheduleRepeating(new Runnable() {
+        ctx.scheduling().scheduleRepeating(new Runnable() {
             int ticksPassed = 0;
             int pullCounter = 0;
 
@@ -345,7 +345,7 @@ public class PsychicCue extends ActiveAbility {
         Location floorLoc = destination.clone().subtract(0, 0.8, 0);
 
         for (double y = 0; y < 2.5; y += 0.8) {
-            ctx.spawnParticle(Particle.END_ROD, floorLoc.clone().add(0, y, 0), 1, 0, 0, 0);
+            ctx.effects().spawnParticle(Particle.END_ROD, floorLoc.clone().add(0, y, 0), 1, 0, 0, 0);
         }
 
         for (int degree = 0; degree < 360; degree += 45) {
@@ -354,7 +354,7 @@ public class PsychicCue extends ActiveAbility {
             double z = Math.sin(radians) * 0.7;
 
             Location point = floorLoc.clone().add(x, 0.1, z);
-            ctx.spawnParticle(Particle.WITCH, point, 1, 0, 0, 0);
+            ctx.effects().spawnParticle(Particle.WITCH, point, 1, 0, 0, 0);
         }
 
         ctx.effects().playAlertHalo(floorLoc.clone().add(0, 0.8, 0), Color.RED);

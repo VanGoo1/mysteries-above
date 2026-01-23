@@ -57,27 +57,28 @@ public class SurgeOfInsanity extends ActiveAbility {
 
         // --- РЕСУРСИ ---
         if (!AbilityResourceConsumer.consumeResources(this, context.getCasterBeyonder(), context)) {
-            context.sendMessageToActionBar(Component.text(
-                    ChatColor.RED + "✗ Недостатньо духовності"
-            ));
+            context.messaging().sendMessageToActionBar(context.getCasterId(),
+                    Component.text(
+                            ChatColor.RED + "✗ Недостатньо духовності"
+                    ));
             return AbilityResult.failure("No spirituality");
         }
 
-        context.publishAbilityUsedEvent(this);
+        context.events().publishAbilityUsedEvent(this, context.getCasterBeyonder());
 
         Location loc = context.getCasterLocation();
 
         // --- ВІЗУАЛИ ---
-        context.playSphereEffect(loc, range, Particle.WITCH, Math.min(40, durationTicks));
-        context.playWaveEffect(loc, range, Particle.SMOKE, durationTicks);
+        context.effects().playSphereEffect(loc, range, Particle.WITCH, Math.min(40, durationTicks));
+        context.effects().playWaveEffect(loc, range, Particle.SMOKE, durationTicks);
 
-        context.playSound(loc, Sound.ENTITY_ILLUSIONER_PREPARE_BLINDNESS, 1.0f, 0.6f);
-        context.playSound(loc, Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.5f, 0.5f);
+        context.effects().playSound(loc, Sound.ENTITY_ILLUSIONER_PREPARE_BLINDNESS, 1.0f, 0.6f);
+        context.effects().playSound(loc, Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.5f, 0.5f);
 
-        List<LivingEntity> targets = context.getNearbyEntities(range);
+        List<LivingEntity> targets = context.targeting().getNearbyEntities(range);
 
         if (targets.isEmpty()) {
-            context.sendMessageToActionBar(Component.text(
+            context.messaging().sendMessageToActionBar(context.getCasterId(), Component.text(
                     ChatColor.GRAY + "✦ Поблизу немає цілей"
             ));
             return AbilityResult.failure("No targets");
@@ -90,23 +91,24 @@ public class SurgeOfInsanity extends ActiveAbility {
             if (target.getUniqueId().equals(context.getCasterId())) continue;
 
             try {
-                context.playTrailEffect(target.getUniqueId(), Particle.CRIT, Math.min(60, durationTicks));
-            } catch (Exception ignored) {}
+                context.effects().playTrailEffect(target.getUniqueId(), Particle.CRIT, Math.min(60, durationTicks));
+            } catch (Exception ignored) {
+            }
 
             if (target instanceof Player) {
-                context.applyEffect(target.getUniqueId(), PotionEffectType.WEAKNESS, durationTicks, 0);
-                context.applyEffect(target.getUniqueId(), PotionEffectType.BLINDNESS, durationTicks, 0);
-                context.updateSanityLoss(target.getUniqueId(), sanityLoss);
+                context.entity().applyPotionEffect(target.getUniqueId(), PotionEffectType.WEAKNESS, durationTicks, 0);
+                context.entity().applyPotionEffect(target.getUniqueId(), PotionEffectType.BLINDNESS, durationTicks, 0);
+                context.beyonder().updateSanityLoss(target.getUniqueId(), sanityLoss);
 
-                context.sendMessageToActionBar(
-                        (Player) target,
+                context.messaging().sendMessageToActionBar(
+                        target.getUniqueId(),
                         Component.text(
                                 ChatColor.DARK_PURPLE +
                                         "🌀 Розум затьмарюється  +" + sanityLoss + " Sanity"
                         )
                 );
 
-                context.spawnParticle(
+                context.effects().spawnParticle(
                         Particle.SMOKE,
                         target.getLocation().add(0, 1.7, 0),
                         12, 0.2, 0.2, 0.2
@@ -114,9 +116,9 @@ public class SurgeOfInsanity extends ActiveAbility {
 
                 players++;
             } else {
-                context.damage(target.getUniqueId(), MOB_DAMAGE);
+                context.entity().damage(target.getUniqueId(), MOB_DAMAGE);
 
-                context.spawnParticle(
+                context.effects().spawnParticle(
                         Particle.CRIT,
                         target.getLocation().add(0, 1, 0),
                         12, 0.2, 0.2, 0.2
@@ -128,7 +130,7 @@ public class SurgeOfInsanity extends ActiveAbility {
 
         Particle.DustOptions dustOptions = new Particle.DustOptions(Color.PURPLE, 1.5f);
 
-        context.playExplosionRingEffect(
+        context.effects().playExplosionRingEffect(
                 loc,
                 Math.max(3.0, range / 1.5),
                 Particle.DUST,
@@ -137,7 +139,7 @@ public class SurgeOfInsanity extends ActiveAbility {
 
 
         // --- ФІНАЛЬНИЙ ACTION BAR ДЛЯ КАСТЕРА ---
-        context.sendMessageToActionBar(Component.text(
+        context.messaging().sendMessageToActionBar(context.getCasterId(), Component.text(
                 ChatColor.DARK_PURPLE + "🌀 Божевілля вивільнено  " +
                         ChatColor.GRAY + "Гравців: " + players +
                         " | Істот: " + mobs

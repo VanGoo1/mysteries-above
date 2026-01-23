@@ -1,9 +1,12 @@
 package me.vangoo.domain.pathways.visionary.abilities;
 
+import me.vangoo.domain.abilities.core.AbilityResourceConsumer;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.domain.services.MasteryProgressionCalculator;
+import me.vangoo.domain.valueobjects.Mastery;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.domain.valueobjects.Spirituality;
 import net.kyori.adventure.text.Component;
@@ -25,11 +28,9 @@ public class PsychologicalInvisibility extends ActiveAbility {
 
     private static final int COST_PER_SECOND = 10;
     private static final int COOLDOWN_SECONDS = 5;
-    // Запобіжник від подвійного кліку (0.5 сек)
     private static final long TOGGLE_SAFETY_DELAY_MS = 500;
 
-    private static final Map<UUID, Runnable> activeCancellers = new ConcurrentHashMap<>();
-    // Зберігаємо час активації
+    private static final Map<UUID, BukkitTask> activeTasks = new ConcurrentHashMap<>();
     private static final Map<UUID, Long> activationTimes = new ConcurrentHashMap<>();
     private static final Set<UUID> trackedProjectiles = ConcurrentHashMap.newKeySet();
 
@@ -46,7 +47,7 @@ public class PsychologicalInvisibility extends ActiveAbility {
 
     @Override
     public int getSpiritualityCost() {
-        return 0;
+        return COST_PER_SECOND;
     }
 
     @Override
@@ -61,91 +62,85 @@ public class PsychologicalInvisibility extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        Player caster = context.getCasterPlayer();
-        UUID id = caster.getUniqueId();
+        UUID id = context.getCasterId();
         Beyonder beyonder = context.getCasterBeyonder();
 
-        // Логіка перемикання (Toggle)
-        if (activeCancellers.containsKey(id)) {
-            // ВАЖЛИВО: Перевіряємо, скільки часу пройшло з моменту активації
+        if (activeTasks.containsKey(id)) {
             long activatedAt = activationTimes.getOrDefault(id, 0L);
             long timeDiff = System.currentTimeMillis() - activatedAt;
 
-            // Якщо пройшло менше 0.5 сек - це "фантомний" клік від лівої руки. Ігноруємо його.
             if (timeDiff < TOGGLE_SAFETY_DELAY_MS) {
-                return AbilityResult.success(); // Нічого не робимо, просто виходимо
+                return AbilityResult.success();
             }
 
-            // Якщо пройшло достатньо часу - це справді бажання гравця вимкнути
-            disable(context, caster, "свідоме розкриття", true);
+            disable(context, id, "свідоме розкриття", true);
             return AbilityResult.success();
         }
 
         if (beyonder.getSpirituality().current() < COST_PER_SECOND) {
-            context.sendMessageToActionBar(
-                    caster,
+            context.messaging().sendMessageToActionBar(
+                    id,
                     Component.text("✗ Недостатньо духовності")
             );
             return AbilityResult.failure("Недостатньо духовності");
         }
 
-        enable(context, caster);
-        return AbilityResult.deferred();
+        enable(context, id);
+        return AbilityResult.success();
     }
 
-    private void enable(IAbilityContext context, Player caster) {
-        UUID id = caster.getUniqueId();
-
-        // Записуємо час старту
-        activationTimes.put(id, System.currentTimeMillis());
+    private void enable(IAbilityContext context, UUID casterId) {
+        activationTimes.put(casterId, System.currentTimeMillis());
 
         context.effects().playSoundForPlayer(context.getCasterId(), Sound.BLOCK_BEACON_ACTIVATE, 1f, 1.8f);
-        context.sendMessageToActionBar(
-                caster,
+        context.messaging().sendMessageToActionBar(
+                casterId,
                 Component.text("✦ Ви зникли зі сприйняття світу")
         );
 
-        caster.addPotionEffect(new PotionEffect(
-                PotionEffectType.INVISIBILITY,
-                Integer.MAX_VALUE,
-                0,
-                false,
-                false
-        ));
-
+        // Ховаємо від усіх
         for (Player other : Bukkit.getOnlinePlayers()) {
-            if (!other.getUniqueId().equals(id)) {
-                context.hidePlayerFromTarget(other, caster);
+            if (!other.getUniqueId().equals(casterId)) {
+                context.entity().hidePlayerFromTarget(other.getUniqueId(), casterId);
             }
         }
 
-        final double[] lastHealth = {caster.getHealth()};
+        final double[] lastHealth = {context.playerData().getHealth(casterId)};
         final int[] ticks = {0};
+
+        // Прапорець для миттєвого реагування
         final boolean[] aggressiveAction = {false};
 
-        // 1. Постріли
-        context.events().subscribeToTemporaryEvent(context.getCasterId(),
-                ProjectileLaunchEvent.class,
-                e -> e.getEntity().getShooter() instanceof Player p && p.getUniqueId().equals(id),
-                e -> trackedProjectiles.add(e.getEntity().getUniqueId()),
-                Integer.MAX_VALUE
-        );
-
-        // 2. Влучання снарядом
+        // --- ВИПРАВЛЕНА ЛОГІКА АГРЕСІЇ ---
+        // Відстежуємо будь-яку нанесену шкоду (ближній бій АБО дальній)
         context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 EntityDamageByEntityEvent.class,
-                e -> e.getDamager() instanceof Projectile pr && trackedProjectiles.contains(pr.getUniqueId()),
                 e -> {
+                    // 1. Якщо гравець вдарив рукою/мечем
+                    if (e.getDamager().getUniqueId().equals(casterId)) {
+                        return true;
+                    }
+                    // 2. Якщо гравець влучив з лука/арбалета/тризуба
+                    if (e.getDamager() instanceof Projectile proj
+                            && proj.getShooter() instanceof Player shooter
+                            && shooter.getUniqueId().equals(casterId)) {
+                        return true;
+                    }
+                    return false;
+                },
+                e -> {
+                    // Цей код виконається, якщо умова вище = true
                     aggressiveAction[0] = true;
-                    trackedProjectiles.remove(e.getDamager().getUniqueId());
+                    // Можна навіть викликати disable тут миттєво, не чекаючи тіка,
+                    // але безпечніше залишити це для Runnable, щоб уникнути конфліктів потоків
                 },
                 Integer.MAX_VALUE
         );
 
-        // 3. Ближній бій
+        // Відстежуємо отримання шкоди самим гравцем (опціонально, якщо треба)
         context.events().subscribeToTemporaryEvent(context.getCasterId(),
                 EntityDamageByEntityEvent.class,
-                e -> e.getDamager().getUniqueId().equals(id),
+                e -> e.getEntity().getUniqueId().equals(casterId),
                 e -> aggressiveAction[0] = true,
                 Integer.MAX_VALUE
         );
@@ -155,56 +150,58 @@ public class PsychologicalInvisibility extends ActiveAbility {
             public void run() {
                 ticks[0]++;
 
-                if (!caster.isOnline()) {
-                    disable(context, caster, "вихід", true);
+                if (!context.playerData().isOnline(casterId)) {
+                    disable(context, casterId, "вихід", false);
                     return;
                 }
 
+                // Перевірка прапорця агресії
                 if (aggressiveAction[0]) {
-                    disable(context, caster, "агресія", true);
+                    disable(context, casterId, "агресія", true);
                     return;
                 }
 
-                // Перевірка шкоди (з невеликим допуском для атрибутів)
-                // Використовуємо epsilon 0.01, щоб уникнути помилок округлення
-                if (lastHealth[0] - caster.getHealth() > 0.01) {
-                    disable(context, caster, "отримання шкоди", true);
+                // Перевірка отримання шкоди через здоров'я (резервна)
+                double currentHealth = context.playerData().getHealth(casterId);
+                if (lastHealth[0] - currentHealth > 0.01) {
+                    disable(context, casterId, "отримання шкоди", true);
                     return;
                 }
-                // Оновлюємо здоров'я, якщо воно виросло (регенерація) або не змінилось
-                if (caster.getHealth() > lastHealth[0]) {
-                    lastHealth[0] = caster.getHealth();
-                } else {
-                    // Якщо здоров'я впало - це обробиться в наступному тіку або вище,
-                    // але тут ми просто синхронізуємо змінну, якщо перевірка вище не спрацювала (наприклад дуже мала шкода)
-                    lastHealth[0] = caster.getHealth();
-                }
+                lastHealth[0] = currentHealth;
 
+                // --- ЛОГІКА ОНОВЛЕННЯ (PULSE) ---
                 if (ticks[0] % 20 == 0) {
                     Beyonder b = context.getCasterBeyonder();
                     Spirituality sp = b.getSpirituality();
 
                     if (sp.current() < COST_PER_SECOND) {
-                        disable(context, caster, "виснаження", true);
+                        disable(context, casterId, "виснаження", false);
                         return;
                     }
-                    b.setSpirituality(new Spirituality(
-                            sp.current() - COST_PER_SECOND,
-                            sp.maximum()
-                    ));
+
+                    b.setSpirituality(sp.decrement(COST_PER_SECOND));
+
+                    double masteryGain = MasteryProgressionCalculator.calculateMasteryGain(COST_PER_SECOND, b.getSequence());
+                    if (masteryGain > 0) {
+                        b.setMastery(b.getMastery().add(masteryGain));
+                    }
+
+                    // Оновлюємо ефект (щоб не мигав)
+                    context.entity().applyPotionEffect(casterId, PotionEffectType.INVISIBILITY, 60, 0);
                 }
 
                 if (ticks[0] % 10 == 0) {
                     for (Player other : Bukkit.getOnlinePlayers()) {
-                        if (!other.getUniqueId().equals(id)) {
-                            context.hidePlayerFromTarget(other, caster);
+                        if (!other.getUniqueId().equals(casterId)) {
+                            context.entity().hidePlayerFromTarget(other.getUniqueId(), casterId);
                         }
                     }
                 }
 
+                // Скидання агро мобів
                 if (ticks[0] % 5 == 0) {
-                    for (Entity e : caster.getNearbyEntities(15, 15, 15)) {
-                        if (e instanceof Mob mob && caster.equals(mob.getTarget())) {
+                    for (Entity e : context.targeting().getNearbyEntities(15)) {
+                        if (e instanceof Mob mob && casterId.equals(mob.getTarget() != null ? mob.getTarget().getUniqueId() : null)) {
                             mob.setTarget(null);
                         }
                     }
@@ -212,34 +209,38 @@ public class PsychologicalInvisibility extends ActiveAbility {
             }
         };
 
-        BukkitTask task = context.scheduleRepeating(runnable, 1L, 1L);
-        activeCancellers.put(id, task::cancel);
+        BukkitTask task = context.scheduling().scheduleRepeating(runnable, 0L, 1L);
+        activeTasks.put(casterId, task);
     }
 
-    private void disable(IAbilityContext context, Player caster, String reason, boolean cooldown) {
-        UUID id = caster.getUniqueId();
+    private void disable(IAbilityContext context, UUID casterId, String reason, boolean applyCooldown) {
+        activationTimes.remove(casterId);
 
-        // Очищаємо таймер активації
-        activationTimes.remove(id);
-
-        if (activeCancellers.containsKey(id)) {
-            activeCancellers.remove(id).run();
+        BukkitTask task = activeTasks.remove(casterId);
+        if (task != null) {
+            task.cancel();
         }
 
-        caster.removePotionEffect(PotionEffectType.INVISIBILITY);
+        context.events().unsubscribeAll(casterId);
 
+        // 1. Примусово знімаємо ефект (навіть якщо він сам спаде через 2 сек)
+        context.entity().removePotionEffect(casterId, PotionEffectType.INVISIBILITY);
+
+        // 2. Показуємо гравця всім
         for (Player other : Bukkit.getOnlinePlayers()) {
-            context.showPlayerToTarget(other, caster);
+            if (!other.getUniqueId().equals(casterId)) {
+                context.entity().showPlayerToTarget(other.getUniqueId(), casterId);
+            }
         }
 
-        context.playSoundToCaster(Sound.BLOCK_BEACON_DEACTIVATE, 1f, 0.6f);
-        context.sendMessageToActionBar(
-                caster,
+        context.effects().playSoundForPlayer(casterId, Sound.BLOCK_BEACON_DEACTIVATE, 1f, 0.6f);
+        context.messaging().sendMessageToActionBar(
+                casterId,
                 Component.text("✗ Невидимість зникла • " + reason)
         );
 
-        if (cooldown) {
-            context.setCooldown(this, getCooldown(context.getCasterBeyonder().getSequence()));
+        if (applyCooldown) {
+            context.cooldown().setCooldown(this, casterId);
         }
     }
 }
