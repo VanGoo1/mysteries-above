@@ -14,6 +14,8 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
+import java.util.Optional;
+
 public class MirrorCurse extends ActiveAbility {
 
     private static final double RANGE = 15.0;
@@ -39,6 +41,11 @@ public class MirrorCurse extends ActiveAbility {
     @Override
     public int getCooldown(Sequence userSequence) {
         return 12;
+    }
+
+    @Override
+    protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
+        return context.targeting().getTargetedEntity(RANGE);
     }
 
     @Override
@@ -105,10 +112,6 @@ public class MirrorCurse extends ActiveAbility {
         context.effects().playSound(mirrorLoc, Sound.BLOCK_GLASS_BREAK, 1.0f, 1.5f);
         context.effects().playSound(targetEye, Sound.ENTITY_PLAYER_HURT, 1.0f, 0.8f);
         context.effects().playSoundForPlayer(caster.getUniqueId(), Sound.ITEM_TRIDENT_THUNDER, 0.5f, 2.0f);
-
-        // --- ВАЖЛИВО: DustOptions ---
-        // Ваш інтерфейс IVisualEffectsContext не приймає "Object data" або "DustOptions".
-        // Тому для кольорових частинок ми використовуємо нативний world.spawnParticle.
 
         // Колір латуні
         Particle.DustOptions brassOptions = new Particle.DustOptions(Color.fromRGB(181, 166, 66), 1.0f);

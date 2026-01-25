@@ -36,6 +36,9 @@ public class TravellersDoor extends ActiveAbility {
 
     private static final Set<UUID> awaitingCoordinates = new HashSet<>();
 
+    // Зберігаємо таймери для скасування
+    private static final Map<UUID, BukkitTask> spectatorTimeouts = new ConcurrentHashMap<>();
+
     @Override
     public String getName() {
         return "Двері Мандрівника";
@@ -107,6 +110,9 @@ public class TravellersDoor extends ActiveAbility {
     private void handlePlayerQuit(IEntityContext entityContext, UUID playerId) {
         if (activeSpectators.contains(playerId)) {
             activeSpectators.remove(playerId);
+
+            // Для показу гравців назад потрібен повний контекст, але тут його немає
+            // Тому просто міняємо GameMode - при наступному логіні гравці будуть видимі
             entityContext.setGameMode(playerId, GameMode.SURVIVAL);
 
             // Очистка сесії, якщо вийшов кастер
@@ -251,7 +257,7 @@ public class TravellersDoor extends ActiveAbility {
         context.events().subscribeToTemporaryEvent(subscriptionId,
                 PlayerMoveEvent.class,
                 e -> {
-                    // ВИПРАВЛЕННЯ: Перевіряємо, чи двері ще активні
+                    // Перевіряємо, чи двері ще активні
                     if (!activeDoors.containsValue(door)) {
                         return false; // Двері вже видалені
                     }
@@ -261,14 +267,18 @@ public class TravellersDoor extends ActiveAbility {
                         return false; // Гравець вже входив
                     }
 
+                    // ВИПРАВЛЕННЯ: Перевіряємо, чи гравець у тому ж світі, що й двері
+                    if (e.getTo() == null || !e.getTo().getWorld().equals(door.location.getWorld())) {
+                        return false; // Різні світи - не можна порівнювати відстань
+                    }
+
                     // Перевіряємо відстань
-                    return e.getTo() != null && e.getTo().distance(door.location) < 1.5;
+                    return e.getTo().distance(door.location) < 1.5;
                 },
                 e -> handlePlayerEnterDoor(context, door, e.getPlayer().getUniqueId(), subscriptionId),
                 DOOR_TIMEOUT + 100
         );
     }
-
     // ВИПРАВЛЕННЯ: Додано параметр subscriptionId
     private void handlePlayerEnterDoor(IAbilityContext context, DoorData door, UUID playerId, UUID subscriptionId) {
         // ВИПРАВЛЕННЯ: Подвійна перевірка, чи гравець вже увійшов
@@ -300,6 +310,14 @@ public class TravellersDoor extends ActiveAbility {
         context.entity().setGameMode(playerId, GameMode.SPECTATOR);
         activeSpectators.add(playerId);
 
+        // КРИТИЧНО: Заборонити телепортацію через меню спектатора
+        List<Player> onlinePlayers = context.targeting().getNearbyPlayers(10000);
+        for (Player onlinePlayer : onlinePlayers) {
+            if (!onlinePlayer.getUniqueId().equals(playerId)) {
+                context.entity().hidePlayerFromTarget(playerId, onlinePlayer.getUniqueId());
+            }
+        }
+
         context.effects().playSound(context.playerData().getCurrentLocation(playerId), Sound.BLOCK_PORTAL_TRAVEL, 1.0f, 1.2f);
         context.effects().spawnParticle(Particle.REVERSE_PORTAL, context.playerData().getCurrentLocation(playerId), 30, 0.5, 1, 0.5);
 
@@ -310,8 +328,7 @@ public class TravellersDoor extends ActiveAbility {
             sessionPassengers.computeIfAbsent(door.casterId, k -> ConcurrentHashMap.newKeySet())
                     .add(playerId);
 
-            Player caster = Bukkit.getPlayer(door.casterId);
-            if (caster != null && caster.isOnline()) {
+            if (context.playerData().isOnline(door.casterId)) {
                 context.messaging().sendMessageToActionBar(door.casterId,
                         Component.text(context.playerData().getName(playerId) + " увійшов у ваші двері.")
                                 .color(NamedTextColor.GREEN));
@@ -325,16 +342,20 @@ public class TravellersDoor extends ActiveAbility {
 
             startTetheringTask(context, playerId);
 
-            context.scheduling().scheduleDelayed(() -> {
-                if (activeSpectators.contains(context.getCasterId())) {
+            // ВИПРАВЛЕННЯ: Зберігаємо таймер і скасовуємо його при ручному виході
+            BukkitTask timeoutTask = context.scheduling().scheduleDelayed(() -> {
+                // Перевіряємо чи гравець ще у спектаторі
+                if (activeSpectators.contains(playerId)) {
                     exitSpectatorMode(context, playerId);
-                    context.messaging().sendMessageToActionBar(context.getCasterId(),
+                    context.messaging().sendMessageToActionBar(playerId,
                             Component.text("Час спостереження вийшов.").color(NamedTextColor.YELLOW));
                 }
             }, SPECTATOR_DURATION);
+
+            // Зберігаємо таймер для можливості скасування
+            spectatorTimeouts.put(playerId, timeoutTask);
         }
     }
-
     private void startTetheringTask(IAbilityContext context, UUID casterId) {
         context.scheduling().scheduleRepeating(() -> {
             if (!activeSpectators.contains(casterId)) {
@@ -378,10 +399,28 @@ public class TravellersDoor extends ActiveAbility {
     private void exitSpectatorMode(IAbilityContext context, UUID playerId) {
         if (!activeSpectators.contains(playerId)) return;
 
-        activeSpectators.remove(playerId);
-        context.entity().setGameMode(playerId, GameMode.SURVIVAL);
+        // ВИПРАВЛЕННЯ: Скасовуємо таймер автовиходу
+        BukkitTask timeoutTask = spectatorTimeouts.remove(playerId);
+        if (timeoutTask != null && !timeoutTask.isCancelled()) {
+            timeoutTask.cancel();
+        }
 
-        if (context.playerData().getEyeLocation(playerId).getBlock().getType().isSolid()) {
+        activeSpectators.remove(playerId);
+
+        // Решта коду залишається без змін...
+        if (context.playerData().isOnline(playerId)) {
+            List<Player> onlinePlayers = context.targeting().getNearbyPlayers(10000);
+            for (Player onlinePlayer : onlinePlayers) {
+                context.entity().showPlayerToTarget(playerId, onlinePlayer.getUniqueId());
+            }
+
+            context.entity().setGameMode(playerId, GameMode.SURVIVAL);
+        } else {
+            context.entity().setGameMode(playerId, GameMode.SURVIVAL);
+        }
+
+        if (context.playerData().getEyeLocation(playerId) != null &&
+                context.playerData().getEyeLocation(playerId).getBlock().getType().isSolid()) {
             context.entity().teleport(playerId, context.playerData().getCurrentLocation(playerId).add(0, 1, 0));
         }
 
@@ -392,16 +431,27 @@ public class TravellersDoor extends ActiveAbility {
             if (passengers != null) {
                 for (UUID passengerId : passengers) {
                     if (context.playerData().isOnline(passengerId) && activeSpectators.contains(passengerId)) {
+                        activeSpectators.remove(passengerId);
+
+                        if (context.playerData().isOnline(passengerId)) {
+                            List<Player> onlinePlayers = context.targeting().getNearbyPlayers(10000);
+                            for (Player onlinePlayer : onlinePlayers) {
+                                context.entity().showPlayerToTarget(passengerId, onlinePlayer.getUniqueId());
+                            }
+                        }
+
+                        context.entity().setGameMode(passengerId, GameMode.SURVIVAL);
+                        context.entity().teleport(passengerId, context.playerData().getCurrentLocation(playerId));
+
                         context.messaging().sendMessageToActionBar(passengerId,
                                 Component.text("Провідник покинув простір.").color(NamedTextColor.YELLOW));
-                        exitSpectatorMode(context, passengerId);
-                        context.entity().teleport(passengerId, context.getCasterLocation());
                     }
                 }
             }
         }
 
         context.cooldown().setCooldown(this, playerId);
+
         Location exitLoc = context.playerData().getCurrentLocation(playerId);
         createMysticalDoor(context, exitLoc, new Vector(0, 0, 1));
 
@@ -524,6 +574,14 @@ public class TravellersDoor extends ActiveAbility {
 
     @Override
     public void cleanUp() {
+        // Скасовуємо всі таймери
+        for (BukkitTask task : spectatorTimeouts.values()) {
+            if (task != null && !task.isCancelled()) {
+                task.cancel();
+            }
+        }
+        spectatorTimeouts.clear();
+
         for (UUID playerId : activeSpectators) {
             Player player = Bukkit.getPlayer(playerId);
             if (player != null && player.isOnline()) {

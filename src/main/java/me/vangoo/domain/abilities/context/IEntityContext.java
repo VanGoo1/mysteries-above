@@ -28,6 +28,8 @@ public interface IEntityContext {
 
     void giveItem(UUID humanEntityId, ItemStack item);
 
+    void removeItem(UUID playerId, ItemStack item);
+
     void setHidden(UUID playerId, boolean hidden);
 
     void hidePlayerFromTarget(UUID playerId, UUID playerToHide);

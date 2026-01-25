@@ -131,6 +131,14 @@ public class EntityContext implements IEntityContext {
     }
 
     @Override
+    public void removeItem(UUID playerId, ItemStack item) {
+        Player player = Bukkit.getPlayer(playerId);
+        if (player != null && player.isOnline()) {
+            player.getInventory().removeItem(item);
+        }
+    }
+
+    @Override
     public void setHidden(UUID playerId, boolean hidden) {
         Player player = Bukkit.getPlayer(playerId);
         if (player == null) return;

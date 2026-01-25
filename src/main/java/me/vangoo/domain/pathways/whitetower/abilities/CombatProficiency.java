@@ -206,11 +206,11 @@ public class CombatProficiency extends PermanentPassiveAbility {
         int level = sequence.level();
 
         // Рівні згідно опису (Sequence 9-5)
-        if (level >= 9) return 0.0; // Reader (без бонусів)
-        if (level == 8) return 0.5; // Student (невеликий бонус)
-        if (level == 7) return 1.0; // Detective (+1 серце)
-        if (level == 6) return 1.5; // Polymath
-        if (level == 5) return 2.0; // Mysticism Magister
+        if (level >= 9) return 0.5;
+        if (level == 8) return 0.5;
+        if (level == 7) return 1.0;
+        if (level == 6) return 1.5;
+        if (level == 5) return 2.0;
         return 3.0;                 // Higher levels
     }
 
