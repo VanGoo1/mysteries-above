@@ -520,10 +520,8 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
 
     private String formatEffectName(PotionEffectType type) {
         String name = type.getKey().getKey();
-        if (name.startsWith("minecraft:")) name = name.substring(10);
-        return name.length() > 3 ? name.substring(0, 3).toUpperCase() : name.toUpperCase();
+        return name.replace('_', ' ').toUpperCase();
     }
-
     private boolean isPositiveEffect(PotionEffectType type) {
         return type.equals(PotionEffectType.REGENERATION) || type.equals(PotionEffectType.SPEED) ||
                 type.equals(PotionEffectType.STRENGTH) || type.equals(PotionEffectType.RESISTANCE) ||

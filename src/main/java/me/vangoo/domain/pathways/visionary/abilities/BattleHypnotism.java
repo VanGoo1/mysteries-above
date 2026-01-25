@@ -9,11 +9,13 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.RayTraceResult;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public class BattleHypnotism extends ActiveAbility {
@@ -45,6 +47,11 @@ public class BattleHypnotism extends ActiveAbility {
                 SequenceScaler.ScalingStrategy.MODERATE
         );
         return Math.max(5, (int) (BASE_COOLDOWN / multiplier));
+    }
+
+    @Override
+    protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
+        return context.targeting().getTargetedEntity(BASE_RANGE);
     }
 
     private int getRange(int sequence) {

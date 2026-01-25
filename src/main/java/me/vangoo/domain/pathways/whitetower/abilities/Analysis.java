@@ -25,9 +25,8 @@ public class Analysis extends ActiveAbility {
     private static final int COOLDOWN = 180;
     private static final int MAX_REMEMBERED_ABILITIES = 10;
 
-    // --- НАЛАШТУВАННЯ ШАНСІВ ---
-    private static final double BASE_CHANCE = 0.20; // Базовий шанс 30%
-    private static final double SEQUENCE_DIFF_MODIFIER = 0.10; // +/- 10% за кожен рівень різниці
+    private static final double BASE_CHANCE = 0.20;
+    private static final double SEQUENCE_DIFF_MODIFIER = 0.10;
     private static final double RECIPE_KNOWLEDGE_BONUS_PER_RECIPE = 0.05;
     private static final double MAX_RECIPE_BONUS = 0.25;
 
@@ -147,7 +146,7 @@ public class Analysis extends ActiveAbility {
                     if (removed) {
                         context.messaging().sendMessageToActionBar(casterId, Component.text(ChatColor.GREEN + "Здібність '" + selectedAbility.getName() + "' успішно видалена."));
                         context.effects().playSound(context.playerData().getCurrentLocation(casterId), Sound.BLOCK_ANVIL_DESTROY, 1f, 1.2f);
-                        context.effects().playVortexEffect(context.playerData().getCurrentLocation(casterId), 1, 0.5, Particle.SMOKE, 50);
+                        context.effects().playSphereEffect(context.playerData().getCurrentLocation(casterId), 1, Particle.SOUL, 30);
                     } else {
                         context.messaging().sendMessageToActionBar(casterId, Component.text(ChatColor.RED + "Не вдалося видалити здібність '" + selectedAbility.getName() + "'."));
                     }
@@ -180,7 +179,7 @@ public class Analysis extends ActiveAbility {
         }
 
         context.ui().openChoiceMenu(
-                "КРОК 2: Шанс (База 30%)",
+                "КРОК 2: Шанс (База 20%)",
                 availableAbilities,
                 ability -> createAbilityIcon(ability, targetBeyonder, context),
                 selectedAbility -> attemptToCopyAbility(context, targetBeyonder, selectedAbility)
@@ -203,7 +202,7 @@ public class Analysis extends ActiveAbility {
         context.events().publishAbilityUsedEvent(this, casterBeyonder);
         int abilitySeq = findAbilitySequence(targetBeyonder, ability);
         int casterSeq = casterBeyonder.getSequenceLevel();
-        int knownRecipes = context.beyonder().getUnlockedRecipesCount(casterId, casterBeyonder.getPathway().getName());
+        int knownRecipes = context.beyonder().getUnlockedRecipesCount(casterId, targetBeyonder.getPathway().getName());
 
         double finalChance = calculateTotalChance(casterSeq, abilitySeq, knownRecipes);
 
@@ -261,19 +260,29 @@ public class Analysis extends ActiveAbility {
             meta.setDisplayName(ChatColor.GOLD + ability.getName());
 
             int abilitySeq = findAbilitySequence(target, ability);
-            int casterSeq = context.getCasterBeyonder().getSequenceLevel();
-            int recipes = context.beyonder().getUnlockedRecipesCount(target.getPlayerId(), target.getPathway().getName());
+            Beyonder casterBeyonder = context.getCasterBeyonder();
+            UUID casterId = context.getCasterId();
+            int casterSeq = casterBeyonder.getSequenceLevel();
+            int knownRecipes = context.beyonder().getUnlockedRecipesCount(casterId, target.getPathway().getName());
 
-            double finalChance = calculateTotalChance(casterSeq, abilitySeq, recipes);
+            double finalChance = calculateTotalChance(casterSeq, abilitySeq, knownRecipes);
+
+            double seqDiffValue = (abilitySeq - casterSeq) * SEQUENCE_DIFF_MODIFIER;
+            double recipeBonusValue = Math.min(knownRecipes * RECIPE_KNOWLEDGE_BONUS_PER_RECIPE, MAX_RECIPE_BONUS);
 
             List<String> lore = new ArrayList<>();
             lore.add(ChatColor.DARK_GRAY + "Рівень послідовності: " + abilitySeq);
             lore.add("");
             lore.add(ChatColor.GRAY + "Тип: " + ChatColor.WHITE + getAbilityTypeDisplay(ability));
-            lore.add(ChatColor.GRAY + "Шанс: " + getColorForChance(finalChance) + String.format("%.0f%%", finalChance * 100));
+            lore.add("");
+            lore.add(ChatColor.WHITE + "Шанс копіювання:");
+            lore.add(ChatColor.GRAY + "  База: " + ChatColor.WHITE + String.format("%.0f%%", BASE_CHANCE * 100));
+            lore.add(ChatColor.GRAY + "  Різниця рівнів: " + (seqDiffValue >= 0 ? ChatColor.GREEN : ChatColor.RED) + String.format("%+.0f%%", seqDiffValue * 100));
+            lore.add(ChatColor.GRAY + "  Бонус знань: " + ChatColor.GREEN + String.format("+%.0f%%", recipeBonusValue * 100));
+            lore.add(ChatColor.GRAY + "Підсумок: " + getColorForChance(finalChance) + String.format("%.0f%%", finalChance * 100));
 
             if (finalChance < 0.5) {
-                lore.add(ChatColor.RED + "⚠ Ризиковано!");
+                lore.add(ChatColor.RED + "⚠ Складна здібність!");
             }
 
             lore.add("");

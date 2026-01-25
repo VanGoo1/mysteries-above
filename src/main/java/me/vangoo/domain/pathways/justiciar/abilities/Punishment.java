@@ -11,6 +11,8 @@ import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Vector;
 
 import java.util.Map;
 import java.util.UUID;
@@ -66,7 +68,7 @@ public class Punishment extends ActiveAbility {
 
         Location casterLoc = context.playerData().getCurrentLocation(casterId);
         if (casterLoc != null) {
-            context.effects().spawnParticle(Particle.SMOKE, casterLoc.clone().add(0, 1, 0), 12, 0.3, 0.3, 0.3);
+            context.effects().spawnParticle(Particle.SOUL, casterLoc.clone().add(0, 1, 0), 12, 0.3, 0.3, 0.3);
         }
         context.effects().playSoundForPlayer(casterId, Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.6f);
 
@@ -189,21 +191,77 @@ public class Punishment extends ActiveAbility {
             }
 
             case IMMOBILIZE -> {
-                int duration = 30;
-                int amp = Math.max(1, (int)Math.round(powerModifier));
-                context.entity().applyPotionEffect(violatorId, PotionEffectType.SLOWNESS, duration * 20, amp);
-                context.entity().applyPotionEffect(violatorId, PotionEffectType.JUMP_BOOST, duration * 20, 128);
+                int duration = 30; // Секунди
+                int durationTicks = duration * 20;
+
+                // 1. Накладаємо "важкі" ефекти (MAX рівень)
+                // Slowness 255: блокує ходьбу
+                context.entity().applyPotionEffect(violatorId, PotionEffectType.SLOWNESS, durationTicks, 255);
+                // Jump Boost 250: блокує стрибки
+                context.entity().applyPotionEffect(violatorId, PotionEffectType.JUMP_BOOST, durationTicks, 250);
+                // Mining Fatigue 255: блокує ламання блоків та уповільнює удари
+                context.entity().applyPotionEffect(violatorId, PotionEffectType.MINING_FATIGUE, durationTicks, 255);
 
                 if (violatorLoc != null) {
+                    // 2. Механіка "Якоря"
+                    final Location anchorLocation = violatorLoc.clone();
+                    // Трохи піднімаємо, щоб гравець не застряг у підлозі
+                    if (anchorLocation.getBlock().getType().isSolid()) {
+                        anchorLocation.add(0, 0.1, 0);
+                    }
+
+                    // Змінні для керування таском
+                    final int[] elapsed = {0};
+                    final BukkitTask[] taskRef = new BukkitTask[1]; // Обгортка для зберігання посилання на таск
+
+                    // Запускаємо через ваш контекст
+                    taskRef[0] = context.scheduling().scheduleRepeating(() -> {
+
+                        // А. Перевірка часу дії
+                        if (elapsed[0] >= durationTicks) {
+                            if (taskRef[0] != null) taskRef[0].cancel(); // Зупиняємо таск
+                            return;
+                        }
+
+                        // Б. Перевірка чи гравець існує та онлайн
+                        if (violatorId == null || !context.playerData().isOnline(violatorId)) {
+                            if (taskRef[0] != null) taskRef[0].cancel(); // Зупиняємо, якщо вийшов
+                            return;
+                        }
+
+                        // В. Логіка утримання (Якір)
+                        Location current = context.playerData().getCurrentLocation(violatorId);
+
+                        // Використовуємо 0.04 (0.2 блоку) для плавності. 0.01 занадто чутливе.
+                        if (current.distanceSquared(anchorLocation) > 0.04) {
+                            // Створюємо точку повернення
+                            Location pullBack = anchorLocation.clone();
+                            // Зберігаємо кут огляду гравця (дозволяємо крутити головою)
+                            pullBack.setYaw(current.getYaw());
+                            pullBack.setPitch(current.getPitch());
+
+                            // Гасимо інерцію (щоб не ковзав)
+                            context.entity().setVelocity(violatorId, new Vector(0, 0, 0));
+                            // Повертаємо на місце
+                            context.entity().teleport(violatorId, pullBack);
+                        }
+
+                        // Г. Збільшуємо лічильник (ми запускаємо раз на 2 тіка)
+                        elapsed[0] += 2;
+
+                    }, 0, 2); // Затримка 0, Період 2 тіка (0.1 сек)
+
+                    // Візуалізація
                     context.effects().spawnParticle(Particle.SOUL, violatorLoc.clone().add(0, 1, 0), 40, 0.4, 0.4, 0.4);
-                    context.effects().playSound(violatorLoc, Sound.ENTITY_SHULKER_CLOSE, 1f, 1f);
+                    context.effects().spawnParticle(Particle.LANDING_OBSIDIAN_TEAR, violatorLoc.clone().add(0, 0.5, 0), 10, 0.5, 0.1, 0.5);
+                    context.effects().playSound(violatorLoc, Sound.BLOCK_ANVIL_PLACE, 1f, 0.5f);
                 }
 
-                Component violMsg = Component.text("Ви тимчасово обездвижені!", NamedTextColor.RED);
+                Component violMsg = Component.text("Вас скуто кайданами! Рух неможливий.", NamedTextColor.RED);
                 context.messaging().sendMessageToActionBar(violatorId, violMsg);
 
                 if (context.playerData().isOnline(casterId)) {
-                    Component casterMsg = Component.text("Покарання: Обездвиження (" + duration + "с)", NamedTextColor.GOLD);
+                    Component casterMsg = Component.text("Покарання: Повна ізоляція (" + duration + "с)", NamedTextColor.GOLD);
                     context.messaging().sendMessageToActionBar(casterId, casterMsg);
                 }
             }

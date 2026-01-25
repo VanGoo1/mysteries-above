@@ -52,7 +52,7 @@ public class Guidance extends ActiveAbility {
 
     @Override
     protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
-        return context.getTargetedEntity(CAST_RANGE);
+        return context.targeting().getTargetedEntity(CAST_RANGE);
     }
 
     @Override
