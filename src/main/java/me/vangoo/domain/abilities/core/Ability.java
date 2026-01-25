@@ -58,9 +58,10 @@ public abstract class Ability {
     }
 
     public final AbilityResult execute(IAbilityContext context) {
-        if (getType() == AbilityType.ACTIVE && context.hasCooldown(this)) {
+        var beyonder = context.getCasterBeyonder();
+        if (getType() == AbilityType.ACTIVE && context.cooldown().hasCooldown(beyonder, this)) {
             return AbilityResult.cooldownFailure(
-                    context.getRemainingCooldownSeconds(this)
+                    context.cooldown().getRemainingCooldownSeconds(beyonder, this)
             );
         }
         if (!canExecute(context))
@@ -140,7 +141,7 @@ public abstract class Ability {
         LivingEntity target = targetOpt.get();
 
         // Get target's beyonder (if they are one)
-        Beyonder targetBeyonder = context.getBeyonderFromEntity(target.getUniqueId());
+        Beyonder targetBeyonder = context.beyonder().getBeyonder(target.getUniqueId());
 
         if (targetBeyonder == null) {
             return null; // Target is not a beyonder, no resistance

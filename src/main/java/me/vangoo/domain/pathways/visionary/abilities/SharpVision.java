@@ -6,6 +6,8 @@ import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.valueobjects.Sequence;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.ChatColor;
 import org.bukkit.Particle;
@@ -51,14 +53,16 @@ public class SharpVision extends ActiveAbility {
     @Override
     protected void preExecution(IAbilityContext context) {
         // Visual effect when activating
-        context.spawnParticle(
+        context.effects().spawnParticle(
                 Particle.END_ROD,
                 context.getCasterLocation().add(0, 1, 0),
                 30,
                 0.5, 0.5, 0.5
         );
 
-        context.playSoundToCaster(Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1.0f, 1.5f);
+        context.effects().playSoundForPlayer(
+                context.getCasterId(),
+                Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1.0f, 1.5f);
     }
 
     @Override
@@ -73,7 +77,7 @@ public class SharpVision extends ActiveAbility {
 
         int nightVisionAmplifier = Math.min(2, (9 - userSequence.level()) / 3);
         // 1. Apply night vision to caster
-        context.applyEffect(
+        context.entity().applyPotionEffect(
                 context.getCasterId(),
                 PotionEffectType.NIGHT_VISION,
                 durationTicks,
@@ -81,11 +85,11 @@ public class SharpVision extends ActiveAbility {
         );
 
         // 2. Get all nearby living entities
-        List<LivingEntity> nearbyEntities = context.getNearbyEntities(range);
+        List<LivingEntity> nearbyEntities = context.targeting().getNearbyEntities(range);
 
         if (nearbyEntities.isEmpty()) {
-            context.sendMessageToCaster(
-                    ChatColor.YELLOW + "Немає сутностей поблизу для підсвічування"
+            context.messaging().sendMessageToActionBar(context.getCasterId(),
+                    Component.text("Немає сутностей поблизу для підсвічування").color(NamedTextColor.YELLOW)
             );
             return AbilityResult.success();
         }
@@ -96,12 +100,11 @@ public class SharpVision extends ActiveAbility {
                 .collect(Collectors.toList());
 
         // 4. Set all entities glowing with white color
-        context.setMultipleGlowing(entityIds, ChatColor.WHITE, durationTicks);
+        context.glowing().setMultipleGlowing(entityIds, ChatColor.WHITE, durationTicks);
 
         // 5. Success message
-        context.sendMessageToActionBar(LegacyComponentSerializer.legacySection().deserialize(
-                ChatColor.GOLD + "Гострий зір активовано! Підсвічено " +
-                        nearbyEntities.size() + " сутностей на " + durationSeconds + " секунд."));
+        context.messaging().sendMessageToActionBar(context.getCasterId(),
+                Component.text("Гострий зір активовано! Підсвічено " + nearbyEntities.size() + " сутностей на " + durationSeconds + " секунд.").color(NamedTextColor.GOLD));
 
 
         return AbilityResult.success();
@@ -110,6 +113,6 @@ public class SharpVision extends ActiveAbility {
     @Override
     protected void postExecution(IAbilityContext context) {
         // Subtle sound effect
-        context.playSoundToCaster(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 2.0f);
+        context.effects().playSoundForPlayer(context.getCasterId(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 2.0f);
     }
 }

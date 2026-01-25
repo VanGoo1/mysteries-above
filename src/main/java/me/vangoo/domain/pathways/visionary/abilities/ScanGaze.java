@@ -7,6 +7,7 @@ import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.domain.valueobjects.Sequence;
+import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.LivingEntity;
@@ -43,7 +44,7 @@ public class ScanGaze extends ActiveAbility {
     @Override
     protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
         return context.targeting().getTargetedPlayer(RANGE)
-                .filter(p -> context.isBeyonder(p.getUniqueId()))
+                .filter(p -> context.beyonder().isBeyonder(p.getUniqueId()))
                 .map(p -> p);
     }
 
@@ -53,7 +54,7 @@ public class ScanGaze extends ActiveAbility {
 
         if (targetedPlayer.isEmpty()) {
             context.messaging().sendMessageToActionBar(context.getCasterId(),
-                    net.kyori.adventure.text.Component.text(
+                    Component.text(
                             ChatColor.RED + "Немає цілі в радіусі " + RANGE + " блоків"
                     )
             );
@@ -112,8 +113,8 @@ public class ScanGaze extends ActiveAbility {
         }
 
         // === ACTION BAR ===
-        context.sendMessageToActionBar(
-                net.kyori.adventure.text.Component.text(message.toString())
+        context.messaging().sendMessageToActionBar(context.getCasterId(),
+                Component.text(message.toString())
         );
 
         return AbilityResult.success();

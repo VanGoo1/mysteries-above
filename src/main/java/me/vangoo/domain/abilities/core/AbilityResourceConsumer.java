@@ -50,7 +50,7 @@ public class AbilityResourceConsumer {
         }
 
         // Set cooldown
-        context.setCooldown(ability, ability.getCooldown(beyonder.getSequence()));
+        context.cooldown().setCooldown(ability, beyonder.getPlayerId());
 
         // Check for critical spirituality
         if (beyonder.getSpirituality().isCritical()) {

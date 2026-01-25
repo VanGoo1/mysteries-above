@@ -37,35 +37,34 @@ public class FractureOfRealitiesAbility extends ActiveAbility {
         Location casterLoc = context.getCasterLocation();
 
         // Create visual anomaly effect
-        context.spawnParticle(Particle.PORTAL, casterLoc, 100, 0, 0, 0);
-        context.spawnParticle(Particle.DRAGON_BREATH, casterLoc, 50, RADIUS, 1, RADIUS);
-        context.spawnParticle(Particle.END_ROD, casterLoc, 30, RADIUS * 0.5, 2, RADIUS * 0.5);
+        context.effects().spawnParticle(Particle.PORTAL, casterLoc, 100, 0, 0, 0);
+        context.effects().spawnParticle(Particle.DRAGON_BREATH, casterLoc, 50, RADIUS, 1, RADIUS);
+        context.effects().spawnParticle(Particle.END_ROD, casterLoc, 30, RADIUS * 0.5, 2, RADIUS * 0.5);
 
         // Play ominous sounds
-        context.playSound(casterLoc, Sound.BLOCK_PORTAL_AMBIENT, 1.5f, 0.5f);
-        context.playSound(casterLoc, Sound.ENTITY_ENDERMAN_SCREAM, 1.0f, 0.8f);
+        context.effects().playSound(casterLoc, Sound.BLOCK_PORTAL_AMBIENT, 1.5f, 0.5f);
+        context.effects().playSound(casterLoc, Sound.ENTITY_ENDERMAN_SCREAM, 1.0f, 0.8f);
 
         // Apply confusion and distortion effects to nearby entities
-        List<org.bukkit.entity.LivingEntity> nearbyEntities = context.getNearbyEntities(RADIUS);
+        List<org.bukkit.entity.LivingEntity> nearbyEntities = context.targeting().getNearbyEntities(RADIUS);
 
         for (org.bukkit.entity.LivingEntity entity : nearbyEntities) {
             // Apply nausea/confusion effect
-            context.applyEffect(entity.getUniqueId(), PotionEffectType.NAUSEA, DURATION_TICKS, 0);
+            context.entity().applyPotionEffect(entity.getUniqueId(), PotionEffectType.NAUSEA, DURATION_TICKS, 0);
             // Apply slowness to represent reality distortion
-            context.applyEffect(entity.getUniqueId(), PotionEffectType.SLOWNESS, DURATION_TICKS, 1);
+            context.entity().applyPotionEffect(entity.getUniqueId(), PotionEffectType.SLOWNESS, DURATION_TICKS, 1);
         }
 
         // Store entities for cleanup (this would need to be stored in ability state)
         // For now, we'll use a simple approach - schedule removal
-        context.scheduleDelayed(() -> {
+        context.scheduling().scheduleDelayed(() -> {
             // Remove effects after duration
             for (org.bukkit.entity.LivingEntity entity : nearbyEntities) {
-                context.removeEffect(entity.getUniqueId(), PotionEffectType.NAUSEA);
-                context.removeEffect(entity.getUniqueId(), PotionEffectType.SLOWNESS);
+                context.entity().removePotionEffect(entity.getUniqueId(), PotionEffectType.NAUSEA);
+                context.entity().removePotionEffect(entity.getUniqueId(), PotionEffectType.SLOWNESS);
             }
         }, DURATION_TICKS);
 
-        context.sendMessageToCaster("Реальність навколо вас спотворюється! Всі в радіусі відчувають хаос.");
 
         return AbilityResult.success();
     }

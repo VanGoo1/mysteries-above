@@ -3,16 +3,18 @@ package me.vangoo.domain.abilities.core;
 
 import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.domain.valueobjects.Sequence;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 /**
  * Domain: Wrapper для одноразових здібностей
- *
+ * <p>
  * Обгортає будь-яку активну здібність та робить її одноразовою.
  * Після успішного використання автоматично видаляє себе.
- *
+ * <p>
  * Для здібностей-перемикачів (toggle abilities) дозволяє два використання:
  * одне для активації, одне для деактивації.
- *
+ * <p>
  * Identity: "onetime:original_name" для розпізнавання при deserialisation
  */
 public class OneTimeUseAbility extends ActiveAbility {
@@ -34,8 +36,8 @@ public class OneTimeUseAbility extends ActiveAbility {
     @Override
     public String getDescription(Sequence userSequence) {
         String usageNote = usesRemaining > 1
-            ? "(Можна використати " + usesRemaining + " рази)"
-            : "(Одноразова здібність)";
+                ? "(Можна використати " + usesRemaining + " рази)"
+                : "(Одноразова здібність)";
         return wrappedAbility.getDescription(userSequence) +
                 "\n§c§o" + usageNote;
     }
@@ -67,13 +69,13 @@ public class OneTimeUseAbility extends ActiveAbility {
 
             if (usesRemaining <= 0) {
                 // Більше немає використань - видаляємо
-                context.removeOffPathwayAbility(getIdentity());
-                context.sendMessageToCaster(
+                context.beyonder().removeOffPathwayAbility(getIdentity(), context.getCasterId());
+                context.messaging().sendMessage(context.getCasterId(),
                         "§7Одноразова здібність §e" + getName() + " §7була використана");
             } else {
                 // Ще залишилися використання
-                context.sendMessageToCaster(
-                        "§7Використань залишилось: §e" + usesRemaining);
+                context.messaging().sendMessageToActionBar(context.getCasterId(),
+                        Component.text("Використань залишилось ").append(Component.text(usesRemaining, NamedTextColor.YELLOW)));
             }
         }
 

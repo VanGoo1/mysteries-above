@@ -44,7 +44,8 @@ public class ScanGazePassive extends ToggleablePassiveAbility {
 
     @Override
     public void onEnable(IAbilityContext context) {
-        context.playSoundToCaster(
+        context.effects().playSoundForPlayer(
+                context.getCasterId(),
                 org.bukkit.Sound.BLOCK_BEACON_ACTIVATE,
                 0.5f,
                 1.5f
@@ -58,7 +59,8 @@ public class ScanGazePassive extends ToggleablePassiveAbility {
         lastTargets.remove(casterId);
         tickCounters.remove(casterId);
 
-        context.playSoundToCaster(
+        context.effects().playSoundForPlayer(
+                context.getCasterId(),
                 org.bukkit.Sound.BLOCK_BEACON_DEACTIVATE,
                 0.5f,
                 1.0f
@@ -82,7 +84,7 @@ public class ScanGazePassive extends ToggleablePassiveAbility {
         // скидаємо лічильник після перевірки (щоб він не ріс безкінечно)
         tickCounters.put(casterId, 0);
 
-        Optional<Player> targetOpt = context.getTargetedPlayer(RANGE);
+        Optional<Player> targetOpt = context.targeting().getTargetedPlayer(RANGE);
 
         if (targetOpt.isEmpty()) {
             lastTargets.remove(casterId);
@@ -102,7 +104,8 @@ public class ScanGazePassive extends ToggleablePassiveAbility {
         // Show scan information (now as hologram only for caster)
         showScanInfo(context, target);
         // Subtle sound effect
-        context.playSoundToCaster(
+        context.effects().playSoundForPlayer(
+                context.getCasterId(),
                 org.bukkit.Sound.BLOCK_NOTE_BLOCK_CHIME,
                 0.3f,
                 2.0f
@@ -162,7 +165,7 @@ public class ScanGazePassive extends ToggleablePassiveAbility {
         long updateIntervalTicks = 1L; // оновлювати кожен тік
 
         // Передаємо casterPlayer як viewer — голограма буде видима лише йому
-        context.spawnFollowingHologramForPlayer(casterPlayer, target, comp, durationTicks, updateIntervalTicks);
+        context.messaging().spawnFollowingHologramForPlayer(casterPlayer, target, comp, durationTicks, updateIntervalTicks);
     }
 
     @Override

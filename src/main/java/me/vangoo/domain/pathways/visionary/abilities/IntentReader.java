@@ -42,14 +42,14 @@ public class IntentReader extends ActiveAbility {
 
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
-        context.sendMessageToActionBar(context.getCasterPlayer(),
+        context.messaging().sendMessageToActionBar(context.getCasterId(),
                 Component.text("👁 Ви бачите справжні наміри істот (" + DURATION_SECONDS + "с)...")
                         .color(NamedTextColor.AQUA));
-        context.playSoundToCaster(Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 1.5f);
+        context.effects().playSoundForPlayer(context.getCasterId(), Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 1.5f);
 
         final Map<UUID, IntentState> lastIntents = new HashMap<>();
 
-        context.scheduleRepeating(new Runnable() {
+        context.scheduling().scheduleRepeating(new Runnable() {
             int ticksPassed = 0;
             final int maxTicks = DURATION_SECONDS * 20;
 
@@ -58,7 +58,7 @@ public class IntentReader extends ActiveAbility {
                 if (ticksPassed >= maxTicks) return;
                 ticksPassed += 10;
 
-                List<LivingEntity> nearby = context.getNearbyEntities(RADIUS);
+                List<LivingEntity> nearby = context.targeting().getNearbyEntities(RADIUS);
 
                 for (LivingEntity entity : nearby) {
                     if (entity.getUniqueId().equals(context.getCasterId())) continue;
@@ -152,14 +152,14 @@ public class IntentReader extends ActiveAbility {
         String entityName = entity instanceof Player ? entity.getName() : entity.getType().name();
 
         if (current == IntentState.AGGRESSIVE) {
-            context.sendMessageToActionBar(context.getCasterPlayer(),
+            context.messaging().sendMessageToActionBar(context.getCasterId(),
                     Component.text("⚠ " + entityName + " готується до атаки!").color(NamedTextColor.RED));
-            context.playSoundToCaster(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 0.5f);
+            context.effects().playSoundForPlayer(context.getCasterId(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 0.5f);
         } else if (current == IntentState.FLEEING && previous == IntentState.AGGRESSIVE) {
-            context.sendMessageToActionBar(context.getCasterPlayer(),
+            context.messaging().sendMessageToActionBar(context.getCasterId(),
                     Component.text("⬇ " + entityName + " відступає.").color(NamedTextColor.YELLOW));
         } else if (current == IntentState.OBSERVING) {
-            context.sendMessageToActionBar(context.getCasterPlayer(),
+            context.messaging().sendMessageToActionBar(context.getCasterId(),
                     Component.text("👀 " + entityName + " спостерігає.").color(NamedTextColor.BLUE));
         }
     }

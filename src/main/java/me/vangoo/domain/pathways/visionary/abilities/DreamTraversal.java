@@ -187,7 +187,7 @@ public class DreamTraversal extends ActiveAbility {
             // Додаємо невеликий випадковий офсет поруч із ціллю
             teleportLoc = teleportLoc.clone().add(Math.random() * 4 - 2, 0, Math.random() * 4 - 2);
 
-            context.teleport(context.getCasterId(), teleportLoc);
+            context.entity().teleport(context.getCasterId(), teleportLoc);
 
             // Ефекти після телепортації
             context.effects().spawnParticle(Particle.PORTAL, teleportLoc.clone().add(0, 1, 0), 100, 0.5, 1, 0.5);
@@ -198,7 +198,7 @@ public class DreamTraversal extends ActiveAbility {
             context.messaging().sendMessage(context.getCasterId(), ChatColor.GREEN + "✓ Ви проникли у світ снів " + targetName);
             context.messaging().sendMessage(targetId, ChatColor.DARK_PURPLE + "✦ У ваш сон хтось увійшов...");
 
-            context.applyEffect(context.getCasterId(), PotionEffectType.BLINDNESS, 20, 0);
+            context.entity().applyPotionEffect(context.getCasterId(), PotionEffectType.BLINDNESS, 20, 0);
 
         }, TELEPORT_DELAY_SECONDS * 20L);
     }
