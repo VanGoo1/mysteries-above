@@ -5,6 +5,7 @@ import me.vangoo.domain.entities.Pathway;
 import me.vangoo.domain.entities.PathwayGroup;
 import me.vangoo.domain.pathways.door.Door;
 import me.vangoo.domain.pathways.error.Error;
+import me.vangoo.domain.pathways.fool.Fool;
 import me.vangoo.domain.pathways.justiciar.Justiciar;
 import me.vangoo.domain.pathways.visionary.Visionary;
 import me.vangoo.domain.pathways.whitetower.WhiteTower;
@@ -36,6 +37,9 @@ public class PathwayManager {
         pathways.put("WhiteTower", new WhiteTower(PathwayGroup.GodAlmighty,
                 List.of("White Tower", "Omniscient Eye", "Wisdom Angel", "Cognizer", "Prophet", "Mysticism Magister", "Polymath",
                         "Detective", "Student", "Reader")));
+        pathways.put("Fool", new Fool(PathwayGroup.LordOfMysteries,
+                List.of("Fool", "Lord of Mysteries", "Attendant of Mysteries", "Bizarro Sorcerer",
+                        "Marionettist", "Faceless", "Magician", "Clown", "Seer")));
     }
 
     public Pathway getPathway(String name) {

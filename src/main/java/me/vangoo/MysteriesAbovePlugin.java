@@ -3,10 +3,13 @@ package me.vangoo;
 import de.slikey.effectlib.EffectManager;
 import fr.skytasul.glowingentities.GlowingEntities;
 import me.vangoo.application.services.*;
+import me.vangoo.infrastructure.citizens.MarionetteMinionTrait;
 import me.vangoo.infrastructure.di.ServiceContainer;
 import me.vangoo.presentation.commands.*;
 import me.vangoo.presentation.listeners.*;
 import me.vangoo.infrastructure.ui.NBTBuilder;
+import net.citizensnpcs.api.CitizensAPI;
+import net.citizensnpcs.api.trait.TraitInfo;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.logging.Logger;
@@ -79,6 +82,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         pluginLogger.info("Custom items system initialized:");
         pluginLogger.info("  Total items: " + services.getCustomItemService().getStatistics().get("totalItems"));
         pluginLogger.info("Recipe and crafting system initialized");
+        CitizensAPI.getTraitFactory().registerTrait(
+                TraitInfo.create(MarionetteMinionTrait.class).withName("marionette_minion")
+        );
     }
 
     private void startRegenerationScheduler() {

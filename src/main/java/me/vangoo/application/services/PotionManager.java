@@ -3,6 +3,7 @@ package me.vangoo.application.services;
 import me.vangoo.domain.PathwayPotions;
 import me.vangoo.domain.pathways.door.DoorPotions;
 import me.vangoo.domain.pathways.error.ErrorPotions;
+import me.vangoo.domain.pathways.fool.FoolPotions;
 import me.vangoo.domain.pathways.justiciar.JusticiarPotions;
 import me.vangoo.domain.pathways.visionary.VisionaryPotions;
 import me.vangoo.domain.pathways.whitetower.WhiteTowerPotions;
@@ -62,6 +63,11 @@ public class PotionManager {
         potions.add(new WhiteTowerPotions(
                 pathwayManager.getPathway("WhiteTower"),
                 Color.fromRGB(255, 0, 50),
+                customItemService
+        ));
+        potions.add(new FoolPotions(
+                pathwayManager.getPathway("Fool"),
+                Color.fromRGB(128, 0, 128),
                 customItemService
         ));
     }
