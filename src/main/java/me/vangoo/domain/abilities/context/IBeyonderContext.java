@@ -23,4 +23,8 @@ public interface IBeyonderContext {
     int getUnlockedRecipesCount(UUID playerId,String pathwayName);
 
     List<ItemStack> getIngredientsForPotion(Pathway pathway, Sequence sequence);
+
+    void setOverride(UUID playerId, Beyonder override);
+
+    void removeOverride(UUID playerId);
 }

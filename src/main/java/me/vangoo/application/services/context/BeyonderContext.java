@@ -99,4 +99,14 @@ public class BeyonderContext implements IBeyonderContext {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public void setOverride(UUID playerId, Beyonder override) {
+        beyonderService.setOverride(playerId, override);
+    }
+
+    @Override
+    public void removeOverride(UUID playerId) {
+        beyonderService.removeOverride(playerId);
+    }
 }

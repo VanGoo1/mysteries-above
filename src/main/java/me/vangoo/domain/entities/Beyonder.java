@@ -529,4 +529,80 @@ public class Beyonder {
 
         return Optional.empty();
     }
+    public synchronized void possessIdentity(Pathway newPathway, Sequence newSequence) {
+        if (newPathway == null || newSequence == null) {
+            throw new IllegalArgumentException("Cannot possess a null identity");
+        }
+        this.pathway  = newPathway;
+        this.sequence = newSequence;
+        this.mastery  = Mastery.zero();
+        reloadAbilities();
+        updateMaximumSpirituality();
+    }
+
+    /**
+     * Restore a previously snapshotted identity.
+     * Called when the caster swaps back OUT of a marionette.
+     *
+     * @param snapshot the snapshot taken just before possessIdentity()
+     */
+    public synchronized void restoreIdentity(BeyonderSnapshot snapshot) {
+        if (snapshot == null) {
+            throw new IllegalArgumentException("Snapshot cannot be null");
+        }
+        this.pathway      = snapshot.pathway();
+        this.sequence     = snapshot.sequence();
+        this.mastery      = snapshot.mastery();
+        this.spirituality = snapshot.spirituality();
+        this.sanityLoss   = snapshot.sanityLoss();
+        // Restore ability list from snapshot (includes off-pathway abilities)
+        this.abilities    = new ArrayList<>(snapshot.abilities());
+        this.offPathwayActiveAbilities = ConcurrentHashMap.newKeySet();
+        this.offPathwayActiveAbilities.addAll(snapshot.offPathwayAbilities());
+    }
+
+    /**
+     * Rebuild the ability list from the current pathway + sequence.
+     * Safe to call at any time; existing off-pathway abilities are preserved.
+     */
+    public synchronized void reloadAbilities() {
+        if (abilityTransformer == null) abilityTransformer = new AbilityTransformer();
+        List<Ability> rawAbilities = collectAllAbilitiesForCurrentSequence();
+        // Merge — keep any off-pathway abilities the caster already had
+        List<Ability> merged = abilityTransformer.transform(new ArrayList<>(), rawAbilities);
+        this.abilities = merged;
+    }
+
+    /**
+     * Take an immutable snapshot of the caster's current identity.
+     * Call this BEFORE possessIdentity() so it can be restored later.
+     */
+    public BeyonderSnapshot takeSnapshot() {
+        return new BeyonderSnapshot(
+                pathway,
+                sequence,
+                mastery,
+                spirituality,
+                sanityLoss,
+                abilities != null ? new ArrayList<>(abilities) : new ArrayList<>(),
+                offPathwayActiveAbilities != null
+                        ? new HashSet<>(offPathwayActiveAbilities)
+                        : new HashSet<>()
+        );
+    }
+
+    // ── Snapshot value object ────────────────────────────────────────────────
+    /**
+     * Immutable point-in-time capture of a Beyonder's full identity.
+     * Lives only in memory — never persisted.
+     */
+    public record BeyonderSnapshot(
+            Pathway           pathway,
+            Sequence          sequence,
+            Mastery           mastery,
+            Spirituality      spirituality,
+            SanityLoss        sanityLoss,
+            List<Ability>     abilities,
+            Set<Ability>      offPathwayAbilities
+    ) {}
 }
