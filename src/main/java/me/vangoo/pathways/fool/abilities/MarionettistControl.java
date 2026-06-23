@@ -4,6 +4,7 @@ import me.vangoo.domain.abilities.core.*;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.entities.Beyonder.BeyonderSnapshot;
 import me.vangoo.domain.services.SequenceScaler;
+import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.infrastructure.citizens.MarionetteMinionTrait;
 import me.vangoo.infrastructure.ui.NBTBuilder;
@@ -37,6 +38,7 @@ public class MarionettistControl extends ActiveAbility {
     private static final int    CONVERT_TICKS     = 100;
     private static final int    TICK_INTERVAL     = 4;
     private static final String SWAP_BACK_NBT     = "marionettist_swap_back";
+    public static final AbilityIdentity IDENTITY = AbilityIdentity.of("marionettist_control");
 
     // Інстанс-реєстри (НЕ static): екземпляр здібності один на пасвей — це і є правильний скоуп
     // спільного стану всіх маріонеток/посесій. Раніше static → витік і неможливість GC.
@@ -49,6 +51,11 @@ public class MarionettistControl extends ActiveAbility {
     private final Map<UUID, BeyonderSnapshot>     possessions    = new ConcurrentHashMap<>();
 
     @Override public String getName() { return "Контроль Маріонетки"; }
+
+    @Override
+    public AbilityIdentity getIdentity() {
+        return IDENTITY;
+    }
 
     @Override
     public String getDescription(Sequence seq) {
@@ -123,7 +130,7 @@ public class MarionettistControl extends ActiveAbility {
         return isSwapBackItem(mainHand) || isSwapBackItem(offHand);
     }
 
-    private boolean isSwapBackItem(ItemStack item) {
+    public static boolean isSwapBackItem(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return false;
         NBTBuilder nbt = new NBTBuilder(item);
         return nbt.getBoolean(item, SWAP_BACK_NBT).orElse(false);
@@ -416,6 +423,17 @@ public class MarionettistControl extends ActiveAbility {
         ctx.messaging().sendMessageToActionBar(casterId,
                 Component.text("Ваш Шлях відновлено.", NamedTextColor.GREEN));
     }
+
+    /** Direct exit entry for the swap-back item listener — no cost/cooldown (bypasses execute()). */
+    public boolean exitIfPossessing(IAbilityContext ctx) {
+        java.util.UUID casterId = ctx.getCasterId();
+        if (!currentPossession.containsKey(casterId)) {
+            return false;
+        }
+        swapOut(ctx, casterId, false);
+        return true;
+    }
+
     // ════════════════════════════════════════════════════════════════════════
     // Inventory helpers
     // ════════════════════════════════════════════════════════════════════════
