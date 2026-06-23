@@ -8,13 +8,16 @@ import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.entity.Player;
 
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.bukkit.Bukkit.getPlayer;
 
 public class BeyonderService {
     private final IBeyonderRepository repository;
     private final BossBarUtil bossBarUtil;
+    private final Map<UUID, Beyonder> overrides = new ConcurrentHashMap<>();
 
     public BeyonderService(IBeyonderRepository repository, BossBarUtil bossBarUtil) {
         this.repository = repository;
@@ -25,7 +28,24 @@ public class BeyonderService {
      * Отримати beyonder'а
      */
     public Beyonder getBeyonder(UUID playerId) {
+        if (overrides.containsKey(playerId)) {
+            return overrides.get(playerId);
+        }
         return repository.get(playerId);
+    }
+
+    /**
+     * Встановити тимчасове переприсвоєння профілю (для маріонеток)
+     */
+    public void setOverride(UUID playerId, Beyonder override) {
+        overrides.put(playerId, override);
+    }
+
+    /**
+     * Видалити переприсвоєння (повернення у власне тіло)
+     */
+    public void removeOverride(UUID playerId) {
+        overrides.remove(playerId);
     }
 
     /**
