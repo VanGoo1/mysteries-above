@@ -13,6 +13,7 @@ import me.vangoo.infrastructure.structures.LootTableConfigLoader;
 import me.vangoo.infrastructure.ui.AbilityMenu;
 import me.vangoo.infrastructure.ui.BossBarUtil;
 import me.vangoo.presentation.listeners.BeyonderSleepListener;
+import me.vangoo.presentation.listeners.MarionetteExitListener;
 import me.vangoo.MysteriesAbovePlugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -70,6 +71,7 @@ public class ServiceContainer {
     // Event listeners
     private RampageEventListener rampageEventListener;
     private BeyonderSleepListener beyonderSleepListener;
+    private MarionetteExitListener marionetteExitListener;
 
     // Recipes
     private RecipeBookCraftingRecipe recipeBookCraftingRecipe;
@@ -217,6 +219,7 @@ public class ServiceContainer {
     private void initializeEventListeners() {
         this.rampageEventListener = new RampageEventListener(passiveAbilityScheduler, beyonderService);
         this.beyonderSleepListener = new BeyonderSleepListener(beyonderService);
+        this.marionetteExitListener = new MarionetteExitListener(abilityContextFactory, pathwayManager);
     }
 
     private void initializeRecipes() {
@@ -262,6 +265,7 @@ public class ServiceContainer {
 
     public RampageEventListener getRampageEventListener() { return rampageEventListener; }
     public BeyonderSleepListener getBeyonderSleepListener() { return beyonderSleepListener; }
+    public MarionetteExitListener getMarionetteExitListener() { return marionetteExitListener; }
 
     public RecipeBookCraftingRecipe getRecipeBookCraftingRecipe() { return recipeBookCraftingRecipe; }
 
