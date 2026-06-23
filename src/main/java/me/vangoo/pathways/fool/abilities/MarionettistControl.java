@@ -539,11 +539,10 @@ public class MarionettistControl extends ActiveAbility {
                     e.getDrops().clear();
                     e.setDroppedExp(0);
 
-                    UUID ownerId = possessionByNpc.remove(npc.getId());
+                    // get (НЕ remove): swapOut сам почистить усі реєстри. Якщо зняти snapshot тут,
+                    // swapOut вийде достроково — без відновлення особистості/інвентаря/скіна.
+                    UUID ownerId = possessionByNpc.get(npc.getId());
                     if (ownerId != null) {
-                        currentPossession.remove(ownerId);
-                        originalInventories.remove(ownerId);
-                        possessions.remove(ownerId);
                         swapOut(ctx, ownerId, true);
                     }
 
