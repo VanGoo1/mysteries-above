@@ -85,7 +85,8 @@ public class CustomItemFactory {
      * Check if ItemStack is a custom item
      */
     public boolean isCustomItem(@Nullable ItemStack itemStack) {
-        if (itemStack == null) {
+        // getItemMeta() == null (напр. AIR) → NBTBuilder кинув би виняток. Читання й так null-safe.
+        if (itemStack == null || itemStack.getItemMeta() == null) {
             return false;
         }
 
@@ -97,7 +98,8 @@ public class CustomItemFactory {
      * Get custom item ID from ItemStack
      */
     public Optional<String> getCustomItemId(@Nullable ItemStack itemStack) {
-        if (itemStack == null) {
+        // getItemMeta() == null (напр. AIR) → NBTBuilder кинув би виняток. Читання й так null-safe.
+        if (itemStack == null || itemStack.getItemMeta() == null) {
             return Optional.empty();
         }
 

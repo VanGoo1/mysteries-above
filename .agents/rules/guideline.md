@@ -38,7 +38,7 @@ The project follows a Clean/Hexagonal Architecture:
 ### Development Workflow: Adding New Pathways & Abilities
 
 #### 1. Create an Ability
-Create a class in me.vangoo.domain.pathways.<pathway>.abilities.
+Create a class in me.vangoo.pathways.<pathway>.abilities (the behavior/effect layer — Bukkit allowed; NOT under domain).
 Inherit from one of the base classes in me.vangoo.domain.abilities.core:
 - ActiveAbility: For abilities triggered by the player.
 - PermanentPassiveAbility: For constant buffs.
@@ -66,7 +66,7 @@ public class MyAbility extends ActiveAbility {
 }
 
 #### 2. Create/Update a Pathway
-Create a class in me.vangoo.domain.pathways.<pathway> extending Pathway.
+Create a class in me.vangoo.pathways.<pathway> extending Pathway (the abstract base stays in me.vangoo.domain.entities).
 Register abilities in initializeAbilities():
 
 public class MyPathway extends Pathway {

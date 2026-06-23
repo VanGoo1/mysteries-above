@@ -1,0 +1,75 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Overview
+
+`mysteries-above` is a Spigot/Bukkit Minecraft plugin (Java 21, API 1.21) inspired by *Lord of the Mysteries*. Players become **Beyonders** who progress along a **Pathway** through **Sequences** (9 = weakest → 0 = strongest), unlocking **Abilities** at each sequence by drinking potions. Much of the in-code text, descriptions, and comments are in **Ukrainian** — keep new user-facing strings consistent with that.
+
+## Commands
+
+- **Build**: `mvn clean package` (default goal; produces a shaded plugin JAR via maven-shade-plugin). Shading bundles `glowingentities`, `EffectLib`, and `triumph-gui`; `spigot-api` and `coreprotect` are `provided`.
+- **Run tests**: `mvn test` (JUnit 5; ArchUnit for architecture rules). Surefire + test deps live in `pom.xml`.
+- **Single test class**: `mvn test -Dtest=SpellRecipeTest`
+- **Single test method**: `mvn test -Dtest=SpellRecipeTest#aoeScalesWithPowerAndArea`
+- Pure-domain logic (progression, balance) is unit-tested without Bukkit; ability **effects** are verified in-server, not mocked.
+
+## Architecture
+
+Layered / hexagonal design under `me.vangoo`. Dependencies point inward toward `domain`:
+
+- **`domain`** — pure business logic, no Bukkit scheduling/DI. Key pieces:
+  - `entities`: `Beyonder` (the player aggregate), `Pathway` (abstract — concrete pathways live in the behavior layer below), `PathwayGroup`.
+  - `abilities.core`: `Ability` base class + `ActiveAbility` / `PermanentPassiveAbility` / `ToggleablePassiveAbility`, `AbilityType`, `AbilityResult`, and the `IAbilityContext` interface.
+  - `abilities.context`: fine-grained context interfaces (`ICooldownContext`, `IMessagingContext`, `ITargetContext`, `IGlowingContext`, `IRampageContext`, `ISchedulingContext`, `IUIContext`, etc.) — abilities depend on these, not on concrete Bukkit services.
+  - `spells`: pure spell data/rules (`SpellRecipe`, `SpellBlueprint`, `SpellCodec`) — no Bukkit; the reference example of the rules-vs-effects seam.
+  - `valueobjects`: immutables like `Sequence`, `Spirituality`, `Mastery`, `SanityLoss`, `AbilityResult`, `SequenceBasedSuccessChance`.
+- **`me.vangoo.pathways`** — the **ability behavior / effect layer** (its own layer, **not** part of `domain`). Bukkit is allowed here; it depends inward on `domain` and is orchestrated by `application` (`PathwayManager` wires it). This is the home of the **effect** half of the rules-vs-effects seam. Contents:
+  - one package per pathway (`error`, `door`, `justiciar`, `visionary`, `whitetower`), each with an `abilities` subpackage, a concrete `Pathway` subclass that builds its per-sequence ability lists in `initializeAbilities()`, and a `*Potions` class.
+  - **thin abilities** — `Ability` subclasses holding only glue (name/cost/cooldown + delegation); balance math is pulled out to `domain` VOs.
+  - **runners** — stateless Bukkit choreography for one-shot effects (e.g. `SpellEffectRunner`).
+  - **sessions** — live, self-ticking objects for stateful effects (e.g. `JurisdictionSession`, `DiviningRodSession`, `DreamVisionSession`).
+  - **Boundary:** `domain` must never depend on this layer — `ArchitectureTest.domainDoesNotDependOnBehaviorLayer` fails the build if it does. Note: **sessions** and **recipe-VOs are patterns _within_ layers, not new layers** — sessions live here, recipe-VOs live in `domain`; the rules-vs-effects seam cuts _across_ the `domain`↔`pathways` boundary rather than adding a level.
+- **`application.services`** — orchestration: `BeyonderService`, `AbilityExecutor`, `PathwayManager`, `CooldownManager`, `RampageManager`, `PassiveAbilityManager`, `PotionManager`, etc. The concrete context implementations live in `application.services.context`.
+- **`infrastructure`** — Bukkit/external integrations: JSON repositories (`JSONBeyonderRepository` wrapped by `BatchedBeyonderRepository`), schedulers, item/recipe/loot factories, UI helpers, and `di.ServiceContainer`.
+- **`presentation`** — `commands`, `listeners` (Bukkit event handlers), and GUI/menu glue.
+
+### Wiring (`ServiceContainer`)
+There is **no DI framework**. `MysteriesAbovePlugin.onEnable()` constructs a single `ServiceContainer` (`infrastructure.di`) that manually instantiates every service in dependency order and exposes getters. Listeners, commands, and schedulers are wired from these getters in the plugin's `registerEvents()` / `registerCommands()` / `startSchedulers()`. When you add a service, register it in `ServiceContainer` and thread it through there.
+
+### Ability execution flow
+`Ability.execute(IAbilityContext)` is `final` and runs the pipeline: cooldown check → `canExecute` → `preExecution` → optional sequence-based success roll (`getSequenceCheckTarget`) → `performExecution` (the method subclasses implement) → `postExecution`. Note: for `ACTIVE` abilities the cooldown is **not** set inside `execute()` — it is applied later by `AbilityResourceConsumer` after resource consumption, and `AbilityResult` may be **deferred** (don't set cooldown on deferred results). Use `scaleValue(base, sequence, strategy)` (via `SequenceScaler`) to make effects stronger as the sequence level drops.
+
+## Architecture seam: rules vs effects
+
+When adding or changing ability code, classify it with one question:
+**Is this a rule that must stay correct (progression, costs, cooldown-as-a-number, sanity, state invariants) — or an effect in the world (particles, damage, teleport, GUI, inventory)?**
+
+- **Rule** → `domain`, plain Java, unit-tested, **zero Bukkit**.
+- **Effect** → the behavior layer `me.vangoo.pathways` (thin ability + runner/session); cross-cutting Bukkit services (scheduling, cooldown, persistence) live in `application` / `infrastructure`. Bukkit allowed, verified in-server.
+
+The pure core of `domain` (`entities`, `services`, `spells`) must not import `org.bukkit.*`, `dev.triumphteam.*`, or `net.kyori.*`, and `domain` must not depend on the behavior layer `me.vangoo.pathways`. Ability **behavior** lives in `me.vangoo.pathways.*` (Bukkit allowed). `ArchitectureTest` pins both invariants — widen the pure-domain scope as more code is cleaned. (Still not clean: `valueobjects` `CustomItem` / `RecordedEvent`, and `domain.abilities.core/context` which still expose Bukkit types like `Player` / `Location`.)
+
+**Two patterns for a complex ability — pick by lifecycle:**
+
+- **One-shot (stateless)** — fires and forgets (damage, teleport, buff). Shape: data-recipe (pure VO) → runner (effect layer) → thin `Ability`. Reference: `SpellRecipe` + `SpellCodec` (pure domain) / `SpellEffectRunner` (Bukkit choreography) / `GeneratedSpell` (thin adapter). The GUI (`Spellcasting`) only collects a `SpellBlueprint`; balance math lives in `SpellRecipe.fromBlueprint`.
+- **Stateful (long-lived)** — establishes something that lives across time with a `start → tick → cancel` lifecycle (zones, clones, body-swaps). Shape: pure params → **session** object (owns its own `BukkitTask` + `tick()` + `cancel()`) → thin `Ability` holding an **instance** `Map<UUID, Session>` registry. Reference: `AreaOfJurisdiction` / `JurisdictionSession`; also `DiviningRodSession` and `DreamVisionSession` (the `door` pathway). Rules: (1) the registry is an **instance** field, never `static` — an ability instance is already shared per-pathway, so that is the correct scope; (2) the session ticks via **Bukkit directly**, never a captured `IAbilityContext` — capturing one caster's context into shared state is a bug. (Exception: a session may hold a **global, non-caster-bound service** like `IEventContext` when it genuinely needs it — see `DreamVisionSession`'s event subscriptions; the test is "does this reference carry one caster's identity?", not "is it from the context?"); (3) the ability overrides `cleanUp()` to `cancel()` every session (wired through `Beyonder.cleanUpAbilities()` on disable), and a re-cast replaces+cancels the owner's previous session.
+
+**Anti-patterns (these produced the current debt):**
+- ❌ Adding a context method just to wrap one Bukkit call you could make directly in the effect layer.
+- ❌ Passing Bukkit types (`Location`, `Player`, `ItemStack`) through a "port" and calling it an abstraction.
+- ❌ Putting balance / stat math in a GUI or behavior class.
+- ❌ `static` mutable state on an ability (registries, tasks, a captured `IAbilityContext`) → use an instance field + a session that owns its own task.
+- ❌ An invariant defended by a `КРИТИЧНО` comment → it should be a type or a test.
+
+## Adding a Pathway / Ability
+
+1. **Ability**: create a class in `me.vangoo.pathways.<pathway>.abilities` extending `ActiveAbility`, `PermanentPassiveAbility`, or `ToggleablePassiveAbility`. Implement `getName`, `getDescription(Sequence)`, `getSpiritualityCost`, `getCooldown(Sequence)`, and `performExecution(IAbilityContext)`. Access services via the typed context sub-interfaces (e.g. `context.cooldown()`, `context.messaging()`, `context.targeting()`). Keep balance/stat math in `domain` (a pure VO like `SpellRecipe`); keep only Bukkit effects here.
+2. **Pathway**: register abilities per sequence in the pathway's `initializeAbilities()` (in `me.vangoo.pathways.<pathway>`) via `sequenceAbilities.put(sequence, List.of(...))`.
+3. **Register the pathway**: add it to `PathwayManager.initializePathways()` with its `PathwayGroup` and the list of 10 sequence names.
+
+## Config & persistence
+
+- `src/main/resources/`: `plugin.yml` (commands + `mysteriesabove.admin` permission), `config.yml`, `custom-items.yml`, `global_loot.yml`. `plugin.yml` and `*.yml` are Maven-filtered resources.
+- Player state persists to `beyonders.json` in the plugin data folder, written by `BatchedBeyonderRepository` (batched save every 5 minutes + save on disable). Recipe unlocks persist to `recipe_unlocks.json`.
+- Admin commands (all require `mysteriesabove.admin`): `/pathway`, `/mastery`, `/rampager`, `/potion`, `/custom-items`, `/recipe`, `/structure`.
