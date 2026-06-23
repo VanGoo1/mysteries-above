@@ -1,5 +1,6 @@
 package me.vangoo.pathways.fool.abilities;
 
+import com.github.retrooper.packetevents.PacketEvents;
 import me.vangoo.domain.abilities.core.*;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.entities.Beyonder.BeyonderSnapshot;
@@ -238,22 +239,18 @@ public class MarionettistControl extends ActiveAbility {
         String skinValue = null, skinSignature = null;
         if (target instanceof Player p) {
             try {
-                Object craftPlayer = p.getClass().getMethod("getHandle").invoke(p);
-                Object gameProfile = craftPlayer.getClass().getMethod("getGameProfile").invoke(craftPlayer);
-                Object properties  = gameProfile.getClass().getMethod("getProperties").invoke(gameProfile);
-                // properties is a com.mojang.authlib.properties.PropertyMap (extends Multimap<String, Property>)
-                @SuppressWarnings("unchecked")
-                java.util.Collection<?> texProps = (java.util.Collection<?>)
-                        properties.getClass().getMethod("get", Object.class).invoke(properties, "textures");
-                if (texProps != null) {
-                    for (Object prop : texProps) {
-                        skinValue     = (String) prop.getClass().getMethod("value").invoke(prop);
-                        skinSignature = (String) prop.getClass().getMethod("signature").invoke(prop);
-                        break;
+                var user = PacketEvents.getAPI().getPlayerManager().getUser(p);
+                if (user != null && user.getProfile() != null) {
+                    for (var tex : user.getProfile().getTextureProperties()) {
+                        if ("textures".equals(tex.getName())) {
+                            skinValue = tex.getValue();
+                            skinSignature = tex.getSignature();
+                            break;
+                        }
                     }
                 }
             } catch (Exception ignored) {
-                // Якщо рефлексія не вдалась — текстура залишається null
+                // Текстура залишається null — скін просто не підміниться
             }
         }
         final String fSkinValue     = skinValue;
