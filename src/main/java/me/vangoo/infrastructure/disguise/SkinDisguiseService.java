@@ -50,8 +50,11 @@ public final class SkinDisguiseService {
 
     /** Відновлює реальний скін {@code player} для всіх глядачів. */
     public static void undisguise(Player player) {
-        UserProfile real = PacketEvents.getAPI().getPlayerManager().getUser(player).getProfile();
-        resend(player, real);
+        var user = PacketEvents.getAPI().getPlayerManager().getUser(player);
+        if (user == null || user.getProfile() == null) {
+            return; // користувач уже від'єднався — нема кому/що відновлювати
+        }
+        resend(player, user.getProfile());
     }
 
     private static void resend(Player player, UserProfile profile) {
