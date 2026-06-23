@@ -186,6 +186,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(masterRecipeBookListener, this);
         getServer().getPluginManager().registerEvents(vanillaStructureLootListener, this);
         getServer().getPluginManager().registerEvents(archaeologyLootListener, this);
+        getServer().getPluginManager().registerEvents(services.getMarionetteExitListener(), this);
     }
 
     private void registerCommands() {
