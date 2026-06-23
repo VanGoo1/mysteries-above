@@ -219,9 +219,25 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
     }
 
     private String formatEffectName(PotionEffectType type) {
-        var key = type.getKeyOrNull();
-        if (key == null) return "";
-        String name = key.getKey().toLowerCase().replace("_", " ");
+        // Сумісність з різними версіями API
+        String name;
+        try {
+            // Спроба нового API (Paper 1.21.3+)
+            var key = type.getKeyOrNull();
+            name = key != null ? key.getKey() : type.getName();
+        } catch (NoSuchMethodError e) {
+            // Fallback для старіших версій
+            name = type.getName();
+        }
+
+        if (name == null || name.isEmpty()) return "";
+
+        // Видаляємо префікс "minecraft:" якщо є
+        if (name.contains(":")) {
+            name = name.substring(name.indexOf(':') + 1);
+        }
+
+        name = name.toLowerCase().replace("_", " ");
         return name.substring(0, 1).toUpperCase() + name.substring(1);
     }
 }
