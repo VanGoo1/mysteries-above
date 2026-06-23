@@ -5,6 +5,8 @@ import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.OneTimeUseAbility;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.entities.Pathway;
+import me.vangoo.pathways.whitetower.abilities.custom.GeneratedSpell;
+import me.vangoo.domain.spells.SpellCodec;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.domain.valueobjects.Mastery;
 import me.vangoo.domain.valueobjects.SanityLoss;
@@ -89,9 +91,9 @@ public class BeyonderMapper {
      */
     private Ability resolveAbility(String abilityId) {
         // 1. Перевіряємо чи це GeneratedSpell (найвищий пріоритет)
-        if (GeneratedSpellSerializer.isSerializedSpell(abilityId)) {
+        if (SpellCodec.isSerializedSpell(abilityId)) {
             try {
-                return GeneratedSpellSerializer.deserialize(abilityId);
+                return new GeneratedSpell(SpellCodec.decode(abilityId));
             } catch (Exception e) {
                 System.err.println("Warning: Failed to restore generated spell: " + abilityId);
                 System.err.println("Error: " + e.getMessage());
@@ -107,12 +109,9 @@ public class BeyonderMapper {
             searchId = abilityId.substring(ONE_TIME_PREFIX.length());
 
             // Підтримка OneTimeUse(GeneratedSpell)
-            if (GeneratedSpellSerializer.isSerializedSpell(searchId)) {
+            if (SpellCodec.isSerializedSpell(searchId)) {
                 try {
-                    Ability spell = GeneratedSpellSerializer.deserialize(searchId);
-                    if (spell instanceof ActiveAbility) {
-                        return new OneTimeUseAbility((ActiveAbility) spell);
-                    }
+                    return new OneTimeUseAbility(new GeneratedSpell(SpellCodec.decode(searchId)));
                 } catch (Exception e) {
                     System.err.println("Warning: Failed to restore one-time generated spell: " + searchId);
                     return null;

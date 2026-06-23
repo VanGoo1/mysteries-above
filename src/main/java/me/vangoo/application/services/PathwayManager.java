@@ -3,12 +3,12 @@ package me.vangoo.application.services;
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.entities.Pathway;
 import me.vangoo.domain.entities.PathwayGroup;
-import me.vangoo.domain.pathways.door.Door;
-import me.vangoo.domain.pathways.error.Error;
-import me.vangoo.domain.pathways.fool.Fool;
-import me.vangoo.domain.pathways.justiciar.Justiciar;
-import me.vangoo.domain.pathways.visionary.Visionary;
-import me.vangoo.domain.pathways.whitetower.WhiteTower;
+import me.vangoo.pathways.door.Door;
+import me.vangoo.pathways.error.Error;
+import me.vangoo.pathways.fool.Fool;
+import me.vangoo.pathways.justiciar.Justiciar;
+import me.vangoo.pathways.visionary.Visionary;
+import me.vangoo.pathways.whitetower.WhiteTower;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
 
 import java.util.*;

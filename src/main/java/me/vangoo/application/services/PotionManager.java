@@ -1,12 +1,12 @@
 package me.vangoo.application.services;
 
 import me.vangoo.domain.PathwayPotions;
-import me.vangoo.domain.pathways.door.DoorPotions;
-import me.vangoo.domain.pathways.error.ErrorPotions;
-import me.vangoo.domain.pathways.fool.FoolPotions;
-import me.vangoo.domain.pathways.justiciar.JusticiarPotions;
-import me.vangoo.domain.pathways.visionary.VisionaryPotions;
-import me.vangoo.domain.pathways.whitetower.WhiteTowerPotions;
+import me.vangoo.pathways.door.DoorPotions;
+import me.vangoo.pathways.error.ErrorPotions;
+import me.vangoo.pathways.fool.FoolPotions;
+import me.vangoo.pathways.justiciar.JusticiarPotions;
+import me.vangoo.pathways.visionary.VisionaryPotions;
+import me.vangoo.pathways.whitetower.WhiteTowerPotions;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.infrastructure.items.PotionItemFactory;
 import org.bukkit.*;
