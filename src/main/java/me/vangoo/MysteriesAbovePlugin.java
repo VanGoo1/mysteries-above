@@ -1,7 +1,9 @@
 package me.vangoo;
 
+import com.github.retrooper.packetevents.PacketEvents;
 import de.slikey.effectlib.EffectManager;
 import fr.skytasul.glowingentities.GlowingEntities;
+import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import me.vangoo.application.services.*;
 import me.vangoo.infrastructure.citizens.MarionetteMinionTrait;
 import me.vangoo.infrastructure.di.ServiceContainer;
@@ -21,7 +23,15 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     private EffectManager effectManager;
 
     @Override
+    public void onLoad() {
+        PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this));
+        PacketEvents.getAPI().load();
+    }
+
+    @Override
     public void onEnable() {
+        PacketEvents.getAPI().init();
+
         this.pluginLogger = this.getLogger();
 
         // Initialize NBT builder FIRST (needed by CustomItemFactory)
@@ -123,6 +133,10 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         if (services != null) {
             services.saveAll();
             services.cleanup();
+        }
+
+        if (PacketEvents.getAPI() != null) {
+            PacketEvents.getAPI().terminate();
         }
 
         super.onDisable();
