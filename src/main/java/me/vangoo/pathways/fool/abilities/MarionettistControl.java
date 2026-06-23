@@ -8,6 +8,7 @@ import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.infrastructure.citizens.MarionetteMinionTrait;
+import me.vangoo.infrastructure.disguise.SkinDisguiseService;
 import me.vangoo.infrastructure.ui.NBTBuilder;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
@@ -369,6 +370,11 @@ public class MarionettistControl extends ActiveAbility {
 
         spawnSwapEffects(ctx, npcLoc, castLoc);
 
+        if (trait.getSkinTextureValue() != null) {
+            SkinDisguiseService.disguise(ctx.getCasterPlayer(),
+                    trait.getSkinTextureValue(), trait.getSkinTextureSignature());
+        }
+
         if (trait.wasBeyonder()) {
             ctx.messaging().sendMessage(casterId,
                     "§5[Маріонетист] §fВи увійшли в §e" + trait.getOriginalPlayerName() +
@@ -397,6 +403,11 @@ public class MarionettistControl extends ActiveAbility {
         removeSwapBackItem(ctx, casterId);
 
         if (snap == null) return;
+
+        Player casterPlayerForSkin = ctx.getCasterPlayer();
+        if (casterPlayerForSkin != null) {
+            SkinDisguiseService.undisguise(casterPlayerForSkin);
+        }
 
         Beyonder caster = ctx.beyonder().getBeyonder(casterId);
 
@@ -680,6 +691,13 @@ public class MarionettistControl extends ActiveAbility {
 
     @Override
     public void cleanUp() {
+        for (UUID possessingCaster : currentPossession.keySet()) {
+            Player p = Bukkit.getPlayer(possessingCaster);
+            if (p != null) {
+                SkinDisguiseService.undisguise(p);
+            }
+        }
+
         NPCRegistry reg = CitizensAPI.getNPCRegistry();
         marionetteNpcs.values().forEach(id -> {
             NPC n = reg.getById(id);
