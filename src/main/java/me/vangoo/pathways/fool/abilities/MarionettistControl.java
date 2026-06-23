@@ -235,6 +235,30 @@ public class MarionettistControl extends ActiveAbility {
         Beyonder tBeyonder  = ctx.beyonder().getBeyonder(target.getUniqueId());
         List<ItemStack> inv = captureInventory(target);
 
+        String skinValue = null, skinSignature = null;
+        if (target instanceof Player p) {
+            try {
+                Object craftPlayer = p.getClass().getMethod("getHandle").invoke(p);
+                Object gameProfile = craftPlayer.getClass().getMethod("getGameProfile").invoke(craftPlayer);
+                Object properties  = gameProfile.getClass().getMethod("getProperties").invoke(gameProfile);
+                // properties is a com.mojang.authlib.properties.PropertyMap (extends Multimap<String, Property>)
+                @SuppressWarnings("unchecked")
+                java.util.Collection<?> texProps = (java.util.Collection<?>)
+                        properties.getClass().getMethod("get", Object.class).invoke(properties, "textures");
+                if (texProps != null) {
+                    for (Object prop : texProps) {
+                        skinValue     = (String) prop.getClass().getMethod("value").invoke(prop);
+                        skinSignature = (String) prop.getClass().getMethod("signature").invoke(prop);
+                        break;
+                    }
+                }
+            } catch (Exception ignored) {
+                // Якщо рефлексія не вдалась — текстура залишається null
+            }
+        }
+        final String fSkinValue     = skinValue;
+        final String fSkinSignature = skinSignature;
+
         ctx.effects().playSound(loc, Sound.ENTITY_WITHER_DEATH, 1.5f, 0.5f);
         ctx.effects().playSphereEffect(loc.clone().add(0, 1, 0), 2.0, Particle.SOUL_FIRE_FLAME, 40);
         ctx.effects().spawnParticle(Particle.SQUID_INK,
@@ -254,6 +278,7 @@ public class MarionettistControl extends ActiveAbility {
 
             MarionetteMinionTrait trait = new MarionetteMinionTrait();
             trait.initialise(casterId, name, tBeyonder, inv);
+            trait.setSkin(fSkinValue, fSkinSignature);
             npc.addTrait(trait);
 
             copyEquipmentToNpc(npc, target);

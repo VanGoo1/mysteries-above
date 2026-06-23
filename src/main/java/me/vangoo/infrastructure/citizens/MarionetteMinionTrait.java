@@ -35,6 +35,8 @@ public class MarionetteMinionTrait extends Trait {
     private List<ItemStack>   capturedInventory   = new ArrayList<>();
     private List<Ability>     capturedAbilities   = new ArrayList<>();
     private String            originalPlayerName;  // for skin display
+    private String            skinTextureValue;    // null if target had no skin
+    private String            skinTextureSignature; // null if target had no skin
 
     public MarionetteMinionTrait() {
         super("marionette_minion");
@@ -64,6 +66,16 @@ public class MarionetteMinionTrait extends Trait {
             this.capturedAbilities       = new ArrayList<>(targetBeyonder.getAbilities());
         }
     }
+
+    // ── Skin texture ────────────────────────────────────────────────────────
+
+    public void setSkin(String value, String signature) {
+        this.skinTextureValue     = value;
+        this.skinTextureSignature = signature;
+    }
+
+    public String getSkinTextureValue()     { return skinTextureValue; }
+    public String getSkinTextureSignature() { return skinTextureSignature; }
 
     // ── Getters ──────────────────────────────────────────────────────────────
 
