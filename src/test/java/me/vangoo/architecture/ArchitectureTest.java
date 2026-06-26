@@ -22,7 +22,8 @@ class ArchitectureTest {
     private static final String[] PURE_DOMAIN = {
             "me.vangoo.domain.entities",
             "me.vangoo.domain.services",
-            "me.vangoo.domain.spells"
+            "me.vangoo.domain.spells",
+            "me.vangoo.domain.brewing"
     };
 
     @Test
