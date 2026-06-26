@@ -4,6 +4,8 @@ import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.infrastructure.IBeyonderRepository;
 import me.vangoo.infrastructure.ui.BossBarUtil;
 import org.bukkit.Bukkit;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.entity.Player;
@@ -71,6 +73,26 @@ public class BeyonderService {
         Player player = getPlayer(playerId);
         if (player != null && player.isOnline()) {
             bossBarUtil.removePlayer(player);
+            resetMaxHealthToDefault(player);
+        }
+    }
+
+    /**
+     * Авторитетно скидає максимальне HP гравця до ванільного дефолту при втраті шляху
+     * (через {@code /pathway remove}/{@code set} чи rampage). Бонусне HP від послідовності дає
+     * пасив {@code PhysicalEnhancement}, і покладатися лише на його {@code onDeactivate} ненадійно
+     * (його може бути не викликано), тож робимо це безумовно в спільній точці видалення Beyonder'а.
+     */
+    private void resetMaxHealthToDefault(Player player) {
+        AttributeInstance attr = player.getAttribute(Attribute.MAX_HEALTH);
+        if (attr == null) return;
+
+        double def = attr.getDefaultValue(); // ванільний дефолт гравця (20)
+        if (Math.abs(attr.getBaseValue() - def) > 0.01) {
+            attr.setBaseValue(def);
+        }
+        if (player.getHealth() > def) {
+            player.setHealth(def);
         }
     }
 

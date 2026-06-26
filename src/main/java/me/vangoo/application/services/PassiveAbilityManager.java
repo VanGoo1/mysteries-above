@@ -33,16 +33,17 @@ public class PassiveAbilityManager {
         // Initialize toggleable abilities set if not exists
         enabledToggleableAbilities.computeIfAbsent(playerId, k -> ConcurrentHashMap.newKeySet());
 
-        // Build or update the per-player permanent instances map
-        Map<Class<? extends PermanentPassiveAbility>, PermanentPassiveAbility> perPlayer =
-                activePassiveInstances.computeIfAbsent(playerId, k -> new ConcurrentHashMap<>());
-
-        // Fill with the instances from the provided abilities list (prefer provided instance)
+        // ПЕРЕБУДОВУЄМО мапу пасивів НАНОВО (заміна, не злиття): інакше інстанси пасивів від
+        // попереднього шляху/послідовності "залипають" після зміни (напр. /pathway set) і далі
+        // тікають із новою послідовністю — звідки криве HP. Стара мапа деактивується ДО цього
+        // виклику (refreshPlayer), тож тут її можна просто замінити.
+        Map<Class<? extends PermanentPassiveAbility>, PermanentPassiveAbility> perPlayer = new ConcurrentHashMap<>();
         for (Ability ability : abilities) {
             if (ability instanceof PermanentPassiveAbility perm) {
-                perPlayer.computeIfAbsent(perm.getClass(), cls -> perm);
+                perPlayer.putIfAbsent(perm.getClass(), perm);
             }
         }
+        activePassiveInstances.put(playerId, perPlayer);
     }
 
     /**

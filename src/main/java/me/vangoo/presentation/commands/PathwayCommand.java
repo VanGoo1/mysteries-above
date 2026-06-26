@@ -8,6 +8,7 @@ import me.vangoo.infrastructure.ui.AbilityMenu;
 import me.vangoo.infrastructure.abilities.AbilityItemFactory;
 import me.vangoo.application.services.BeyonderService;
 import me.vangoo.application.services.PathwayManager;
+import me.vangoo.infrastructure.schedulers.PassiveAbilityScheduler;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.*;
@@ -25,15 +26,17 @@ public class PathwayCommand implements CommandExecutor, TabCompleter {
     private final PathwayManager pathwayManager;
     private final AbilityMenu abilityMenu;
     private final AbilityItemFactory abilityItemFactory;
+    private final PassiveAbilityScheduler passiveAbilityScheduler;
 
     private static final String PREFIX = ChatColor.DARK_PURPLE + "[Pathway] " + ChatColor.RESET;
 
     public PathwayCommand(BeyonderService beyonderService, PathwayManager pathwayManager, AbilityMenu abilityMenu,
-                          AbilityItemFactory abilityItemFactory) {
+                          AbilityItemFactory abilityItemFactory, PassiveAbilityScheduler passiveAbilityScheduler) {
         this.beyonderService = beyonderService;
         this.pathwayManager = pathwayManager;
         this.abilityMenu = abilityMenu;
         this.abilityItemFactory = abilityItemFactory;
+        this.passiveAbilityScheduler = passiveAbilityScheduler;
     }
 
     @Override
@@ -69,6 +72,9 @@ public class PathwayCommand implements CommandExecutor, TabCompleter {
                 Beyonder beyonder = new Beyonder(target.getUniqueId(), Sequence.of(sequence), path);
                 beyonderService.createBeyonder(beyonder);
                 abilityMenu.giveAbilityMenuItemToPlayer(target, beyonder);
+                // Реєструємо пасиви НОВОГО шляху (наново): активує бонуси нового шляху й гарантує,
+                // що інстанси старого шляху не лишились активними після заміни.
+                passiveAbilityScheduler.registerPlayer(target);
                 sender.sendMessage(PREFIX + ChatColor.GREEN + "Шлях для " + target.getName() + " встановлено.");
             }
             case "remove" -> {
@@ -102,6 +108,9 @@ public class PathwayCommand implements CommandExecutor, TabCompleter {
                 inv.setItem(i, null);
             }
         }
+        // Деактивуємо й очищаємо пасиви ДО видалення Beyonder'а (поки він ще існує), щоб
+        // PhysicalEnhancement.onDeactivate скинув HP і не лишилось завислих інстансів пасивів.
+        passiveAbilityScheduler.unregisterPlayer(target);
         beyonderService.removeBeyonder(target.getUniqueId());
     }
 
