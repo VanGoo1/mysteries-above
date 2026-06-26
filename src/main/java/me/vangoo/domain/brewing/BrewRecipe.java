@@ -13,6 +13,12 @@ public record BrewRecipe(
         Map<String, Integer> mainCounts,
         Map<String, Integer> auxCounts) {
 
+    public BrewRecipe {
+        // Незмінний VO: захищаємось від мутації переданих мап ззовні.
+        mainCounts = Map.copyOf(mainCounts);
+        auxCounts = Map.copyOf(auxCounts);
+    }
+
     /** Ключ Характеристики цього (шлях, seq). */
     public String characteristicKey() {
         return "characteristic:" + pathwayName + ":" + sequence;
@@ -32,7 +38,7 @@ public record BrewRecipe(
     private boolean matchesViaCharacteristic(Map<String, Integer> provided) {
         // 1× Характеристика замість УСІХ основних + ті самі допоміжні, нічого зайвого.
         Map<String, Integer> required = new HashMap<>(auxCounts);
-        required.merge(characteristicKey(), 1, Integer::sum);
+        required.put(characteristicKey(), 1); // ключ Характеристики не може збігтися з aux-ключем
         return provided.equals(required);
     }
 }

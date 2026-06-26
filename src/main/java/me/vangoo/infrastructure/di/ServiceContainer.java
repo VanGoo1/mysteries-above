@@ -147,7 +147,7 @@ public class ServiceContainer {
 
         // Initialize potion manager first (needed for loot service)
         PotionRecipeConfigLoader recipeConfigLoader = new PotionRecipeConfigLoader(plugin);
-        java.util.Map<String, java.util.Map<Integer, RecipeDefinition>> recipeConfig = recipeConfigLoader.load();
+        Map<String, Map<Integer, RecipeDefinition>> recipeConfig = recipeConfigLoader.load();
         this.characteristicCodec = new CharacteristicCodec();
         this.potionManager = new PotionManager(pathwayManager, potionItemFactory, customItemService, recipeConfig);
 

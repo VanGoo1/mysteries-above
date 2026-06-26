@@ -12,7 +12,6 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -122,8 +121,8 @@ public class CharacteristicCommand implements CommandExecutor, TabCompleter {
 
     private List<String> filter(String input, List<String> options) {
         String lower = input.toLowerCase();
-        return new ArrayList<>(options.stream()
+        return options.stream()
                 .filter(o -> o.toLowerCase().startsWith(lower))
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList());
     }
 }
