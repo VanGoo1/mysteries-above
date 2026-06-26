@@ -12,8 +12,10 @@ import me.vangoo.infrastructure.items.PotionItemFactory;
 import org.bukkit.*;
 import org.bukkit.inventory.ItemStack;
 
+import me.vangoo.domain.brewing.RecipeDefinition;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -28,47 +30,56 @@ public class PotionManager {
     public PotionManager(
             PathwayManager pathwayManager,
             PotionItemFactory potionItemFactory,
-            CustomItemService customItemService) {
+            CustomItemService customItemService,
+            Map<String, Map<Integer, RecipeDefinition>> recipeConfig) {
         this.pathwayManager = pathwayManager;
         this.potionItemFactory = potionItemFactory;
         this.potions = new ArrayList<>();
-        initializePotions(customItemService);
+        initializePotions(customItemService, recipeConfig);
     }
 
-    private void initializePotions(CustomItemService customItemService) {
-        // Initialize pathway potions with custom item service
+    private void initializePotions(CustomItemService customItemService,
+                                   Map<String, Map<Integer, RecipeDefinition>> recipeConfig) {
         potions.add(new ErrorPotions(
                 pathwayManager.getPathway("Error"),
                 Color.fromRGB(26, 0, 181),
-                customItemService
+                customItemService,
+                recipeConfig.getOrDefault("Error", Map.of())
         ));
 
         potions.add(new VisionaryPotions(
                 pathwayManager.getPathway("Visionary"),
                 Color.fromRGB(128, 128, 128),
-                customItemService
+                customItemService,
+                recipeConfig.getOrDefault("Visionary", Map.of())
         ));
 
         potions.add(new DoorPotions(
                 pathwayManager.getPathway("Door"),
                 Color.fromRGB(0, 0, 115),
-                customItemService
+                customItemService,
+                recipeConfig.getOrDefault("Door", Map.of())
         ));
 
         potions.add(new JusticiarPotions(
                 pathwayManager.getPathway("Justiciar"),
                 Color.fromRGB(255, 255, 0),
-                customItemService
+                customItemService,
+                recipeConfig.getOrDefault("Justiciar", Map.of())
         ));
+
         potions.add(new WhiteTowerPotions(
                 pathwayManager.getPathway("WhiteTower"),
                 Color.fromRGB(255, 0, 50),
-                customItemService
+                customItemService,
+                recipeConfig.getOrDefault("WhiteTower", Map.of())
         ));
+
         potions.add(new FoolPotions(
                 pathwayManager.getPathway("Fool"),
                 Color.fromRGB(128, 0, 128),
-                customItemService
+                customItemService,
+                recipeConfig.getOrDefault("Fool", Map.of())
         ));
     }
 
