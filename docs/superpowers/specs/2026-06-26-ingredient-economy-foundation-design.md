@@ -9,7 +9,7 @@
 Спек 1 — це **фундамент** Економіки Характеристик. Він додає:
 
 - тип-предмет **«Характеристика[шлях, Seq]»** (кристалічна есенція, ключована шляхом+послідовністю);
-- теги **основний / допоміжний** на інгредієнтах рецепта;
+- винесення рецептів у **конфіг** (`potion-recipes.yml`) із явними секціями **основні / допоміжні**;
 - логіку **опціональної заміни** при зварюванні (1× Характеристика замість *усіх* основних);
 - **інваріант луту:** Характеристики ніколи не з'являються у звичайних лут-таблицях;
 - **адмін-команду** для видачі Характеристики (тимчасовий тестовий канал, доки немає джерел).
@@ -18,22 +18,39 @@
 смерть Beyonder (Спек 2); природний форедж допоміжних і тиризація луту (Спек 4); компас/тяжіння
 (Спек 5); перерозподіл і Сефіроти (Спеки 6–7).
 
-### Класифікація наявних рецептів
+### Рецепти в конфігу
 
-Наразі рецепти зберігаються **пласким списком** `ItemStack[]` — поділу на основні/допоміжні в
-коді **немає**. Цей спек вводить такий поділ і **розкладає інгредієнти кожного наявного рецепта**
-(`FoolPotions`, `DoorPotions`, `VisionaryPotions`, `JusticiarPotions`, `WhiteTowerPotions`,
-`ErrorPotions`) на:
+Наразі рецепти **захардкоджені в Java**: кожен `*Potions`-клас (`FoolPotions`, `DoorPotions`,
+`VisionaryPotions`, `JusticiarPotions`, `WhiteTowerPotions`, `ErrorPotions`) у конструкторі
+викликає `itemResolver.createItemStack(id)` та `addIngredientsRecipe(...)` пласким списком — поділу
+на основні/допоміжні **немає**.
 
-- **основні** — рідкісні матеріали істот (кров / серце / око / залоза / есенція / ріг / мозок
-  істоти тощо);
-- **допоміжні** — поширені рослинні/мінеральні компоненти (порошок / пил / пелюстки / квітка /
-  екстракт / пилок / спори / сік тощо).
+Цей спек **виносить рецепти у конфіг** `potion-recipes.yml` з явними секціями `main`/`auxiliary` на
+кожен (шлях × Seq). Поділ — це **дані в YAML**, які редагуються руками (жодної евристики в коді):
 
-Класифікація виконується за **евристикою назв** і **подається на рев'ю користувачу** (межові
-випадки уточнюються вручну). Якщо рецепт після розкладу не має жодного допоміжного, він лишається
-коректним (заміна = `1× Характеристика`), але мета — щоб у більшості рецептів був бодай один
-допоміжний, аби заміна Характеристикою була змістовною.
+```yaml
+recipes:
+  Fool:
+    9:
+      main: [nighthawk_eyeball, stellar_aqua_crystal]
+      auxiliary: [dragon_savageland_pollen, crimson_star]
+    8:
+      main: [joker_blood_essence, marbled_ivory_shard]
+      auxiliary: [chameleon_slime]
+  Door:
+    9:
+      main: [dimensional_wanderer_eye]
+      auxiliary: [ever_shifting_lotus]
+  # ... решта шляхів і послідовностей
+```
+
+- **id інгредієнтів** — ті самі custom-item id, що вже використовуються (можна й vanilla-матеріали
+  за потреби в майбутньому).
+- **Початковий вміст YAML** генерується з наявних рецептів (поточний membership зберігаємо
+  точно), з **чернетковим** розкладом на main/auxiliary; цей розклад — звичайні дані, які
+  користувач вільно правит у файлі.
+- Рецепт може мати **порожній** `auxiliary` — тоді він лишається коректним (заміна =
+  `1× Характеристика`), але загальна мета — мати бодай один допоміжний, щоб заміна була змістовною.
 
 **Поведінка після змін:** класичний крафт = основні + допоміжні (точний збіг, як і функціонально
 раніше); додається шлях «через Характеристику», що замінює **лише основні**, лишаючи допоміжні
@@ -81,24 +98,33 @@
 > ускладнює крок — лишаємо інваріант на рівні рев'ю + відсутності імпортів `org.bukkit.*`,
 > як зазначено в CLAUDE.md.
 
+### Завантаження конфіга — `PotionRecipeConfigLoader`
+
+- **`PotionRecipeConfigLoader`** (`infrastructure/items`, дзеркалить `CustomItemConfigLoader`):
+  читає `potion-recipes.yml` із теки плагіна (`saveDefaultResource`-патерн, як `custom-items.yml`)
+  і повертає `Map<String pathway, Map<Integer seq, RecipeDefinition>>`.
+- **`RecipeDefinition`** — record `(List<String> mainIds, List<String> auxIds)` (сирі id, без Bukkit).
+- Невідомі/невалідні id логуються warning і пропускаються (як у наявних завантажувачах).
+
 ### Модель рецепта в поведінковому шарі — `PathwayPotions`
 
 `PathwayPotions` (наразі в `me.vangoo.domain`, тримає `HashMap<Integer, ItemStack[]>` основних)
-розширюється:
+розширюється й **наповнюється з конфіга**, а не з конструкторів підкласів:
 
 - додати другу мапу `HashMap<Integer, ItemStack[]> auxIngredientsPerSequence` (наявна мапа =
   основні);
-- новий метод `addIngredientsRecipe(int seq, List<ItemStack> main, List<ItemStack> aux)`;
-- **старий** `addIngredientsRecipe(int seq, ItemStack... ingredients)` **зберігається** (означає
-  «усе основне, 0 допоміжних») для зворотної сумісності API, але наявні `*Potions`-класи
-  **переписуємо** на новий метод із поділом основні/допоміжні (див. «Класифікація наявних
-  рецептів»);
+- новий метод `addIngredientsRecipe(int seq, List<ItemStack> main, List<ItemStack> aux)`; базовий
+  клас наповнює обидві мапи, резолвлячи id з `RecipeDefinition` через `itemResolver`;
 - геттери: `ItemStack[] getMainIngredients(int seq)`, `ItemStack[] getAuxiliaryIngredients(int seq)`;
   наявний `getIngredients(int seq)` повертає **об'єднання** основних+допоміжних (використовується
   книгою рецептів для відображення).
+- **`*Potions`-підкласи спрощуються:** лишають лише естетику (`nameColor`, `description`); membership
+  інгредієнтів більше не хардкодиться — приходить із конфіга. `PotionManager` під час побудови
+  кожного `*Potions` передає відповідний зріз `Map<Integer, RecipeDefinition>` із завантажувача.
 
 > `PathwayPotions` уже імпортує `org.bukkit.inventory.ItemStack` — це поведінковий клас, а не
-> чисте ядро; додавання другої мапи не змінює його статус.
+> чисте ядро; додавання другої мапи не змінює його статус. Сам матчинг (правило) живе у чистому
+> `domain.brewing` (нижче), а не тут.
 
 ### Предмет «Характеристика» — infrastructure
 
@@ -177,6 +203,7 @@
 - `PotionCraftingListener` (котел) — точка входу зварювання; **не змінюється** (вся логіка нижче в
   сервісі/матчері).
 - `PotionManager` / `PathwayManager` — резолвінг шляху за назвою для команди й рецептів.
+- `CustomItemConfigLoader` — патерн завантаження YAML із теки плагіна для `PotionRecipeConfigLoader`.
 
 ## Файли (орієнтовно)
 
@@ -185,15 +212,18 @@
 - `domain/brewing/BrewMatcher.java`
 - `domain/brewing/Characteristic.java` (VO `(pathway, seq)` + `itemKey()`)
 - `infrastructure/items/CharacteristicCodec.java`
+- `infrastructure/items/PotionRecipeConfigLoader.java` (+ `RecipeDefinition`)
 - `presentation/commands/CharacteristicCommand.java`
+- `src/main/resources/potion-recipes.yml` (рецепти з main/auxiliary)
 - `src/test/java/.../brewing/BrewMatcherTest.java`
 
 **Змінені:**
-- `domain/PathwayPotions.java` (друга мапа + перевантаження + геттери)
-- `pathways/*/`*`Potions.java` (Fool/Door/Visionary/Justiciar/WhiteTower/Error — розклад
-  інгредієнтів на основні/допоміжні)
+- `domain/PathwayPotions.java` (друга мапа + наповнення з `RecipeDefinition` + геттери)
+- `pathways/*/`*`Potions.java` (Fool/Door/Visionary/Justiciar/WhiteTower/Error — прибрати
+  захардкоджені інгредієнти, лишити естетику; приймати рецепти з конфіга)
+- `application/services/PotionManager.java` (інжект завантажувача рецептів + передача зрізів у `*Potions`)
 - `application/services/PotionCraftingService.java` (матчер + ключ Характеристики)
 - `infrastructure/structures/LootGenerationService.java` (відхилення `characteristic:` id)
-- `infrastructure/di/ServiceContainer.java` (wiring кодека + команди)
+- `infrastructure/di/ServiceContainer.java` (wiring завантажувача, кодека, команди)
 - `MysteriesAbovePlugin.java` (реєстрація команди)
 - `src/main/resources/plugin.yml` (команда `characteristic`)
