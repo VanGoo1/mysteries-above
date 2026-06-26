@@ -1,7 +1,5 @@
 package me.vangoo.domain.brewing;
 
-import me.vangoo.domain.brewing.BrewMatcher;
-import me.vangoo.domain.brewing.BrewRecipe;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

@@ -93,7 +93,8 @@ public abstract class PathwayPotions {
         List<ItemStack> all = new ArrayList<>();
         if (main != null) all.addAll(Arrays.asList(main));
         if (aux != null) all.addAll(Arrays.asList(aux));
-        return all.toArray(new ItemStack[0]);
+        // Порожнє об'єднання трактуємо як "рецепта немає" (узгоджено з null-перевірками викликачів).
+        return all.isEmpty() ? null : all.toArray(new ItemStack[0]);
     }
 
     public Pathway getPathway() {

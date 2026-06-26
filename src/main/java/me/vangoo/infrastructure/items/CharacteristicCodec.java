@@ -8,6 +8,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.List;
 import java.util.Optional;
@@ -44,10 +45,11 @@ public final class CharacteristicCodec {
 
     /** Чи є предмет Характеристикою (має NBT-мітку шляху). */
     public boolean isCharacteristic(ItemStack item) {
-        if (item == null || item.getType() == Material.AIR || item.getItemMeta() == null) {
+        if (item == null || item.getType() == Material.AIR) {
             return false;
         }
-        return new NBTBuilder(item).getString(item, NBT_PATHWAY).isPresent();
+        // Статична перевірка без клонування стака (NBTBuilder.hasKey сам обробляє null-meta).
+        return NBTBuilder.hasKey(item, NBT_PATHWAY, PersistentDataType.STRING);
     }
 
     /** Читає (шлях, seq) з предмета, якщо це Характеристика. */

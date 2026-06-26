@@ -62,10 +62,17 @@ public class PotionRecipeConfigLoader {
                 }
                 List<String> main = recipeSection.getStringList("main");
                 List<String> aux = recipeSection.getStringList("auxiliary");
+                if (main.isEmpty() && aux.isEmpty()) {
+                    plugin.getLogger().warning("Recipe " + pathway + " Seq " + sequence
+                            + " in " + CONFIG_FILE + " has no 'main' or 'auxiliary' ingredients — skipped");
+                    continue;
+                }
                 perSequence.put(sequence, new RecipeDefinition(main, aux));
                 loaded++;
             }
-            result.put(pathway, perSequence);
+            if (!perSequence.isEmpty()) {
+                result.put(pathway, perSequence);
+            }
         }
 
         plugin.getLogger().info("Loaded potion recipes for " + result.size() + " pathways (" + loaded + " recipes)");
