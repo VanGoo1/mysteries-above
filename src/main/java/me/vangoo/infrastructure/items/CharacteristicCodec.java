@@ -61,10 +61,30 @@ public final class CharacteristicCodec {
 
         item.setItemMeta(meta);
 
-        return new NBTBuilder(item)
+        ItemStack built = new NBTBuilder(item)
                 .setString(NBT_PATHWAY, pathwayName)
                 .setInt(NBT_SEQUENCE, sequence)
                 .build();
+        tryStripJukeboxPlayable(built);
+        return built;
+    }
+
+    /**
+     * Best-effort: прибирає компонент {@code jukebox_playable}, щоб Характеристику не можна було
+     * вставити в jukebox. Реалізовано через Paper DataComponent API ({@code ItemStack.unsetData(
+     * DataComponentTypes.JUKEBOX_PLAYABLE)}) РЕФЛЕКСІЄЮ — бо компілюємось проти spigot-api, який не
+     * має цього API. На сервері Paper (чи форках із цим API) спрацьовує; на чистому Spigot мовчки
+     * нічого не робить (там для блокування потрібен лістенер на PlayerInteractEvent з jukebox).
+     */
+    private void tryStripJukeboxPlayable(ItemStack item) {
+        try {
+            Class<?> typesClass = Class.forName("io.papermc.paper.datacomponent.DataComponentTypes");
+            Class<?> typeClass = Class.forName("io.papermc.paper.datacomponent.DataComponentType");
+            Object jukeboxType = typesClass.getField("JUKEBOX_PLAYABLE").get(null);
+            item.getClass().getMethod("unsetData", typeClass).invoke(item, jukeboxType);
+        } catch (Throwable ignored) {
+            // Spigot/стара версія без DataComponent API — лишаємо предмет як є.
+        }
     }
 
     /** Чи є предмет Характеристикою (має NBT-мітку шляху). */
