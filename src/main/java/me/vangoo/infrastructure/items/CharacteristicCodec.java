@@ -8,6 +8,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.components.CustomModelDataComponent;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.List;
@@ -22,9 +23,15 @@ public final class CharacteristicCodec {
     public static final String NBT_PATHWAY = "characteristic_pathway";
     public static final String NBT_SEQUENCE = "characteristic_sequence";
 
+    /**
+     * Ключ custom-model-data для ресурс-паку (як в інгредієнтів). Один ключ → одна (анімована)
+     * текстура на всі Характеристики. За потреби можна зробити по-шляхово, додавши шлях/seq у ключ.
+     */
+    public static final String MODEL_KEY = "characteristic";
+
     /** Будує стак Характеристики для (шлях, seq). */
     public ItemStack create(String pathwayName, int sequence, int amount) {
-        ItemStack item = new ItemStack(Material.AMETHYST_SHARD, amount);
+        ItemStack item = new ItemStack(Material.MUSIC_DISC_CHIRP, amount);
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Характеристика: " + pathwayName
                 + ChatColor.GRAY + " [Seq " + sequence + "]");
@@ -33,8 +40,25 @@ public final class CharacteristicCodec {
                 ChatColor.GRAY + "Кристалічна есенція сили.",
                 ChatColor.DARK_GRAY + "Замінює всі основні інгредієнти рецепта."
         ));
-        meta.addEnchant(Enchantment.UNBREAKING, 1, true);
-        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
+        // Незнищенний: захист від поломки/зношення (диск і так не має міцності — це підстраховка).
+        meta.setUnbreakable(true);
+        meta.addEnchant(Enchantment.UNBREAKING, 1, true); // лише для світіння
+        meta.addItemFlags(
+                ItemFlag.HIDE_ENCHANTS,
+                ItemFlag.HIDE_ATTRIBUTES,
+                ItemFlag.HIDE_ADDITIONAL_TOOLTIP,
+                ItemFlag.HIDE_UNBREAKABLE
+        );
+
+        // Підготовка під текстуру ресурс-паку (рядковий custom-model-data, як у CustomItemFactory).
+        try {
+            CustomModelDataComponent cmd = meta.getCustomModelDataComponent();
+            cmd.setStrings(List.of(MODEL_KEY));
+            meta.setCustomModelDataComponent(cmd);
+        } catch (Throwable ignored) {
+            // Старіше API без CustomModelDataComponent — пропускаємо, предмет лишається валідним.
+        }
+
         item.setItemMeta(meta);
 
         return new NBTBuilder(item)

@@ -130,8 +130,9 @@ recipes:
 
 - **`CharacteristicCodec`** (`me.vangoo.infrastructure.items`):
   - `ItemStack create(String pathwayName, int sequence, int amount)` — будує предмет:
-    - матеріал `AMETHYST_SHARD`, `glow = true` (через ту саму техніку, що `CustomItemFactory`:
-      `UNBREAKING` + `HIDE_ENCHANTS`);
+    - матеріал `MUSIC_DISC_CHIRP`, `setUnbreakable(true)` (+ `HIDE_UNBREAKABLE`), `glow` через
+      `UNBREAKING` + `HIDE_ENCHANTS` (як `CustomItemFactory`); рядковий custom-model-data
+      (`MODEL_KEY = "characteristic"`) для текстури ресурс-паку — як в інгредієнтів;
     - назва: `§dХарактеристика: <Шлях> §7[Seq <N>]`;
     - лор: короткий флейвор + підказка, що замінює всі основні інгредієнти рецепта;
     - NBT (через наявний `NBTBuilder`): `characteristic_pathway` = pathwayName,
