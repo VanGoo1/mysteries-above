@@ -2,6 +2,7 @@ package me.vangoo.domain;
 
 import me.vangoo.domain.brewing.RecipeDefinition;
 import me.vangoo.domain.entities.Pathway;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.inventory.ItemStack;
@@ -11,6 +12,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public abstract class PathwayPotions {
     protected HashMap<Integer, ItemStack[]> ingredientsPerSequence;       // основні
@@ -39,19 +41,25 @@ public abstract class PathwayPotions {
         }
         for (Map.Entry<Integer, RecipeDefinition> entry : defs.entrySet()) {
             int sequence = entry.getKey();
-            List<ItemStack> main = resolveAll(entry.getValue().mainIds());
-            List<ItemStack> aux = resolveAll(entry.getValue().auxIds());
+            List<ItemStack> main = resolveAll(sequence, entry.getValue().mainIds());
+            List<ItemStack> aux = resolveAll(sequence, entry.getValue().auxIds());
             addIngredientsRecipe(sequence, main, aux);
         }
     }
 
-    private List<ItemStack> resolveAll(List<String> ids) {
+    private List<ItemStack> resolveAll(int sequence, List<String> ids) {
         List<ItemStack> out = new ArrayList<>();
         if (ids == null) {
             return out;
         }
         for (String id : ids) {
-            itemResolver.createItemStack(id).ifPresent(out::add);
+            Optional<ItemStack> resolved = itemResolver.createItemStack(id);
+            if (resolved.isPresent()) {
+                out.add(resolved.get());
+            } else {
+                Bukkit.getLogger().warning("[PathwayPotions] Невідомий інгредієнт '" + id
+                        + "' для рецепта " + getPathway().getName() + " Seq " + sequence + " — пропущено");
+            }
         }
         return out;
     }
