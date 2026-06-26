@@ -40,6 +40,8 @@ public final class CharacteristicCodec {
                 ChatColor.GRAY + "Кристалічна есенція сили.",
                 ChatColor.DARK_GRAY + "Замінює всі основні інгредієнти рецепта."
         ));
+        // Диск у ванілі стакається до 1 — піднімаємо ліміт стака через компонент max_stack_size.
+        meta.setMaxStackSize(64);
         // Незнищенний: захист від поломки/зношення (диск і так не має міцності — це підстраховка).
         meta.setUnbreakable(true);
         meta.addEnchant(Enchantment.UNBREAKING, 1, true); // лише для світіння
