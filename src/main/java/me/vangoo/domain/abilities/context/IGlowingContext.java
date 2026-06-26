@@ -7,6 +7,9 @@ import java.util.UUID;
 public interface IGlowingContext {
     void setGlowing(UUID targetId, UUID casterId, ChatColor color, int durationTicks);
 
+    /** Світіння цілі лише для одного гравця, без авто-зняття (поки не викличуть removeGlowing). */
+    void setGlowing(UUID targetId, UUID casterId, ChatColor color);
+
     void setGlowingPermanent(UUID entityId, ChatColor color);
 
     void removeGlowing(UUID casterId, UUID entity);

@@ -45,6 +45,18 @@ public class GlowingContext implements IGlowingContext {
     }
 
     @Override
+    public void setGlowing(UUID targetId, UUID casterId, ChatColor color) {
+        Player caster = Bukkit.getPlayer(casterId);
+        Entity target = Bukkit.getEntity(targetId);
+        if (target == null || caster == null) return;
+        try {
+            glowingEntities.setGlowing(target, caster, color);
+        } catch (ReflectiveOperationException e) {
+            logger.warning("Failed to set glowing for entity " + targetId + ": " + e.getMessage());
+        }
+    }
+
+    @Override
     public void setGlowingPermanent(UUID entityId, ChatColor color) {
         Entity target = Bukkit.getEntity(entityId);
         if (target == null) return;
