@@ -1,0 +1,100 @@
+# potion-recipes.yml
+# Рецепти зілля: основні (main) та допоміжні (auxiliary) інгредієнти на кожен шлях × послідовність.
+# Зварити можна класично (усі main + усі auxiliary) АБО замінивши УСІ main на 1× Характеристику
+# відповідного шляху+рівня (auxiliary при цьому все одно потрібні).
+recipes:
+  Error:
+    9:
+      main: [sphinx_brain]
+      auxiliary: [black_mosquito]
+    8:
+      main: [sphinx_brain]
+      auxiliary: [lavar_octopus_crystal, black_mosquito]
+    7:
+      main: [plague_serpent_bile]
+      auxiliary: [black_mosquito]
+
+  Visionary:
+    9:
+      main: [manhal_fish_eyeball, goat_horned_blackfish_blood]
+      auxiliary: [autumn_crocus_essence, elf_flower_petals]
+    8:
+      main: [thought_essence]
+      auxiliary: [crystalline_moon_orchid, iridescent_pearl_dust]
+    7:
+      main: [mirror_dragon_eyes, mirror_dragon_blood]
+      auxiliary: [tree_of_elders_fruit]
+    6:
+      main: [black_hunting_lizard_spinal_fluid, split_personality_essence]
+      auxiliary: [illusory_chime_tree_fruit, mind_crystal_powder]
+    5:
+      main: [dream_catcher_heart, adult_mind_dragon_blood]
+      auxiliary: [mind_illusion_crystal]
+
+  Door:
+    9:
+      main: [dimensional_wanderer_eye]
+      auxiliary: [ever_shifting_lotus]
+    8:
+      main: [spirit_eater_pouch, deep_sea_marlin_blood]
+      auxiliary: [string_grass_powder, red_chestnut_flower]
+    7:
+      main: [lavos_squid_blood]
+      auxiliary: [meteorite_crystal, starfaced_stone]
+    6:
+      main: [asmann_complete_brain]
+      auxiliary: [cursed_wraith_artifact, imbued_ink_sac]
+    5:
+      main: [void_drifter_heart]
+      auxiliary: [astral_mist_essence, wayfinder_tree_root]
+
+  Justiciar:
+    9:
+      main: [heart_of_unquestioned_command, eye_of_judicial_insight]
+      auxiliary: [bone_of_the_unyielding_frame]
+    8:
+      main: [pair_of_terror_demon_worms_eyes, silver_war_bears_right_palm]
+      auxiliary: [eye_of_perfect_recognition, thread_of_supernatural_intuition]
+    7:
+      main: [horn_of_a_flash_patterned_black_snake]
+      auxiliary: [dust_of_lake_spirit, ashes_of_a_broken_oath_seal]
+    6:
+      main: [heart_of_the_silent_verdict, fragment_of_a_sealed_domain]
+      auxiliary: [ashes_of_a_forbidden_decree, chains_of_collective_fear]
+    5:
+      main: [core_of_retributive_authority, brand_of_the_unforgiving_oath]
+      auxiliary: [ashes_of_a_public_execution, shackles_of_the_guilty]
+
+  WhiteTower:
+    9:
+      main: [manticore_bird_pituitary_gland, light_antelope_blood]
+      auxiliary: [rock_crystal_powder, peppermint_extract]
+    8:
+      main: [crystallized_cave_monkey_brain]
+      auxiliary: [memory_flower_petals, tree_of_wisdom_sap, yellow_amber_powder]
+    7:
+      main: [phantom_python_vertical_eye, steel_toothed_wolf_heart]
+      auxiliary: [mica_powder]
+    6:
+      main: [prismatic_chameleon_heart]
+      auxiliary: [liquid_silver_phantom_residue, mimicry_moss_spores, devastated_blank_mask]
+    5:
+      main: [void_beholder_petrified_eye]
+      auxiliary: [condensed_astral_nebula, ancient_rune_powder, pure_spirituality_tear]
+
+  Fool:
+    9:
+      main: [nighthawk_eyeball]
+      auxiliary: [stellar_aqua_crystal, dragon_savageland_pollen, crimson_star]
+    8:
+      main: [joker_blood_essence]
+      auxiliary: [marbled_ivory_shard, chameleon_slime]
+    7:
+      main: [phantom_ink]
+      auxiliary: [flamingo_crystal, meteorite_fragment]
+    6:
+      main: [shapeshifter_gland]
+      auxiliary: [depths_shadow_essence, mirror_silver_dust, soul_wax]
+    5:
+      main: [puppeteer_heartstring]
+      auxiliary: [spirit_thread_spool, wraithhold_essence]
