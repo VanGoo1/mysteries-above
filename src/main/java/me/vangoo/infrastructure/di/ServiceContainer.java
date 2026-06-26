@@ -20,6 +20,7 @@ import me.vangoo.presentation.listeners.MarionetteRestorer;
 import me.vangoo.MysteriesAbovePlugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import me.vangoo.domain.brewing.RecipeDefinition;
 import java.io.File;
 import java.util.Map;
 
@@ -54,6 +55,7 @@ public class ServiceContainer {
     private CustomItemService customItemService;
     private LootTableConfigLoader lootTableConfigLoader;
     private LootGenerationService lootGenerationService;
+    private CharacteristicCodec characteristicCodec;
 
     // UI and menus
     private AbilityMenu abilityMenu;
@@ -144,7 +146,10 @@ public class ServiceContainer {
         this.customItemService = new CustomItemService(customItemRegistry);
 
         // Initialize potion manager first (needed for loot service)
-        this.potionManager = new PotionManager(pathwayManager, potionItemFactory, customItemService);
+        PotionRecipeConfigLoader recipeConfigLoader = new PotionRecipeConfigLoader(plugin);
+        java.util.Map<String, java.util.Map<Integer, RecipeDefinition>> recipeConfig = recipeConfigLoader.load();
+        this.characteristicCodec = new CharacteristicCodec();
+        this.potionManager = new PotionManager(pathwayManager, potionItemFactory, customItemService, recipeConfig);
 
         // Loot system
         this.lootTableConfigLoader = new LootTableConfigLoader(plugin);
@@ -186,7 +191,8 @@ public class ServiceContainer {
         this.potionCraftingService = new PotionCraftingService(
                 potionManager,
                 recipeUnlockService,
-                customItemService
+                customItemService,
+                characteristicCodec
         );
     }
 
@@ -260,6 +266,7 @@ public class ServiceContainer {
     public CustomItemService getCustomItemService() { return customItemService; }
     public LootTableConfigLoader getLootTableConfigLoader() { return lootTableConfigLoader; }
     public LootGenerationService getLootGenerationService() { return lootGenerationService; }
+    public CharacteristicCodec getCharacteristicCodec() { return characteristicCodec; }
 
     public AbilityMenu getAbilityMenu() { return abilityMenu; }
     public BossBarUtil getBossBarUtil() { return bossBarUtil; }
