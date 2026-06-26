@@ -168,6 +168,11 @@ public class LootGenerationService {
     }
 
     public ItemStack createItemFromId(String itemId) {
+        if (itemId.startsWith("characteristic:")) {
+            plugin.getLogger().warning("Refused to generate Характеристика from loot table: " + itemId
+                    + " (characteristics must come only from apex creatures / Beyonder death)");
+            return null;
+        }
         if (itemId.startsWith("potion:")) return createPotion(itemId);
         if (itemId.startsWith("recipe:")) return createRecipeBook(itemId);
 
