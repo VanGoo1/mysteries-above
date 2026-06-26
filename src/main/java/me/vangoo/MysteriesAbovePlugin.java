@@ -205,7 +205,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
     private void registerCommands() {
         PathwayCommand pathwayCommand = new PathwayCommand(services.getBeyonderService(),
-                services.getPathwayManager(), services.getAbilityMenu(), services.getAbilityItemFactory());
+                services.getPathwayManager(), services.getAbilityMenu(), services.getAbilityItemFactory(),
+                services.getPassiveAbilityScheduler());
         SequencePotionCommand sequencePotionCommand = new SequencePotionCommand(services.getPotionManager());
         RampagerCommand rampagerCommand = new RampagerCommand(services.getBeyonderService());
         CustomItemCommand customItemCommand = new CustomItemCommand(services.getCustomItemService());
