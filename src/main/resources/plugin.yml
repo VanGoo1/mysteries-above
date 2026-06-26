@@ -40,6 +40,11 @@ commands:
     usage: /recipe <give|list> ...
     permission: mysteriesabove.admin
     permission-message: "§cYou do not have permission to use this command."
+  characteristic:
+    description: Grant Characteristic crystals (admin/testing)
+    usage: /characteristic give <player> <pathway> <seq> [amount]
+    permission: mysteriesabove.admin
+    permission-message: "§cYou do not have permission to use this command."
 permissions:
   mysteriesabove.admin:
     description: Gives access to all administrative commands

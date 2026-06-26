@@ -255,5 +255,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getCommand("custom-items").setTabCompleter(customItemCommand);
         getCommand("recipe").setExecutor(recipeBookCommand);
         getCommand("recipe").setTabCompleter(recipeBookCommand);
+        CharacteristicCommand characteristicCommand = new CharacteristicCommand(
+                services.getCharacteristicCodec(), services.getPotionManager());
+        getCommand("characteristic").setExecutor(characteristicCommand);
+        getCommand("characteristic").setTabCompleter(characteristicCommand);
     }
 }
