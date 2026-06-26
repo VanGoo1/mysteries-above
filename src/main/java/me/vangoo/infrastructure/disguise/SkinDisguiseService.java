@@ -38,14 +38,32 @@ public final class SkinDisguiseService {
 
     /** Робить {@code player} видимим із заданим скіном для всіх ІНШИХ гравців, що його бачать. */
     public static void disguise(Player player, String textureValue, String textureSignature) {
+        disguise(player, textureValue, textureSignature, null);
+    }
+
+    /**
+     * Робить {@code player} видимим із заданим скіном <b>та ніком</b> {@code disguiseName}
+     * для всіх ІНШИХ гравців. Нік підмінює запис у tab-листі і табличку над головою
+     * (вони беруться клієнтом з імені профілю). {@code null} → лишається справжній нік.
+     */
+    public static void disguise(Player player, String textureValue, String textureSignature,
+                                String disguiseName) {
         if (textureValue == null) {
             return; // нема що підміняти
         }
-        UserProfile spoofed = new UserProfile(player.getUniqueId(), player.getName());
+        String name = (disguiseName != null && !disguiseName.isBlank())
+                ? trimToProfileName(disguiseName)
+                : player.getName();
+        UserProfile spoofed = new UserProfile(player.getUniqueId(), name);
         List<TextureProperty> props = new ArrayList<>();
         props.add(new TextureProperty("textures", textureValue, textureSignature));
         spoofed.setTextureProperties(props);
         resend(player, spoofed);
+    }
+
+    /** Імена профілю Mojang обмежені 16 символами — обрізаємо, щоб клієнт не відкинув пакет. */
+    private static String trimToProfileName(String name) {
+        return name.length() > 16 ? name.substring(0, 16) : name;
     }
 
     /** Відновлює реальний скін {@code player} для всіх глядачів. */

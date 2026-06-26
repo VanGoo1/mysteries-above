@@ -92,9 +92,17 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         pluginLogger.info("Custom items system initialized:");
         pluginLogger.info("  Total items: " + services.getCustomItemService().getStatistics().get("totalItems"));
         pluginLogger.info("Recipe and crafting system initialized");
+        // PathwayManager потрібен трейту для регідрації шляху під час завантаження NPC (load(DataKey)).
+        // Citizens завантажує NPC відкладено (після onEnable усіх плагінів), тож встигаємо подати його.
+        MarionetteMinionTrait.bindPathwayManager(services.getPathwayManager());
         CitizensAPI.getTraitFactory().registerTrait(
                 TraitInfo.create(MarionetteMinionTrait.class).withName("marionette_minion")
         );
+        // Фолбек-скан: Citizens завантажує NPC через 1 тік після свого onEnable і кидає
+        // CitizensEnableEvent (його ловить MarionetteRestorer). Якщо подію пропущено (порядок
+        // увімкнення/особливості ядра) — повторюємо скан із запасом; restoreNow() ідемпотентний.
+        getServer().getScheduler().runTaskLater(this,
+                () -> services.getMarionetteRestorer().restoreNow(), 40L);
     }
 
     private void startRegenerationScheduler() {
@@ -119,6 +127,24 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         // Stop schedulers
         if (services != null) {
             services.stopSchedulers();
+        }
+
+        // Маріонетки: повертаємо гравців, що зараз керують маріонетками, у власне тіло ДО збереження
+        // (щоб тіло/інвентар/особистість/скін коректно зберіглись), і коректно завершуємо здібність —
+        // БЕЗ знищення NPC: їх збереже Citizens у saves.yml і відновить при наступному старті.
+        if (services != null) {
+            me.vangoo.domain.abilities.core.Ability marionettist =
+                    services.getPathwayManager().findAbilityInAllPathways(
+                            me.vangoo.pathways.fool.abilities.MarionettistControl.IDENTITY);
+            if (marionettist instanceof me.vangoo.pathways.fool.abilities.MarionettistControl mc) {
+                for (java.util.UUID caster : mc.getPossessingCasters()) {
+                    org.bukkit.entity.Player p = org.bukkit.Bukkit.getPlayer(caster);
+                    if (p != null) {
+                        mc.exitIfPossessing(services.getAbilityContextFactory().createContext(p));
+                    }
+                }
+                mc.onPluginDisable();
+            }
         }
 
         // Dispose external dependencies
@@ -201,6 +227,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(vanillaStructureLootListener, this);
         getServer().getPluginManager().registerEvents(archaeologyLootListener, this);
         getServer().getPluginManager().registerEvents(services.getMarionetteExitListener(), this);
+        getServer().getPluginManager().registerEvents(services.getMainBodyAbilityListener(), this);
+        getServer().getPluginManager().registerEvents(services.getMarionetteLifecycleListener(), this);
+        getServer().getPluginManager().registerEvents(services.getMarionetteRestorer(), this);
     }
 
     private void registerCommands() {

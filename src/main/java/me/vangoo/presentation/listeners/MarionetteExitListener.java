@@ -34,7 +34,9 @@ public class MarionetteExitListener implements Listener {
         }
 
         ItemStack item = event.getItem();
-        if (item == null || !MarionettistControl.isSwapBackItem(item)) {
+        boolean isExit = MarionettistControl.isSwapBackItem(item);
+        boolean isMenu = MarionettistControl.isSwapMenuItem(item);
+        if (item == null || (!isExit && !isMenu)) {
             return;
         }
 
@@ -46,6 +48,10 @@ public class MarionetteExitListener implements Listener {
         }
 
         IAbilityContext ctx = abilityContextFactory.createContext(event.getPlayer());
-        mc.exitIfPossessing(ctx);
+        if (isMenu) {
+            mc.openSwapMenu(ctx);   // швидке перемикання між маріонетками
+        } else {
+            mc.exitIfPossessing(ctx);
+        }
     }
 }

@@ -14,6 +14,9 @@ import me.vangoo.infrastructure.ui.AbilityMenu;
 import me.vangoo.infrastructure.ui.BossBarUtil;
 import me.vangoo.presentation.listeners.BeyonderSleepListener;
 import me.vangoo.presentation.listeners.MarionetteExitListener;
+import me.vangoo.presentation.listeners.MainBodyAbilityListener;
+import me.vangoo.presentation.listeners.MarionetteLifecycleListener;
+import me.vangoo.presentation.listeners.MarionetteRestorer;
 import me.vangoo.MysteriesAbovePlugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -72,6 +75,9 @@ public class ServiceContainer {
     private RampageEventListener rampageEventListener;
     private BeyonderSleepListener beyonderSleepListener;
     private MarionetteExitListener marionetteExitListener;
+    private MainBodyAbilityListener mainBodyAbilityListener;
+    private MarionetteLifecycleListener marionetteLifecycleListener;
+    private MarionetteRestorer marionetteRestorer;
 
     // Recipes
     private RecipeBookCraftingRecipe recipeBookCraftingRecipe;
@@ -190,7 +196,9 @@ public class ServiceContainer {
                 abilityItemFactory,
                 recipeUnlockService,
                 potionManager,
-                abilityExecutor
+                abilityExecutor,
+                pathwayManager,
+                abilityContextFactory
         );
     }
 
@@ -220,6 +228,9 @@ public class ServiceContainer {
         this.rampageEventListener = new RampageEventListener(passiveAbilityScheduler, beyonderService);
         this.beyonderSleepListener = new BeyonderSleepListener(beyonderService);
         this.marionetteExitListener = new MarionetteExitListener(abilityContextFactory, pathwayManager);
+        this.mainBodyAbilityListener = new MainBodyAbilityListener(beyonderService, abilityExecutor, pathwayManager);
+        this.marionetteLifecycleListener = new MarionetteLifecycleListener(abilityContextFactory, pathwayManager);
+        this.marionetteRestorer = new MarionetteRestorer(pathwayManager);
     }
 
     private void initializeRecipes() {
@@ -266,6 +277,9 @@ public class ServiceContainer {
     public RampageEventListener getRampageEventListener() { return rampageEventListener; }
     public BeyonderSleepListener getBeyonderSleepListener() { return beyonderSleepListener; }
     public MarionetteExitListener getMarionetteExitListener() { return marionetteExitListener; }
+    public MainBodyAbilityListener getMainBodyAbilityListener() { return mainBodyAbilityListener; }
+    public MarionetteLifecycleListener getMarionetteLifecycleListener() { return marionetteLifecycleListener; }
+    public MarionetteRestorer getMarionetteRestorer() { return marionetteRestorer; }
 
     public RecipeBookCraftingRecipe getRecipeBookCraftingRecipe() { return recipeBookCraftingRecipe; }
 

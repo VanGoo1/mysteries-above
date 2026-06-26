@@ -88,6 +88,12 @@ public class BeyonderPlayerListener implements Listener {
         ItemStack mainHandItem = player.getInventory().getItemInMainHand();
         ItemStack offHandItem = player.getInventory().getItemInOffHand();
 
+        // Предмети здібностей основного тіла обробляє MainBodyAbilityListener (білить духовність тіла).
+        if (me.vangoo.pathways.fool.abilities.MarionettistControl.isMainBodyAbilityItem(mainHandItem)
+                || me.vangoo.pathways.fool.abilities.MarionettistControl.isMainBodyAbilityItem(offHandItem)) {
+            return;
+        }
+
         Ability ability = null;
 
         if (mainHandItem.hasItemMeta()) {

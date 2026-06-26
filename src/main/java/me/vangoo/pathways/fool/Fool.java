@@ -58,8 +58,11 @@ public class Fool extends Pathway {
         ));
 
         // Sequence 5: Marionettist (Маріонетник)
+        // Обидві здібності поділяють той самий MarionettistControl (спільний реєстр маріонеток).
+        MarionettistControl marionettistControl = new MarionettistControl();
         sequenceAbilities.put(5, List.of(
-                new MarionettistControl()
+                marionettistControl,
+                new MarionetteSwapMenu(marionettistControl)
         ));
     }
 }
