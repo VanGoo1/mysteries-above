@@ -88,6 +88,7 @@ public class ServiceContainer {
     private me.vangoo.presentation.listeners.CreatureDeathListener creatureDeathListener;
     private me.vangoo.presentation.listeners.NaturalCreatureSpawnListener naturalCreatureSpawnListener;
     private me.vangoo.presentation.listeners.StructureCreatureSpawnListener structureCreatureSpawnListener;
+    private me.vangoo.presentation.listeners.CreatureLoadListener creatureLoadListener;
     private me.vangoo.presentation.commands.CreatureCommand creatureCommand;
     private BeyonderSleepListener beyonderSleepListener;
     private MarionetteExitListener marionetteExitListener;
@@ -199,6 +200,8 @@ public class ServiceContainer {
                 creatureSelector, creatureSpawner);
         this.structureCreatureSpawnListener = new me.vangoo.presentation.listeners.StructureCreatureSpawnListener(
                 creatureSelector, creatureSpawner);
+        this.creatureLoadListener = new me.vangoo.presentation.listeners.CreatureLoadListener(
+                creatureCodec, creatureRegistry, creatureBehaviorManager);
         this.creatureCommand = new me.vangoo.presentation.commands.CreatureCommand(
                 creatureRegistry, creatureSpawner);
 
@@ -329,6 +332,7 @@ public class ServiceContainer {
     public me.vangoo.presentation.listeners.CreatureDeathListener getCreatureDeathListener() { return creatureDeathListener; }
     public me.vangoo.presentation.listeners.NaturalCreatureSpawnListener getNaturalCreatureSpawnListener() { return naturalCreatureSpawnListener; }
     public me.vangoo.presentation.listeners.StructureCreatureSpawnListener getStructureCreatureSpawnListener() { return structureCreatureSpawnListener; }
+    public me.vangoo.presentation.listeners.CreatureLoadListener getCreatureLoadListener() { return creatureLoadListener; }
     public me.vangoo.presentation.commands.CreatureCommand getCreatureCommand() { return creatureCommand; }
     public BeyonderSleepListener getBeyonderSleepListener() { return beyonderSleepListener; }
     public MarionetteExitListener getMarionetteExitListener() { return marionetteExitListener; }

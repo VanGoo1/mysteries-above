@@ -38,8 +38,16 @@ public final class ChaosBehavior implements CreatureBehavior {
         Player target = nearbyBeyonders.get(ThreadLocalRandom.current().nextInt(nearbyBeyonders.size()));
         switch (ThreadLocalRandom.current().nextInt(4)) {
             case 0 -> {
-                Location l = target.getLocation().clone().add(rand(), 0, rand());
-                target.teleport(SafeLocations.passableNear(l));
+                org.bukkit.Location l = target.getLocation().clone().add(rand(), 0, rand());
+                org.bukkit.Location dest = me.vangoo.infrastructure.creatures.SafeLocations.passableNear(l);
+                org.bukkit.block.Block below = dest.clone().subtract(0, 1, 0).getBlock();
+                boolean lava = dest.getBlock().getType() == org.bukkit.Material.LAVA
+                        || below.getType() == org.bukkit.Material.LAVA;
+                if (below.getType().isSolid() && !lava) {
+                    target.teleport(dest);
+                } else {
+                    target.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.WEAKNESS, 80, 0, false, false));
+                }
             }
             case 1 -> target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 80, 0, false, false));
             case 2 -> target.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, 80, 0, false, false));
