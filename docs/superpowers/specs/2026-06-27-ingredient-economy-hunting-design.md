@@ -131,9 +131,12 @@ in-server.
    - `@EventHandler onCreatureSpawn(CreatureSpawnEvent e)` з `SpawnReason.NATURAL`;
    - `CreatureSelector.pickForBiome(біом, тип, random)` → якщо є істота:
      `e.setCancelled(true)` + `spawner.spawn(def, e.getLocation())`.
-3. **Структури — піггібек на наявний `LootGenerateEvent`**:
-   - **розширюємо `VanillaStructureLootListener`** (там уже є мапа ключів структур і доступ до
-     локації події) **або** додаємо вузький `StructureCreatureSpawnListener` поряд;
+3. **Структури — окремий `StructureCreatureSpawnListener` (`presentation.listeners`)**:
+   - **окремий** лістенер, а не розширення `VanillaStructureLootListener`: спавн **істоти** — це
+     не генерація **предмета**, тож відповідальності розділені (один лістенер додає лут у скрині,
+     інший спавнить мобів біля структур);
+   - слухає той самий `LootGenerateEvent` незалежно (Bukkit допускає кілька лістенерів події);
+     має власну мапу ключів структур + шансів (або переюзає мапу істот через `SpawnRule.structureKeys`);
    - на `LootGenerateEvent` із ключем структури → `CreatureSelector.pickForStructure(ключ, random)` →
      `spawner.spawn(def, поряд із event.getLootContext().getLocation())`;
    - apex-істоти мають ненульовий `structureChance` для ключів `mysteries`/`nova_structures`/
@@ -155,8 +158,8 @@ in-server.
 - Лістенери/команда:
   - `new CreatureDeathListener(creatureCodec, creatureRegistry, lootGenerationService, beyonderService)`;
   - `new NaturalCreatureSpawnListener(creatureSelector, creatureSpawner)`;
-  - спавн біля структур — у `VanillaStructureLootListener` (інжект `creatureSelector`+`creatureSpawner`)
-    або новий `StructureCreatureSpawnListener`;
+  - `new StructureCreatureSpawnListener(creatureSelector, creatureSpawner)` — окремий лістенер
+    спавну біля структур (`VanillaStructureLootListener` лишається без змін);
   - `new CreatureCommand(creatureRegistry, creatureSpawner)`.
 - Геттери + реєстрація `registerEvents(...)` / `registerCommands(...)` у `MysteriesAbovePlugin`,
   запис команди `creature` у `plugin.yml`.
@@ -225,8 +228,8 @@ creatures:
 
 - `LootGenerationService` / `LootTableData` / `LootItem` — генерація та «розумний» рерол дропу;
   інваріант відхилення `characteristic:` уже всередині.
-- `VanillaStructureLootListener` — наявне розпізнавання структур і доступ до локації події (точка
-  піггібеку структурного спавну).
+- `VanillaStructureLootListener` — **взірець** розпізнавання структур (мапа ключів, `contains`,
+  доступ до локації події) для нового `StructureCreatureSpawnListener`; сам файл **не змінюється**.
 - `WardenRemnantCodec` — патерн PDC-тега на сутності для `CreatureCodec`.
 - `CustomItemConfigLoader` / `PotionRecipeConfigLoader` — патерн завантаження YAML для
   `CreatureConfigLoader`.
@@ -248,13 +251,12 @@ creatures:
 - `infrastructure/creatures/CreatureAppearance.java` (+ `VanillaAppearance`)
 - `presentation/listeners/CreatureDeathListener.java`
 - `presentation/listeners/NaturalCreatureSpawnListener.java`
+- `presentation/listeners/StructureCreatureSpawnListener.java`
 - `presentation/commands/CreatureCommand.java`
 - `src/main/resources/creatures.yml`
 - `src/test/java/.../creatures/CreatureSelectorTest.java`
 
 **Змінені:**
-- `presentation/listeners/VanillaStructureLootListener.java` (піггібек структурного спавну — або
-  новий `StructureCreatureSpawnListener.java`)
 - `infrastructure/di/ServiceContainer.java` (wiring loader/registry/selector/codec/spawner/listeners/команди + геттери)
 - `MysteriesAbovePlugin.java` (реєстрація лістенерів і команди)
 - `src/main/resources/plugin.yml` (команда `creature`)
