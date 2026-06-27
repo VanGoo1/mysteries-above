@@ -25,6 +25,7 @@ public final class CreatureBehaviorFactory {
         return switch (pathway) {
             // архетипи додаються наступними задачами (Task 4-9)
             case "justiciar" -> new VerdictBehavior(apex);
+            case "whitetower" -> new RevealBehavior(apex);
             default -> null;
         };
     }
