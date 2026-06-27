@@ -1,35 +1,471 @@
 # creatures.yml — міфічні істоти (полювання). Дають ЛИШЕ інгредієнти, ніколи Характеристики.
-# tier: common (Seq 9-6, дика природа) | apex (Seq 5-0, біля структур).
+# Покриття: по одному створінню на (шлях × послідовність), лут = main-інгредієнти того тіру
+# (auxiliary-трави/кристали приходять зі структур через global_loot.yml — тут не дублюються).
+# tier: common (Seq 9-6, дика природа) | apex (Seq 5, біля структур, зрідка в дикій природі).
+# Зменшений шанс дропу: min_items 0 / max_items 1 -> кіл часто дає 0, інколи 1 інгредієнт.
 creatures:
-  manhal_fish:
+
+  # ============================ ERROR ============================
+  error_sphinx_9:
+    base_entity: ENDERMAN
+    display_name: "§7Сфінкс"
+    tier: common
+    stats: { health: 24, damage: 5, speed: 0.25, scale: 1.0 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: sphinx_brain, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [DESERT, BADLANDS], replace: [HUSK, ZOMBIE], chance: 0.02 }
+      structure: { keys: [], chance: 0.0 }
+
+  error_sphinx_8:
+    base_entity: ENDERMAN
+    display_name: "§8Великий Сфінкс"
+    tier: common
+    stats: { health: 40, damage: 7, speed: 0.26, scale: 1.1 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: sphinx_brain, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [DESERT], replace: [HUSK], chance: 0.015 }
+      structure: { keys: [], chance: 0.0 }
+
+  error_plague_serpent_7:
+    base_entity: CAVE_SPIDER
+    display_name: "§2Чумний Змій"
+    tier: common
+    stats: { health: 70, damage: 10, speed: 0.27, scale: 1.2 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: plague_serpent_bile, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [SWAMP, MANGROVE_SWAMP], replace: [SPIDER, SLIME], chance: 0.01 }
+      structure: { keys: [], chance: 0.0 }
+
+  # ========================== VISIONARY ==========================
+  visionary_manhal_9:
     base_entity: GUARDIAN
     display_name: "§3Манхал-риба"
     tier: common
-    stats: { health: 30, damage: 6, speed: 0.25, scale: 1.2 }
+    stats: { health: 24, damage: 5, speed: 0.25, scale: 1.0 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
-      min_items: 1
-      max_items: 2
+      min_items: 0
+      max_items: 1
       items:
-        - { id: manhal_fish_eyeball, weight: 70, min: 1, max: 2 }
-        - { id: "recipe:Visionary:9", weight: 10, min: 1, max: 1 }
+        - { id: manhal_fish_eyeball, weight: 50, min: 1, max: 1 }
+        - { id: goat_horned_blackfish_blood, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [OCEAN, DEEP_OCEAN], replace: [GUARDIAN, DROWNED], chance: 0.03 }
+      natural: { biomes: [OCEAN, DEEP_OCEAN], replace: [GUARDIAN, DROWNED], chance: 0.02 }
       structure: { keys: [], chance: 0.0 }
 
-  mind_dragon:
+  visionary_thoughtform_8:
+    base_entity: VEX
+    display_name: "§bМислеформ"
+    tier: common
+    stats: { health: 40, damage: 7, speed: 0.26, scale: 1.1 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: thought_essence, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [DARK_FOREST], replace: [VEX, ZOMBIE], chance: 0.015 }
+      structure: { keys: [], chance: 0.0 }
+
+  visionary_mirror_dragon_7:
+    base_entity: RAVAGER
+    display_name: "§9Дзеркальний Дракон"
+    tier: common
+    stats: { health: 70, damage: 10, speed: 0.27, scale: 1.2 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: mirror_dragon_eyes, weight: 50, min: 1, max: 1 }
+        - { id: mirror_dragon_blood, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [JUNGLE], replace: [PILLAGER, ZOMBIE], chance: 0.01 }
+      structure: { keys: [], chance: 0.0 }
+
+  visionary_hunting_lizard_6:
+    base_entity: ZOGLIN
+    display_name: "§5Чорний Мисливський Ящір"
+    tier: common
+    stats: { health: 110, damage: 13, speed: 0.28, scale: 1.35 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: black_hunting_lizard_spinal_fluid, weight: 50, min: 1, max: 1 }
+        - { id: split_personality_essence, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [JUNGLE, SWAMP], replace: [SPIDER], chance: 0.006 }
+      structure: { keys: [], chance: 0.0 }
+
+  visionary_mind_dragon_5:
     base_entity: RAVAGER
     display_name: "§5Розумовий Дракон"
     tier: apex
-    stats: { health: 200, damage: 18, speed: 0.30, scale: 1.6 }
+    stats: { health: 190, damage: 17, speed: 0.30, scale: 1.55 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
-      min_items: 1
-      max_items: 2
+      min_items: 0
+      max_items: 1
       items:
-        - { id: adult_mind_dragon_blood, weight: 60, min: 1, max: 1 }
+        - { id: dream_catcher_heart, weight: 50, min: 1, max: 1 }
+        - { id: adult_mind_dragon_blood, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [], replace: [], chance: 0.0 }
-      structure: { keys: [mysteries, nova_structures], chance: 0.35 }
+      natural: { biomes: [JUNGLE], replace: [], chance: 0.003 }
+      structure: { keys: [mysteries, nova_structures], chance: 0.12 }
+
+  # ============================ DOOR =============================
+  door_wanderer_9:
+    base_entity: ENDERMAN
+    display_name: "§dВимірний Блукач"
+    tier: common
+    stats: { health: 24, damage: 5, speed: 0.25, scale: 1.0 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: dimensional_wanderer_eye, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [PLAINS, DESERT], replace: [ENDERMAN, ZOMBIE], chance: 0.02 }
+      structure: { keys: [], chance: 0.0 }
+
+  door_spirit_eater_8:
+    base_entity: DROWNED
+    display_name: "§3Пожирач Духів"
+    tier: common
+    stats: { health: 40, damage: 7, speed: 0.26, scale: 1.1 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: spirit_eater_pouch, weight: 50, min: 1, max: 1 }
+        - { id: deep_sea_marlin_blood, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [OCEAN, RIVER], replace: [DROWNED], chance: 0.015 }
+      structure: { keys: [], chance: 0.0 }
+
+  door_lavos_squid_7:
+    base_entity: GUARDIAN
+    display_name: "§4Лавос-Кальмар"
+    tier: common
+    stats: { health: 70, damage: 10, speed: 0.27, scale: 1.2 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: lavos_squid_blood, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [WARM_OCEAN, DEEP_OCEAN], replace: [GUARDIAN], chance: 0.01 }
+      structure: { keys: [], chance: 0.0 }
+
+  door_asmann_6:
+    base_entity: HUSK
+    display_name: "§6Асман"
+    tier: common
+    stats: { health: 110, damage: 13, speed: 0.28, scale: 1.35 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: asmann_complete_brain, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [DESERT], replace: [HUSK], chance: 0.006 }
+      structure: { keys: [], chance: 0.0 }
+
+  door_void_drifter_5:
+    base_entity: ENDERMAN
+    display_name: "§0Блукач Порожнечі"
+    tier: apex
+    stats: { health: 190, damage: 17, speed: 0.30, scale: 1.55 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: void_drifter_heart, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [PLAINS], replace: [], chance: 0.003 }
+      structure: { keys: [mysteries, nova_structures], chance: 0.12 }
+
+  # ========================== JUSTICIAR =========================
+  justiciar_judge_9:
+    base_entity: VINDICATOR
+    display_name: "§fСуддя"
+    tier: common
+    stats: { health: 24, damage: 5, speed: 0.25, scale: 1.0 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: heart_of_unquestioned_command, weight: 50, min: 1, max: 1 }
+        - { id: eye_of_judicial_insight, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [PLAINS, DARK_FOREST], replace: [VINDICATOR, PILLAGER], chance: 0.02 }
+      structure: { keys: [], chance: 0.0 }
+
+  justiciar_terror_worm_8:
+    base_entity: ZOGLIN
+    display_name: "§cЖахний Демон-Черв'як"
+    tier: common
+    stats: { health: 40, damage: 7, speed: 0.26, scale: 1.1 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: pair_of_terror_demon_worms_eyes, weight: 50, min: 1, max: 1 }
+        - { id: silver_war_bears_right_palm, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [TAIGA], replace: [SPIDER], chance: 0.015 }
+      structure: { keys: [], chance: 0.0 }
+
+  justiciar_flash_snake_7:
+    base_entity: CAVE_SPIDER
+    display_name: "§eЧорний Змій-Спалах"
+    tier: common
+    stats: { health: 70, damage: 10, speed: 0.27, scale: 1.2 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: horn_of_a_flash_patterned_black_snake, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [JUNGLE], replace: [SPIDER], chance: 0.01 }
+      structure: { keys: [], chance: 0.0 }
+
+  justiciar_silent_verdict_6:
+    base_entity: EVOKER
+    display_name: "§7Безмовний Вирок"
+    tier: common
+    stats: { health: 110, damage: 13, speed: 0.28, scale: 1.35 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: heart_of_the_silent_verdict, weight: 50, min: 1, max: 1 }
+        - { id: fragment_of_a_sealed_domain, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [DARK_FOREST], replace: [VINDICATOR], chance: 0.006 }
+      structure: { keys: [], chance: 0.0 }
+
+  justiciar_retribution_5:
+    base_entity: IRON_GOLEM
+    display_name: "§4Караюча Влада"
+    tier: apex
+    stats: { health: 190, damage: 17, speed: 0.30, scale: 1.55 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: core_of_retributive_authority, weight: 50, min: 1, max: 1 }
+        - { id: brand_of_the_unforgiving_oath, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [PLAINS], replace: [], chance: 0.003 }
+      structure: { keys: [mysteries, nova_structures], chance: 0.12 }
+
+  # ========================= WHITE TOWER ========================
+  whitetower_manticore_9:
+    base_entity: PHANTOM
+    display_name: "§eМантикора"
+    tier: common
+    stats: { health: 24, damage: 5, speed: 0.25, scale: 1.0 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: manticore_bird_pituitary_gland, weight: 50, min: 1, max: 1 }
+        - { id: light_antelope_blood, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [SAVANNA, PLAINS], replace: [PHANTOM, ZOMBIE], chance: 0.02 }
+      structure: { keys: [], chance: 0.0 }
+
+  whitetower_cave_monkey_8:
+    base_entity: PIGLIN
+    display_name: "§6Печерна Мавпа"
+    tier: common
+    stats: { health: 40, damage: 7, speed: 0.26, scale: 1.1 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: crystallized_cave_monkey_brain, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [JUNGLE], replace: [ZOMBIE], chance: 0.015 }
+      structure: { keys: [], chance: 0.0 }
+
+  whitetower_phantom_python_7:
+    base_entity: WOLF
+    display_name: "§8Фантомний Пітон"
+    tier: common
+    stats: { health: 70, damage: 10, speed: 0.27, scale: 1.2 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: phantom_python_vertical_eye, weight: 50, min: 1, max: 1 }
+        - { id: steel_toothed_wolf_heart, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [TAIGA, FOREST], replace: [WOLF], chance: 0.01 }
+      structure: { keys: [], chance: 0.0 }
+
+  whitetower_chameleon_6:
+    base_entity: CAVE_SPIDER
+    display_name: "§aПризматичний Хамелеон"
+    tier: common
+    stats: { health: 110, damage: 13, speed: 0.28, scale: 1.35 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: prismatic_chameleon_heart, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [JUNGLE], replace: [SPIDER], chance: 0.006 }
+      structure: { keys: [], chance: 0.0 }
+
+  whitetower_void_beholder_5:
+    base_entity: SHULKER
+    display_name: "§5Бехолдер Порожнечі"
+    tier: apex
+    stats: { health: 190, damage: 17, speed: 0.30, scale: 1.55 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: void_beholder_petrified_eye, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [PLAINS], replace: [], chance: 0.003 }
+      structure: { keys: [mysteries, nova_structures], chance: 0.12 }
+
+  # ============================ FOOL ============================
+  fool_nighthawk_9:
+    base_entity: PHANTOM
+    display_name: "§8Нічний Яструб"
+    tier: common
+    stats: { health: 24, damage: 5, speed: 0.25, scale: 1.0 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: nighthawk_eyeball, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [PLAINS, FOREST], replace: [PHANTOM], chance: 0.02 }
+      structure: { keys: [], chance: 0.0 }
+
+  fool_joker_8:
+    base_entity: VINDICATOR
+    display_name: "§cДжокер"
+    tier: common
+    stats: { health: 40, damage: 7, speed: 0.26, scale: 1.1 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: joker_blood_essence, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [DARK_FOREST], replace: [VINDICATOR, PILLAGER], chance: 0.015 }
+      structure: { keys: [], chance: 0.0 }
+
+  fool_phantom_ink_7:
+    base_entity: GUARDIAN
+    display_name: "§9Примарне Чорнило"
+    tier: common
+    stats: { health: 70, damage: 10, speed: 0.27, scale: 1.2 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: phantom_ink, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [OCEAN, DEEP_OCEAN], replace: [GUARDIAN, DROWNED], chance: 0.01 }
+      structure: { keys: [], chance: 0.0 }
+
+  fool_shapeshifter_6:
+    base_entity: WITCH
+    display_name: "§5Перевертень"
+    tier: common
+    stats: { health: 110, damage: 13, speed: 0.28, scale: 1.35 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: shapeshifter_gland, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [SWAMP], replace: [WITCH, ZOMBIE], chance: 0.006 }
+      structure: { keys: [], chance: 0.0 }
+
+  fool_puppeteer_5:
+    base_entity: EVOKER
+    display_name: "§dЛялькар"
+    tier: apex
+    stats: { health: 190, damage: 17, speed: 0.30, scale: 1.55 }
+    appearance: vanilla
+    clear_vanilla_drops: true
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: puppeteer_heartstring, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [DARK_FOREST], replace: [], chance: 0.003 }
+      structure: { keys: [mysteries, nova_structures], chance: 0.12 }
