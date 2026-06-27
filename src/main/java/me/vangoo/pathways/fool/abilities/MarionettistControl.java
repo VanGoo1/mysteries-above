@@ -12,6 +12,7 @@ import me.vangoo.domain.entities.Beyonder.BeyonderSnapshot;
 import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.domain.valueobjects.Sequence;
+import me.vangoo.infrastructure.abilities.AbilityItemFactory;
 import me.vangoo.infrastructure.citizens.MarionetteMinionTrait;
 import me.vangoo.infrastructure.disguise.SkinDisguiseService;
 import me.vangoo.infrastructure.ui.NBTBuilder;
@@ -457,6 +458,12 @@ public class MarionettistControl extends ActiveAbility {
                     trait.getSkinTextureValue(), trait.getSkinTextureSignature(), marionetteName);
         }
 
+        // NPC тепер представляє основне тіло гравця → даємо йому нік+скін гравця (а не цілі),
+        // інакше «ваше тіло» показувало б нік маріонетки, у якій ви зараз перебуваєте.
+        if (casterPlayer != null) {
+            applyNpcIdentity(npc, casterPlayer.getName(), casterPlayer.getName());
+        }
+
         if (trait.wasBeyonder()) {
             ctx.messaging().sendMessage(casterId,
                     "§5[Маріонетист] §fВи увійшли в §e" + trait.getOriginalPlayerName() +
@@ -537,6 +544,12 @@ public class MarionettistControl extends ActiveAbility {
             spawnSwapEffects(ctx, npcLoc != null ? npcLoc : castLoc, castLoc);
             ctx.messaging().sendMessage(casterId,
                     "§5[Маріонетист] §fВи повернулись у своє тіло.");
+
+            // NPC знову став вільною маріонеткою — повертаємо особистість цілі (нік+скін).
+            MarionetteMinionTrait freeTrait = npc.getTraitNullable(MarionetteMinionTrait.class);
+            String targetName = (freeTrait != null && freeTrait.getOriginalPlayerName() != null)
+                    ? freeTrait.getOriginalPlayerName() : npc.getName();
+            applyNpcIdentity(npc, targetName, targetName);
 
             // NPC знову став вільною маріонеткою — повертаємо фіолетове світіння для власника.
             applyGlow(npc, casterId, GLOW_MARIONETTE);
@@ -625,13 +638,27 @@ public class MarionettistControl extends ActiveAbility {
         eq.set(Equipment.EquipmentSlot.BOOTS, safeClone(player.getInventory().getBoots()));
     }
 
+    /**
+     * Тимчасово вдягає на NPC-тіло особистість (нік + скін). Поки гравець керує маріонеткою, її NPC
+     * стоїть як «основне тіло» гравця — отже має показувати нік+скін гравця, а не цілі; при виході
+     * повертаємо особистість цілі. (Citizens застосовує зміну імені/скіну через респавн NPC.)
+     */
+    private void applyNpcIdentity(NPC npc, String name, String skinName) {
+        if (npc == null || name == null) return;
+        npc.setName(name);
+        if (skinName != null) {
+            npc.getOrAddTrait(SkinTrait.class).setSkinName(skinName, true);
+        }
+    }
+
     /** Скидає речі маріонетки на землю, пропускаючи службові предмети (меню/керування/здібності тіла). */
     private void dropMarionetteItems(Location loc, List<ItemStack> items) {
         if (loc == null || loc.getWorld() == null || items == null) return;
         for (ItemStack item : items) {
             if (item == null || item.getType() == Material.AIR) continue;
             if (isAbilityMenuItem(item) || isMainBodyAbilityItem(item)
-                    || isSwapBackItem(item) || isSwapMenuItem(item)) continue;
+                    || isSwapBackItem(item) || isSwapMenuItem(item)
+                    || AbilityItemFactory.isAbilityItem(item)) continue;
             loc.getWorld().dropItemNaturally(loc, item.clone());
         }
     }
