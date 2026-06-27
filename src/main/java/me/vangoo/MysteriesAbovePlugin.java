@@ -129,6 +129,10 @@ public class MysteriesAbovePlugin extends JavaPlugin {
             services.stopSchedulers();
         }
 
+        if (services != null && services.getCreatureBehaviorManager() != null) {
+            services.getCreatureBehaviorManager().stopAll();
+        }
+
         // Маріонетки: повертаємо гравців, що зараз керують маріонетками, у власне тіло ДО збереження
         // (щоб тіло/інвентар/особистість/скін коректно зберіглись), і коректно завершуємо здібність —
         // БЕЗ знищення NPC: їх збереже Citizens у saves.yml і відновить при наступному старті.
