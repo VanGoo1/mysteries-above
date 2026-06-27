@@ -596,7 +596,7 @@ public final class VanillaAppearance implements CreatureAppearance {
         entity.setCustomName(def.displayName());
         entity.setCustomNameVisible(true);
 
-        AttributeInstance scale = entity.getAttribute(Attribute.GENERIC_SCALE);
+        AttributeInstance scale = entity.getAttribute(Attribute.SCALE);
         if (scale != null) {
             scale.setBaseValue(def.stats().scale());
         }
@@ -627,7 +627,7 @@ public final class VanillaAppearance implements CreatureAppearance {
 - [ ] **Step 3: Зібрати проєкт**
 
 Run: `mvn clean package`
-Expected: BUILD SUCCESS. (Якщо `Attribute.GENERIC_SCALE` не резолвиться на цьому API-рівні — це сигнал невідповідності версії; перевір, що `spigot-api` = 1.21.1, де `GENERIC_SCALE` присутній.)
+Expected: BUILD SUCCESS. (Цей проєкт використовує НОВУ номенклатуру `Attribute` без префікса `GENERIC_`: `Attribute.SCALE`, `Attribute.MAX_HEALTH`, `Attribute.ATTACK_DAMAGE`, `Attribute.MOVEMENT_SPEED` — як у наявному `BeyonderService`/`EntityContext`.)
 
 - [ ] **Step 4: Commit**
 
@@ -711,13 +711,13 @@ public final class CreatureSpawner {
     }
 
     private void applyStats(LivingEntity e, CreatureStats s) {
-        setAttr(e, Attribute.GENERIC_MAX_HEALTH, s.health());
-        AttributeInstance maxHp = e.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        setAttr(e, Attribute.MAX_HEALTH, s.health());
+        AttributeInstance maxHp = e.getAttribute(Attribute.MAX_HEALTH);
         if (maxHp != null) {
             e.setHealth(Math.min(s.health(), maxHp.getValue()));
         }
-        setAttr(e, Attribute.GENERIC_ATTACK_DAMAGE, s.damage());
-        setAttr(e, Attribute.GENERIC_MOVEMENT_SPEED, s.speed());
+        setAttr(e, Attribute.ATTACK_DAMAGE, s.damage());
+        setAttr(e, Attribute.MOVEMENT_SPEED, s.speed());
     }
 
     private void setAttr(LivingEntity e, Attribute attribute, double value) {
