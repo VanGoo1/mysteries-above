@@ -58,9 +58,20 @@ public final class ControlBehavior implements CreatureBehavior {
                 int n = apex ? 2 : 1;
                 for (int i = 0; i < n; i++) {
                     Entity z = self.getWorld().spawnEntity(self.getLocation(), EntityType.ZOMBIE);
-                    if (z instanceof LivingEntity puppet) {
+                    if (z instanceof org.bukkit.entity.Zombie puppet) {
                         puppet.setCustomName("§8Лялька");
                         puppet.setCustomNameVisible(false);
+                        puppet.setBaby(false);
+                        puppet.setCanPickupItems(false);
+                        org.bukkit.attribute.AttributeInstance hp = puppet.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+                        if (hp != null) {
+                            hp.setBaseValue(8.0);
+                            puppet.setHealth(8.0);
+                        }
+                        org.bukkit.attribute.AttributeInstance reinf = puppet.getAttribute(org.bukkit.attribute.Attribute.SPAWN_REINFORCEMENTS);
+                        if (reinf != null) {
+                            reinf.setBaseValue(0.0);
+                        }
                     }
                 }
             }

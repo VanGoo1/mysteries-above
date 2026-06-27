@@ -33,6 +33,9 @@ public final class CreatureBehaviorManager {
     }
 
     public void start(LivingEntity entity, CreatureDefinition def) {
+        if (behaviors.containsKey(entity.getUniqueId())) {
+            return;
+        }
         CreatureBehavior behavior = factory.create(def);
         if (behavior != null) {
             behaviors.put(entity.getUniqueId(), behavior);
