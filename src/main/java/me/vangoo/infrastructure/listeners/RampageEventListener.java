@@ -1,7 +1,9 @@
 package me.vangoo.infrastructure.listeners;
 
 import me.vangoo.application.services.BeyonderService;
+import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.events.RampageDomainEvent;
+import me.vangoo.infrastructure.items.WardenRemnantCodec;
 import me.vangoo.infrastructure.schedulers.PassiveAbilityScheduler;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -30,10 +32,14 @@ public class RampageEventListener {
 
     private final PassiveAbilityScheduler passiveAbilityScheduler;
     private final BeyonderService beyonderService;
+    private final WardenRemnantCodec wardenRemnantCodec;
 
-    public RampageEventListener(PassiveAbilityScheduler passiveAbilityScheduler, BeyonderService beyonderService) {
+    public RampageEventListener(PassiveAbilityScheduler passiveAbilityScheduler,
+                                BeyonderService beyonderService,
+                                WardenRemnantCodec wardenRemnantCodec) {
         this.passiveAbilityScheduler = passiveAbilityScheduler;
         this.beyonderService = beyonderService;
+        this.wardenRemnantCodec = wardenRemnantCodec;
     }
 
     /**
@@ -208,6 +214,12 @@ public class RampageEventListener {
                 location.add(0, 1, 0),
                 50, 2.0, 2.0, 2.0, 0.1
         );
+        // Есенцію носить сам Warden: вилучення відкладене до його смерті (RampageRemnantDeathListener).
+        Beyonder beyonder = beyonderService.getBeyonder(player.getUniqueId());
+        if (beyonder != null) {
+            wardenRemnantCodec.tag(warden, beyonder.getPathway().getName(), beyonder.getSequenceLevel());
+        }
+
         passiveAbilityScheduler.unregisterPlayer(player);
         beyonderService.removeBeyonder(player.getUniqueId());
         // Вбити гравця

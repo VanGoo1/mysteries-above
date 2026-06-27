@@ -230,6 +230,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(services.getMainBodyAbilityListener(), this);
         getServer().getPluginManager().registerEvents(services.getMarionetteLifecycleListener(), this);
         getServer().getPluginManager().registerEvents(services.getMarionetteRestorer(), this);
+        getServer().getPluginManager().registerEvents(services.getRampageRemnantDeathListener(), this);
     }
 
     private void registerCommands() {
