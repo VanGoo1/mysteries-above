@@ -297,14 +297,11 @@ public class AbilityMenuListener implements Listener {
      */
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
-        Beyonder beyonder = beyonderService.getBeyonder(event.getEntity().getUniqueId());
-        if (beyonder == null) {
-            return;
-        }
-
+        // Статичне розпізнавання (за NBT), щоб мітки/здібності прибиралися навіть коли Beyonder уже
+        // знятий до смерті — як при втраті контролю (rampage прибирає Beyonder перед setHealth(0)).
         event.getDrops().removeIf(item ->
                 abilityMenu.isAbilityMenu(item) ||
-                        abilityItemFactory.isAbilityItem(item, beyonder));
+                        AbilityItemFactory.isAbilityItem(item));
     }
 
     /**

@@ -4,17 +4,22 @@ import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.AbilityType;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.Sequence;
+import me.vangoo.infrastructure.ui.NBTBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.components.CustomModelDataComponent;
+import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class AbilityItemFactory {
+
+    /** Статична NBT-мітка предмета здібності — дозволяє розпізнати його без контексту Beyonder. */
+    public static final String ABILITY_ITEM_NBT = "ability_item";
 
     public ItemStack getItemFromAbility(Ability ability, Sequence userSequence) {
         ItemStack item = new ItemStack(Material.PAPER);
@@ -60,6 +65,11 @@ public class AbilityItemFactory {
 
             meta.setLore(lore);
             item.setItemMeta(meta);
+        }
+        // Мітимо предмет статичною NBT-міткою, щоб його можна було розпізнати без Beyonder
+        // (очищення дропу при смерті гравця та фільтр речей маріонетки).
+        if (item.hasItemMeta()) {
+            item = new NBTBuilder(item).setBoolean(ABILITY_ITEM_NBT, true).build();
         }
         return item;
     }
@@ -122,5 +132,13 @@ public class AbilityItemFactory {
 
     public boolean isAbilityItem(ItemStack item, Beyonder beyonder) {
         return getAbilityFromItem(item, beyonder) != null;
+    }
+
+    /** Розпізнає предмет здібності за статичною NBT-міткою (без контексту Beyonder). */
+    public static boolean isAbilityItem(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR || !item.hasItemMeta()) {
+            return false;
+        }
+        return NBTBuilder.hasKey(item, ABILITY_ITEM_NBT, PersistentDataType.BYTE);
     }
 }
