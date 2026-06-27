@@ -28,6 +28,7 @@ public final class CreatureBehaviorFactory {
             case "whitetower" -> new RevealBehavior(apex);
             case "visionary" -> new AmbushBehavior(apex, beyonderService);
             case "fool" -> new ControlBehavior(apex, beyonderService);
+            case "door" -> new BlinkBehavior(apex);
             default -> null;
         };
     }
