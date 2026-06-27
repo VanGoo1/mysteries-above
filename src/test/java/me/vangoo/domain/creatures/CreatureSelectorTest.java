@@ -17,7 +17,7 @@ class CreatureSelectorTest {
                 new CreatureStats(30, 6, 0.25, 1.2),
                 Map.of(), "vanilla",
                 new LootTableData(List.of(), 1, 2),
-                spawn, true);
+                spawn, true, "visionary");
     }
 
     private SpawnRule natural(double chance) {
