@@ -79,6 +79,14 @@ public class ServiceContainer {
     private CharacteristicExtractor characteristicExtractor;
     private WardenRemnantCodec wardenRemnantCodec;
     private RampageRemnantDeathListener rampageRemnantDeathListener;
+    private java.util.Map<String, me.vangoo.domain.creatures.CreatureDefinition> creatureRegistry;
+    private me.vangoo.domain.creatures.CreatureSelector creatureSelector;
+    private me.vangoo.infrastructure.creatures.CreatureCodec creatureCodec;
+    private me.vangoo.infrastructure.creatures.CreatureSpawner creatureSpawner;
+    private me.vangoo.presentation.listeners.CreatureDeathListener creatureDeathListener;
+    private me.vangoo.presentation.listeners.NaturalCreatureSpawnListener naturalCreatureSpawnListener;
+    private me.vangoo.presentation.listeners.StructureCreatureSpawnListener structureCreatureSpawnListener;
+    private me.vangoo.presentation.commands.CreatureCommand creatureCommand;
     private BeyonderSleepListener beyonderSleepListener;
     private MarionetteExitListener marionetteExitListener;
     private MainBodyAbilityListener mainBodyAbilityListener;
@@ -168,6 +176,25 @@ public class ServiceContainer {
                                                de.slikey.effectlib.EffectManager effectManager) {
         this.bossBarUtil = new BossBarUtil();
         this.beyonderService = new BeyonderService(beyonderRepository, bossBarUtil);
+
+        // --- Спек 3: полювання (істоти) ---
+        me.vangoo.infrastructure.creatures.CreatureConfigLoader creatureConfigLoader =
+                new me.vangoo.infrastructure.creatures.CreatureConfigLoader(plugin);
+        this.creatureRegistry = creatureConfigLoader.load();
+        this.creatureSelector = new me.vangoo.domain.creatures.CreatureSelector(creatureRegistry.values());
+        this.creatureCodec = new me.vangoo.infrastructure.creatures.CreatureCodec(plugin);
+        this.creatureSpawner = new me.vangoo.infrastructure.creatures.CreatureSpawner(
+                java.util.Map.of("vanilla",
+                        new me.vangoo.infrastructure.creatures.VanillaAppearance(customItemService)),
+                creatureCodec, plugin);
+        this.creatureDeathListener = new me.vangoo.presentation.listeners.CreatureDeathListener(
+                creatureCodec, creatureRegistry, lootGenerationService, beyonderService);
+        this.naturalCreatureSpawnListener = new me.vangoo.presentation.listeners.NaturalCreatureSpawnListener(
+                creatureSelector, creatureSpawner);
+        this.structureCreatureSpawnListener = new me.vangoo.presentation.listeners.StructureCreatureSpawnListener(
+                creatureSelector, creatureSpawner);
+        this.creatureCommand = new me.vangoo.presentation.commands.CreatureCommand(
+                creatureRegistry, creatureSpawner);
 
         this.abilityContextFactory = new AbilityContextFactory(
                 (MysteriesAbovePlugin) plugin,
@@ -292,6 +319,10 @@ public class ServiceContainer {
     public CharacteristicExtractor getCharacteristicExtractor() { return characteristicExtractor; }
     public WardenRemnantCodec getWardenRemnantCodec() { return wardenRemnantCodec; }
     public RampageRemnantDeathListener getRampageRemnantDeathListener() { return rampageRemnantDeathListener; }
+    public me.vangoo.presentation.listeners.CreatureDeathListener getCreatureDeathListener() { return creatureDeathListener; }
+    public me.vangoo.presentation.listeners.NaturalCreatureSpawnListener getNaturalCreatureSpawnListener() { return naturalCreatureSpawnListener; }
+    public me.vangoo.presentation.listeners.StructureCreatureSpawnListener getStructureCreatureSpawnListener() { return structureCreatureSpawnListener; }
+    public me.vangoo.presentation.commands.CreatureCommand getCreatureCommand() { return creatureCommand; }
     public BeyonderSleepListener getBeyonderSleepListener() { return beyonderSleepListener; }
     public MarionetteExitListener getMarionetteExitListener() { return marionetteExitListener; }
     public MainBodyAbilityListener getMainBodyAbilityListener() { return mainBodyAbilityListener; }

@@ -231,6 +231,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(services.getMarionetteLifecycleListener(), this);
         getServer().getPluginManager().registerEvents(services.getMarionetteRestorer(), this);
         getServer().getPluginManager().registerEvents(services.getRampageRemnantDeathListener(), this);
+        getServer().getPluginManager().registerEvents(services.getCreatureDeathListener(), this);
+        getServer().getPluginManager().registerEvents(services.getNaturalCreatureSpawnListener(), this);
+        getServer().getPluginManager().registerEvents(services.getStructureCreatureSpawnListener(), this);
     }
 
     private void registerCommands() {
@@ -260,5 +263,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 services.getCharacteristicCodec(), services.getPotionManager());
         getCommand("characteristic").setExecutor(characteristicCommand);
         getCommand("characteristic").setTabCompleter(characteristicCommand);
+        getCommand("creature").setExecutor(services.getCreatureCommand());
+        getCommand("creature").setTabCompleter(services.getCreatureCommand());
     }
 }
