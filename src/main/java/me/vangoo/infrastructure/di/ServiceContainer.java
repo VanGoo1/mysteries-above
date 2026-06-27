@@ -180,7 +180,7 @@ public class ServiceContainer {
         // --- Спек 3: полювання (істоти) ---
         me.vangoo.infrastructure.creatures.CreatureConfigLoader creatureConfigLoader =
                 new me.vangoo.infrastructure.creatures.CreatureConfigLoader(plugin);
-        this.creatureRegistry = creatureConfigLoader.load();
+        this.creatureRegistry = java.util.Collections.unmodifiableMap(creatureConfigLoader.load());
         this.creatureSelector = new me.vangoo.domain.creatures.CreatureSelector(creatureRegistry.values());
         this.creatureCodec = new me.vangoo.infrastructure.creatures.CreatureCodec(plugin);
         this.creatureSpawner = new me.vangoo.infrastructure.creatures.CreatureSpawner(
