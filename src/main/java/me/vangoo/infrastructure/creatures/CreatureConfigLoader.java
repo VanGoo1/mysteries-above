@@ -63,8 +63,15 @@ public class CreatureConfigLoader {
         LootTableData loot = parseLoot(c.getConfigurationSection("loot"));
         SpawnRule spawn = parseSpawn(c.getConfigurationSection("spawn"));
 
+        String pathway = c.getString("pathway");
+        if (pathway == null || pathway.isEmpty()) {
+            int underscore = id.indexOf('_');
+            pathway = (underscore > 0 ? id.substring(0, underscore) : id);
+        }
+        pathway = pathway.toLowerCase(Locale.ROOT);
+
         return new CreatureDefinition(id, baseEntity.toUpperCase(Locale.ROOT), displayName, tier,
-                stats, equipment, appearance, loot, spawn, clearDrops);
+                stats, equipment, appearance, loot, spawn, clearDrops, pathway);
     }
 
     private CreatureStats parseStats(ConfigurationSection s) {

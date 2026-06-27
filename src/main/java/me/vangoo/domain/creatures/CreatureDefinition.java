@@ -14,4 +14,5 @@ public record CreatureDefinition(
         String appearance,
         LootTableData loot,
         SpawnRule spawn,
-        boolean clearVanillaDrops) {}
+        boolean clearVanillaDrops,
+        String pathway) {}
