@@ -3,6 +3,7 @@ package me.vangoo.presentation.listeners;
 import me.vangoo.domain.creatures.CreatureDefinition;
 import me.vangoo.domain.creatures.CreatureSelector;
 import me.vangoo.infrastructure.creatures.CreatureSpawner;
+import me.vangoo.infrastructure.creatures.SafeLocations;
 import org.bukkit.Location;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -54,27 +55,12 @@ public class StructureCreatureSpawnListener implements Listener {
         Optional<CreatureDefinition> pick = selector.pickForStructure(key, random.nextDouble());
         if (pick.isEmpty()) return;
 
-        spawner.spawn(pick.get(), safeSpawnLocation(loc));
+        spawner.spawn(pick.get(), SafeLocations.passableNear(loc));
 
         // Прибираємо застарілі записи перед вставкою, щоб карта не росла безмежно
         if (lastSpawnByChunk.size() > 256) {
             lastSpawnByChunk.values().removeIf(t -> now - t > SPAWN_COOLDOWN_MS);
         }
         lastSpawnByChunk.put(chunkKey, now);
-    }
-
-    /**
-     * Шукає вільне місце (2 блоки заввишки) поряд із контейнером, щоб не заспавнити істоту
-     * всередині стіни або скрині.
-     */
-    private Location safeSpawnLocation(Location origin) {
-        int[][] offsets = { {0, 1, 0}, {1, 1, 0}, {-1, 1, 0}, {0, 1, 1}, {0, 1, -1}, {2, 1, 0}, {0, 1, 2} };
-        for (int[] o : offsets) {
-            Location cand = origin.clone().add(o[0] + 0.5, o[1], o[2] + 0.5);
-            if (cand.getBlock().isPassable() && cand.clone().add(0, 1, 0).getBlock().isPassable()) {
-                return cand;
-            }
-        }
-        return origin.clone().add(0.5, 1.0, 0.5);
     }
 }
