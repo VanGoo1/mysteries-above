@@ -6,6 +6,7 @@ import me.vangoo.infrastructure.*;
 import me.vangoo.infrastructure.abilities.AbilityItemFactory;
 import me.vangoo.infrastructure.items.*;
 import me.vangoo.infrastructure.listeners.RampageEventListener;
+import me.vangoo.infrastructure.listeners.RampageRemnantDeathListener;
 import me.vangoo.infrastructure.recipes.RecipeBookCraftingRecipe;
 import me.vangoo.infrastructure.schedulers.*;
 import me.vangoo.infrastructure.structures.LootGenerationService;
@@ -75,6 +76,9 @@ public class ServiceContainer {
 
     // Event listeners
     private RampageEventListener rampageEventListener;
+    private CharacteristicExtractor characteristicExtractor;
+    private WardenRemnantCodec wardenRemnantCodec;
+    private RampageRemnantDeathListener rampageRemnantDeathListener;
     private BeyonderSleepListener beyonderSleepListener;
     private MarionetteExitListener marionetteExitListener;
     private MainBodyAbilityListener mainBodyAbilityListener;
@@ -149,6 +153,8 @@ public class ServiceContainer {
         PotionRecipeConfigLoader recipeConfigLoader = new PotionRecipeConfigLoader(plugin);
         Map<String, Map<Integer, RecipeDefinition>> recipeConfig = recipeConfigLoader.load();
         this.characteristicCodec = new CharacteristicCodec();
+        this.characteristicExtractor = new CharacteristicExtractor(characteristicCodec);
+        this.wardenRemnantCodec = new WardenRemnantCodec(plugin);
         this.potionManager = new PotionManager(pathwayManager, potionItemFactory, customItemService, recipeConfig);
 
         // Loot system
@@ -231,7 +237,8 @@ public class ServiceContainer {
     }
 
     private void initializeEventListeners() {
-        this.rampageEventListener = new RampageEventListener(passiveAbilityScheduler, beyonderService);
+        this.rampageEventListener = new RampageEventListener(passiveAbilityScheduler, beyonderService, wardenRemnantCodec);
+        this.rampageRemnantDeathListener = new RampageRemnantDeathListener(wardenRemnantCodec, characteristicExtractor);
         this.beyonderSleepListener = new BeyonderSleepListener(beyonderService);
         this.marionetteExitListener = new MarionetteExitListener(abilityContextFactory, pathwayManager);
         this.mainBodyAbilityListener = new MainBodyAbilityListener(beyonderService, abilityExecutor, pathwayManager);
@@ -282,6 +289,9 @@ public class ServiceContainer {
     public AbilityMenuItemUpdater getAbilityMenuItemUpdater() { return abilityMenuItemUpdater; }
 
     public RampageEventListener getRampageEventListener() { return rampageEventListener; }
+    public CharacteristicExtractor getCharacteristicExtractor() { return characteristicExtractor; }
+    public WardenRemnantCodec getWardenRemnantCodec() { return wardenRemnantCodec; }
+    public RampageRemnantDeathListener getRampageRemnantDeathListener() { return rampageRemnantDeathListener; }
     public BeyonderSleepListener getBeyonderSleepListener() { return beyonderSleepListener; }
     public MarionetteExitListener getMarionetteExitListener() { return marionetteExitListener; }
     public MainBodyAbilityListener getMainBodyAbilityListener() { return mainBodyAbilityListener; }
