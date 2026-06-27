@@ -20,11 +20,14 @@ public final class CreatureSpawner {
     private final Map<String, CreatureAppearance> appearances;
     private final CreatureCodec codec;
     private final Plugin plugin;
+    private final me.vangoo.infrastructure.creatures.behavior.CreatureBehaviorManager behaviorManager;
 
-    public CreatureSpawner(Map<String, CreatureAppearance> appearances, CreatureCodec codec, Plugin plugin) {
+    public CreatureSpawner(Map<String, CreatureAppearance> appearances, CreatureCodec codec, Plugin plugin,
+                           me.vangoo.infrastructure.creatures.behavior.CreatureBehaviorManager behaviorManager) {
         this.appearances = appearances;
         this.codec = codec;
         this.plugin = plugin;
+        this.behaviorManager = behaviorManager;
     }
 
     public Optional<LivingEntity> spawn(CreatureDefinition def, Location loc) {
@@ -54,6 +57,7 @@ public final class CreatureSpawner {
             appearance.apply(living, def);
         }
         codec.tag(living, def.id());
+        behaviorManager.start(living, def);
         return Optional.of(living);
     }
 

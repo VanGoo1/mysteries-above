@@ -82,6 +82,8 @@ public class ServiceContainer {
     private java.util.Map<String, me.vangoo.domain.creatures.CreatureDefinition> creatureRegistry;
     private me.vangoo.domain.creatures.CreatureSelector creatureSelector;
     private me.vangoo.infrastructure.creatures.CreatureCodec creatureCodec;
+    private me.vangoo.infrastructure.creatures.behavior.CreatureBehaviorFactory creatureBehaviorFactory;
+    private me.vangoo.infrastructure.creatures.behavior.CreatureBehaviorManager creatureBehaviorManager;
     private me.vangoo.infrastructure.creatures.CreatureSpawner creatureSpawner;
     private me.vangoo.presentation.listeners.CreatureDeathListener creatureDeathListener;
     private me.vangoo.presentation.listeners.NaturalCreatureSpawnListener naturalCreatureSpawnListener;
@@ -183,10 +185,14 @@ public class ServiceContainer {
         this.creatureRegistry = java.util.Collections.unmodifiableMap(creatureConfigLoader.load());
         this.creatureSelector = new me.vangoo.domain.creatures.CreatureSelector(creatureRegistry.values());
         this.creatureCodec = new me.vangoo.infrastructure.creatures.CreatureCodec(plugin);
+        this.creatureBehaviorFactory = new me.vangoo.infrastructure.creatures.behavior.CreatureBehaviorFactory(
+                beyonderService, plugin);
+        this.creatureBehaviorManager = new me.vangoo.infrastructure.creatures.behavior.CreatureBehaviorManager(
+                plugin, beyonderService, creatureBehaviorFactory);
         this.creatureSpawner = new me.vangoo.infrastructure.creatures.CreatureSpawner(
                 java.util.Map.of("vanilla",
                         new me.vangoo.infrastructure.creatures.VanillaAppearance(customItemService)),
-                creatureCodec, plugin);
+                creatureCodec, plugin, creatureBehaviorManager);
         this.creatureDeathListener = new me.vangoo.presentation.listeners.CreatureDeathListener(
                 creatureCodec, creatureRegistry, lootGenerationService, beyonderService);
         this.naturalCreatureSpawnListener = new me.vangoo.presentation.listeners.NaturalCreatureSpawnListener(
@@ -319,6 +325,7 @@ public class ServiceContainer {
     public CharacteristicExtractor getCharacteristicExtractor() { return characteristicExtractor; }
     public WardenRemnantCodec getWardenRemnantCodec() { return wardenRemnantCodec; }
     public RampageRemnantDeathListener getRampageRemnantDeathListener() { return rampageRemnantDeathListener; }
+    public me.vangoo.infrastructure.creatures.behavior.CreatureBehaviorManager getCreatureBehaviorManager() { return creatureBehaviorManager; }
     public me.vangoo.presentation.listeners.CreatureDeathListener getCreatureDeathListener() { return creatureDeathListener; }
     public me.vangoo.presentation.listeners.NaturalCreatureSpawnListener getNaturalCreatureSpawnListener() { return naturalCreatureSpawnListener; }
     public me.vangoo.presentation.listeners.StructureCreatureSpawnListener getStructureCreatureSpawnListener() { return structureCreatureSpawnListener; }
