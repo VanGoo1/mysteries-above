@@ -26,6 +26,7 @@ public final class CreatureBehaviorFactory {
             // архетипи додаються наступними задачами (Task 4-9)
             case "justiciar" -> new VerdictBehavior(apex);
             case "whitetower" -> new RevealBehavior(apex);
+            case "visionary" -> new AmbushBehavior(apex, beyonderService);
             default -> null;
         };
     }
