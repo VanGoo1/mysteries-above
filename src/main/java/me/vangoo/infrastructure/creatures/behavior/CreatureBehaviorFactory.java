@@ -24,6 +24,7 @@ public final class CreatureBehaviorFactory {
         boolean apex = def.tier() == CreatureTier.APEX;
         return switch (pathway) {
             // архетипи додаються наступними задачами (Task 4-9)
+            case "justiciar" -> new VerdictBehavior(apex);
             default -> null;
         };
     }
