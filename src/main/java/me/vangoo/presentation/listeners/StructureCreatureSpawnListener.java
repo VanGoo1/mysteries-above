@@ -30,7 +30,7 @@ public class StructureCreatureSpawnListener implements Listener {
     private final CreatureSelector selector;
     private final CreatureSpawner spawner;
     private final Random random = new Random();
-    private final Map<Long, Long> lastSpawnByChunk = new HashMap<>();
+    private final Map<String, Long> lastSpawnByChunk = new HashMap<>();
 
     public StructureCreatureSpawnListener(CreatureSelector selector, CreatureSpawner spawner) {
         this.selector = selector;
@@ -44,7 +44,9 @@ public class StructureCreatureSpawnListener implements Listener {
 
         // Per-chunk cooldown: не більше одного спавну на чанк за SPAWN_COOLDOWN_MS мс
         // getChunkKey() недоступний у 1.21.1 — обчислюємо вручну (ті самі біти)
-        long chunkKey = ((long) loc.getChunk().getX() << 32) | (loc.getChunk().getZ() & 0xFFFFFFFFL);
+        org.bukkit.Chunk chunk = loc.getChunk();
+        long chunkXZ = ((long) chunk.getX() << 32) | (chunk.getZ() & 0xFFFFFFFFL);
+        String chunkKey = loc.getWorld().getUID() + "@" + chunkXZ;
         long now = System.currentTimeMillis();
         if (now - lastSpawnByChunk.getOrDefault(chunkKey, 0L) < SPAWN_COOLDOWN_MS) return;
 
