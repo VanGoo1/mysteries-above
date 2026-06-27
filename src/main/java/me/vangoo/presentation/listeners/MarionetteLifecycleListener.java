@@ -2,6 +2,7 @@ package me.vangoo.presentation.listeners;
 
 import me.vangoo.application.services.AbilityContextFactory;
 import me.vangoo.application.services.PathwayManager;
+import me.vangoo.infrastructure.items.CharacteristicExtractor;
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.infrastructure.citizens.MarionetteMinionTrait;
@@ -33,11 +34,14 @@ public class MarionetteLifecycleListener implements Listener {
 
     private final AbilityContextFactory abilityContextFactory;
     private final PathwayManager pathwayManager;
+    private final CharacteristicExtractor characteristicExtractor;
 
     public MarionetteLifecycleListener(AbilityContextFactory abilityContextFactory,
-                                       PathwayManager pathwayManager) {
+                                       PathwayManager pathwayManager,
+                                       CharacteristicExtractor characteristicExtractor) {
         this.abilityContextFactory = abilityContextFactory;
         this.pathwayManager = pathwayManager;
+        this.characteristicExtractor = characteristicExtractor;
     }
 
     @EventHandler
@@ -46,6 +50,17 @@ public class MarionetteLifecycleListener implements Listener {
         if (npc == null || !npc.hasTrait(MarionetteMinionTrait.class)) {
             return;
         }
+
+        // Якщо маріонетка несла особистість потойбічного — її Характеристика вилучається на місці смерті.
+        MarionetteMinionTrait remnantTrait = npc.getTraitNullable(MarionetteMinionTrait.class);
+        if (remnantTrait != null && remnantTrait.getCapturedPathway() != null
+                && remnantTrait.getCapturedSequence() != null) {
+            characteristicExtractor.extractTo(
+                    npc.getStoredLocation(),
+                    remnantTrait.getCapturedPathway().getName(),
+                    remnantTrait.getCapturedSequence().level());
+        }
+
         MarionettistControl mc = resolveControl();
         if (mc == null) return;
 
