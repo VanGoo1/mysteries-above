@@ -242,7 +242,7 @@ public class ServiceContainer {
         this.beyonderSleepListener = new BeyonderSleepListener(beyonderService);
         this.marionetteExitListener = new MarionetteExitListener(abilityContextFactory, pathwayManager);
         this.mainBodyAbilityListener = new MainBodyAbilityListener(beyonderService, abilityExecutor, pathwayManager);
-        this.marionetteLifecycleListener = new MarionetteLifecycleListener(abilityContextFactory, pathwayManager);
+        this.marionetteLifecycleListener = new MarionetteLifecycleListener(abilityContextFactory, pathwayManager, characteristicExtractor);
         this.marionetteRestorer = new MarionetteRestorer(pathwayManager);
     }
 
