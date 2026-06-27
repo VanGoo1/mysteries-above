@@ -32,13 +32,13 @@ public final class RevealBehavior implements CreatureBehavior {
         }
         long now = System.currentTimeMillis();
         long cd = apex ? 3500 : 5000;
-        if (now - lastShot >= cd) {
+        if (now - lastShot >= cd && !nearbyBeyonders.isEmpty()) {
             lastShot = now;
             Player target = nearbyBeyonders.get(0);
-            Snowball ball = self.getWorld().spawn(self.getEyeLocation(), Snowball.class);
-            ball.setShooter(self);
             Vector dir = target.getEyeLocation().toVector().subtract(self.getEyeLocation().toVector());
             if (dir.lengthSquared() > 0.001) {
+                Snowball ball = self.getWorld().spawn(self.getEyeLocation(), Snowball.class);
+                ball.setShooter(self);
                 ball.setVelocity(dir.normalize().multiply(1.6));
             }
         }
