@@ -12,12 +12,16 @@ import static org.junit.jupiter.api.Assertions.*;
 class CreatureSelectorTest {
 
     private CreatureDefinition def(String id, SpawnRule spawn) {
+        return def(id, spawn, "visionary", 9);
+    }
+
+    private CreatureDefinition def(String id, SpawnRule spawn, String pathway, int sequence) {
         return new CreatureDefinition(
                 id, "GUARDIAN", "§3" + id, CreatureTier.COMMON,
                 new CreatureStats(30, 6, 0.25, 1.2),
                 Map.of(), "vanilla",
                 new LootTableData(List.of(), 1, 2),
-                spawn, true, "visionary");
+                spawn, true, pathway, sequence);
     }
 
     private SpawnRule natural(double chance) {

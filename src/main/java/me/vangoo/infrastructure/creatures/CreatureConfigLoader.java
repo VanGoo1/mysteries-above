@@ -70,8 +70,28 @@ public class CreatureConfigLoader {
         }
         pathway = pathway.toLowerCase(Locale.ROOT);
 
+        int sequence = c.getInt("sequence", -1);
+        if (sequence < 0 || sequence > 9) {
+            int us = id.lastIndexOf('_');
+            sequence = 9;
+            if (us >= 0 && us < id.length() - 1) {
+                try {
+                    int parsed = Integer.parseInt(id.substring(us + 1));
+                    if (parsed >= 0 && parsed <= 9) {
+                        sequence = parsed;
+                    } else {
+                        plugin.getLogger().warning("Creature '" + id
+                                + "': sequence out of range, defaulting to 9");
+                    }
+                } catch (NumberFormatException ex) {
+                    plugin.getLogger().warning("Creature '" + id
+                            + "': cannot derive sequence from id, defaulting to 9");
+                }
+            }
+        }
+
         return new CreatureDefinition(id, baseEntity.toUpperCase(Locale.ROOT), displayName, tier,
-                stats, equipment, appearance, loot, spawn, clearDrops, pathway);
+                stats, equipment, appearance, loot, spawn, clearDrops, pathway, sequence);
     }
 
     private CreatureStats parseStats(ConfigurationSection s) {
