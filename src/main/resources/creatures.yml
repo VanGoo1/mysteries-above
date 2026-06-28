@@ -19,7 +19,7 @@ creatures:
       items:
         - { id: sphinx_brain, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [DESERT, BADLANDS], replace: [HUSK, ZOMBIE], chance: 0.02 }
+      natural: { biomes: [DESERT, BADLANDS], replace: [HUSK, ZOMBIE], chance: 0.005 }
       structure: { keys: [], chance: 0.0 }
 
   error_sphinx_8:
@@ -35,7 +35,7 @@ creatures:
       items:
         - { id: sphinx_brain, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [DESERT], replace: [HUSK], chance: 0.015 }
+      natural: { biomes: [DESERT], replace: [HUSK], chance: 0.00375 }
       structure: { keys: [], chance: 0.0 }
 
   error_plague_serpent_7:
@@ -51,7 +51,7 @@ creatures:
       items:
         - { id: plague_serpent_bile, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [SWAMP, MANGROVE_SWAMP], replace: [SPIDER, SLIME], chance: 0.01 }
+      natural: { biomes: [SWAMP, MANGROVE_SWAMP], replace: [SPIDER, SLIME], chance: 0.0025 }
       structure: { keys: [], chance: 0.0 }
 
   # ========================== VISIONARY ==========================
@@ -69,7 +69,7 @@ creatures:
         - { id: manhal_fish_eyeball, weight: 50, min: 1, max: 1 }
         - { id: goat_horned_blackfish_blood, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [OCEAN, DEEP_OCEAN], replace: [GUARDIAN, DROWNED], chance: 0.02 }
+      natural: { biomes: [OCEAN, DEEP_OCEAN], replace: [GUARDIAN, DROWNED], chance: 0.005 }
       structure: { keys: [], chance: 0.0 }
 
   visionary_thoughtform_8:
@@ -85,7 +85,7 @@ creatures:
       items:
         - { id: thought_essence, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [DARK_FOREST], replace: [VEX, ZOMBIE], chance: 0.015 }
+      natural: { biomes: [DARK_FOREST], replace: [VEX, ZOMBIE], chance: 0.00375 }
       structure: { keys: [], chance: 0.0 }
 
   visionary_mirror_dragon_7:
@@ -102,7 +102,7 @@ creatures:
         - { id: mirror_dragon_eyes, weight: 50, min: 1, max: 1 }
         - { id: mirror_dragon_blood, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [JUNGLE], replace: [PILLAGER, ZOMBIE], chance: 0.01 }
+      natural: { biomes: [JUNGLE], replace: [PILLAGER, ZOMBIE], chance: 0.0025 }
       structure: { keys: [], chance: 0.0 }
 
   visionary_hunting_lizard_6:
@@ -119,7 +119,7 @@ creatures:
         - { id: black_hunting_lizard_spinal_fluid, weight: 50, min: 1, max: 1 }
         - { id: split_personality_essence, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [JUNGLE, SWAMP], replace: [SPIDER], chance: 0.006 }
+      natural: { biomes: [JUNGLE, SWAMP], replace: [SPIDER], chance: 0.0015 }
       structure: { keys: [], chance: 0.0 }
 
   visionary_mind_dragon_5:
@@ -136,7 +136,7 @@ creatures:
         - { id: dream_catcher_heart, weight: 50, min: 1, max: 1 }
         - { id: adult_mind_dragon_blood, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [JUNGLE], replace: [], chance: 0.003 }
+      natural: { biomes: [JUNGLE], replace: [], chance: 0.00075 }
       structure: { keys: [mysteries, nova_structures], chance: 0.12 }
 
   # ============================ DOOR =============================
@@ -153,7 +153,7 @@ creatures:
       items:
         - { id: dimensional_wanderer_eye, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [PLAINS, DESERT], replace: [ENDERMAN, ZOMBIE], chance: 0.02 }
+      natural: { biomes: [PLAINS, DESERT], replace: [ENDERMAN, ZOMBIE], chance: 0.005 }
       structure: { keys: [], chance: 0.0 }
 
   door_spirit_eater_8:
@@ -170,7 +170,7 @@ creatures:
         - { id: spirit_eater_pouch, weight: 50, min: 1, max: 1 }
         - { id: deep_sea_marlin_blood, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [OCEAN, RIVER], replace: [DROWNED], chance: 0.015 }
+      natural: { biomes: [OCEAN, RIVER], replace: [DROWNED], chance: 0.00375 }
       structure: { keys: [], chance: 0.0 }
 
   door_lavos_squid_7:
@@ -186,7 +186,7 @@ creatures:
       items:
         - { id: lavos_squid_blood, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [WARM_OCEAN, DEEP_OCEAN], replace: [GUARDIAN], chance: 0.01 }
+      natural: { biomes: [WARM_OCEAN, DEEP_OCEAN], replace: [GUARDIAN], chance: 0.0025 }
       structure: { keys: [], chance: 0.0 }
 
   door_asmann_6:
@@ -202,7 +202,7 @@ creatures:
       items:
         - { id: asmann_complete_brain, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [DESERT], replace: [HUSK], chance: 0.006 }
+      natural: { biomes: [DESERT], replace: [HUSK], chance: 0.0015 }
       structure: { keys: [], chance: 0.0 }
 
   door_void_drifter_5:
@@ -218,7 +218,7 @@ creatures:
       items:
         - { id: void_drifter_heart, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [PLAINS], replace: [], chance: 0.003 }
+      natural: { biomes: [PLAINS], replace: [], chance: 0.00075 }
       structure: { keys: [mysteries, nova_structures], chance: 0.12 }
 
   # ========================== JUSTICIAR =========================
@@ -236,7 +236,7 @@ creatures:
         - { id: heart_of_unquestioned_command, weight: 50, min: 1, max: 1 }
         - { id: eye_of_judicial_insight, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [PLAINS, DARK_FOREST], replace: [VINDICATOR, PILLAGER], chance: 0.02 }
+      natural: { biomes: [PLAINS, DARK_FOREST], replace: [VINDICATOR, PILLAGER], chance: 0.005 }
       structure: { keys: [], chance: 0.0 }
 
   justiciar_terror_worm_8:
@@ -253,7 +253,7 @@ creatures:
         - { id: pair_of_terror_demon_worms_eyes, weight: 50, min: 1, max: 1 }
         - { id: silver_war_bears_right_palm, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [TAIGA], replace: [SPIDER], chance: 0.015 }
+      natural: { biomes: [TAIGA], replace: [SPIDER], chance: 0.00375 }
       structure: { keys: [], chance: 0.0 }
 
   justiciar_flash_snake_7:
@@ -269,7 +269,7 @@ creatures:
       items:
         - { id: horn_of_a_flash_patterned_black_snake, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [JUNGLE], replace: [SPIDER], chance: 0.01 }
+      natural: { biomes: [JUNGLE], replace: [SPIDER], chance: 0.0025 }
       structure: { keys: [], chance: 0.0 }
 
   justiciar_silent_verdict_6:
@@ -286,7 +286,7 @@ creatures:
         - { id: heart_of_the_silent_verdict, weight: 50, min: 1, max: 1 }
         - { id: fragment_of_a_sealed_domain, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [DARK_FOREST], replace: [VINDICATOR], chance: 0.006 }
+      natural: { biomes: [DARK_FOREST], replace: [VINDICATOR], chance: 0.0015 }
       structure: { keys: [], chance: 0.0 }
 
   justiciar_retribution_5:
@@ -303,7 +303,7 @@ creatures:
         - { id: core_of_retributive_authority, weight: 50, min: 1, max: 1 }
         - { id: brand_of_the_unforgiving_oath, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [PLAINS], replace: [], chance: 0.003 }
+      natural: { biomes: [PLAINS], replace: [], chance: 0.00075 }
       structure: { keys: [mysteries, nova_structures], chance: 0.12 }
 
   # ========================= WHITE TOWER ========================
@@ -321,7 +321,7 @@ creatures:
         - { id: manticore_bird_pituitary_gland, weight: 50, min: 1, max: 1 }
         - { id: light_antelope_blood, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [SAVANNA, PLAINS], replace: [PHANTOM, ZOMBIE], chance: 0.02 }
+      natural: { biomes: [SAVANNA, PLAINS], replace: [PHANTOM, ZOMBIE], chance: 0.005 }
       structure: { keys: [], chance: 0.0 }
 
   whitetower_cave_monkey_8:
@@ -337,7 +337,7 @@ creatures:
       items:
         - { id: crystallized_cave_monkey_brain, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [JUNGLE], replace: [ZOMBIE], chance: 0.015 }
+      natural: { biomes: [JUNGLE], replace: [ZOMBIE], chance: 0.00375 }
       structure: { keys: [], chance: 0.0 }
 
   whitetower_phantom_python_7:
@@ -354,7 +354,7 @@ creatures:
         - { id: phantom_python_vertical_eye, weight: 50, min: 1, max: 1 }
         - { id: steel_toothed_wolf_heart, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [TAIGA, FOREST], replace: [WOLF], chance: 0.01 }
+      natural: { biomes: [TAIGA, FOREST], replace: [WOLF], chance: 0.0025 }
       structure: { keys: [], chance: 0.0 }
 
   whitetower_chameleon_6:
@@ -370,7 +370,7 @@ creatures:
       items:
         - { id: prismatic_chameleon_heart, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [JUNGLE], replace: [SPIDER], chance: 0.006 }
+      natural: { biomes: [JUNGLE], replace: [SPIDER], chance: 0.0015 }
       structure: { keys: [], chance: 0.0 }
 
   whitetower_void_beholder_5:
@@ -386,7 +386,7 @@ creatures:
       items:
         - { id: void_beholder_petrified_eye, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [PLAINS], replace: [], chance: 0.003 }
+      natural: { biomes: [PLAINS], replace: [], chance: 0.00075 }
       structure: { keys: [mysteries, nova_structures], chance: 0.12 }
 
   # ============================ FOOL ============================
@@ -403,7 +403,7 @@ creatures:
       items:
         - { id: nighthawk_eyeball, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [PLAINS, FOREST], replace: [PHANTOM], chance: 0.02 }
+      natural: { biomes: [PLAINS, FOREST], replace: [PHANTOM], chance: 0.005 }
       structure: { keys: [], chance: 0.0 }
 
   fool_joker_8:
@@ -419,7 +419,7 @@ creatures:
       items:
         - { id: joker_blood_essence, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [DARK_FOREST], replace: [VINDICATOR, PILLAGER], chance: 0.015 }
+      natural: { biomes: [DARK_FOREST], replace: [VINDICATOR, PILLAGER], chance: 0.00375 }
       structure: { keys: [], chance: 0.0 }
 
   fool_phantom_ink_7:
@@ -435,7 +435,7 @@ creatures:
       items:
         - { id: phantom_ink, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [OCEAN, DEEP_OCEAN], replace: [GUARDIAN, DROWNED], chance: 0.01 }
+      natural: { biomes: [OCEAN, DEEP_OCEAN], replace: [GUARDIAN, DROWNED], chance: 0.0025 }
       structure: { keys: [], chance: 0.0 }
 
   fool_shapeshifter_6:
@@ -451,7 +451,7 @@ creatures:
       items:
         - { id: shapeshifter_gland, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [SWAMP], replace: [WITCH, ZOMBIE], chance: 0.006 }
+      natural: { biomes: [SWAMP], replace: [WITCH, ZOMBIE], chance: 0.0015 }
       structure: { keys: [], chance: 0.0 }
 
   fool_puppeteer_5:
@@ -467,5 +467,5 @@ creatures:
       items:
         - { id: puppeteer_heartstring, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [DARK_FOREST], replace: [], chance: 0.003 }
+      natural: { biomes: [DARK_FOREST], replace: [], chance: 0.00075 }
       structure: { keys: [mysteries, nova_structures], chance: 0.12 }
