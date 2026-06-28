@@ -68,8 +68,8 @@ public final class AmbientCreatureSpawner {
         if (task != null && !task.isCancelled()) {
             task.cancel();
             task = null;
+            plugin.getLogger().info("AmbientCreatureSpawner stopped");
         }
-        plugin.getLogger().info("AmbientCreatureSpawner stopped");
     }
 
     private void tick() {
@@ -77,12 +77,15 @@ public final class AmbientCreatureSpawner {
             try {
                 trySpawnFor(player);
             } catch (Exception e) {
-                plugin.getLogger().warning("Ambient spawn error for " + player.getName() + ": " + e.getMessage());
+                plugin.getLogger().warning("Ambient spawn error for " + player.getName() + ": " + e.toString());
             }
         }
     }
 
     private void trySpawnFor(Player player) {
+        if (player.getGameMode() == org.bukkit.GameMode.SPECTATOR
+                || player.getGameMode() == org.bukkit.GameMode.CREATIVE) return;
+
         UUID id = player.getUniqueId();
         Beyonder beyonder = beyonderService.getBeyonder(id);
         if (beyonder == null) return;
@@ -105,7 +108,8 @@ public final class AmbientCreatureSpawner {
         Optional<CreatureDefinition> pick = selector.pickForAmbient(biome, bias, random.nextDouble());
         if (pick.isEmpty()) return;
 
-        Optional<Location> spot = AmbientSpawnLocation.findSurfaceNear(loc, SPAWN_MIN_R, SPAWN_MAX_R);
+        boolean aquatic = AmbientSpawnLocation.isAquatic(pick.get().baseEntityType());
+        Optional<Location> spot = AmbientSpawnLocation.findSpawnNear(loc, SPAWN_MIN_R, SPAWN_MAX_R, aquatic);
         if (spot.isEmpty()) return;
 
         spawner.spawn(pick.get(), spot.get());
