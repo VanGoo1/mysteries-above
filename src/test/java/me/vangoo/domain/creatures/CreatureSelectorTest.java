@@ -139,4 +139,47 @@ class CreatureSelectorTest {
         ConvergenceBias bias = new ConvergenceBias("Visionary", 9);
         assertTrue(s.pickForBiome("OCEAN", "GUARDIAN", 0.1, bias).isPresent());
     }
+
+    @Test
+    void ambientPicksPathwayAndBiomeMatch() {
+        CreatureDefinition a = def("a", natural(0.2), "visionary", 9);
+        CreatureSelector s = new CreatureSelector(List.of(a));
+        ConvergenceBias bias = new ConvergenceBias("Visionary", 9);
+        assertEquals("a", s.pickForAmbient("OCEAN", bias, 0.5).get().id());
+    }
+
+    @Test
+    void ambientEmptyWhenPathwayMismatch() {
+        CreatureDefinition a = def("a", natural(0.2), "visionary", 9);
+        CreatureSelector s = new CreatureSelector(List.of(a));
+        ConvergenceBias bias = new ConvergenceBias("Error", 5);
+        assertTrue(s.pickForAmbient("OCEAN", bias, 0.5).isEmpty());
+    }
+
+    @Test
+    void ambientEmptyWhenBiomeMismatch() {
+        CreatureDefinition a = def("a", natural(0.2), "visionary", 9);
+        CreatureSelector s = new CreatureSelector(List.of(a));
+        ConvergenceBias bias = new ConvergenceBias("Visionary", 9);
+        assertTrue(s.pickForAmbient("PLAINS", bias, 0.5).isEmpty());
+    }
+
+    @Test
+    void ambientNullBiasEmpty() {
+        CreatureDefinition a = def("a", natural(0.2), "visionary", 9);
+        CreatureSelector s = new CreatureSelector(List.of(a));
+        assertTrue(s.pickForAmbient("OCEAN", null, 0.5).isEmpty());
+    }
+
+    @Test
+    void ambientFavorsNextNeededSequence() {
+        CreatureDefinition a = def("a", natural(0.2), "visionary", 9); // current -> x2
+        CreatureDefinition b = def("b", natural(0.2), "visionary", 8); // next-needed -> x4
+        CreatureSelector s = new CreatureSelector(List.of(a, b));
+        ConvergenceBias bias = new ConvergenceBias("Visionary", 9);
+        // weights a=0.4, b=0.8, sum=1.2; target = roll*1.2; a in [0,0.4), b in [0.4,1.2)
+        assertEquals("a", s.pickForAmbient("OCEAN", bias, 0.1).get().id());
+        assertEquals("b", s.pickForAmbient("OCEAN", bias, 0.5).get().id());
+        assertEquals("b", s.pickForAmbient("OCEAN", bias, 0.99).get().id());
+    }
 }

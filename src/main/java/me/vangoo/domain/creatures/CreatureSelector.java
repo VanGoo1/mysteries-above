@@ -64,6 +64,41 @@ public final class CreatureSelector {
         return 1.0;
     }
 
+    /**
+     * Вибір істоти для ambient-спавну (закон конвергенції): серед істот ШЛЯХУ гравця, чий
+     * natural-біом збігається з поточним. Без «порогу неспавну» — рішення «спавнити» вже
+     * прийняв планувальник; цей метод лише обирає, КОГО. {@code roll} у [0,1).
+     */
+    public Optional<CreatureDefinition> pickForAmbient(String biome, ConvergenceBias bias, double roll) {
+        if (bias == null) return Optional.empty();
+        List<CreatureDefinition> candidates = new ArrayList<>();
+        double[] weights;
+        double sumWeights = 0.0;
+        for (CreatureDefinition def : creatures) {
+            SpawnRule s = def.spawn();
+            if (s.naturalChance() <= 0.0) continue;
+            if (!s.naturalBiomes().contains(biome)) continue;
+            if (def.pathway() == null || !def.pathway().equalsIgnoreCase(bias.pathway())) continue;
+            candidates.add(def);
+        }
+        if (candidates.isEmpty()) return Optional.empty();
+
+        weights = new double[candidates.size()];
+        for (int i = 0; i < candidates.size(); i++) {
+            weights[i] = candidates.get(i).spawn().naturalChance() * multiplier(candidates.get(i), bias);
+            sumWeights += weights[i];
+        }
+        if (sumWeights <= 0.0) return Optional.of(candidates.get(0));
+
+        double target = roll * sumWeights;
+        double cumulative = 0.0;
+        for (int i = 0; i < candidates.size(); i++) {
+            cumulative += weights[i];
+            if (target < cumulative) return Optional.of(candidates.get(i));
+        }
+        return Optional.of(candidates.get(candidates.size() - 1));
+    }
+
     public Optional<CreatureDefinition> pickForStructure(String structureKey, double roll) {
         double cumulative = 0.0;
         for (CreatureDefinition def : creatures) {
