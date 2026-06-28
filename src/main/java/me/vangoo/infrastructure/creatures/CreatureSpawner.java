@@ -59,6 +59,7 @@ public final class CreatureSpawner {
         }
         codec.tag(living, def.id());
         behaviorManager.start(living, def);
+        CreatureAggression.acquireTarget(living, 24.0);
         return Optional.of(living);
     }
 

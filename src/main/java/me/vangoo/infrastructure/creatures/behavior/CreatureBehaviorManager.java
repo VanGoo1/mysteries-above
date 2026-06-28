@@ -57,6 +57,7 @@ public final class CreatureBehaviorManager {
                 behaviors.remove(e.getKey());
                 continue;
             }
+            me.vangoo.infrastructure.creatures.CreatureAggression.acquireTarget(self, 24.0);
             List<Player> nearby = new ArrayList<>();
             for (Entity n : self.getNearbyEntities(R, R, R)) {
                 if (n instanceof Player p && beyonderService.getBeyonder(p.getUniqueId()) != null) {
