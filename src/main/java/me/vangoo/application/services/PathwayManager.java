@@ -38,7 +38,7 @@ public class PathwayManager {
                 List.of("White Tower", "Omniscient Eye", "Wisdom Angel", "Cognizer", "Prophet", "Mysticism Magister", "Polymath",
                         "Detective", "Student", "Reader")));
         pathways.put("Fool", new Fool(PathwayGroup.LordOfMysteries,
-                List.of("Fool", "Lord of Mysteries", "Attendant of Mysteries", "Bizarro Sorcerer",
+                List.of("Fool", "Lord of Mysteries", "Attendant of Mysteries", "Scholar of Yore", "Bizarro Sorcerer",
                         "Marionettist", "Faceless", "Magician", "Clown", "Seer")));
     }
 
