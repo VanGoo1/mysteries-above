@@ -30,18 +30,27 @@ public class StructureCreatureSpawnListener implements Listener {
 
     private final CreatureSelector selector;
     private final CreatureSpawner spawner;
+    private final double minSpawnDistance;
     private final Random random = new Random();
     private final Map<String, Long> lastSpawnByChunk = new HashMap<>();
 
-    public StructureCreatureSpawnListener(CreatureSelector selector, CreatureSpawner spawner) {
+    public StructureCreatureSpawnListener(CreatureSelector selector, CreatureSpawner spawner,
+                                          double minSpawnDistance) {
         this.selector = selector;
         this.spawner = spawner;
+        this.minSpawnDistance = minSpawnDistance;
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onLootGenerate(LootGenerateEvent event) {
         Location loc = event.getLootContext().getLocation();
         if (loc == null || loc.getWorld() == null) return;
+
+        org.bukkit.Location ws = loc.getWorld().getSpawnLocation();
+        if (!me.vangoo.domain.creatures.SpawnDistanceGate.isFarEnough(
+                loc.getX() - ws.getX(), loc.getZ() - ws.getZ(), minSpawnDistance)) {
+            return;
+        }
 
         // Per-chunk cooldown: не більше одного спавну на чанк за SPAWN_COOLDOWN_MS мс
         // getChunkKey() недоступний у 1.21.1 — обчислюємо вручну (ті самі біти)
