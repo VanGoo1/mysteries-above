@@ -2,6 +2,7 @@ package me.vangoo.infrastructure.creatures.behavior;
 
 import me.vangoo.application.services.BeyonderService;
 import me.vangoo.domain.creatures.CreatureDefinition;
+import me.vangoo.infrastructure.creatures.CreatureAggression;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -57,7 +58,7 @@ public final class CreatureBehaviorManager {
                 behaviors.remove(e.getKey());
                 continue;
             }
-            me.vangoo.infrastructure.creatures.CreatureAggression.acquireTarget(self, 24.0);
+            CreatureAggression.acquireTarget(self, 24.0);
             List<Player> nearby = new ArrayList<>();
             for (Entity n : self.getNearbyEntities(R, R, R)) {
                 if (n instanceof Player p && beyonderService.getBeyonder(p.getUniqueId()) != null) {
