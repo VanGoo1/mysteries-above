@@ -72,7 +72,6 @@ public final class CreatureSelector {
     public Optional<CreatureDefinition> pickForAmbient(String biome, ConvergenceBias bias, double roll) {
         if (bias == null) return Optional.empty();
         List<CreatureDefinition> candidates = new ArrayList<>();
-        double[] weights;
         double sumWeights = 0.0;
         for (CreatureDefinition def : creatures) {
             SpawnRule s = def.spawn();
@@ -83,12 +82,11 @@ public final class CreatureSelector {
         }
         if (candidates.isEmpty()) return Optional.empty();
 
-        weights = new double[candidates.size()];
+        double[] weights = new double[candidates.size()];
         for (int i = 0; i < candidates.size(); i++) {
             weights[i] = candidates.get(i).spawn().naturalChance() * multiplier(candidates.get(i), bias);
             sumWeights += weights[i];
         }
-        if (sumWeights <= 0.0) return Optional.of(candidates.get(0));
 
         double target = roll * sumWeights;
         double cumulative = 0.0;
