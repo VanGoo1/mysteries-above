@@ -10,7 +10,7 @@ creatures:
     base_entity: ENDERMAN
     display_name: "§7Сфінкс"
     tier: common
-    stats: { health: 24, damage: 5, speed: 0.25, scale: 1.0 }
+    stats: { health: 24, damage: 4, speed: 0.25, scale: 1.0 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -26,7 +26,7 @@ creatures:
     base_entity: ENDERMAN
     display_name: "§8Великий Сфінкс"
     tier: common
-    stats: { health: 40, damage: 7, speed: 0.26, scale: 1.1 }
+    stats: { health: 40, damage: 5, speed: 0.26, scale: 1.1 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -42,7 +42,7 @@ creatures:
     base_entity: CAVE_SPIDER
     display_name: "§2Чумний Змій"
     tier: common
-    stats: { health: 70, damage: 10, speed: 0.27, scale: 1.2 }
+    stats: { health: 70, damage: 7, speed: 0.27, scale: 1.2 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -59,7 +59,7 @@ creatures:
     base_entity: GUARDIAN
     display_name: "§3Манхал-риба"
     tier: common
-    stats: { health: 24, damage: 5, speed: 0.25, scale: 1.0 }
+    stats: { health: 24, damage: 4, speed: 0.25, scale: 1.0 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -76,7 +76,7 @@ creatures:
     base_entity: VEX
     display_name: "§bМислеформ"
     tier: common
-    stats: { health: 40, damage: 7, speed: 0.26, scale: 1.1 }
+    stats: { health: 40, damage: 5, speed: 0.26, scale: 1.1 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -92,7 +92,7 @@ creatures:
     base_entity: RAVAGER
     display_name: "§9Дзеркальний Дракон"
     tier: common
-    stats: { health: 70, damage: 10, speed: 0.27, scale: 1.2 }
+    stats: { health: 70, damage: 7, speed: 0.27, scale: 1.2 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -109,7 +109,7 @@ creatures:
     base_entity: ZOGLIN
     display_name: "§5Чорний Мисливський Ящір"
     tier: common
-    stats: { health: 110, damage: 13, speed: 0.28, scale: 1.35 }
+    stats: { health: 110, damage: 9, speed: 0.28, scale: 1.35 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -126,7 +126,7 @@ creatures:
     base_entity: RAVAGER
     display_name: "§5Розумовий Дракон"
     tier: apex
-    stats: { health: 190, damage: 17, speed: 0.30, scale: 1.55 }
+    stats: { health: 190, damage: 12, speed: 0.30, scale: 1.55 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -144,7 +144,7 @@ creatures:
     base_entity: ENDERMAN
     display_name: "§dВимірний Блукач"
     tier: common
-    stats: { health: 24, damage: 5, speed: 0.25, scale: 1.0 }
+    stats: { health: 24, damage: 4, speed: 0.25, scale: 1.0 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -160,7 +160,7 @@ creatures:
     base_entity: DROWNED
     display_name: "§3Пожирач Духів"
     tier: common
-    stats: { health: 40, damage: 7, speed: 0.26, scale: 1.1 }
+    stats: { health: 40, damage: 5, speed: 0.26, scale: 1.1 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -177,7 +177,7 @@ creatures:
     base_entity: GUARDIAN
     display_name: "§4Лавос-Кальмар"
     tier: common
-    stats: { health: 70, damage: 10, speed: 0.27, scale: 1.2 }
+    stats: { health: 70, damage: 7, speed: 0.27, scale: 1.2 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -193,7 +193,7 @@ creatures:
     base_entity: HUSK
     display_name: "§6Асман"
     tier: common
-    stats: { health: 110, damage: 13, speed: 0.28, scale: 1.35 }
+    stats: { health: 110, damage: 9, speed: 0.28, scale: 1.35 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -209,7 +209,7 @@ creatures:
     base_entity: ENDERMAN
     display_name: "§0Блукач Порожнечі"
     tier: apex
-    stats: { health: 190, damage: 17, speed: 0.30, scale: 1.55 }
+    stats: { health: 190, damage: 12, speed: 0.30, scale: 1.55 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -226,7 +226,7 @@ creatures:
     base_entity: VINDICATOR
     display_name: "§fСуддя"
     tier: common
-    stats: { health: 24, damage: 5, speed: 0.25, scale: 1.0 }
+    stats: { health: 24, damage: 4, speed: 0.25, scale: 1.0 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -243,7 +243,7 @@ creatures:
     base_entity: ZOGLIN
     display_name: "§cЖахний Демон-Черв'як"
     tier: common
-    stats: { health: 40, damage: 7, speed: 0.26, scale: 1.1 }
+    stats: { health: 40, damage: 5, speed: 0.26, scale: 1.1 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -260,7 +260,7 @@ creatures:
     base_entity: CAVE_SPIDER
     display_name: "§eЧорний Змій-Спалах"
     tier: common
-    stats: { health: 70, damage: 10, speed: 0.27, scale: 1.2 }
+    stats: { health: 70, damage: 7, speed: 0.27, scale: 1.2 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -276,7 +276,7 @@ creatures:
     base_entity: EVOKER
     display_name: "§7Безмовний Вирок"
     tier: common
-    stats: { health: 110, damage: 13, speed: 0.28, scale: 1.35 }
+    stats: { health: 110, damage: 9, speed: 0.28, scale: 1.35 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -293,7 +293,7 @@ creatures:
     base_entity: IRON_GOLEM
     display_name: "§4Караюча Влада"
     tier: apex
-    stats: { health: 190, damage: 17, speed: 0.30, scale: 1.55 }
+    stats: { health: 190, damage: 12, speed: 0.30, scale: 1.55 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -311,7 +311,7 @@ creatures:
     base_entity: PHANTOM
     display_name: "§eМантикора"
     tier: common
-    stats: { health: 24, damage: 5, speed: 0.25, scale: 1.0 }
+    stats: { health: 24, damage: 4, speed: 0.25, scale: 1.0 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -328,7 +328,7 @@ creatures:
     base_entity: PIGLIN
     display_name: "§6Печерна Мавпа"
     tier: common
-    stats: { health: 40, damage: 7, speed: 0.26, scale: 1.1 }
+    stats: { health: 40, damage: 5, speed: 0.26, scale: 1.1 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -344,7 +344,7 @@ creatures:
     base_entity: WOLF
     display_name: "§8Фантомний Пітон"
     tier: common
-    stats: { health: 70, damage: 10, speed: 0.27, scale: 1.2 }
+    stats: { health: 70, damage: 7, speed: 0.27, scale: 1.2 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -361,7 +361,7 @@ creatures:
     base_entity: CAVE_SPIDER
     display_name: "§aПризматичний Хамелеон"
     tier: common
-    stats: { health: 110, damage: 13, speed: 0.28, scale: 1.35 }
+    stats: { health: 110, damage: 9, speed: 0.28, scale: 1.35 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -377,7 +377,7 @@ creatures:
     base_entity: SHULKER
     display_name: "§5Бехолдер Порожнечі"
     tier: apex
-    stats: { health: 190, damage: 17, speed: 0.30, scale: 1.55 }
+    stats: { health: 190, damage: 12, speed: 0.30, scale: 1.55 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -394,7 +394,7 @@ creatures:
     base_entity: PHANTOM
     display_name: "§8Нічний Яструб"
     tier: common
-    stats: { health: 24, damage: 5, speed: 0.25, scale: 1.0 }
+    stats: { health: 24, damage: 4, speed: 0.25, scale: 1.0 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -410,7 +410,7 @@ creatures:
     base_entity: VINDICATOR
     display_name: "§cДжокер"
     tier: common
-    stats: { health: 40, damage: 7, speed: 0.26, scale: 1.1 }
+    stats: { health: 40, damage: 5, speed: 0.26, scale: 1.1 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -426,7 +426,7 @@ creatures:
     base_entity: GUARDIAN
     display_name: "§9Примарне Чорнило"
     tier: common
-    stats: { health: 70, damage: 10, speed: 0.27, scale: 1.2 }
+    stats: { health: 70, damage: 7, speed: 0.27, scale: 1.2 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -442,7 +442,7 @@ creatures:
     base_entity: WITCH
     display_name: "§5Перевертень"
     tier: common
-    stats: { health: 110, damage: 13, speed: 0.28, scale: 1.35 }
+    stats: { health: 110, damage: 9, speed: 0.28, scale: 1.35 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
@@ -458,7 +458,7 @@ creatures:
     base_entity: EVOKER
     display_name: "§dЛялькар"
     tier: apex
-    stats: { health: 190, damage: 17, speed: 0.30, scale: 1.55 }
+    stats: { health: 190, damage: 12, speed: 0.30, scale: 1.55 }
     appearance: vanilla
     clear_vanilla_drops: true
     loot:
