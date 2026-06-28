@@ -59,7 +59,7 @@ public class NaturalCreatureSpawnListener implements Listener {
     /** Знаходить найближчого онлайн-потойбічного в радіусі 48 блоків і будує з нього зсув. */
     private me.vangoo.domain.creatures.ConvergenceBias nearestBias(org.bukkit.Location loc) {
         if (loc.getWorld() == null) return null;
-        org.bukkit.entity.Player nearest = null;
+        me.vangoo.domain.entities.Beyonder nearestB = null;
         double best = 48.0 * 48.0;
         for (org.bukkit.entity.Player p : loc.getWorld().getPlayers()) {
             double d = p.getLocation().distanceSquared(loc);
@@ -67,13 +67,12 @@ public class NaturalCreatureSpawnListener implements Listener {
                 me.vangoo.domain.entities.Beyonder b = beyonderService.getBeyonder(p.getUniqueId());
                 if (b != null) {
                     best = d;
-                    nearest = p;
+                    nearestB = b;
                 }
             }
         }
-        if (nearest == null) return null;
-        me.vangoo.domain.entities.Beyonder b = beyonderService.getBeyonder(nearest.getUniqueId());
+        if (nearestB == null) return null;
         return new me.vangoo.domain.creatures.ConvergenceBias(
-                b.getPathway().getName(), b.getSequenceLevel());
+                nearestB.getPathway().getName(), nearestB.getSequenceLevel());
     }
 }

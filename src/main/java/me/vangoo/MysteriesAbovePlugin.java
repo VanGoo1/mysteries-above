@@ -30,6 +30,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        saveDefaultConfig();
+
         PacketEvents.getAPI().init();
 
         this.pluginLogger = this.getLogger();

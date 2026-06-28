@@ -18,7 +18,9 @@ public final class CreatureAggression {
         Player nearest = null;
         double best = range * range;
         for (Entity e : entity.getNearbyEntities(range, range, range)) {
-            if (e instanceof Player p && !p.isDead() && p.getGameMode() == org.bukkit.GameMode.SURVIVAL) {
+            if (e instanceof Player p && !p.isDead()
+                    && p.getGameMode() != org.bukkit.GameMode.CREATIVE
+                    && p.getGameMode() != org.bukkit.GameMode.SPECTATOR) {
                 double d = p.getLocation().distanceSquared(entity.getLocation());
                 if (d <= best) {
                     best = d;

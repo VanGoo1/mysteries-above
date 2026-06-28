@@ -23,5 +23,6 @@ class SpawnDistanceGateTest {
     @Test
     void zeroMinDistanceAlwaysFarEnough() {
         assertTrue(SpawnDistanceGate.isFarEnough(0, 0, 0));
+        assertTrue(SpawnDistanceGate.isFarEnough(0, 0, -1));
     }
 }
