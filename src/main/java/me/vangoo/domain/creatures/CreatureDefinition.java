@@ -15,4 +15,5 @@ public record CreatureDefinition(
         LootTableData loot,
         SpawnRule spawn,
         boolean clearVanillaDrops,
-        String pathway) {}
+        String pathway,
+        int sequence) {}
