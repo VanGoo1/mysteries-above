@@ -2,6 +2,7 @@ package me.vangoo.infrastructure.creatures;
 
 import me.vangoo.domain.creatures.CreatureDefinition;
 import me.vangoo.domain.creatures.CreatureStats;
+import me.vangoo.infrastructure.creatures.behavior.CreatureBehaviorManager;
 import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -20,10 +21,10 @@ public final class CreatureSpawner {
     private final Map<String, CreatureAppearance> appearances;
     private final CreatureCodec codec;
     private final Plugin plugin;
-    private final me.vangoo.infrastructure.creatures.behavior.CreatureBehaviorManager behaviorManager;
+    private final CreatureBehaviorManager behaviorManager;
 
     public CreatureSpawner(Map<String, CreatureAppearance> appearances, CreatureCodec codec, Plugin plugin,
-                           me.vangoo.infrastructure.creatures.behavior.CreatureBehaviorManager behaviorManager) {
+                           CreatureBehaviorManager behaviorManager) {
         this.appearances = appearances;
         this.codec = codec;
         this.plugin = plugin;
