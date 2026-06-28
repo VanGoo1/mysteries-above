@@ -89,6 +89,7 @@ public class ServiceContainer {
     private me.vangoo.presentation.listeners.NaturalCreatureSpawnListener naturalCreatureSpawnListener;
     private me.vangoo.presentation.listeners.StructureCreatureSpawnListener structureCreatureSpawnListener;
     private me.vangoo.presentation.listeners.CreatureLoadListener creatureLoadListener;
+    private me.vangoo.presentation.listeners.CreatureDamageListener creatureDamageListener;
     private me.vangoo.presentation.commands.CreatureCommand creatureCommand;
     private BeyonderSleepListener beyonderSleepListener;
     private MarionetteExitListener marionetteExitListener;
@@ -203,6 +204,8 @@ public class ServiceContainer {
                 creatureSelector, creatureSpawner, minSpawnDistance);
         this.creatureLoadListener = new me.vangoo.presentation.listeners.CreatureLoadListener(
                 creatureCodec, creatureRegistry, creatureBehaviorManager);
+        this.creatureDamageListener = new me.vangoo.presentation.listeners.CreatureDamageListener(
+                creatureCodec, beyonderService);
         this.creatureCommand = new me.vangoo.presentation.commands.CreatureCommand(
                 creatureRegistry, creatureSpawner);
 
@@ -334,6 +337,7 @@ public class ServiceContainer {
     public me.vangoo.presentation.listeners.NaturalCreatureSpawnListener getNaturalCreatureSpawnListener() { return naturalCreatureSpawnListener; }
     public me.vangoo.presentation.listeners.StructureCreatureSpawnListener getStructureCreatureSpawnListener() { return structureCreatureSpawnListener; }
     public me.vangoo.presentation.listeners.CreatureLoadListener getCreatureLoadListener() { return creatureLoadListener; }
+    public me.vangoo.presentation.listeners.CreatureDamageListener getCreatureDamageListener() { return creatureDamageListener; }
     public me.vangoo.presentation.commands.CreatureCommand getCreatureCommand() { return creatureCommand; }
     public BeyonderSleepListener getBeyonderSleepListener() { return beyonderSleepListener; }
     public MarionetteExitListener getMarionetteExitListener() { return marionetteExitListener; }

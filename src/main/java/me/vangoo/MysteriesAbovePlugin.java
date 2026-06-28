@@ -239,6 +239,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(services.getNaturalCreatureSpawnListener(), this);
         getServer().getPluginManager().registerEvents(services.getStructureCreatureSpawnListener(), this);
         getServer().getPluginManager().registerEvents(services.getCreatureLoadListener(), this);
+        getServer().getPluginManager().registerEvents(services.getCreatureDamageListener(), this);
     }
 
     private void registerCommands() {
