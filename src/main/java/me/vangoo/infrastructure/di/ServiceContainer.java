@@ -73,6 +73,7 @@ public class ServiceContainer {
     private MasteryRegenerationScheduler masteryRegenerationScheduler;
     private RampageScheduler rampageScheduler;
     private AbilityMenuItemUpdater abilityMenuItemUpdater;
+    private me.vangoo.infrastructure.schedulers.AmbientCreatureSpawner ambientCreatureSpawner;
 
     // Event listeners
     private RampageEventListener rampageEventListener;
@@ -269,6 +270,14 @@ public class ServiceContainer {
 
         this.rampageScheduler = new RampageScheduler(plugin, rampageManager);
 
+        double ambientMinDistance = plugin.getConfig().getDouble("creatures.min-spawn-distance", 2000.0);
+        long ambientInterval = plugin.getConfig().getLong("creatures.ambient.interval-seconds", 60L);
+        double ambientChance = plugin.getConfig().getDouble("creatures.ambient.chance", 0.022);
+        int ambientMaxNearby = plugin.getConfig().getInt("creatures.ambient.max-nearby", 3);
+        this.ambientCreatureSpawner = new me.vangoo.infrastructure.schedulers.AmbientCreatureSpawner(
+                (MysteriesAbovePlugin) plugin, beyonderService, creatureSelector, creatureSpawner, creatureCodec,
+                ambientMinDistance, ambientInterval, ambientChance, ambientMaxNearby);
+
         this.abilityMenuItemUpdater = new AbilityMenuItemUpdater(
                 plugin,
                 beyonderService,
@@ -327,6 +336,7 @@ public class ServiceContainer {
     public MasteryRegenerationScheduler getMasteryRegenerationScheduler() { return masteryRegenerationScheduler; }
     public RampageScheduler getRampageScheduler() { return rampageScheduler; }
     public AbilityMenuItemUpdater getAbilityMenuItemUpdater() { return abilityMenuItemUpdater; }
+    public me.vangoo.infrastructure.schedulers.AmbientCreatureSpawner getAmbientCreatureSpawner() { return ambientCreatureSpawner; }
 
     public RampageEventListener getRampageEventListener() { return rampageEventListener; }
     public CharacteristicExtractor getCharacteristicExtractor() { return characteristicExtractor; }
@@ -356,6 +366,7 @@ public class ServiceContainer {
         masteryRegenerationScheduler.start();
         rampageScheduler.start();
         abilityMenuItemUpdater.start();
+        ambientCreatureSpawner.start();
 
         // Start batched save scheduler (every 5 minutes)
         startBatchedSaveScheduler();
@@ -385,6 +396,9 @@ public class ServiceContainer {
         }
         if (abilityMenuItemUpdater != null) {
             abilityMenuItemUpdater.stop();
+        }
+        if (ambientCreatureSpawner != null) {
+            ambientCreatureSpawner.stop();
         }
     }
 
