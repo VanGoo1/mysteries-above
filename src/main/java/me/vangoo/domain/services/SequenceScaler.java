@@ -60,6 +60,18 @@ public class SequenceScaler {
         return baseDamage + escalation;
     }
 
+    /**
+     * Скейлінг ЗАХИСТУ від потойбічних істот (WEAK): чим сильніший Beyonder (нижчий sequence),
+     * тим менше урону по ньому проходить. Seq 9 → 0%, Seq 5 → 20%, Seq 0 → 45% (стеля).
+     *
+     * @return частка зниження урону в діапазоні [0.0, 0.45]
+     */
+    public static double creatureDamageReduction(int sequenceLevel) {
+        int power = 9 - sequenceLevel; // Seq 9 = 0, Seq 0 = 9
+        double reduction = power * (ScalingStrategy.WEAK.getPercentPerLevel() / 100.0);
+        return Math.max(0.0, Math.min(0.45, reduction));
+    }
+
     public static int getSequencePower(int sequence) {
         return 9 - sequence;
     }
