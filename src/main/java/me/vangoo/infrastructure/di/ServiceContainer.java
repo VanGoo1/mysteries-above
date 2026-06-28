@@ -198,7 +198,7 @@ public class ServiceContainer {
                 creatureCodec, creatureRegistry, lootGenerationService, beyonderService);
         double minSpawnDistance = plugin.getConfig().getDouble("creatures.min-spawn-distance", 2000.0);
         this.naturalCreatureSpawnListener = new me.vangoo.presentation.listeners.NaturalCreatureSpawnListener(
-                creatureSelector, creatureSpawner, minSpawnDistance);
+                creatureSelector, creatureSpawner, minSpawnDistance, beyonderService);
         this.structureCreatureSpawnListener = new me.vangoo.presentation.listeners.StructureCreatureSpawnListener(
                 creatureSelector, creatureSpawner, minSpawnDistance);
         this.creatureLoadListener = new me.vangoo.presentation.listeners.CreatureLoadListener(
