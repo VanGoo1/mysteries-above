@@ -58,7 +58,7 @@ public final class CreatureSelector {
 
     private double multiplier(CreatureDefinition def, ConvergenceBias bias) {
         if (bias == null || bias.pathway() == null) return 1.0;
-        if (!def.pathway().equalsIgnoreCase(bias.pathway())) return 1.0;
+        if (def.pathway() == null || !def.pathway().equalsIgnoreCase(bias.pathway())) return 1.0;
         if (def.sequence() == bias.sequenceLevel() - 1) return NEXT_NEEDED_WEIGHT;
         if (def.sequence() == bias.sequenceLevel()) return CURRENT_WEIGHT;
         return 1.0;

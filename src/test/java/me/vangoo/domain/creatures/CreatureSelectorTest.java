@@ -128,4 +128,15 @@ class CreatureSelectorTest {
         assertEquals("b", s.pickForBiome("OCEAN", "GUARDIAN", 0.30, unrelated).get().id());
         assertTrue(s.pickForBiome("OCEAN", "GUARDIAN", 0.40, unrelated).isEmpty());
     }
+
+    @Test
+    void biasAgainstNullPathwayCreatureIsNoOp() {
+        CreatureDefinition noPathway = new CreatureDefinition("x", "GUARDIAN", "§3x",
+                CreatureTier.COMMON, new CreatureStats(30, 6, 0.25, 1.2),
+                Map.of(), "vanilla", new LootTableData(List.of(), 1, 2),
+                natural(0.3), true, null, 0);
+        CreatureSelector s = new CreatureSelector(List.of(noPathway));
+        ConvergenceBias bias = new ConvergenceBias("Visionary", 9);
+        assertTrue(s.pickForBiome("OCEAN", "GUARDIAN", 0.1, bias).isPresent());
+    }
 }
