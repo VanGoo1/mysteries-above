@@ -47,19 +47,20 @@ forage:
       - { id: tree_of_wisdom_sap, weight: 40 }
       - { id: yellow_amber_powder, weight: 30 }
     DARK_FOREST:
-      - { id: depths_shadow_essence, weight: 40 }
-      - { id: soul_wax, weight: 25 }
+      - { id: memory_flower_petals, weight: 40 }
+      - { id: crystalline_moon_orchid, weight: 25 }
     JUNGLE:
       - { id: ever_shifting_lotus, weight: 40 }
-      - { id: chameleon_slime, weight: 30 }
+      - { id: tree_of_elders_fruit, weight: 30 }
     TAIGA:
       - { id: tree_of_elders_fruit, weight: 40 }
       - { id: string_grass_powder, weight: 30 }
     SWAMP:
-      - { id: black_mosquito, weight: 50 }
-      - { id: dust_of_lake_spirit, weight: 25 }
+      - { id: dust_of_lake_spirit, weight: 50 }
+      - { id: string_grass_powder, weight: 25 }
     DESERT:
-      - { id: dragon_savageland_pollen, weight: 60 }
+      - { id: yellow_amber_powder, weight: 40 }
+      - { id: dust_of_lake_spirit, weight: 20 }
     SAVANNA:
-      - { id: dragon_savageland_pollen, weight: 40 }
+      - { id: bone_of_the_unyielding_frame, weight: 40 }
       - { id: ashes_of_a_broken_oath_seal, weight: 20 }
