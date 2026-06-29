@@ -7,18 +7,17 @@ import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
 import java.util.Optional;
 import java.util.UUID;
 
-/** Збір ноди фореджу: ЛКМ по хітбоксу-armor stand -> інгредієнт падає на землю, нода прибирається. */
+/** Збір ноди фореджу: ПКМ по Interaction-хітбоксу -> інгредієнт падає на землю, нода прибирається. */
 public class ForageHarvestListener implements Listener {
 
     private final ForageNodeCodec codec;
@@ -31,20 +30,13 @@ public class ForageHarvestListener implements Listener {
         this.plugin = plugin;
     }
 
-    @EventHandler(ignoreCancelled = true)
-    public void onForageHit(EntityDamageByEntityEvent event) {
-        if (!(event.getDamager() instanceof Player)) return;
-        Entity target = event.getEntity();
+    @EventHandler
+    public void onForageInteract(PlayerInteractEntityEvent event) {
+        if (event.getHand() != EquipmentSlot.HAND) return; // ПКМ шле подію двічі (рука+оффхенд)
+        Entity target = event.getRightClicked();
         if (!codec.isForageNode(target)) return;
         event.setCancelled(true);
         harvest(target);
-    }
-
-    @EventHandler
-    public void onManipulate(PlayerArmorStandManipulateEvent event) {
-        if (codec.isForageNode(event.getRightClicked())) {
-            event.setCancelled(true);
-        }
     }
 
     private void harvest(Entity clicked) {

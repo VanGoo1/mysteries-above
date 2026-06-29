@@ -10,10 +10,15 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
-/** Шукає блок вегетації біля гравця для розміщення ноди фореджу. */
+/**
+ * Шукає блок вегетації БІЛЯ РІВНЯ ГРАВЦЯ (досяжний), а не на вершині стовпа: інакше у лісі
+ * нода спавнилася б у кроні дерева — недосяжна для збору і захаращувала б простір.
+ */
 public final class ForageNodeLocation {
 
     private static final int ATTEMPTS = 10;
+    private static final int SCAN_UP = 2;    // блоків над ногами гравця
+    private static final int SCAN_DOWN = 3;  // блоків під ногами гравця
 
     private ForageNodeLocation() {}
 
@@ -22,17 +27,16 @@ public final class ForageNodeLocation {
         World world = center.getWorld();
         if (world == null || vegetation.isEmpty()) return Optional.empty();
 
+        int baseY = center.getBlockY();
         for (int i = 0; i < ATTEMPTS; i++) {
-            int dx = ThreadLocalRandom.current().nextInt(-radius, radius + 1);
-            int dz = ThreadLocalRandom.current().nextInt(-radius, radius + 1);
-            int x = center.getBlockX() + dx;
-            int z = center.getBlockZ() + dz;
+            int x = center.getBlockX() + ThreadLocalRandom.current().nextInt(-radius, radius + 1);
+            int z = center.getBlockZ() + ThreadLocalRandom.current().nextInt(-radius, radius + 1);
 
-            Block top = world.getHighestBlockAt(x, z);
-            for (int dy = 0; dy >= -2; dy--) {
-                Block b = top.getRelative(0, dy, 0);
+            // Скануємо вузьке вертикальне вікно навколо ніг гравця — досяжна висота, не крона.
+            for (int dy = SCAN_UP; dy >= -SCAN_DOWN; dy--) {
+                Block b = world.getBlockAt(x, baseY + dy, z);
                 if (vegetation.contains(b.getType())) {
-                    return Optional.of(b.getLocation().add(0.5, 0.6, 0.5));
+                    return Optional.of(b.getLocation().add(0.5, 0.5, 0.5));
                 }
             }
         }

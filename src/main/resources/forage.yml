@@ -1,30 +1,29 @@
 # forage.yml
 # Природний форедж допоміжних інгредієнтів: на вегетації біля гравця з'являється видима 3D-нода
-# допоміжного інгредієнта; ЛКМ по ній -> інгредієнт падає на землю. Лише наявні auxiliary з
+# допоміжного інгредієнта; ПКМ по ній -> інгредієнт падає на землю. Лише наявні auxiliary з
 # potion-recipes.yml. Біом-тематично, для всіх гравців.
 forage:
   spawn:
     interval-seconds: 40      # як часто планувальник перевіряє гравців
-    chance: 0.5               # шанс спробувати спавн ноди за тік на гравця
-    max-nearby: 5             # не спавнити, якщо стільки нод вже в радіусі 32 блоки
-    ttl-seconds: 120          # нода зникає, якщо її не зібрали
-    search-radius: 12         # радіус пошуку вегетації біля гравця
-    vegetation:               # на чому з'являються ноди
+    chance: 0.25              # шанс спробувати спавн ноди за тік на гравця
+    max-nearby: 3             # не спавнити, якщо стільки нод вже в радіусі 32 блоки
+    ttl-seconds: 90           # нода зникає, якщо її не зібрали
+    search-radius: 8          # радіус пошуку вегетації біля гравця (на рівні ніг)
+    vegetation:               # на чому з'являються ноди (НАЗЕМНА флора, без листя крон)
       - SHORT_GRASS
       - TALL_GRASS
       - FERN
       - LARGE_FERN
-      - OAK_LEAVES
-      - BIRCH_LEAVES
-      - SPRUCE_LEAVES
-      - DARK_OAK_LEAVES
-      - JUNGLE_LEAVES
       - SWEET_BERRY_BUSH
       - DANDELION
       - POPPY
       - CORNFLOWER
       - OXEYE_DAISY
       - BLUE_ORCHID
+      - AZURE_BLUET
+      - ALLIUM
+      - RED_TULIP
+      - LILY_OF_THE_VALLEY
   biomes:                     # біом -> зважена таблиця допоміжних id (усі — наявні auxiliary)
     PLAINS:
       - { id: elf_flower_petals, weight: 50 }

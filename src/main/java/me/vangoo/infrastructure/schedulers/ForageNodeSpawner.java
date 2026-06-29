@@ -10,8 +10,8 @@ import me.vangoo.infrastructure.forage.ForageNodeLocation;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
-import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Interaction;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
@@ -97,7 +97,7 @@ public final class ForageNodeSpawner {
 
         int near = 0;
         for (Entity e : player.getNearbyEntities(NEARBY_RADIUS, NEARBY_RADIUS, NEARBY_RADIUS)) {
-            if (e instanceof ArmorStand && codec.isForageNode(e)) near++;
+            if (e instanceof Interaction && codec.isForageNode(e)) near++;
         }
         if (near >= config.maxNearby()) return;
 
