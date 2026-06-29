@@ -1,0 +1,8 @@
+{
+  "_comment": "Приклад 3D-моделі трави: дві перехрещені площини (як квітка/папороть), не плаский білборд. Texture 16x16 -> textures/item/forage/elf_flower_petals.png. Для складнішої геометрії роби модель у Blockbench і клади сюди її експорт.",
+  "parent": "minecraft:block/cross",
+  "textures": {
+    "cross": "minecraft:item/forage/elf_flower_petals",
+    "particle": "minecraft:item/forage/elf_flower_petals"
+  }
+}
