@@ -31,7 +31,7 @@ public class ForageHarvestListener implements Listener {
         this.plugin = plugin;
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onForageHit(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player)) return;
         Entity target = event.getEntity();
@@ -52,14 +52,15 @@ public class ForageHarvestListener implements Listener {
         Location loc = clicked.getLocation();
         Optional<ItemStack> stack = ingredient.flatMap(customItemService::createItemStack);
         removePair(clicked);
-        if (stack.isPresent() && loc.getWorld() != null) {
-            loc.getWorld().dropItem(loc, stack.get());
-            loc.getWorld().playSound(loc, Sound.BLOCK_SWEET_BERRY_BUSH_PICK_BERRIES, 1.0f, 1.2f);
-            loc.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, loc, 8, 0.3, 0.3, 0.3, 0.0);
-        } else {
+        if (stack.isEmpty()) {
             plugin.getLogger().warning("Forage harvest: could not resolve ingredient item for "
                     + ingredient.orElse("<none>"));
+            return;
         }
+        if (loc.getWorld() == null) return;
+        loc.getWorld().dropItem(loc, stack.get());
+        loc.getWorld().playSound(loc, Sound.BLOCK_SWEET_BERRY_BUSH_PICK_BERRIES, 1.0f, 1.2f);
+        loc.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, loc, 8, 0.3, 0.3, 0.3, 0.0);
     }
 
     private void removePair(Entity clicked) {
