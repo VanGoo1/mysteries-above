@@ -120,7 +120,7 @@ public class VanillaStructureLootListener implements Listener {
         }
 
         List<ItemStack> currentLoot = event.getLoot();
-        int itemsToAdd = (Math.random() <= 0.20) ? 2 : 1;
+        int itemsToAdd = (random.nextDouble() <= 0.20) ? 2 : 1;
 
         logger.fine("Adding " + itemsToAdd + " custom items (tiers " + tiers + ") to " + lootTableKey);
 
