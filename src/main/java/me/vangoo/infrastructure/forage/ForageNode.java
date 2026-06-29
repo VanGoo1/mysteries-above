@@ -27,6 +27,7 @@ public final class ForageNode {
 
     public static ForageNode spawn(Location loc, ItemStack model, String ingredientId, ForageNodeCodec codec) {
         World world = loc.getWorld();
+        if (world == null) throw new IllegalArgumentException("Location has no world");
         ItemDisplay display = world.spawn(loc, ItemDisplay.class, d -> {
             d.setItemStack(model);
             d.setBillboard(Display.Billboard.CENTER);
@@ -49,7 +50,7 @@ public final class ForageNode {
     }
 
     public boolean isAlive() {
-        return display != null && hitbox != null && display.isValid() && hitbox.isValid();
+        return display.isValid() && hitbox.isValid();
     }
 
     public long ageMillis() { return System.currentTimeMillis() - createdAtMillis; }

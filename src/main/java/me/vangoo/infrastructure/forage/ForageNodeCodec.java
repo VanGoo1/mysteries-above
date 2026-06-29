@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /** PDC-тег ноди фореджу на сутності (патерн CreatureCodec). Тегуються обидві сутності ноди. */
-public class ForageNodeCodec {
+public final class ForageNodeCodec {
 
     private final NamespacedKey nodeKey;
     private final NamespacedKey ingredientKey;
