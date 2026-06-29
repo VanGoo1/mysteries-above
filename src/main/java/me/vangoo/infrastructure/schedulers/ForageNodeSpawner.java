@@ -91,7 +91,8 @@ public final class ForageNodeSpawner {
     }
 
     private void trySpawnFor(Player player) {
-        if (player.getGameMode() == GameMode.SPECTATOR) return;
+        if (player.getGameMode() == GameMode.SPECTATOR
+                || player.getGameMode() == GameMode.CREATIVE) return;
         if (random.nextDouble() >= config.chance()) return;
 
         int near = 0;
