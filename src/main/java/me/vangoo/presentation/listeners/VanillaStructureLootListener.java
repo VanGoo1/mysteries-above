@@ -2,9 +2,9 @@ package me.vangoo.presentation.listeners;
 
 import me.vangoo.application.services.BeyonderService;
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.domain.valueobjects.LootTier;
 import me.vangoo.infrastructure.structures.LootGenerationService;
 import me.vangoo.domain.valueobjects.LootTableData;
-import me.vangoo.infrastructure.ui.NBTBuilder;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -16,7 +16,8 @@ import java.util.*;
 import java.util.logging.Logger;
 
 /**
- * Listener для додавання кастомного лута до ванільних структур Minecraft
+ * Listener для додавання кастомного лута до ванільних структур Minecraft.
+ * Тиризація: звичайні скрині тягнуть лише BASE; данжі/спец-структури — BASE + RARE.
  */
 public class VanillaStructureLootListener implements Listener {
 
@@ -26,8 +27,10 @@ public class VanillaStructureLootListener implements Listener {
     private final BeyonderService beyonderService;
     private final Random random = new Random();
 
-    // Ванільні структури до яких додається лут
-    private final Map<String, Double> enabledStructures;
+    private final Map<String, StructureLootRule> enabledStructures;
+
+    /** Правило луту структури: шанс додати кастомний лут + дозволені тіри. */
+    private record StructureLootRule(double chance, Set<LootTier> tiers) {}
 
     public VanillaStructureLootListener(
             Plugin plugin,
@@ -47,60 +50,67 @@ public class VanillaStructureLootListener implements Listener {
     public void onLootGenerate(LootGenerateEvent event) {
         String lootTableKey = event.getLootTable().getKey().toString();
 
-        double chance = getStructureChance(lootTableKey);
-        if (chance <= 0.0) {
+        StructureLootRule rule = getRule(lootTableKey);
+        if (rule == null || rule.chance() <= 0.0) {
+            return;
+        }
+        if (random.nextDouble() > rule.chance()) {
             return;
         }
 
-        if (random.nextDouble() > chance) {
-            return;
-        }
-
-        addCustomLoot(event, lootTableKey);
+        addCustomLoot(event, lootTableKey, rule.tiers());
     }
 
-    private double getStructureChance(String lootTableKey) {
-        for (Map.Entry<String, Double> entry : enabledStructures.entrySet()) {
+    private StructureLootRule getRule(String lootTableKey) {
+        for (Map.Entry<String, StructureLootRule> entry : enabledStructures.entrySet()) {
             if (lootTableKey.contains(entry.getKey())) {
                 return entry.getValue();
             }
         }
-        return 0.0;
+        return null;
     }
 
-    private Map<String, Double> loadEnabledVanillaStructures() {
-        Map<String, Double> structures = new HashMap<>();
+    private Map<String, StructureLootRule> loadEnabledVanillaStructures() {
+        Map<String, StructureLootRule> structures = new HashMap<>();
 
-        structures.put("mansion", 0.20);
-        structures.put("ancient_city", 0.25);
-        structures.put("bastion", 0.20);
-        structures.put("nether_bridge", 0.05);
-        structures.put("end_city", 0.10);
-        structures.put("stronghold", 0.10);
-        structures.put("jungle_temple", 0.10);
-        structures.put("desert_pyramid", 0.10);
-        structures.put("pillager_outpost", 0.20);
-        structures.put("ocean_ruin_warm", 0.10);
-        structures.put("ocean_ruin_cold", 0.10);
-        structures.put("buried_treasure", 0.15);
-        structures.put("shipwreck", 0.10);
-        structures.put("mineshaft", 0.10);
-        structures.put("simple_dungeon", 0.10);
-        structures.put("ruined_portal", 0.20);
-        structures.put("mysteries", 0.15);
-        structures.put("nova_structures", 0.15);
-        structures.put("trial_chambers/supply", 0.10);
-        structures.put("trial_chambers/corridor", 0.10);
+        Set<LootTier> base = EnumSet.of(LootTier.BASE);
+        Set<LootTier> baseRare = EnumSet.of(LootTier.BASE, LootTier.RARE);
+
+        // Звичайні скрині -> лише BASE
+        structures.put("shipwreck", new StructureLootRule(0.10, base));
+        structures.put("mineshaft", new StructureLootRule(0.10, base));
+        structures.put("desert_pyramid", new StructureLootRule(0.10, base));
+        structures.put("jungle_temple", new StructureLootRule(0.10, base));
+        structures.put("buried_treasure", new StructureLootRule(0.15, base));
+        structures.put("ocean_ruin_warm", new StructureLootRule(0.10, base));
+        structures.put("ocean_ruin_cold", new StructureLootRule(0.10, base));
+        structures.put("ruined_portal", new StructureLootRule(0.20, base));
+        structures.put("simple_dungeon", new StructureLootRule(0.10, base));
+        structures.put("trial_chambers/supply", new StructureLootRule(0.10, base));
+
+        // Данжі / спец-структури -> BASE + RARE
+        structures.put("mansion", new StructureLootRule(0.20, baseRare));
+        structures.put("ancient_city", new StructureLootRule(0.25, baseRare));
+        structures.put("bastion", new StructureLootRule(0.20, baseRare));
+        structures.put("nether_bridge", new StructureLootRule(0.05, baseRare));
+        structures.put("end_city", new StructureLootRule(0.10, baseRare));
+        structures.put("stronghold", new StructureLootRule(0.10, baseRare));
+        structures.put("pillager_outpost", new StructureLootRule(0.20, baseRare));
+        structures.put("trial_chambers/corridor", new StructureLootRule(0.10, baseRare));
+        structures.put("mysteries", new StructureLootRule(0.15, baseRare));
+        structures.put("nova_structures", new StructureLootRule(0.15, baseRare));
 
         logger.info("Enabled vanilla structures for custom loot: " + structures.size());
         return structures;
     }
 
-    /**
-     * Додає кастомні предмети до лута
-     */
-    private void addCustomLoot(LootGenerateEvent event, String lootTableKey) {
+    private void addCustomLoot(LootGenerateEvent event, String lootTableKey, Set<LootTier> tiers) {
         if (globalLootTable == null || globalLootTable.items().isEmpty()) {
+            return;
+        }
+
+        LootTableData tiered = globalLootTable.filterByTier(tiers);
+        if (tiered.items().isEmpty()) {
             return;
         }
 
@@ -110,19 +120,11 @@ public class VanillaStructureLootListener implements Listener {
         }
 
         List<ItemStack> currentLoot = event.getLoot();
-
-        // Шанс на 2 предмети
         int itemsToAdd = (Math.random() <= 0.20) ? 2 : 1;
 
-        logger.fine("Adding " + itemsToAdd + " custom items to " + lootTableKey);
+        logger.fine("Adding " + itemsToAdd + " custom items (tiers " + tiers + ") to " + lootTableKey);
 
-        List<ItemStack> generatedLoot = lootService.generateLoot(
-                globalLootTable,
-                itemsToAdd,
-                false,
-                beyonder
-        );
-
+        List<ItemStack> generatedLoot = lootService.generateLoot(tiered, itemsToAdd, false, beyonder);
         currentLoot.addAll(generatedLoot);
     }
 }
