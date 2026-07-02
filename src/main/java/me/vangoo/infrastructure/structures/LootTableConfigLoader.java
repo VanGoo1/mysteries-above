@@ -87,6 +87,14 @@ public class LootTableConfigLoader {
             int weight = itemSection.getInt("weight", 1);
             int amountMin = itemSection.getInt("amount_min", 1);
             int amountMax = itemSection.getInt("amount_max", 1);
+            String tierStr = itemSection.getString("tier", "base");
+            me.vangoo.domain.valueobjects.LootTier tier;
+            try {
+                tier = me.vangoo.domain.valueobjects.LootTier.valueOf(tierStr.toUpperCase(java.util.Locale.ROOT));
+            } catch (IllegalArgumentException ex) {
+                plugin.getLogger().warning("Invalid tier '" + tierStr + "' for item '" + key + "'. Using BASE");
+                tier = me.vangoo.domain.valueobjects.LootTier.BASE;
+            }
 
             if (weight <= 0) {
                 plugin.getLogger().warning("Invalid weight for item '" + key + "': " + weight + ". Using 1");
@@ -103,7 +111,7 @@ public class LootTableConfigLoader {
                 amountMax = amountMin;
             }
 
-            items.add(new LootItem(itemId, weight, amountMin, amountMax));
+            items.add(new LootItem(itemId, weight, amountMin, amountMax, tier));
         }
 
         plugin.getLogger().info("Loaded " + items.size() + " loot items from config");

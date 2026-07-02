@@ -1,0 +1,15 @@
+{
+  "_comment": "Усі кастомні інгредієнти мають base material PAPER + рядковий custom_model_data (= id інгредієнта). Цей select обирає модель за тим рядком; невідомий рядок або звичайний папір -> fallback на ванільну модель паперу. Додавай по одному case на кожен інгредієнт.",
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:custom_model_data",
+    "index": 0,
+    "cases": [
+      {
+        "when": "elf_flower_petals",
+        "model": { "type": "minecraft:model", "model": "minecraft:item/forage/elf_flower_petals" }
+      }
+    ],
+    "fallback": { "type": "minecraft:model", "model": "minecraft:item/paper" }
+  }
+}

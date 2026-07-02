@@ -2,9 +2,12 @@ package me.vangoo.presentation.listeners;
 
 import me.vangoo.application.services.BeyonderService;
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.domain.valueobjects.LootTier;
 import me.vangoo.infrastructure.structures.LootGenerationService;
 import me.vangoo.domain.valueobjects.LootTableData;
 import org.bukkit.Material;
+
+import java.util.EnumSet;
 import org.bukkit.block.Block;
 import org.bukkit.block.BrushableBlock;
 import org.bukkit.block.data.Brushable;
@@ -157,9 +160,14 @@ public class ArchaeologyLootListener implements Listener {
             return;
         }
 
-        // Генеруємо 1 кастомний предмет
+        // Археологія -> лише BASE-тір
+        LootTableData baseTable = globalLootTable.filterByTier(EnumSet.of(LootTier.BASE));
+        if (baseTable.items().isEmpty()) {
+            logger.warning("ArchaeologyLootListener: no BASE-tier items to generate");
+            return;
+        }
         List<ItemStack> generatedLoot = lootService.generateLoot(
-                globalLootTable,
+                baseTable,
                 1,
                 false,
                 beyonder
