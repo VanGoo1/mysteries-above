@@ -25,7 +25,7 @@ Layered / hexagonal design under `me.vangoo`. Dependencies point inward toward `
   - `spells`: pure spell data/rules (`SpellRecipe`, `SpellBlueprint`, `SpellCodec`) — no Bukkit; the reference example of the rules-vs-effects seam.
   - `valueobjects`: immutables like `Sequence`, `Spirituality`, `Mastery`, `SanityLoss`, `AbilityResult`, `SequenceBasedSuccessChance`.
 - **`me.vangoo.pathways`** — the **ability behavior / effect layer** (its own layer, **not** part of `domain`). Bukkit is allowed here; it depends inward on `domain` and is orchestrated by `application` (`PathwayManager` wires it). This is the home of the **effect** half of the rules-vs-effects seam. Contents:
-  - one package per pathway (`error`, `door`, `justiciar`, `visionary`, `whitetower`), each with an `abilities` subpackage, a concrete `Pathway` subclass that builds its per-sequence ability lists in `initializeAbilities()`, and a `*Potions` class.
+  - one package per pathway (`error`, `door`, `justiciar`, `visionary`, `whitetower`, `fool`), each with an `abilities` subpackage, a concrete `Pathway` subclass that builds its per-sequence ability lists in `initializeAbilities()`, and a `*Potions` class.
   - **thin abilities** — `Ability` subclasses holding only glue (name/cost/cooldown + delegation); balance math is pulled out to `domain` VOs.
   - **runners** — stateless Bukkit choreography for one-shot effects (e.g. `SpellEffectRunner`).
   - **sessions** — live, self-ticking objects for stateful effects (e.g. `JurisdictionSession`, `DiviningRodSession`, `DreamVisionSession`).
@@ -48,7 +48,7 @@ When adding or changing ability code, classify it with one question:
 - **Rule** → `domain`, plain Java, unit-tested, **zero Bukkit**.
 - **Effect** → the behavior layer `me.vangoo.pathways` (thin ability + runner/session); cross-cutting Bukkit services (scheduling, cooldown, persistence) live in `application` / `infrastructure`. Bukkit allowed, verified in-server.
 
-The pure core of `domain` (`entities`, `services`, `spells`) must not import `org.bukkit.*`, `dev.triumphteam.*`, or `net.kyori.*`, and `domain` must not depend on the behavior layer `me.vangoo.pathways`. Ability **behavior** lives in `me.vangoo.pathways.*` (Bukkit allowed). `ArchitectureTest` pins both invariants — widen the pure-domain scope as more code is cleaned. (Still not clean: `valueobjects` `CustomItem` / `RecordedEvent`, and `domain.abilities.core/context` which still expose Bukkit types like `Player` / `Location`.)
+The pure core of `domain` (`entities`, `services`, `spells`, `brewing`, `creatures`) must not import `org.bukkit.*`, `dev.triumphteam.*`, or `net.kyori.*`, and `domain` must not depend on the behavior layer `me.vangoo.pathways`. Ability **behavior** lives in `me.vangoo.pathways.*` (Bukkit allowed). `ArchitectureTest` pins both invariants — widen the pure-domain scope as more code is cleaned. (Still not clean: `valueobjects` `CustomItem` / `RecordedEvent`, and `domain.abilities.core/context` which still expose Bukkit types like `Player` / `Location`.)
 
 **Two patterns for a complex ability — pick by lifecycle:**
 
@@ -70,6 +70,14 @@ The pure core of `domain` (`entities`, `services`, `spells`) must not import `or
 
 ## Config & persistence
 
-- `src/main/resources/`: `plugin.yml` (commands + `mysteriesabove.admin` permission), `config.yml`, `custom-items.yml`, `global_loot.yml`. `plugin.yml` and `*.yml` are Maven-filtered resources.
+- `src/main/resources/`: `plugin.yml` (commands + `mysteriesabove.admin` permission), `config.yml`, `custom-items.yml`, `global_loot.yml`, `creatures.yml`, `potion-recipes.yml`. `plugin.yml` and `*.yml` are Maven-filtered resources.
 - Player state persists to `beyonders.json` in the plugin data folder, written by `BatchedBeyonderRepository` (batched save every 5 minutes + save on disable). Recipe unlocks persist to `recipe_unlocks.json`.
-- Admin commands (all require `mysteriesabove.admin`): `/pathway`, `/mastery`, `/rampager`, `/potion`, `/custom-items`, `/recipe`, `/structure`.
+- Admin commands (all require `mysteriesabove.admin`): `/pathway`, `/mastery`, `/rampager`, `/potion`, `/custom-items`, `/recipe`, `/structure`, `/characteristic`, `/creature`.
+
+## Maintaining docs & rules
+
+Scoped working rules live in `.claude/rules/*.md` (loaded conditionally via `paths:` frontmatter; rules without frontmatter are always on). Treat them as part of the codebase:
+
+- **When you add a new mechanic or cross-cutting pattern that affects — or will plausibly grow to affect — the wider architecture** (a new layer or seam, a lifecycle pattern like sessions, a persistence store, a registration/wiring flow, a config subsystem), add a dedicated rule file for it in `.claude/rules/` describing which classes/services/abstractions to use, where, and how — and update everything it touches: the relevant CLAUDE.md sections, existing rules that now overlap or contradict, and `ArchitectureTest` if the invariant is machine-enforceable.
+- Do this **in the same commit/branch** as the code change. A mechanic that exists only in code and git history is undocumented; a rule that contradicts the code is worse than no rule.
+- Keep rules non-duplicative: architecture overview belongs here in CLAUDE.md; rules hold the mechanism-specific "how to use it correctly" detail.
