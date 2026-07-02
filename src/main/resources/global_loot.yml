@@ -74,21 +74,25 @@ global_loot:
       weight: 12
       amount_min: 1
       amount_max: 1
+      tier: rare
     illusory_chime_tree_fruit:
       item_id: "illusory_chime_tree_fruit"
       weight: 12
       amount_min: 1
       amount_max: 1
+      tier: rare
     mind_crystal_powder:
       item_id: "mind_crystal_powder"
       weight: 12
       amount_min: 1
       amount_max: 1
+      tier: rare
     split_personality_essence:
       item_id: "split_personality_essence"
       weight: 12
       amount_min: 1
       amount_max: 1
+      tier: rare
 
     # --- Seq 5 Ingredients (Вага 5 - Шанс ~0.28%) ---
     dream_catcher_heart:
@@ -96,16 +100,19 @@ global_loot:
       weight: 5
       amount_min: 1
       amount_max: 1
+      tier: rare
     mind_illusion_crystal:
       item_id: "mind_illusion_crystal"
       weight: 5
       amount_min: 1
       amount_max: 1
+      tier: rare
     adult_mind_dragon_blood:
       item_id: "adult_mind_dragon_blood"
       weight: 5
       amount_min: 1
       amount_max: 1
+      tier: rare
 
     # --- Visionary Recipes ---
     visionary_recipe_9:
@@ -128,11 +135,13 @@ global_loot:
       weight: 8
       amount_min: 1
       amount_max: 1
+      tier: rare
     visionary_recipe_5:
       item_id: "recipe:Visionary:5"
       weight: 4
       amount_min: 1
       amount_max: 1
+      tier: rare
 
     # --- Visionary Potions ---
     visionary_potion_9:
@@ -150,6 +159,7 @@ global_loot:
       weight: 3
       amount_min: 1
       amount_max: 1
+      tier: rare
 
     # =====================================================================
     #                              DOOR PATHWAY
@@ -212,16 +222,19 @@ global_loot:
       weight: 12
       amount_min: 1
       amount_max: 1
+      tier: rare
     cursed_wraith_artifact:
       item_id: "cursed_wraith_artifact"
       weight: 12
       amount_min: 1
       amount_max: 1
+      tier: rare
     imbued_ink_sac:
       item_id: "imbued_ink_sac"
       weight: 12
       amount_min: 1
       amount_max: 1
+      tier: rare
 
     # --- Seq 5 Ingredients (Вага 5 - Шанс ~0.28%) ---
     void_drifter_heart:
@@ -229,16 +242,19 @@ global_loot:
       weight: 5
       amount_min: 1
       amount_max: 1
+      tier: rare
     astral_mist_essence:
       item_id: "astral_mist_essence"
       weight: 5
       amount_min: 1
       amount_max: 1
+      tier: rare
     wayfinder_tree_root:
       item_id: "wayfinder_tree_root"
       weight: 5
       amount_min: 1
       amount_max: 1
+      tier: rare
 
     # --- Door Recipes ---
     door_recipe_9:
@@ -261,11 +277,13 @@ global_loot:
       weight: 8
       amount_min: 1
       amount_max: 1
+      tier: rare
     door_recipe_5:
       item_id: "recipe:Door:5"
       weight: 4
       amount_min: 1
       amount_max: 1
+      tier: rare
 
     # --- Door Potions ---
     door_potion_9:
@@ -283,6 +301,7 @@ global_loot:
       weight: 3
       amount_min: 1
       amount_max: 1
+      tier: rare
 
     # =====================================================================
     #                            JUSTICIAR PATHWAY
@@ -350,21 +369,25 @@ global_loot:
       weight: 12
       amount_min: 1
       amount_max: 1
+      tier: rare
     fragment_of_a_sealed_domain:
       item_id: "fragment_of_a_sealed_domain"
       weight: 12
       amount_min: 1
       amount_max: 1
+      tier: rare
     ashes_of_a_forbidden_decree:
       item_id: "ashes_of_a_forbidden_decree"
       weight: 12
       amount_min: 1
       amount_max: 1
+      tier: rare
     chains_of_collective_fear:
       item_id: "chains_of_collective_fear"
       weight: 12
       amount_min: 1
       amount_max: 1
+      tier: rare
 
     # --- Seq 5 Ingredients (Вага 5 - Шанс ~0.28%) ---
     core_of_retributive_authority:
@@ -372,21 +395,25 @@ global_loot:
       weight: 5
       amount_min: 1
       amount_max: 1
+      tier: rare
     brand_of_the_unforgiving_oath:
       item_id: "brand_of_the_unforgiving_oath"
       weight: 5
       amount_min: 1
       amount_max: 1
+      tier: rare
     ashes_of_a_public_execution:
       item_id: "ashes_of_a_public_execution"
       weight: 5
       amount_min: 1
       amount_max: 1
+      tier: rare
     shackles_of_the_guilty:
       item_id: "shackles_of_the_guilty"
       weight: 5
       amount_min: 1
       amount_max: 1
+      tier: rare
 
     # --- Justiciar Recipes ---
     justiciar_recipe_9:
@@ -409,11 +436,13 @@ global_loot:
       weight: 8
       amount_min: 1
       amount_max: 1
+      tier: rare
     justiciar_recipe_5:
       item_id: "recipe:Justiciar:5"
       weight: 4
       amount_min: 1
       amount_max: 1
+      tier: rare
 
     # --- Justiciar Potions ---
     justiciar_potion_9:
@@ -431,6 +460,7 @@ global_loot:
       weight: 3
       amount_min: 1
       amount_max: 1
+      tier: rare
 
     # =====================================================================
     #                            WHITE TOWER PATHWAY
@@ -503,21 +533,25 @@ global_loot:
       weight: 12
       amount_min: 1
       amount_max: 1
+      tier: rare
     liquid_silver_phantom_residue:
       item_id: "liquid_silver_phantom_residue"
       weight: 12
       amount_min: 1
       amount_max: 1
+      tier: rare
     mimicry_moss_spores:
       item_id: "mimicry_moss_spores"
       weight: 12
       amount_min: 1
       amount_max: 1
+      tier: rare
     devastated_blank_mask:
       item_id: "devastated_blank_mask"
       weight: 12
       amount_min: 1
       amount_max: 1
+      tier: rare
 
     # --- Seq 5 Ingredients (Вага 5 - Шанс ~0.28%) ---
     void_beholder_petrified_eye:
@@ -525,21 +559,25 @@ global_loot:
       weight: 5
       amount_min: 1
       amount_max: 1
+      tier: rare
     condensed_astral_nebula:
       item_id: "condensed_astral_nebula"
       weight: 5
       amount_min: 1
       amount_max: 1
+      tier: rare
     ancient_rune_powder:
       item_id: "ancient_rune_powder"
       weight: 5
       amount_min: 1
       amount_max: 1
+      tier: rare
     pure_spirituality_tear:
       item_id: "pure_spirituality_tear"
       weight: 5
       amount_min: 1
       amount_max: 1
+      tier: rare
 
     # --- White Tower Recipes ---
     white_tower_recipe_9:
@@ -562,11 +600,13 @@ global_loot:
       weight: 8
       amount_min: 1
       amount_max: 1
+      tier: rare
     white_tower_recipe_5:
       item_id: "recipe:WhiteTower:5"
       weight: 4
       amount_min: 1
       amount_max: 1
+      tier: rare
 
     # --- White Tower Potions ---
     white_tower_potion_9:
@@ -584,3 +624,4 @@ global_loot:
       weight: 3
       amount_min: 1
       amount_max: 1
+      tier: rare

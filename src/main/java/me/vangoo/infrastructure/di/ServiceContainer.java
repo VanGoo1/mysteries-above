@@ -74,6 +74,8 @@ public class ServiceContainer {
     private RampageScheduler rampageScheduler;
     private AbilityMenuItemUpdater abilityMenuItemUpdater;
     private me.vangoo.infrastructure.schedulers.AmbientCreatureSpawner ambientCreatureSpawner;
+    private me.vangoo.infrastructure.forage.ForageNodeCodec forageNodeCodec;
+    private me.vangoo.infrastructure.schedulers.ForageNodeSpawner forageNodeSpawner;
 
     // Event listeners
     private RampageEventListener rampageEventListener;
@@ -188,6 +190,7 @@ public class ServiceContainer {
         this.creatureRegistry = java.util.Collections.unmodifiableMap(creatureConfigLoader.load());
         this.creatureSelector = new me.vangoo.domain.creatures.CreatureSelector(creatureRegistry.values());
         this.creatureCodec = new me.vangoo.infrastructure.creatures.CreatureCodec(plugin);
+        this.forageNodeCodec = new me.vangoo.infrastructure.forage.ForageNodeCodec(plugin);
         this.creatureBehaviorFactory = new me.vangoo.infrastructure.creatures.behavior.CreatureBehaviorFactory(
                 beyonderService, plugin);
         this.creatureBehaviorManager = new me.vangoo.infrastructure.creatures.behavior.CreatureBehaviorManager(
@@ -278,6 +281,14 @@ public class ServiceContainer {
                 (MysteriesAbovePlugin) plugin, beyonderService, creatureSelector, creatureSpawner, creatureCodec,
                 ambientMinDistance, ambientInterval, ambientChance, ambientMaxNearby);
 
+        me.vangoo.infrastructure.forage.ForageConfigLoader forageConfigLoader =
+                new me.vangoo.infrastructure.forage.ForageConfigLoader(plugin);
+        me.vangoo.infrastructure.forage.ForageConfig forageConfig = forageConfigLoader.load();
+        me.vangoo.domain.forage.ForageSelector forageSelector =
+                new me.vangoo.domain.forage.ForageSelector(forageConfig.biomes());
+        this.forageNodeSpawner = new me.vangoo.infrastructure.schedulers.ForageNodeSpawner(
+                (MysteriesAbovePlugin) plugin, forageSelector, this.customItemService, forageNodeCodec, forageConfig);
+
         this.abilityMenuItemUpdater = new AbilityMenuItemUpdater(
                 plugin,
                 beyonderService,
@@ -337,6 +348,8 @@ public class ServiceContainer {
     public RampageScheduler getRampageScheduler() { return rampageScheduler; }
     public AbilityMenuItemUpdater getAbilityMenuItemUpdater() { return abilityMenuItemUpdater; }
     public me.vangoo.infrastructure.schedulers.AmbientCreatureSpawner getAmbientCreatureSpawner() { return ambientCreatureSpawner; }
+    public me.vangoo.infrastructure.forage.ForageNodeCodec getForageNodeCodec() { return forageNodeCodec; }
+    public me.vangoo.infrastructure.schedulers.ForageNodeSpawner getForageNodeSpawner() { return forageNodeSpawner; }
 
     public RampageEventListener getRampageEventListener() { return rampageEventListener; }
     public CharacteristicExtractor getCharacteristicExtractor() { return characteristicExtractor; }
@@ -367,6 +380,7 @@ public class ServiceContainer {
         rampageScheduler.start();
         abilityMenuItemUpdater.start();
         ambientCreatureSpawner.start();
+        forageNodeSpawner.start();
 
         // Start batched save scheduler (every 5 minutes)
         startBatchedSaveScheduler();
@@ -399,6 +413,9 @@ public class ServiceContainer {
         }
         if (ambientCreatureSpawner != null) {
             ambientCreatureSpawner.stop();
+        }
+        if (forageNodeSpawner != null) {
+            forageNodeSpawner.stop();
         }
     }
 

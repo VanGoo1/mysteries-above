@@ -242,6 +242,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(services.getStructureCreatureSpawnListener(), this);
         getServer().getPluginManager().registerEvents(services.getCreatureLoadListener(), this);
         getServer().getPluginManager().registerEvents(services.getCreatureDamageListener(), this);
+        ForageHarvestListener forageHarvestListener = new ForageHarvestListener(
+                services.getForageNodeCodec(), services.getCustomItemService(), this);
+        getServer().getPluginManager().registerEvents(forageHarvestListener, this);
     }
 
     private void registerCommands() {
