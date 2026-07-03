@@ -143,10 +143,6 @@ public class MysteriesAbovePlugin extends JavaPlugin {
             services.stopSchedulers();
         }
 
-        if (services != null && services.getCreatureBehaviorManager() != null) {
-            services.getCreatureBehaviorManager().stopAll();
-        }
-
         // Маріонетки: повертаємо гравців, що зараз керують маріонетками, у власне тіло ДО збереження
         // (щоб тіло/інвентар/особистість/скін коректно зберіглись), і коректно завершуємо здібність —
         // БЕЗ знищення NPC: їх збереже Citizens у saves.yml і відновить при наступному старті.
@@ -252,7 +248,6 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(services.getCreatureDeathListener(), this);
         getServer().getPluginManager().registerEvents(services.getNaturalCreatureSpawnListener(), this);
         getServer().getPluginManager().registerEvents(services.getStructureCreatureSpawnListener(), this);
-        getServer().getPluginManager().registerEvents(services.getCreatureLoadListener(), this);
         getServer().getPluginManager().registerEvents(services.getCreatureDamageListener(), this);
         ForageHarvestListener forageHarvestListener = new ForageHarvestListener(
                 services.getForageNodeCodec(), services.getCustomItemService(), this);
@@ -286,7 +281,5 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 services.getCharacteristicCodec(), services.getPotionManager());
         getCommand("characteristic").setExecutor(characteristicCommand);
         getCommand("characteristic").setTabCompleter(characteristicCommand);
-        getCommand("creature").setExecutor(services.getCreatureCommand());
-        getCommand("creature").setTabCompleter(services.getCreatureCommand());
     }
 }

@@ -45,10 +45,6 @@ commands:
     usage: /characteristic give <player> <pathway> <seq> [amount]
     permission: mysteriesabove.admin
     permission-message: "§cYou do not have permission to use this command."
-  creature:
-    description: Spawn custom mythical creatures (admin/testing)
-    usage: /creature spawn <id> [amount]
-    permission: mysteriesabove.admin
 permissions:
   mysteriesabove.admin:
     description: Gives access to all administrative commands

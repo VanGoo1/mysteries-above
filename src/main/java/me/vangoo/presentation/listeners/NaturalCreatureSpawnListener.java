@@ -2,7 +2,7 @@ package me.vangoo.presentation.listeners;
 
 import me.vangoo.domain.creatures.CreatureDefinition;
 import me.vangoo.domain.creatures.CreatureSelector;
-import me.vangoo.infrastructure.creatures.CreatureSpawner;
+import me.vangoo.infrastructure.mythic.MythicCreatureGateway;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
@@ -17,16 +17,16 @@ import java.util.Random;
 public class NaturalCreatureSpawnListener implements Listener {
 
     private final CreatureSelector selector;
-    private final CreatureSpawner spawner;
+    private final MythicCreatureGateway gateway;
     private final double minSpawnDistance;
     private final me.vangoo.application.services.BeyonderService beyonderService;
     private final Random random = new Random();
 
-    public NaturalCreatureSpawnListener(CreatureSelector selector, CreatureSpawner spawner,
+    public NaturalCreatureSpawnListener(CreatureSelector selector, MythicCreatureGateway gateway,
                                         double minSpawnDistance,
                                         me.vangoo.application.services.BeyonderService beyonderService) {
         this.selector = selector;
-        this.spawner = spawner;
+        this.gateway = gateway;
         this.minSpawnDistance = minSpawnDistance;
         this.beyonderService = beyonderService;
     }
@@ -53,7 +53,7 @@ public class NaturalCreatureSpawnListener implements Listener {
         if (pick.isEmpty()) return;
 
         event.setCancelled(true);
-        spawner.spawn(pick.get(), event.getLocation());
+        gateway.spawn(pick.get().id(), event.getLocation());
     }
 
     /** Знаходить найближчого онлайн-потойбічного в радіусі 48 блоків і будує з нього зсув. */
