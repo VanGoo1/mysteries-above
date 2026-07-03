@@ -1,0 +1,26 @@
+MA_Error_Chaos:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - randomskill{skills=MA_Error_Scatter,MA_Error_Weak,MA_Error_Fatigue,MA_Error_Omen}
+  - drainsanity{amount=1} 0.1
+  - effect:particles{p=smoke;amount=6;hS=0.3;vS=0.5;y=1;speed=0.01}
+MA_Error_ChaosApex:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - randomskill{skills=MA_Error_Scatter,MA_Error_Weak,MA_Error_Fatigue,MA_Error_Omen}
+  - drainsanity{amount=1} 0.1
+  - effect:particles{p=smoke;amount=6;hS=0.3;vS=0.5;y=1;speed=0.01}
+MA_Error_Scatter:
+  Skills:
+  - scatter{radius=5}
+MA_Error_Weak:
+  Skills:
+  - potion{type=WEAKNESS;duration=80;level=1;particles=false}
+MA_Error_Fatigue:
+  Skills:
+  - potion{type=MINING_FATIGUE;duration=80;level=1;particles=false}
+MA_Error_Omen:
+  Skills:
+  - potion{type=BAD_OMEN;duration=100;level=1;particles=false}

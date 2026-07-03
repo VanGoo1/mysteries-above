@@ -1,0 +1,14 @@
+MA_Fool_Pull:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - pull{velocity=0.9}
+  - potion{type=SLOWNESS;duration=40;level=1;particles=false}
+  - drainsanity{amount=1} 0.2
+MA_Fool_PullApex:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - pull{velocity=1.2}
+  - potion{type=SLOWNESS;duration=40;level=1;particles=false}
+  - drainsanity{amount=1} 0.2
