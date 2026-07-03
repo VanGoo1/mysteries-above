@@ -194,7 +194,7 @@ public class ServiceContainer {
         this.structureCreatureSpawnListener = new me.vangoo.presentation.listeners.StructureCreatureSpawnListener(
                 creatureSelector, mythicCreatureGateway, minSpawnDistance);
         this.creatureDamageListener = new me.vangoo.presentation.listeners.CreatureDamageListener(
-                mythicCreatureGateway, beyonderService);
+                mythicCreatureGateway, creatureRegistry, beyonderService);
 
         this.abilityContextFactory = new AbilityContextFactory(
                 (MysteriesAbovePlugin) plugin,
@@ -262,7 +262,7 @@ public class ServiceContainer {
         int ambientMaxNearby = plugin.getConfig().getInt("creatures.ambient.max-nearby", 3);
         this.ambientCreatureSpawner = new me.vangoo.infrastructure.schedulers.AmbientCreatureSpawner(
                 (MysteriesAbovePlugin) plugin, beyonderService, creatureSelector, mythicCreatureGateway,
-                ambientMinDistance, ambientInterval, ambientChance, ambientMaxNearby);
+                creatureRegistry, ambientMinDistance, ambientInterval, ambientChance, ambientMaxNearby);
 
         me.vangoo.infrastructure.forage.ForageConfigLoader forageConfigLoader =
                 new me.vangoo.infrastructure.forage.ForageConfigLoader(plugin);

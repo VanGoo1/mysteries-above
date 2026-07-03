@@ -15,6 +15,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
@@ -34,6 +35,7 @@ public final class AmbientCreatureSpawner {
     private final BeyonderService beyonderService;
     private final CreatureSelector selector;
     private final MythicCreatureGateway gateway;
+    private final Map<String, CreatureDefinition> registry;
     private final double minSpawnDistance;
     private final long intervalTicks;
     private final double chance;
@@ -44,11 +46,13 @@ public final class AmbientCreatureSpawner {
 
     public AmbientCreatureSpawner(MysteriesAbovePlugin plugin, BeyonderService beyonderService,
                                   CreatureSelector selector, MythicCreatureGateway gateway,
+                                  Map<String, CreatureDefinition> registry,
                                   double minSpawnDistance, long intervalSeconds, double chance, int maxNearby) {
         this.plugin = plugin;
         this.beyonderService = beyonderService;
         this.selector = selector;
         this.gateway = gateway;
+        this.registry = registry;
         this.minSpawnDistance = minSpawnDistance;
         this.intervalTicks = Math.max(20L, intervalSeconds * 20L);
         this.chance = chance;
@@ -96,7 +100,7 @@ public final class AmbientCreatureSpawner {
 
         int near = 0;
         for (Entity e : player.getNearbyEntities(NEARBY_RADIUS, NEARBY_RADIUS, NEARBY_RADIUS)) {
-            if (gateway.isCreature(e)) near++;
+            if (gateway.creatureId(e).map(registry::containsKey).orElse(false)) near++;
         }
         if (near >= maxNearby) return;
 
