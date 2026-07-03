@@ -70,8 +70,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         // MythicMobs bridge: static holder must be initialized before CustomComponentRegistry
         // scans the components package (see .claude/rules/mythic-creatures.md).
         me.vangoo.infrastructure.mythic.MythicBridge.init(services.getBeyonderService());
-        new io.lumine.mythic.core.skills.CustomComponentRegistry(
-                this, "me.vangoo.infrastructure.mythic.components");
+        me.vangoo.infrastructure.mythic.MythicBridge.registerComponents(this);
 
         boolean packChanged = new me.vangoo.infrastructure.mythic.MythicPackInstaller(this).installOrUpdate();
         if (packChanged) {
