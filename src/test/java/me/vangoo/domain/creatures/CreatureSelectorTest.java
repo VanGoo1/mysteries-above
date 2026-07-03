@@ -4,7 +4,6 @@ import me.vangoo.domain.valueobjects.LootTableData;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -17,11 +16,9 @@ class CreatureSelectorTest {
 
     private CreatureDefinition def(String id, SpawnRule spawn, String pathway, int sequence) {
         return new CreatureDefinition(
-                id, "GUARDIAN", "§3" + id, CreatureTier.COMMON,
-                new CreatureStats(30, 6, 0.25, 1.2),
-                Map.of(), "vanilla",
+                id, "GUARDIAN", CreatureTier.COMMON,
                 new LootTableData(List.of(), 1, 2),
-                spawn, true, pathway, sequence);
+                spawn, pathway, sequence);
     }
 
     private SpawnRule natural(double chance) {
@@ -131,10 +128,9 @@ class CreatureSelectorTest {
 
     @Test
     void biasAgainstNullPathwayCreatureIsNoOp() {
-        CreatureDefinition noPathway = new CreatureDefinition("x", "GUARDIAN", "§3x",
-                CreatureTier.COMMON, new CreatureStats(30, 6, 0.25, 1.2),
-                Map.of(), "vanilla", new LootTableData(List.of(), 1, 2),
-                natural(0.3), true, null, 0);
+        CreatureDefinition noPathway = new CreatureDefinition("x", "GUARDIAN",
+                CreatureTier.COMMON, new LootTableData(List.of(), 1, 2),
+                natural(0.3), null, 0);
         CreatureSelector s = new CreatureSelector(List.of(noPathway));
         ConvergenceBias bias = new ConvergenceBias("Visionary", 9);
         assertTrue(s.pickForBiome("OCEAN", "GUARDIAN", 0.1, bias).isPresent());

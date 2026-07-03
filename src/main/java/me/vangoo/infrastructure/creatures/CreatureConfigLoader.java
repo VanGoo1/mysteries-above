@@ -1,7 +1,6 @@
 package me.vangoo.infrastructure.creatures;
 
 import me.vangoo.domain.creatures.CreatureDefinition;
-import me.vangoo.domain.creatures.CreatureStats;
 import me.vangoo.domain.creatures.CreatureTier;
 import me.vangoo.domain.creatures.SpawnRule;
 import me.vangoo.domain.valueobjects.LootItem;
@@ -53,13 +52,8 @@ public class CreatureConfigLoader {
         if (baseEntity == null || baseEntity.isEmpty()) {
             throw new IllegalArgumentException("missing base_entity");
         }
-        String displayName = c.getString("display_name", id);
         CreatureTier tier = CreatureTier.valueOf(c.getString("tier", "common").toUpperCase(Locale.ROOT));
-        boolean clearDrops = c.getBoolean("clear_vanilla_drops", true);
-        String appearance = c.getString("appearance", "vanilla");
 
-        CreatureStats stats = parseStats(c.getConfigurationSection("stats"));
-        Map<String, String> equipment = parseEquipment(c.getConfigurationSection("equipment"));
         LootTableData loot = parseLoot(c.getConfigurationSection("loot"));
         SpawnRule spawn = parseSpawn(c.getConfigurationSection("spawn"));
 
@@ -90,26 +84,8 @@ public class CreatureConfigLoader {
             }
         }
 
-        return new CreatureDefinition(id, baseEntity.toUpperCase(Locale.ROOT), displayName, tier,
-                stats, equipment, appearance, loot, spawn, clearDrops, pathway, sequence);
-    }
-
-    private CreatureStats parseStats(ConfigurationSection s) {
-        if (s == null) return new CreatureStats(20, 4, 0.25, 1.0);
-        return new CreatureStats(
-                s.getDouble("health", 20),
-                s.getDouble("damage", 4),
-                s.getDouble("speed", 0.25),
-                s.getDouble("scale", 1.0));
-    }
-
-    private Map<String, String> parseEquipment(ConfigurationSection s) {
-        Map<String, String> map = new LinkedHashMap<>();
-        if (s == null) return map;
-        for (String slot : s.getKeys(false)) {
-            map.put(slot.toUpperCase(Locale.ROOT), s.getString(slot));
-        }
-        return map;
+        return new CreatureDefinition(id, baseEntity.toUpperCase(Locale.ROOT), tier,
+                loot, spawn, pathway, sequence);
     }
 
     private LootTableData parseLoot(ConfigurationSection s) {
