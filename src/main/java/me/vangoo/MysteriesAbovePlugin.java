@@ -73,6 +73,12 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         new io.lumine.mythic.core.skills.CustomComponentRegistry(
                 this, "me.vangoo.infrastructure.mythic.components");
 
+        boolean packChanged = new me.vangoo.infrastructure.mythic.MythicPackInstaller(this).installOrUpdate();
+        if (packChanged) {
+            getServer().getScheduler().runTaskLater(this, () ->
+                    getServer().dispatchCommand(getServer().getConsoleSender(), "mythicmobs reload"), 20L);
+        }
+
         // Register events and commands
         registerEvents();
         registerCommands();

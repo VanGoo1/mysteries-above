@@ -1,0 +1,57 @@
+fool_nighthawk_9:
+  Template: MA_Fool_Common
+  Type: PHANTOM
+  Display: '&8Нічний Яструб'
+  Health: 24
+  Damage: 4
+  Options:
+    MovementSpeed: 0.25
+
+fool_joker_8:
+  Template: MA_Fool_Common
+  Type: VINDICATOR
+  Display: '&cДжокер'
+  Health: 40
+  Damage: 5
+  Options:
+    MovementSpeed: 0.26
+    Scale: 1.1
+
+fool_phantom_ink_7:
+  Template: MA_Fool_Common
+  Type: GUARDIAN
+  Display: '&9Примарне Чорнило'
+  Health: 70
+  Damage: 7
+  Options:
+    MovementSpeed: 0.27
+    Scale: 1.2
+
+fool_shapeshifter_6:
+  Template: MA_Fool_Common
+  Type: WITCH
+  Display: '&5Перевертень'
+  Health: 110
+  Damage: 9
+  Options:
+    MovementSpeed: 0.28
+    Scale: 1.35
+
+fool_puppeteer_5:
+  Template: MA_Fool_Apex
+  Type: EVOKER
+  Display: '&dЛялькар'
+  Health: 190
+  Damage: 12
+  Options:
+    MovementSpeed: 0.3
+    Scale: 1.55
+
+MA_FoolPuppet:
+  Type: ZOMBIE
+  Display: '&8Лялька'
+  Health: 8
+  Options:
+    PreventOtherDrops: true
+    ShowNameOnDamaged: false
+    PreventRandomEquipment: true

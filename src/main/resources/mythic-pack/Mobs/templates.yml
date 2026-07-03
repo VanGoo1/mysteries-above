@@ -1,0 +1,76 @@
+# Базові шаблони. Кожен pathway має Common/Apex — apex успадковує common і підсилює скіли.
+MA_Base:
+  AITargetSelectors:
+  - 0 clear
+  - 1 attacker
+  - 2 players
+  Options:
+    PreventOtherDrops: true
+    MaxCombatDistance: 32
+    Despawn: true
+
+MA_Justiciar_Common:
+  Template: MA_Base
+  Skills:
+  - skill{s=MA_Justiciar_Aura} @PlayersInRadius{r=12} ~onTimer:20
+  - effect:particles{p=wax_off;amount=3;hS=0.4;vS=0.4;y=1} @self ~onTimer:20
+MA_Justiciar_Apex:
+  Template: MA_Base
+  Skills:
+  - skill{s=MA_Justiciar_AuraApex} @PlayersInRadius{r=12} ~onTimer:20
+  - effect:particles{p=wax_off;amount=3;hS=0.4;vS=0.4;y=1} @self ~onTimer:20
+
+MA_Whitetower_Common:
+  Template: MA_Base
+  Skills:
+  - skill{s=MA_Whitetower_Reveal} @PlayersInRadius{r=12} ~onTimer:20
+  - shoot{type=SNOWBALL;velocity=1.6} @NearestPlayer{r=12} ~onTimer:100
+  - effect:particles{p=end_rod;amount=4;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
+MA_Whitetower_Apex:
+  Template: MA_Base
+  Skills:
+  - skill{s=MA_Whitetower_Reveal} @PlayersInRadius{r=12} ~onTimer:20
+  - shoot{type=SNOWBALL;velocity=1.6} @NearestPlayer{r=12} ~onTimer:70
+  - effect:particles{p=end_rod;amount=4;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
+
+MA_Visionary_Common:
+  Template: MA_Base
+  Skills:
+  - potion{type=INVISIBILITY;duration=45;particles=false} @self ~onTimer:20 ?!playerwithin{d=4}
+  - skill{s=MA_Visionary_Burst} @PlayersInRadius{r=4} ~onTimer:20 ?playerwithin{d=4}
+MA_Visionary_Apex:
+  Template: MA_Base
+  Skills:
+  - potion{type=INVISIBILITY;duration=45;particles=false} @self ~onTimer:20 ?!playerwithin{d=4}
+  - skill{s=MA_Visionary_BurstApex} @PlayersInRadius{r=4} ~onTimer:20 ?playerwithin{d=4}
+
+MA_Door_Common:
+  Template: MA_Base
+  Skills:
+  - skill{s=MA_Door_Seal} @NearestPlayer{r=12} ~onTimer:140
+MA_Door_Apex:
+  Template: MA_Base
+  Skills:
+  - skill{s=MA_Door_SealApex} @NearestPlayer{r=12} ~onTimer:100
+
+MA_Fool_Common:
+  Template: MA_Base
+  Skills:
+  - skill{s=MA_Fool_Pull} @NearestPlayer{r=12} ~onTimer:60
+  - summon{mob=MA_FoolPuppet;amount=1;radius=1} @self ~onDamaged ?healthpercent{h=<35} 1
+  - effect:particles{p=witch;amount=4;hS=0.3;vS=0.5;y=1} @self ~onTimer:20
+MA_Fool_Apex:
+  Template: MA_Base
+  Skills:
+  - skill{s=MA_Fool_PullApex} @NearestPlayer{r=12} ~onTimer:60
+  - summon{mob=MA_FoolPuppet;amount=2;radius=1} @self ~onDamaged ?healthpercent{h=<35} 1
+  - effect:particles{p=witch;amount=4;hS=0.3;vS=0.5;y=1} @self ~onTimer:20
+
+MA_Error_Common:
+  Template: MA_Base
+  Skills:
+  - skill{s=MA_Error_Chaos} @NearestPlayer{r=12} ~onTimer:70
+MA_Error_Apex:
+  Template: MA_Base
+  Skills:
+  - skill{s=MA_Error_ChaosApex} @NearestPlayer{r=12} ~onTimer:50

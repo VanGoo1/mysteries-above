@@ -1,0 +1,48 @@
+visionary_manhal_9:
+  Template: MA_Visionary_Common
+  Type: GUARDIAN
+  Display: '&3Манхал-риба'
+  Health: 24
+  Damage: 4
+  Options:
+    MovementSpeed: 0.25
+
+visionary_thoughtform_8:
+  Template: MA_Visionary_Common
+  Type: VEX
+  Display: '&bМислеформ'
+  Health: 40
+  Damage: 5
+  Options:
+    MovementSpeed: 0.26
+    Scale: 1.1
+
+visionary_mirror_dragon_7:
+  Template: MA_Visionary_Common
+  Type: RAVAGER
+  Display: '&9Дзеркальний Дракон'
+  Health: 70
+  Damage: 7
+  Options:
+    MovementSpeed: 0.27
+    Scale: 1.2
+
+visionary_hunting_lizard_6:
+  Template: MA_Visionary_Common
+  Type: ZOGLIN
+  Display: '&5Чорний Мисливський Ящір'
+  Health: 110
+  Damage: 9
+  Options:
+    MovementSpeed: 0.28
+    Scale: 1.35
+
+visionary_mind_dragon_5:
+  Template: MA_Visionary_Apex
+  Type: RAVAGER
+  Display: '&5Розумовий Дракон'
+  Health: 190
+  Damage: 12
+  Options:
+    MovementSpeed: 0.3
+    Scale: 1.55
