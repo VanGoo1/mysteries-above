@@ -85,15 +85,11 @@ public class ServiceContainer {
     private java.util.Map<String, me.vangoo.domain.creatures.CreatureDefinition> creatureRegistry;
     private me.vangoo.domain.creatures.CreatureSelector creatureSelector;
     private me.vangoo.infrastructure.creatures.CreatureCodec creatureCodec;
-    private me.vangoo.infrastructure.creatures.behavior.CreatureBehaviorFactory creatureBehaviorFactory;
-    private me.vangoo.infrastructure.creatures.behavior.CreatureBehaviorManager creatureBehaviorManager;
-    private me.vangoo.infrastructure.creatures.CreatureSpawner creatureSpawner;
+    private me.vangoo.infrastructure.mythic.MythicCreatureGateway mythicCreatureGateway;
     private me.vangoo.presentation.listeners.CreatureDeathListener creatureDeathListener;
     private me.vangoo.presentation.listeners.NaturalCreatureSpawnListener naturalCreatureSpawnListener;
     private me.vangoo.presentation.listeners.StructureCreatureSpawnListener structureCreatureSpawnListener;
-    private me.vangoo.presentation.listeners.CreatureLoadListener creatureLoadListener;
     private me.vangoo.presentation.listeners.CreatureDamageListener creatureDamageListener;
-    private me.vangoo.presentation.commands.CreatureCommand creatureCommand;
     private BeyonderSleepListener beyonderSleepListener;
     private MarionetteExitListener marionetteExitListener;
     private MainBodyAbilityListener mainBodyAbilityListener;
@@ -191,27 +187,16 @@ public class ServiceContainer {
         this.creatureSelector = new me.vangoo.domain.creatures.CreatureSelector(creatureRegistry.values());
         this.creatureCodec = new me.vangoo.infrastructure.creatures.CreatureCodec(plugin);
         this.forageNodeCodec = new me.vangoo.infrastructure.forage.ForageNodeCodec(plugin);
-        this.creatureBehaviorFactory = new me.vangoo.infrastructure.creatures.behavior.CreatureBehaviorFactory(
-                beyonderService, plugin);
-        this.creatureBehaviorManager = new me.vangoo.infrastructure.creatures.behavior.CreatureBehaviorManager(
-                plugin, beyonderService, creatureBehaviorFactory);
-        this.creatureSpawner = new me.vangoo.infrastructure.creatures.CreatureSpawner(
-                java.util.Map.of("vanilla",
-                        new me.vangoo.infrastructure.creatures.VanillaAppearance(customItemService)),
-                creatureCodec, plugin, creatureBehaviorManager);
+        this.mythicCreatureGateway = new me.vangoo.infrastructure.mythic.MythicCreatureGateway(plugin);
         this.creatureDeathListener = new me.vangoo.presentation.listeners.CreatureDeathListener(
                 creatureCodec, creatureRegistry, lootGenerationService, beyonderService);
         double minSpawnDistance = plugin.getConfig().getDouble("creatures.min-spawn-distance", 2000.0);
         this.naturalCreatureSpawnListener = new me.vangoo.presentation.listeners.NaturalCreatureSpawnListener(
-                creatureSelector, creatureSpawner, minSpawnDistance, beyonderService);
+                creatureSelector, mythicCreatureGateway, minSpawnDistance, beyonderService);
         this.structureCreatureSpawnListener = new me.vangoo.presentation.listeners.StructureCreatureSpawnListener(
-                creatureSelector, creatureSpawner, minSpawnDistance);
-        this.creatureLoadListener = new me.vangoo.presentation.listeners.CreatureLoadListener(
-                creatureCodec, creatureRegistry, creatureBehaviorManager);
+                creatureSelector, mythicCreatureGateway, minSpawnDistance);
         this.creatureDamageListener = new me.vangoo.presentation.listeners.CreatureDamageListener(
                 creatureCodec, beyonderService);
-        this.creatureCommand = new me.vangoo.presentation.commands.CreatureCommand(
-                creatureRegistry, creatureSpawner);
 
         this.abilityContextFactory = new AbilityContextFactory(
                 (MysteriesAbovePlugin) plugin,
@@ -278,7 +263,7 @@ public class ServiceContainer {
         double ambientChance = plugin.getConfig().getDouble("creatures.ambient.chance", 0.022);
         int ambientMaxNearby = plugin.getConfig().getInt("creatures.ambient.max-nearby", 3);
         this.ambientCreatureSpawner = new me.vangoo.infrastructure.schedulers.AmbientCreatureSpawner(
-                (MysteriesAbovePlugin) plugin, beyonderService, creatureSelector, creatureSpawner, creatureCodec,
+                (MysteriesAbovePlugin) plugin, beyonderService, creatureSelector, mythicCreatureGateway,
                 ambientMinDistance, ambientInterval, ambientChance, ambientMaxNearby);
 
         me.vangoo.infrastructure.forage.ForageConfigLoader forageConfigLoader =
@@ -355,13 +340,11 @@ public class ServiceContainer {
     public CharacteristicExtractor getCharacteristicExtractor() { return characteristicExtractor; }
     public WardenRemnantCodec getWardenRemnantCodec() { return wardenRemnantCodec; }
     public RampageRemnantDeathListener getRampageRemnantDeathListener() { return rampageRemnantDeathListener; }
-    public me.vangoo.infrastructure.creatures.behavior.CreatureBehaviorManager getCreatureBehaviorManager() { return creatureBehaviorManager; }
+    public me.vangoo.infrastructure.mythic.MythicCreatureGateway getMythicCreatureGateway() { return mythicCreatureGateway; }
     public me.vangoo.presentation.listeners.CreatureDeathListener getCreatureDeathListener() { return creatureDeathListener; }
     public me.vangoo.presentation.listeners.NaturalCreatureSpawnListener getNaturalCreatureSpawnListener() { return naturalCreatureSpawnListener; }
     public me.vangoo.presentation.listeners.StructureCreatureSpawnListener getStructureCreatureSpawnListener() { return structureCreatureSpawnListener; }
-    public me.vangoo.presentation.listeners.CreatureLoadListener getCreatureLoadListener() { return creatureLoadListener; }
     public me.vangoo.presentation.listeners.CreatureDamageListener getCreatureDamageListener() { return creatureDamageListener; }
-    public me.vangoo.presentation.commands.CreatureCommand getCreatureCommand() { return creatureCommand; }
     public BeyonderSleepListener getBeyonderSleepListener() { return beyonderSleepListener; }
     public MarionetteExitListener getMarionetteExitListener() { return marionetteExitListener; }
     public MainBodyAbilityListener getMainBodyAbilityListener() { return mainBodyAbilityListener; }

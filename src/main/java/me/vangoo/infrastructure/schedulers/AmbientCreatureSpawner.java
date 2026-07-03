@@ -8,8 +8,7 @@ import me.vangoo.domain.creatures.CreatureSelector;
 import me.vangoo.domain.creatures.SpawnDistanceGate;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.infrastructure.creatures.AmbientSpawnLocation;
-import me.vangoo.infrastructure.creatures.CreatureCodec;
-import me.vangoo.infrastructure.creatures.CreatureSpawner;
+import me.vangoo.infrastructure.mythic.MythicCreatureGateway;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
@@ -34,8 +33,7 @@ public final class AmbientCreatureSpawner {
     private final MysteriesAbovePlugin plugin;
     private final BeyonderService beyonderService;
     private final CreatureSelector selector;
-    private final CreatureSpawner spawner;
-    private final CreatureCodec codec;
+    private final MythicCreatureGateway gateway;
     private final double minSpawnDistance;
     private final long intervalTicks;
     private final double chance;
@@ -45,13 +43,12 @@ public final class AmbientCreatureSpawner {
     private BukkitTask task;
 
     public AmbientCreatureSpawner(MysteriesAbovePlugin plugin, BeyonderService beyonderService,
-                                  CreatureSelector selector, CreatureSpawner spawner, CreatureCodec codec,
+                                  CreatureSelector selector, MythicCreatureGateway gateway,
                                   double minSpawnDistance, long intervalSeconds, double chance, int maxNearby) {
         this.plugin = plugin;
         this.beyonderService = beyonderService;
         this.selector = selector;
-        this.spawner = spawner;
-        this.codec = codec;
+        this.gateway = gateway;
         this.minSpawnDistance = minSpawnDistance;
         this.intervalTicks = Math.max(20L, intervalSeconds * 20L);
         this.chance = chance;
@@ -99,7 +96,7 @@ public final class AmbientCreatureSpawner {
 
         int near = 0;
         for (Entity e : player.getNearbyEntities(NEARBY_RADIUS, NEARBY_RADIUS, NEARBY_RADIUS)) {
-            if (codec.isCreature(e)) near++;
+            if (gateway.isCreature(e)) near++;
         }
         if (near >= maxNearby) return;
 
@@ -112,6 +109,6 @@ public final class AmbientCreatureSpawner {
         Optional<Location> spot = AmbientSpawnLocation.findSpawnNear(loc, SPAWN_MIN_R, SPAWN_MAX_R, aquatic);
         if (spot.isEmpty()) return;
 
-        spawner.spawn(pick.get(), spot.get());
+        gateway.spawn(pick.get().id(), spot.get());
     }
 }

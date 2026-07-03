@@ -2,8 +2,8 @@ package me.vangoo.presentation.listeners;
 
 import me.vangoo.domain.creatures.CreatureDefinition;
 import me.vangoo.domain.creatures.CreatureSelector;
-import me.vangoo.infrastructure.creatures.CreatureSpawner;
 import me.vangoo.infrastructure.creatures.SafeLocations;
+import me.vangoo.infrastructure.mythic.MythicCreatureGateway;
 import org.bukkit.Location;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -29,15 +29,15 @@ public class StructureCreatureSpawnListener implements Listener {
     private static final long SPAWN_COOLDOWN_MS = 300_000L; // 5 хвилин
 
     private final CreatureSelector selector;
-    private final CreatureSpawner spawner;
+    private final MythicCreatureGateway gateway;
     private final double minSpawnDistance;
     private final Random random = new Random();
     private final Map<String, Long> lastSpawnByChunk = new HashMap<>();
 
-    public StructureCreatureSpawnListener(CreatureSelector selector, CreatureSpawner spawner,
+    public StructureCreatureSpawnListener(CreatureSelector selector, MythicCreatureGateway gateway,
                                           double minSpawnDistance) {
         this.selector = selector;
-        this.spawner = spawner;
+        this.gateway = gateway;
         this.minSpawnDistance = minSpawnDistance;
     }
 
@@ -64,7 +64,7 @@ public class StructureCreatureSpawnListener implements Listener {
         Optional<CreatureDefinition> pick = selector.pickForStructure(key, random.nextDouble());
         if (pick.isEmpty()) return;
 
-        spawner.spawn(pick.get(), SafeLocations.passableNear(loc));
+        gateway.spawn(pick.get().id(), SafeLocations.passableNear(loc));
 
         // Прибираємо застарілі записи перед вставкою, щоб карта не росла безмежно
         if (lastSpawnByChunk.size() > 256) {
