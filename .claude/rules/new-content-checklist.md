@@ -30,10 +30,12 @@ paths:
 
 ## Нова істота (полювання)
 
-1. Дефініція у `creatures.yml` → `CreatureConfigLoader` → реєстр у `ServiceContainer` (`creatureRegistry`).
-2. Правила відбору/спавну — `domain.creatures` (`CreatureSelector`, `SpawnRule`, `SpawnDistanceGate`) — чистий домен, тестується юнітами.
-3. Поведінка — `infrastructure.creatures.behavior`: клас `*Behavior implements CreatureBehavior` + гілка в `CreatureBehaviorFactory`.
-4. Спавн-канали вже підключені: `NaturalCreatureSpawnListener`, `StructureCreatureSpawnListener`, `AmbientCreatureSpawner` (конфіг `creatures.*` у `config.yml`), дроп — `CreatureDeathListener` + `LootGenerationService`. Тест у грі: `/creature spawn <id>`.
+Повний механізм — `.claude/rules/mythic-creatures.md`. Коротко:
+
+1. Моб (стати, вигляд, скіли) — у MythicMobs-паку `mythic-pack/Mobs/<pathway>.yml` (+ метаскіли в `Skills/<pathway>.yml` за потреби); новий файл — дописати в `MythicPackInstaller.PACK_FILES`.
+2. Дефініція у `creatures.yml` → `CreatureConfigLoader` → реєстр у `ServiceContainer` (`creatureRegistry`).
+3. Правила відбору/спавну — `domain.creatures` (`CreatureSelector`, `SpawnRule`, `SpawnDistanceGate`) — чистий домен, тестується юнітами.
+4. Спавн-канали вже підключені: `NaturalCreatureSpawnListener`, `StructureCreatureSpawnListener`, `AmbientCreatureSpawner` (конфіг `creatures.*` у `config.yml`), дроп — `CreatureDeathListener` + `LootGenerationService`. Тест у грі: `/mm mobs spawn <id>`.
 
 ## Новий кастомний предмет / лут
 

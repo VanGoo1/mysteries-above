@@ -21,8 +21,9 @@ paths:
 ## Ресурси (`src/main/resources`)
 
 - `plugin.yml` і всі `*.yml` — **Maven-filtered**: у target потрапляє оброблена копія, тож тестуй через `mvn clean package`, а не сирі файли.
-- Файли конфігів і хто їх читає: `config.yml` (в т.ч. ключі `creatures.*`) → `plugin.getConfig()` у `ServiceContainer`; `custom-items.yml` → `CustomItemConfigLoader`; `potion-recipes.yml` → `PotionRecipeConfigLoader`; `creatures.yml` → `CreatureConfigLoader`; `global_loot.yml` → `LootTableConfigLoader`.
-- Кожна команда мусить бути оголошена в `plugin.yml` (permission `mysteriesabove.admin`, default: op); `depend: [Citizens]`, `softdepend: [CoreProtect]`.
+- Файли конфігів і хто їх читає: `config.yml` (в т.ч. ключі `creatures.*`) → `plugin.getConfig()` у `ServiceContainer`; `custom-items.yml` → `CustomItemConfigLoader`; `potion-recipes.yml` → `PotionRecipeConfigLoader`; `creatures.yml` → `CreatureConfigLoader` (правила спавну/луту істот — контент мобів живе в mythic-pack, див. `mythic-creatures.md`); `global_loot.yml` → `LootTableConfigLoader`.
+- `mythic-pack/**` — **нефільтрований** ресурс (копіюється як є через `MythicPackInstaller`; не додавай туди Maven-плейсхолдери `${}`).
+- Кожна команда мусить бути оголошена в `plugin.yml` (permission `mysteriesabove.admin`, default: op); `depend: [Citizens, MythicMobs]`, `softdepend: [CoreProtect]`.
 
 ## Залежності збірки
 
