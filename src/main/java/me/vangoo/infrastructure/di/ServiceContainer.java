@@ -84,7 +84,6 @@ public class ServiceContainer {
     private RampageRemnantDeathListener rampageRemnantDeathListener;
     private java.util.Map<String, me.vangoo.domain.creatures.CreatureDefinition> creatureRegistry;
     private me.vangoo.domain.creatures.CreatureSelector creatureSelector;
-    private me.vangoo.infrastructure.creatures.CreatureCodec creatureCodec;
     private me.vangoo.infrastructure.mythic.MythicCreatureGateway mythicCreatureGateway;
     private me.vangoo.presentation.listeners.CreatureDeathListener creatureDeathListener;
     private me.vangoo.presentation.listeners.NaturalCreatureSpawnListener naturalCreatureSpawnListener;
@@ -185,18 +184,17 @@ public class ServiceContainer {
                 new me.vangoo.infrastructure.creatures.CreatureConfigLoader(plugin);
         this.creatureRegistry = java.util.Collections.unmodifiableMap(creatureConfigLoader.load());
         this.creatureSelector = new me.vangoo.domain.creatures.CreatureSelector(creatureRegistry.values());
-        this.creatureCodec = new me.vangoo.infrastructure.creatures.CreatureCodec(plugin);
         this.forageNodeCodec = new me.vangoo.infrastructure.forage.ForageNodeCodec(plugin);
         this.mythicCreatureGateway = new me.vangoo.infrastructure.mythic.MythicCreatureGateway(plugin);
         this.creatureDeathListener = new me.vangoo.presentation.listeners.CreatureDeathListener(
-                creatureCodec, creatureRegistry, lootGenerationService, beyonderService);
+                mythicCreatureGateway, creatureRegistry, lootGenerationService, beyonderService);
         double minSpawnDistance = plugin.getConfig().getDouble("creatures.min-spawn-distance", 2000.0);
         this.naturalCreatureSpawnListener = new me.vangoo.presentation.listeners.NaturalCreatureSpawnListener(
                 creatureSelector, mythicCreatureGateway, minSpawnDistance, beyonderService);
         this.structureCreatureSpawnListener = new me.vangoo.presentation.listeners.StructureCreatureSpawnListener(
                 creatureSelector, mythicCreatureGateway, minSpawnDistance);
         this.creatureDamageListener = new me.vangoo.presentation.listeners.CreatureDamageListener(
-                creatureCodec, beyonderService);
+                mythicCreatureGateway, beyonderService);
 
         this.abilityContextFactory = new AbilityContextFactory(
                 (MysteriesAbovePlugin) plugin,

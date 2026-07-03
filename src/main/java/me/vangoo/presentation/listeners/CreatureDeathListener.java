@@ -4,7 +4,7 @@ import me.vangoo.application.services.BeyonderService;
 import me.vangoo.domain.creatures.CreatureDefinition;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.LootTableData;
-import me.vangoo.infrastructure.creatures.CreatureCodec;
+import me.vangoo.infrastructure.mythic.MythicCreatureGateway;
 import me.vangoo.infrastructure.structures.LootGenerationService;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -23,17 +23,17 @@ import java.util.Random;
  */
 public class CreatureDeathListener implements Listener {
 
-    private final CreatureCodec codec;
+    private final MythicCreatureGateway gateway;
     private final Map<String, CreatureDefinition> registry;
     private final LootGenerationService lootService;
     private final BeyonderService beyonderService;
     private final Random random = new Random();
 
-    public CreatureDeathListener(CreatureCodec codec,
+    public CreatureDeathListener(MythicCreatureGateway gateway,
                                  Map<String, CreatureDefinition> registry,
                                  LootGenerationService lootService,
                                  BeyonderService beyonderService) {
-        this.codec = codec;
+        this.gateway = gateway;
         this.registry = registry;
         this.lootService = lootService;
         this.beyonderService = beyonderService;
@@ -41,14 +41,12 @@ public class CreatureDeathListener implements Listener {
 
     @EventHandler
     public void onEntityDeath(EntityDeathEvent event) {
-        Optional<String> id = codec.readId(event.getEntity());
+        Optional<String> id = gateway.creatureId(event.getEntity());
         if (id.isEmpty()) return;
         CreatureDefinition def = registry.get(id.get());
-        if (def == null) return;
+        if (def == null) return; // Mythic mob without loot rules (e.g. MA_FoolPuppet)
 
-        if (def.clearVanillaDrops()) {
-            event.getDrops().clear();
-        }
+        event.getDrops().clear(); // PreventOtherDrops страхує, це — для певності
 
         Beyonder killer = null;
         Player p = event.getEntity().getKiller();

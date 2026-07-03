@@ -3,7 +3,7 @@ package me.vangoo.presentation.listeners;
 import me.vangoo.application.services.BeyonderService;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.services.SequenceScaler;
-import me.vangoo.infrastructure.creatures.CreatureCodec;
+import me.vangoo.infrastructure.mythic.MythicCreatureGateway;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -19,11 +19,11 @@ import org.bukkit.projectiles.ProjectileSource;
  */
 public class CreatureDamageListener implements Listener {
 
-    private final CreatureCodec codec;
+    private final MythicCreatureGateway gateway;
     private final BeyonderService beyonderService;
 
-    public CreatureDamageListener(CreatureCodec codec, BeyonderService beyonderService) {
-        this.codec = codec;
+    public CreatureDamageListener(MythicCreatureGateway gateway, BeyonderService beyonderService) {
+        this.gateway = gateway;
         this.beyonderService = beyonderService;
     }
 
@@ -42,10 +42,10 @@ public class CreatureDamageListener implements Listener {
 
     /** Прямий удар істоти або снаряд, випущений істотою. */
     private boolean isCreatureSource(Entity damager) {
-        if (codec.isCreature(damager)) return true;
+        if (gateway.isCreature(damager)) return true;
         if (damager instanceof Projectile proj) {
             ProjectileSource shooter = proj.getShooter();
-            return shooter instanceof Entity e && codec.isCreature(e);
+            return shooter instanceof Entity e && gateway.isCreature(e);
         }
         return false;
     }
