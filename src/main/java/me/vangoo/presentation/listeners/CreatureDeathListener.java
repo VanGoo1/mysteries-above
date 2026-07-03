@@ -8,6 +8,7 @@ import me.vangoo.infrastructure.mythic.MythicCreatureGateway;
 import me.vangoo.infrastructure.structures.LootGenerationService;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.ItemStack;
@@ -39,7 +40,8 @@ public class CreatureDeathListener implements Listener {
         this.beyonderService = beyonderService;
     }
 
-    @EventHandler
+    // HIGHEST: щоб лут додавався після того, як MythicMobs очистить дропи за PreventOtherDrops.
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onEntityDeath(EntityDeathEvent event) {
         Optional<String> id = gateway.creatureId(event.getEntity());
         if (id.isEmpty()) return;
