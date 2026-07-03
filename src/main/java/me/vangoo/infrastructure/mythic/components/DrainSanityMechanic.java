@@ -1,0 +1,38 @@
+package me.vangoo.infrastructure.mythic.components;
+
+import io.lumine.mythic.api.adapters.AbstractEntity;
+import io.lumine.mythic.api.config.MythicLineConfig;
+import io.lumine.mythic.api.skills.ITargetedEntitySkill;
+import io.lumine.mythic.api.skills.SkillMetadata;
+import io.lumine.mythic.api.skills.SkillResult;
+import io.lumine.mythic.core.skills.SkillExecutor;
+import io.lumine.mythic.core.skills.SkillMechanic;
+import io.lumine.mythic.core.utils.annotations.MythicMechanic;
+import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.infrastructure.mythic.MythicBridge;
+
+import java.io.File;
+
+@MythicMechanic(author = "mysteries-above", name = "drainsanity",
+        description = "Increases sanity loss of the target Beyonder")
+public class DrainSanityMechanic extends SkillMechanic implements ITargetedEntitySkill {
+
+    private final int amount;
+
+    public DrainSanityMechanic(SkillExecutor manager, File file, String line, MythicLineConfig mlc) {
+        super(manager, file, line, mlc);
+        this.amount = mlc.getInteger(new String[]{"amount", "a"}, 1);
+    }
+
+    @Override
+    public SkillResult castAtEntity(SkillMetadata data, AbstractEntity target) {
+        if (!target.isPlayer()) return SkillResult.INVALID_TARGET;
+        var service = MythicBridge.beyonders();
+        if (service == null) return SkillResult.CONDITION_FAILED;
+        Beyonder b = service.getBeyonder(target.getUniqueId());
+        if (b == null) return SkillResult.CONDITION_FAILED;
+        b.increaseSanityLoss(amount);
+        service.updateBeyonder(b);
+        return SkillResult.SUCCESS;
+    }
+}

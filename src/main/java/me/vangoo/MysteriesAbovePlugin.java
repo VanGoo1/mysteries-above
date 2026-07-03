@@ -67,6 +67,12 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         // Initialize service container
         services = new ServiceContainer(this, glowingEntities, effectManager);
 
+        // MythicMobs bridge: static holder must be initialized before CustomComponentRegistry
+        // scans the components package (see .claude/rules/mythic-creatures.md).
+        me.vangoo.infrastructure.mythic.MythicBridge.init(services.getBeyonderService());
+        new io.lumine.mythic.core.skills.CustomComponentRegistry(
+                this, "me.vangoo.infrastructure.mythic.components");
+
         // Register events and commands
         registerEvents();
         registerCommands();
