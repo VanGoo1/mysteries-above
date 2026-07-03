@@ -31,7 +31,7 @@ public final class MythicPackInstaller {
     public boolean installOrUpdate() {
         Path packRoot = plugin.getDataFolder().toPath()
                 .resolveSibling("MythicMobs").resolve("Packs").resolve("MysteriesAbove");
-        boolean changed = false;
+        int updated = 0;
         for (String rel : PACK_FILES) {
             try (InputStream in = plugin.getResource("mythic-pack/" + rel)) {
                 if (in == null) {
@@ -43,12 +43,15 @@ public final class MythicPackInstaller {
                 if (!Files.exists(target) || !Arrays.equals(Files.readAllBytes(target), data)) {
                     Files.createDirectories(target.getParent());
                     Files.write(target, data);
-                    changed = true;
+                    updated++;
                 }
             } catch (IOException e) {
                 plugin.getLogger().warning("Failed to install mythic pack file " + rel + ": " + e);
             }
         }
-        return changed;
+        if (updated > 0) {
+            plugin.getLogger().info("Mythic pack: installed/updated " + updated + " file(s)");
+        }
+        return updated > 0;
     }
 }
