@@ -53,4 +53,18 @@ class ArchitectureTest {
                 .because("поведінка здібностей винесена з domain — domain не повинен знати про шар ефектів")
                 .check(domain);
     }
+
+    @Test
+    void mythicMobsApiIsConfinedToBridgePackage() {
+        JavaClasses classes = new ClassFileImporter()
+                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+                .importPackages("me.vangoo");
+
+        noClasses()
+                .that().resideOutsideOfPackage("me.vangoo.infrastructure.mythic..")
+                .should().dependOnClassesThat()
+                .resideInAnyPackage("io.lumine..")
+                .because("увесь код інтеграції з MythicMobs живе за шлюзом infrastructure.mythic")
+                .check(classes);
+    }
 }
