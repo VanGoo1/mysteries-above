@@ -8,7 +8,7 @@ import org.bukkit.plugin.Plugin;
 import java.util.Optional;
 import java.util.UUID;
 
-/** PDC-тег ноди фореджу на сутності (патерн CreatureCodec). Тегуються обидві сутності ноди. */
+/** PDC-тег ноди фореджу на сутності: дані пишуться в PersistentDataContainer через NamespacedKey. Тегуються обидві сутності ноди. */
 public final class ForageNodeCodec {
 
     private final NamespacedKey nodeKey;

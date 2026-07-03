@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-- **Build**: `mvn clean package` (default goal; produces a shaded plugin JAR via maven-shade-plugin). Shading bundles `glowingentities`, `EffectLib`, and `triumph-gui`; `spigot-api` and `coreprotect` are `provided`.
+- **Build**: `mvn clean package` (default goal; produces a shaded plugin JAR via maven-shade-plugin). Shading bundles `glowingentities`, `EffectLib`, and `triumph-gui`; `spigot-api`, `coreprotect`, and MythicMobs (`io.lumine:Mythic-Dist`) are `provided` — MythicMobs is a separate plugin dependency (`depend: [Citizens, MythicMobs]` in `plugin.yml`), not shaded into the JAR.
 - **Run tests**: `mvn test` (JUnit 5; ArchUnit for architecture rules). Surefire + test deps live in `pom.xml`.
 - **Single test class**: `mvn test -Dtest=SpellRecipeTest`
 - **Single test method**: `mvn test -Dtest=SpellRecipeTest#aoeScalesWithPowerAndArea`
@@ -31,7 +31,7 @@ Layered / hexagonal design under `me.vangoo`. Dependencies point inward toward `
   - **sessions** — live, self-ticking objects for stateful effects (e.g. `JurisdictionSession`, `DiviningRodSession`, `DreamVisionSession`).
   - **Boundary:** `domain` must never depend on this layer — `ArchitectureTest.domainDoesNotDependOnBehaviorLayer` fails the build if it does. Note: **sessions** and **recipe-VOs are patterns _within_ layers, not new layers** — sessions live here, recipe-VOs live in `domain`; the rules-vs-effects seam cuts _across_ the `domain`↔`pathways` boundary rather than adding a level.
 - **`application.services`** — orchestration: `BeyonderService`, `AbilityExecutor`, `PathwayManager`, `CooldownManager`, `RampageManager`, `PassiveAbilityManager`, `PotionManager`, etc. The concrete context implementations live in `application.services.context`.
-- **`infrastructure`** — Bukkit/external integrations: JSON repositories (`JSONBeyonderRepository` wrapped by `BatchedBeyonderRepository`), schedulers, item/recipe/loot factories, UI helpers, and `di.ServiceContainer`.
+- **`infrastructure`** — Bukkit/external integrations: JSON repositories (`JSONBeyonderRepository` wrapped by `BatchedBeyonderRepository`), schedulers, item/recipe/loot factories, UI helpers, `mythic` (MythicMobs bridge: `MythicCreatureGateway`, `MythicBridge`, custom components, `MythicPackInstaller`), and `di.ServiceContainer`.
 - **`presentation`** — `commands`, `listeners` (Bukkit event handlers), and GUI/menu glue.
 
 ### Wiring (`ServiceContainer`)
@@ -70,9 +70,10 @@ The pure core of `domain` (`entities`, `services`, `spells`, `brewing`, `creatur
 
 ## Config & persistence
 
-- `src/main/resources/`: `plugin.yml` (commands + `mysteriesabove.admin` permission), `config.yml`, `custom-items.yml`, `global_loot.yml`, `creatures.yml`, `potion-recipes.yml`. `plugin.yml` and `*.yml` are Maven-filtered resources.
+- `src/main/resources/`: `plugin.yml` (commands + `mysteriesabove.admin` permission), `config.yml`, `custom-items.yml`, `global_loot.yml`, `creatures.yml`, `potion-recipes.yml`. `plugin.yml` and `*.yml` are Maven-filtered resources; `mythic-pack/**` (see below) is not.
+- Mob content (stats, appearance, skills, templates) lives in the MythicMobs pack `src/main/resources/mythic-pack/`, installed to the server by `MythicPackInstaller`; spawn/loot rules stay in code (`domain.creatures` + `creatures.yml`). See `.claude/rules/mythic-creatures.md` for the full mechanism.
 - Player state persists to `beyonders.json` in the plugin data folder, written by `BatchedBeyonderRepository` (batched save every 5 minutes + save on disable). Recipe unlocks persist to `recipe_unlocks.json`.
-- Admin commands (all require `mysteriesabove.admin`): `/pathway`, `/mastery`, `/rampager`, `/potion`, `/custom-items`, `/recipe`, `/structure`, `/characteristic`, `/creature`.
+- Admin commands (all require `mysteriesabove.admin`): `/pathway`, `/mastery`, `/rampager`, `/potion`, `/custom-items`, `/recipe`, `/structure`, `/characteristic`. Creature testing goes through MythicMobs' own command: `/mm mobs spawn <id>`.
 
 ## Maintaining docs & rules
 
