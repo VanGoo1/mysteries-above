@@ -1,4 +1,6 @@
-# creatures.yml — міфічні істоти (полювання). Дають ЛИШЕ інгредієнти, ніколи Характеристики.
+# creatures.yml — правила спавну/луту міфічних істот (полювання). Дають ЛИШЕ інгредієнти, ніколи Характеристики.
+# Контент моба (стати, вигляд, скіли) живе у src/main/resources/mythic-pack/; id тут МАЄ збігатися
+# з internal name MythicMobs-моба (join-ключ).
 # Покриття: по одному створінню на (шлях × послідовність), лут = main-інгредієнти того тіру
 # (auxiliary-трави/кристали приходять зі структур через global_loot.yml — тут не дублюються).
 # tier: common (Seq 9-6, дика природа) | apex (Seq 5, біля структур, зрідка в дикій природі).
@@ -8,11 +10,7 @@ creatures:
   # ============================ ERROR ============================
   error_sphinx_9:
     base_entity: ENDERMAN
-    display_name: "§7Сфінкс"
     tier: common
-    stats: { health: 24, damage: 4, speed: 0.25, scale: 1.0 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -24,11 +22,7 @@ creatures:
 
   error_sphinx_8:
     base_entity: ENDERMAN
-    display_name: "§8Великий Сфінкс"
     tier: common
-    stats: { health: 40, damage: 5, speed: 0.26, scale: 1.1 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -40,11 +34,7 @@ creatures:
 
   error_plague_serpent_7:
     base_entity: CAVE_SPIDER
-    display_name: "§2Чумний Змій"
     tier: common
-    stats: { health: 70, damage: 7, speed: 0.27, scale: 1.2 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -57,11 +47,7 @@ creatures:
   # ========================== VISIONARY ==========================
   visionary_manhal_9:
     base_entity: GUARDIAN
-    display_name: "§3Манхал-риба"
     tier: common
-    stats: { health: 24, damage: 4, speed: 0.25, scale: 1.0 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -74,11 +60,7 @@ creatures:
 
   visionary_thoughtform_8:
     base_entity: VEX
-    display_name: "§bМислеформ"
     tier: common
-    stats: { health: 40, damage: 5, speed: 0.26, scale: 1.1 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -90,11 +72,7 @@ creatures:
 
   visionary_mirror_dragon_7:
     base_entity: RAVAGER
-    display_name: "§9Дзеркальний Дракон"
     tier: common
-    stats: { health: 70, damage: 7, speed: 0.27, scale: 1.2 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -107,11 +85,7 @@ creatures:
 
   visionary_hunting_lizard_6:
     base_entity: ZOGLIN
-    display_name: "§5Чорний Мисливський Ящір"
     tier: common
-    stats: { health: 110, damage: 9, speed: 0.28, scale: 1.35 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -124,11 +98,7 @@ creatures:
 
   visionary_mind_dragon_5:
     base_entity: RAVAGER
-    display_name: "§5Розумовий Дракон"
     tier: apex
-    stats: { health: 190, damage: 12, speed: 0.30, scale: 1.55 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -142,11 +112,7 @@ creatures:
   # ============================ DOOR =============================
   door_wanderer_9:
     base_entity: ENDERMAN
-    display_name: "§dВимірний Блукач"
     tier: common
-    stats: { health: 24, damage: 4, speed: 0.25, scale: 1.0 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -158,11 +124,7 @@ creatures:
 
   door_spirit_eater_8:
     base_entity: DROWNED
-    display_name: "§3Пожирач Духів"
     tier: common
-    stats: { health: 40, damage: 5, speed: 0.26, scale: 1.1 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -175,11 +137,7 @@ creatures:
 
   door_lavos_squid_7:
     base_entity: GUARDIAN
-    display_name: "§4Лавос-Кальмар"
     tier: common
-    stats: { health: 70, damage: 7, speed: 0.27, scale: 1.2 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -191,11 +149,7 @@ creatures:
 
   door_asmann_6:
     base_entity: HUSK
-    display_name: "§6Асман"
     tier: common
-    stats: { health: 110, damage: 9, speed: 0.28, scale: 1.35 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -207,11 +161,7 @@ creatures:
 
   door_void_drifter_5:
     base_entity: ENDERMAN
-    display_name: "§0Блукач Порожнечі"
     tier: apex
-    stats: { health: 190, damage: 12, speed: 0.30, scale: 1.55 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -224,11 +174,7 @@ creatures:
   # ========================== JUSTICIAR =========================
   justiciar_judge_9:
     base_entity: VINDICATOR
-    display_name: "§fСуддя"
     tier: common
-    stats: { health: 24, damage: 4, speed: 0.25, scale: 1.0 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -241,11 +187,7 @@ creatures:
 
   justiciar_terror_worm_8:
     base_entity: ZOGLIN
-    display_name: "§cЖахний Демон-Черв'як"
     tier: common
-    stats: { health: 40, damage: 5, speed: 0.26, scale: 1.1 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -258,11 +200,7 @@ creatures:
 
   justiciar_flash_snake_7:
     base_entity: CAVE_SPIDER
-    display_name: "§eЧорний Змій-Спалах"
     tier: common
-    stats: { health: 70, damage: 7, speed: 0.27, scale: 1.2 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -274,11 +212,7 @@ creatures:
 
   justiciar_silent_verdict_6:
     base_entity: EVOKER
-    display_name: "§7Безмовний Вирок"
     tier: common
-    stats: { health: 110, damage: 9, speed: 0.28, scale: 1.35 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -291,11 +225,7 @@ creatures:
 
   justiciar_retribution_5:
     base_entity: IRON_GOLEM
-    display_name: "§4Караюча Влада"
     tier: apex
-    stats: { health: 190, damage: 12, speed: 0.30, scale: 1.55 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -309,11 +239,7 @@ creatures:
   # ========================= WHITE TOWER ========================
   whitetower_manticore_9:
     base_entity: PHANTOM
-    display_name: "§eМантикора"
     tier: common
-    stats: { health: 24, damage: 4, speed: 0.25, scale: 1.0 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -326,11 +252,7 @@ creatures:
 
   whitetower_cave_monkey_8:
     base_entity: PIGLIN
-    display_name: "§6Печерна Мавпа"
     tier: common
-    stats: { health: 40, damage: 5, speed: 0.26, scale: 1.1 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -342,11 +264,7 @@ creatures:
 
   whitetower_phantom_python_7:
     base_entity: WOLF
-    display_name: "§8Фантомний Пітон"
     tier: common
-    stats: { health: 70, damage: 7, speed: 0.27, scale: 1.2 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -359,11 +277,7 @@ creatures:
 
   whitetower_chameleon_6:
     base_entity: CAVE_SPIDER
-    display_name: "§aПризматичний Хамелеон"
     tier: common
-    stats: { health: 110, damage: 9, speed: 0.28, scale: 1.35 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -375,11 +289,7 @@ creatures:
 
   whitetower_void_beholder_5:
     base_entity: SHULKER
-    display_name: "§5Бехолдер Порожнечі"
     tier: apex
-    stats: { health: 190, damage: 12, speed: 0.30, scale: 1.55 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -392,11 +302,7 @@ creatures:
   # ============================ FOOL ============================
   fool_nighthawk_9:
     base_entity: PHANTOM
-    display_name: "§8Нічний Яструб"
     tier: common
-    stats: { health: 24, damage: 4, speed: 0.25, scale: 1.0 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -408,11 +314,7 @@ creatures:
 
   fool_joker_8:
     base_entity: VINDICATOR
-    display_name: "§cДжокер"
     tier: common
-    stats: { health: 40, damage: 5, speed: 0.26, scale: 1.1 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -424,11 +326,7 @@ creatures:
 
   fool_phantom_ink_7:
     base_entity: GUARDIAN
-    display_name: "§9Примарне Чорнило"
     tier: common
-    stats: { health: 70, damage: 7, speed: 0.27, scale: 1.2 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -440,11 +338,7 @@ creatures:
 
   fool_shapeshifter_6:
     base_entity: WITCH
-    display_name: "§5Перевертень"
     tier: common
-    stats: { health: 110, damage: 9, speed: 0.28, scale: 1.35 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
@@ -456,11 +350,7 @@ creatures:
 
   fool_puppeteer_5:
     base_entity: EVOKER
-    display_name: "§dЛялькар"
     tier: apex
-    stats: { health: 190, damage: 12, speed: 0.30, scale: 1.55 }
-    appearance: vanilla
-    clear_vanilla_drops: true
     loot:
       min_items: 0
       max_items: 1
