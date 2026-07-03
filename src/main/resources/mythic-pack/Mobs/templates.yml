@@ -57,13 +57,13 @@ MA_Fool_Common:
   Template: MA_Base
   Skills:
   - skill{s=MA_Fool_Pull} @NearestPlayer{r=12} ~onTimer:60
-  - summon{mob=MA_FoolPuppet;amount=1;radius=1} @self ~onDamaged ?healthpercent{h=<35} 1
+  - skill{s=MA_Fool_Summon} @self ~onDamaged ?healthpercent{h=<35} 1
   - effect:particles{p=witch;amount=4;hS=0.3;vS=0.5;y=1} @self ~onTimer:20
 MA_Fool_Apex:
   Template: MA_Base
   Skills:
   - skill{s=MA_Fool_PullApex} @NearestPlayer{r=12} ~onTimer:60
-  - summon{mob=MA_FoolPuppet;amount=2;radius=1} @self ~onDamaged ?healthpercent{h=<35} 1
+  - skill{s=MA_Fool_SummonApex} @self ~onDamaged ?healthpercent{h=<35} 1
   - effect:particles{p=witch;amount=4;hS=0.3;vS=0.5;y=1} @self ~onTimer:20
 
 MA_Error_Common:
