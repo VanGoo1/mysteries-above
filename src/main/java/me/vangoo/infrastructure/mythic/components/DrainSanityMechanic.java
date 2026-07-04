@@ -4,6 +4,7 @@ import io.lumine.mythic.api.adapters.AbstractEntity;
 import io.lumine.mythic.api.skills.ITargetedEntitySkill;
 import io.lumine.mythic.api.skills.SkillMetadata;
 import io.lumine.mythic.api.skills.SkillResult;
+import io.lumine.mythic.api.skills.ThreadSafetyLevel;
 import io.lumine.mythic.bukkit.events.MythicMechanicLoadEvent;
 import io.lumine.mythic.core.skills.SkillMechanic;
 import io.lumine.mythic.core.utils.annotations.MythicMechanic;
@@ -20,6 +21,13 @@ public class DrainSanityMechanic extends SkillMechanic implements ITargetedEntit
     public DrainSanityMechanic(MythicMechanicLoadEvent event) {
         super(event.getContainer().getManager(), event.getConfig().getLine(), event.getConfig());
         this.amount = event.getConfig().getInteger(new String[]{"amount", "a"}, 1);
+    }
+
+    // Скіл-клок MythicMobs асинхронний; мутація Beyonder має йти на main thread,
+    // щоб не гнатися з рештою доменної логіки
+    @Override
+    public ThreadSafetyLevel getThreadSafetyLevel() {
+        return ThreadSafetyLevel.SYNC_ONLY;
     }
 
     @Override

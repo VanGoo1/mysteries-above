@@ -29,16 +29,40 @@ class MythicComponentContractTest {
 
     @Test
     void everyMechanicHasLoadEventConstructor() {
-        assertComponentsHaveLoadEventConstructor(MythicMechanic.class, MythicMechanicLoadEvent.class);
+        assertComponentsHaveLoadEventConstructor(MythicMechanicLoadEvent.class, MythicMechanic.class);
     }
 
     @Test
     void everyConditionHasLoadEventConstructor() {
-        assertComponentsHaveLoadEventConstructor(MythicCondition.class, MythicConditionLoadEvent.class);
+        assertComponentsHaveLoadEventConstructor(MythicConditionLoadEvent.class, MythicCondition.class);
     }
 
-    private void assertComponentsHaveLoadEventConstructor(Class<? extends Annotation> annotation,
-                                                          Class<?> loadEvent) {
+    /**
+     * MythicMobs' skill clock runs on async executor threads and SkillMechanic's
+     * async flag defaults to true (ThreadSafetyLevel.EITHER), so a mechanic touching
+     * the Bukkit API trips Paper's AsyncCatcher at runtime. Every mechanic must
+     * therefore declare its own getThreadSafetyLevel() (returning SYNC_ONLY) instead
+     * of inheriting the default.
+     */
+    @Test
+    void everyMechanicDeclaresThreadSafetyLevel() {
+        for (Class<?> mechanic : componentsAnnotatedWith(MythicMechanic.class)) {
+            assertTrue(declaresThreadSafetyLevel(mechanic),
+                    mechanic.getSimpleName() + " must override getThreadSafetyLevel() (return SYNC_ONLY"
+                            + " when it touches Bukkit) — MythicMobs' skill clock is async");
+        }
+    }
+
+    private boolean declaresThreadSafetyLevel(Class<?> mechanic) {
+        try {
+            mechanic.getDeclaredMethod("getThreadSafetyLevel");
+            return true;
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
+    }
+
+    private List<Class<?>> componentsAnnotatedWith(Class<? extends Annotation> annotation) {
         JavaClasses imported = new ClassFileImporter().importPackages(COMPONENTS_PACKAGE);
         List<Class<?>> components = imported.stream()
                 .filter(c -> c.isAnnotatedWith(annotation))
@@ -47,7 +71,12 @@ class MythicComponentContractTest {
         assertFalse(components.isEmpty(),
                 "No @" + annotation.getSimpleName() + " classes found in " + COMPONENTS_PACKAGE
                         + " — package scan is broken");
-        for (Class<?> component : components) {
+        return components;
+    }
+
+    private void assertComponentsHaveLoadEventConstructor(Class<?> loadEvent,
+                                                          Class<? extends Annotation> annotation) {
+        for (Class<?> component : componentsAnnotatedWith(annotation)) {
             assertTrue(hasLoadEventConstructor(component, loadEvent),
                     component.getSimpleName() + " needs a public constructor (" + loadEvent.getSimpleName()
                             + ") — MythicMobs' CustomComponentRegistry cannot register it otherwise");
