@@ -1,5 +1,8 @@
 # Базові шаблони. Кожен pathway має Common/Apex — apex успадковує common і підсилює скіли.
 MA_Base:
+  # Плейсхолдер: шаблон ніколи не спавниться, але MythicMobs вантажить кожен запис Mobs/*.yml
+  # як моба і без Type кидає "No Type specified". Конкретні моби перекривають Type власним.
+  Type: ZOMBIE
   AITargetSelectors:
   - 0 clear
   - 1 attacker

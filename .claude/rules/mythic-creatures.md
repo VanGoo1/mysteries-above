@@ -13,6 +13,8 @@
 ## Додати істоту
 
 1. Моб у `mythic-pack/Mobs/<pathway>.yml`: `Template: MA_<Pathway>_Common|Apex`, Type/Display/Health/Damage/Options.
+   Кожен запис Mobs/*.yml (шаблони теж) мусить резолвити `Type` напряму або через ланцюжок `Template:`,
+   інакше "No Type specified" на старті (гард — `MythicPackMobTypeTest`).
 2. Запис у `creatures.yml`: `base_entity`, `tier`, `loot` (тільки інгредієнти), `spawn` (natural/structure).
 3. Нова поведінка → метаскіл у `mythic-pack/Skills/<pathway>.yml`; таргет-гейт — умова `isbeyonder`.
 4. Файл додано? Впиши його в `MythicPackInstaller.PACK_FILES`.
@@ -25,6 +27,9 @@
 - Кастомні механіки/умови (`drainsanity`, `scatter`, `isbeyonder`) — в `infrastructure.mythic.components`;
   сервіси беруть зі статичного `MythicBridge` (єдиний дозволений static-виняток: конструктор диктує MythicMobs).
   Реєстрація компонентів — `MythicBridge.registerComponents(plugin)`, викликати в `onEnable` ПІСЛЯ `MythicBridge.init(beyonderService)`.
+  Конструктор компонента — ОБОВʼЯЗКОВО публічний із параметром load-event
+  (`MythicMechanicLoadEvent` / `MythicConditionLoadEvent`) — реєстр шукає саме його рефлексією
+  (гард — `MythicComponentContractTest`).
   Після мутації Beyonder у механіці — обовʼязково `beyonderService.updateBeyonder(...)`.
 - Балансові числа спавну/луту (шанси, конвергенція, дистанції) — у `domain.creatures` з юніт-тестами,
   НЕ в YAML пака. У паку — тільки хореографія ефектів (аркадні прості атаки, ванільна стилістика).
