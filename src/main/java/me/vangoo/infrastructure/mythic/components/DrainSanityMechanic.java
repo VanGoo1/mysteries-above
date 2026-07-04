@@ -1,17 +1,14 @@
 package me.vangoo.infrastructure.mythic.components;
 
 import io.lumine.mythic.api.adapters.AbstractEntity;
-import io.lumine.mythic.api.config.MythicLineConfig;
 import io.lumine.mythic.api.skills.ITargetedEntitySkill;
 import io.lumine.mythic.api.skills.SkillMetadata;
 import io.lumine.mythic.api.skills.SkillResult;
-import io.lumine.mythic.core.skills.SkillExecutor;
+import io.lumine.mythic.bukkit.events.MythicMechanicLoadEvent;
 import io.lumine.mythic.core.skills.SkillMechanic;
 import io.lumine.mythic.core.utils.annotations.MythicMechanic;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.infrastructure.mythic.MythicBridge;
-
-import java.io.File;
 
 @MythicMechanic(author = "mysteries-above", name = "drainsanity",
         description = "Increases sanity loss of the target Beyonder")
@@ -19,9 +16,10 @@ public class DrainSanityMechanic extends SkillMechanic implements ITargetedEntit
 
     private final int amount;
 
-    public DrainSanityMechanic(SkillExecutor manager, File file, String line, MythicLineConfig mlc) {
-        super(manager, file, line, mlc);
-        this.amount = mlc.getInteger(new String[]{"amount", "a"}, 1);
+    // CustomComponentRegistry інстанціює компонент рефлексією саме через конструктор (load event)
+    public DrainSanityMechanic(MythicMechanicLoadEvent event) {
+        super(event.getContainer().getManager(), event.getConfig().getLine(), event.getConfig());
+        this.amount = event.getConfig().getInteger(new String[]{"amount", "a"}, 1);
     }
 
     @Override

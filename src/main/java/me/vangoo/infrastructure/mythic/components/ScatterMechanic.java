@@ -1,11 +1,10 @@
 package me.vangoo.infrastructure.mythic.components;
 
 import io.lumine.mythic.api.adapters.AbstractEntity;
-import io.lumine.mythic.api.config.MythicLineConfig;
 import io.lumine.mythic.api.skills.ITargetedEntitySkill;
 import io.lumine.mythic.api.skills.SkillMetadata;
 import io.lumine.mythic.api.skills.SkillResult;
-import io.lumine.mythic.core.skills.SkillExecutor;
+import io.lumine.mythic.bukkit.events.MythicMechanicLoadEvent;
 import io.lumine.mythic.core.skills.SkillMechanic;
 import io.lumine.mythic.core.utils.annotations.MythicMechanic;
 import me.vangoo.infrastructure.creatures.SafeLocations;
@@ -15,7 +14,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.io.File;
 import java.util.concurrent.ThreadLocalRandom;
 
 @MythicMechanic(author = "mysteries-above", name = "scatter",
@@ -24,9 +22,10 @@ public class ScatterMechanic extends SkillMechanic implements ITargetedEntitySki
 
     private final double radius;
 
-    public ScatterMechanic(SkillExecutor manager, File file, String line, MythicLineConfig mlc) {
-        super(manager, file, line, mlc);
-        this.radius = mlc.getDouble(new String[]{"radius", "r"}, 5.0);
+    // CustomComponentRegistry інстанціює компонент рефлексією саме через конструктор (load event)
+    public ScatterMechanic(MythicMechanicLoadEvent event) {
+        super(event.getContainer().getManager(), event.getConfig().getLine(), event.getConfig());
+        this.radius = event.getConfig().getDouble(new String[]{"radius", "r"}, 5.0);
     }
 
     @Override
