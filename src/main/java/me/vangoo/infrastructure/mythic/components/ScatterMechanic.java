@@ -4,6 +4,7 @@ import io.lumine.mythic.api.adapters.AbstractEntity;
 import io.lumine.mythic.api.skills.ITargetedEntitySkill;
 import io.lumine.mythic.api.skills.SkillMetadata;
 import io.lumine.mythic.api.skills.SkillResult;
+import io.lumine.mythic.api.skills.ThreadSafetyLevel;
 import io.lumine.mythic.bukkit.events.MythicMechanicLoadEvent;
 import io.lumine.mythic.core.skills.SkillMechanic;
 import io.lumine.mythic.core.utils.annotations.MythicMechanic;
@@ -26,6 +27,12 @@ public class ScatterMechanic extends SkillMechanic implements ITargetedEntitySki
     public ScatterMechanic(MythicMechanicLoadEvent event) {
         super(event.getContainer().getManager(), event.getConfig().getLine(), event.getConfig());
         this.radius = event.getConfig().getDouble(new String[]{"radius", "r"}, 5.0);
+    }
+
+    // Скіл-клок MythicMobs асинхронний; телепорт/ефекти — тільки на main thread
+    @Override
+    public ThreadSafetyLevel getThreadSafetyLevel() {
+        return ThreadSafetyLevel.SYNC_ONLY;
     }
 
     @Override

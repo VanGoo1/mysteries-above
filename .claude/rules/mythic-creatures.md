@@ -28,8 +28,10 @@
   сервіси беруть зі статичного `MythicBridge` (єдиний дозволений static-виняток: конструктор диктує MythicMobs).
   Реєстрація компонентів — `MythicBridge.registerComponents(plugin)`, викликати в `onEnable` ПІСЛЯ `MythicBridge.init(beyonderService)`.
   Конструктор компонента — ОБОВʼЯЗКОВО публічний із параметром load-event
-  (`MythicMechanicLoadEvent` / `MythicConditionLoadEvent`) — реєстр шукає саме його рефлексією
-  (гард — `MythicComponentContractTest`).
+  (`MythicMechanicLoadEvent` / `MythicConditionLoadEvent`) — реєстр шукає саме його рефлексією.
+  Скіл-клок MythicMobs АСИНХРОННИЙ (дефолт `ThreadSafetyLevel.EITHER`): механіка, що чіпає Bukkit
+  або мутує домен, мусить перевизначити `getThreadSafetyLevel()` → `SYNC_ONLY`, інакше AsyncCatcher.
+  Обидва контракти пінить `MythicComponentContractTest`.
   Після мутації Beyonder у механіці — обовʼязково `beyonderService.updateBeyonder(...)`.
 - Балансові числа спавну/луту (шанси, конвергенція, дистанції) — у `domain.creatures` з юніт-тестами,
   НЕ в YAML пака. У паку — тільки хореографія ефектів (аркадні прості атаки, ванільна стилістика).
