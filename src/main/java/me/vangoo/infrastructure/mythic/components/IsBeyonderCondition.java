@@ -2,6 +2,7 @@ package me.vangoo.infrastructure.mythic.components;
 
 import io.lumine.mythic.api.adapters.AbstractEntity;
 import io.lumine.mythic.api.skills.conditions.IEntityCondition;
+import io.lumine.mythic.bukkit.events.MythicConditionLoadEvent;
 import io.lumine.mythic.core.skills.SkillCondition;
 import io.lumine.mythic.core.utils.annotations.MythicCondition;
 import me.vangoo.infrastructure.mythic.MythicBridge;
@@ -10,8 +11,9 @@ import me.vangoo.infrastructure.mythic.MythicBridge;
         description = "True if the target player is a Beyonder")
 public class IsBeyonderCondition extends SkillCondition implements IEntityCondition {
 
-    public IsBeyonderCondition(String line) {
-        super(line);
+    // CustomComponentRegistry інстанціює компонент рефлексією саме через конструктор (load event)
+    public IsBeyonderCondition(MythicConditionLoadEvent event) {
+        super(event.getConfig().getLine());
     }
 
     @Override
