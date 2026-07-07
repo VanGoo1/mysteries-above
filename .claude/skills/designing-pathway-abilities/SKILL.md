@@ -25,7 +25,16 @@ Real failure this skill exists to prevent: an agent asked for "Sequence 7 Vision
 4. **Design spec FIRST — present to the user, do not write code yet.** One short block: name (Ukrainian), sequence, base class, what it does, target/range, cost & cooldown, scaling dimension+strategy, the effect/feedback beats. Get a thumbs-up or adjust. (See "Don't skip the spec" below.)
 5. **Implement** per `api-reference.md`: right base class, contexts, `SequenceScaler`, guards with clear failure messages, juice checklist.
 6. **Register** in the pathway's `initializeAbilities()` at the correct sequence (merge into the existing `List.of`).
-7. **Verify**: `mvn -q -DskipTests compile`. Report the result honestly.
+7. **Mirror into creature kits (manual sync).** Creature ability kits in
+   `src/main/resources/mythic-pack/` do NOT inherit player abilities — they are separate
+   YAML metaskills balanced independently. If the new ability is COMBAT-relevant, add its
+   mob version: a `MA_<Pathway>_S<seq>_<Ability>` metaskill in
+   `mythic-pack/Skills/<pathway>.yml` and a kit entry in every template
+   `MA_<Pathway>_S<N≤seq>` in `Mobs/templates.yml` (offensive → the `kitcast{skills=...}`
+   line; reactive/passive → its own trigger line with `Cooldown:`). See
+   `.claude/rules/mythic-creatures.md` § «Кіти здібностей (kitcast)». Utility/GUI
+   abilities are NOT mirrored.
+8. **Verify**: `mvn -q -DskipTests compile`. Report the result honestly.
 
 ## Balance heuristics
 - Cost/cooldown scale **down** as sequence strengthens: `base / SequenceScaler.calculateMultiplier(seq, ...)`.
@@ -42,6 +51,8 @@ Jumping straight to a Java file is the most common failure: it bakes in a wrong 
 - "Particles/sound are optional" → juice is the point; add cast + resolve effects and two-sided feedback.
 - "This is basically like \<existing ability\>" → that's a duplicate; pick another facet.
 - "I'll just write the class" → write the spec first and confirm.
+- "Creature kits will pick this up automatically" → they won't; mirror combat abilities
+  into the mythic-pack kit or consciously skip (utility/GUI).
 
 ## Files
 - `pathways-reference.md` — authoritative sequence↔name↔theme tables for all 5 pathways.
