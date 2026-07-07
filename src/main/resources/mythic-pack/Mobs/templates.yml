@@ -1,8 +1,8 @@
 # Шаблони. MA_Base — спільні опції; MA_<Pathway>_S<seq> — кіт здібностей, накопичений
 # з послідовностей 9..N (модель прогресії гравців). Наступальні касти йдуть через kitcast
 # (ГКД ~6с, у S5 ~4с; пріоритет — здібності нижчої послідовності, перші у списку);
-# реактивні/пасивні — окремі тригерні рядки поза ГКД. Стійка: RANGED-шаблони мають
-# retreat-рядок (кайт при d<4), MELEE — ні. Числа тут — баланс істот, незалежний від
+# реактивні/пасивні — окремі тригерні рядки поза ГКД. Стійка: RANGED-шаблони вимикають рухові AI-цілі і додають rangedstance (стоїть-кастує
+# в смузі 5..11, відходить кроком, мілі-відповідь по provoke) + provoke ~onDamaged; MELEE — нічого. Числа тут — баланс істот, незалежний від
 # гравцевих здібностей.
 MA_Base:
   # Плейсхолдер: шаблон ніколи не спавниться, але MythicMobs вантажить кожен запис Mobs/*.yml
@@ -26,43 +26,67 @@ MA_Fool_S9:
 
 MA_Fool_S8:
   Template: MA_Base
+  AIGoalSelectors:
+  - 0 clear
+  - 1 float
+  - 2 lookatplayers
+  - 3 randomlookaround
   Skills:
   - kitcast{gcd=120;skills=MA_Fool_S8_PaperCutter:120} @NearestPlayer{r=12} ~onTimer:20
   - skill{s=MA_Fool_S9_DangerIntuition} @trigger ~onDamaged
   - potion{type=SPEED;duration=45;level=0;particles=false} @self ~onTimer:40
-  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
   - effect:particles{p=witch;amount=4;hS=0.3;vS=0.5;y=1} @self ~onTimer:20
 
 MA_Fool_S7:
   Template: MA_Base
+  AIGoalSelectors:
+  - 0 clear
+  - 1 float
+  - 2 lookatplayers
+  - 3 randomlookaround
   Skills:
   - kitcast{gcd=120;skills=MA_Fool_S7_AirBullet:160,MA_Fool_S8_PaperCutter:100} @NearestPlayer{r=12} ~onTimer:20
   - skill{s=MA_Fool_S7_FlameJump} @NearestPlayer{r=3} ~onTimer:20 ?playerwithin{d=3}
   - skill{s=MA_Fool_S9_DangerIntuition} @trigger ~onDamaged
   - potion{type=SPEED;duration=45;level=0;particles=false} @self ~onTimer:40
-  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
   - effect:particles{p=witch;amount=4;hS=0.3;vS=0.5;y=1} @self ~onTimer:20
 
 # S6: гравцеві здібності S6 не бойові для моба — той самий кіт, коротші кулдауни
 MA_Fool_S6:
   Template: MA_Base
+  AIGoalSelectors:
+  - 0 clear
+  - 1 float
+  - 2 lookatplayers
+  - 3 randomlookaround
   Skills:
   - kitcast{gcd=120;skills=MA_Fool_S7_AirBullet:140,MA_Fool_S8_PaperCutter:90} @NearestPlayer{r=12} ~onTimer:20
   - skill{s=MA_Fool_S7_FlameJump} @NearestPlayer{r=3} ~onTimer:20 ?playerwithin{d=3}
   - skill{s=MA_Fool_S9_DangerIntuition} @trigger ~onDamaged
   - potion{type=SPEED;duration=45;level=0;particles=false} @self ~onTimer:40
-  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
   - effect:particles{p=witch;amount=4;hS=0.3;vS=0.5;y=1} @self ~onTimer:20
 
 MA_Fool_S5:
   Template: MA_Base
+  AIGoalSelectors:
+  - 0 clear
+  - 1 float
+  - 2 lookatplayers
+  - 3 randomlookaround
   Skills:
   - kitcast{gcd=80;skills=MA_Fool_S5_Marionette:200,MA_Fool_S7_AirBullet:140,MA_Fool_S8_PaperCutter:80} @NearestPlayer{r=12} ~onTimer:20
   - skill{s=MA_Fool_S5_Puppets} @self ~onDamaged ?healthpercent{h=<35}
   - skill{s=MA_Fool_S7_FlameJump} @NearestPlayer{r=3} ~onTimer:20 ?playerwithin{d=3}
   - skill{s=MA_Fool_S9_DangerIntuition} @trigger ~onDamaged
   - potion{type=SPEED;duration=45;level=0;particles=false} @self ~onTimer:40
-  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
   - effect:particles{p=witch;amount=4;hS=0.3;vS=0.5;y=1} @self ~onTimer:20
 
 # ── Visionary (MELEE, засідник) ──
@@ -103,38 +127,68 @@ MA_Visionary_S5:
 # ── Door (RANGED, блінк-скірмішер) ──
 MA_Door_S9:
   Template: MA_Base
+  AIGoalSelectors:
+  - 0 clear
+  - 1 float
+  - 2 lookatplayers
+  - 3 randomlookaround
   Skills:
   - kitcast{gcd=120;skills=MA_Door_S9_Seal:140} @NearestPlayer{r=12} ~onTimer:20
-  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
 
 MA_Door_S8:
   Template: MA_Base
+  AIGoalSelectors:
+  - 0 clear
+  - 1 float
+  - 2 lookatplayers
+  - 3 randomlookaround
   Skills:
   - kitcast{gcd=120;skills=MA_Door_S8_Shock:120,MA_Door_S8_Flash:140,MA_Door_S8_Burning:160,MA_Door_S9_Seal:160} @NearestPlayer{r=12} ~onTimer:20
   - skill{s=MA_Door_S8_EscapeTrick} @self ~onDamaged
-  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
 
 # S7/S6: гравцеві здібності цих рівнів не бойові (дивінації/Record) — кіт S8, коротші кулдауни
 MA_Door_S7:
   Template: MA_Base
+  AIGoalSelectors:
+  - 0 clear
+  - 1 float
+  - 2 lookatplayers
+  - 3 randomlookaround
   Skills:
   - kitcast{gcd=120;skills=MA_Door_S8_Shock:110,MA_Door_S8_Flash:130,MA_Door_S8_Burning:150,MA_Door_S9_Seal:150} @NearestPlayer{r=12} ~onTimer:20
   - skill{s=MA_Door_S8_EscapeTrick} @self ~onDamaged
-  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
 
 MA_Door_S6:
   Template: MA_Base
+  AIGoalSelectors:
+  - 0 clear
+  - 1 float
+  - 2 lookatplayers
+  - 3 randomlookaround
   Skills:
   - kitcast{gcd=120;skills=MA_Door_S8_Shock:100,MA_Door_S8_Flash:120,MA_Door_S8_Burning:140,MA_Door_S9_Seal:140} @NearestPlayer{r=12} ~onTimer:20
   - skill{s=MA_Door_S8_EscapeTrick} @self ~onDamaged
-  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
 
 MA_Door_S5:
   Template: MA_Base
+  AIGoalSelectors:
+  - 0 clear
+  - 1 float
+  - 2 lookatplayers
+  - 3 randomlookaround
   Skills:
   - kitcast{gcd=80;skills=MA_Door_S5_Blink:140,MA_Door_S8_Shock:100,MA_Door_S8_Flash:120,MA_Door_S8_Burning:140,MA_Door_S9_Seal:140} @NearestPlayer{r=12} ~onTimer:20
   - skill{s=MA_Door_S8_EscapeTrick} @self ~onDamaged
-  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
 
 # ── Justiciar (MELEE) ──
 MA_Justiciar_S9:
@@ -195,10 +249,16 @@ MA_Whitetower_S6:
 
 MA_Whitetower_S5:
   Template: MA_Base
+  AIGoalSelectors:
+  - 0 clear
+  - 1 float
+  - 2 lookatplayers
+  - 3 randomlookaround
   Skills:
   - kitcast{gcd=80;skills=MA_Whitetower_S5_Spellcast:120,MA_Whitetower_S6_Analysis:120} @NearestPlayer{r=14} ~onTimer:20
   - skill{s=MA_Whitetower_S5_MirrorCurse} @trigger ~onDamaged
-  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
   - effect:particles{p=end_rod;amount=4;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
 
 # ── Error (MELEE, трикстер; гравцеві здібності S7–S5 ще не існують — кіт S8, сильніший) ──
