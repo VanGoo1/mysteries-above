@@ -35,7 +35,7 @@ MA_Fool_S8:
   - kitcast{gcd=120;skills=MA_Fool_S8_PaperCutter:120} @NearestPlayer{r=12} ~onTimer:20
   - skill{s=MA_Fool_S9_DangerIntuition} @trigger ~onDamaged
   - potion{type=SPEED;duration=45;level=0;particles=false} @self ~onTimer:40
-  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - rangedstance{min=5;max=11} @NearestPlayer{r=24} ~onTimer:10
   - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
   - effect:particles{p=witch;amount=4;hS=0.3;vS=0.5;y=1} @self ~onTimer:20
 
@@ -51,7 +51,7 @@ MA_Fool_S7:
   - skill{s=MA_Fool_S7_FlameJump} @NearestPlayer{r=3} ~onTimer:20 ?playerwithin{d=3}
   - skill{s=MA_Fool_S9_DangerIntuition} @trigger ~onDamaged
   - potion{type=SPEED;duration=45;level=0;particles=false} @self ~onTimer:40
-  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - rangedstance{min=5;max=11} @NearestPlayer{r=24} ~onTimer:10
   - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
   - effect:particles{p=witch;amount=4;hS=0.3;vS=0.5;y=1} @self ~onTimer:20
 
@@ -68,7 +68,7 @@ MA_Fool_S6:
   - skill{s=MA_Fool_S7_FlameJump} @NearestPlayer{r=3} ~onTimer:20 ?playerwithin{d=3}
   - skill{s=MA_Fool_S9_DangerIntuition} @trigger ~onDamaged
   - potion{type=SPEED;duration=45;level=0;particles=false} @self ~onTimer:40
-  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - rangedstance{min=5;max=11} @NearestPlayer{r=24} ~onTimer:10
   - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
   - effect:particles{p=witch;amount=4;hS=0.3;vS=0.5;y=1} @self ~onTimer:20
 
@@ -85,7 +85,7 @@ MA_Fool_S5:
   - skill{s=MA_Fool_S7_FlameJump} @NearestPlayer{r=3} ~onTimer:20 ?playerwithin{d=3}
   - skill{s=MA_Fool_S9_DangerIntuition} @trigger ~onDamaged
   - potion{type=SPEED;duration=45;level=0;particles=false} @self ~onTimer:40
-  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - rangedstance{min=5;max=11} @NearestPlayer{r=24} ~onTimer:10
   - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
   - effect:particles{p=witch;amount=4;hS=0.3;vS=0.5;y=1} @self ~onTimer:20
 
@@ -134,7 +134,7 @@ MA_Door_S9:
   - 3 randomlookaround
   Skills:
   - kitcast{gcd=120;skills=MA_Door_S9_Seal:140} @NearestPlayer{r=12} ~onTimer:20
-  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - rangedstance{min=5;max=11} @NearestPlayer{r=24} ~onTimer:10
   - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
 
 MA_Door_S8:
@@ -147,7 +147,7 @@ MA_Door_S8:
   Skills:
   - kitcast{gcd=120;skills=MA_Door_S8_Shock:120,MA_Door_S8_Flash:140,MA_Door_S8_Burning:160,MA_Door_S9_Seal:160} @NearestPlayer{r=12} ~onTimer:20
   - skill{s=MA_Door_S8_EscapeTrick} @self ~onDamaged
-  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - rangedstance{min=5;max=11} @NearestPlayer{r=24} ~onTimer:10
   - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
 
 # S7/S6: гравцеві здібності цих рівнів не бойові (дивінації/Record) — кіт S8, коротші кулдауни
@@ -161,7 +161,7 @@ MA_Door_S7:
   Skills:
   - kitcast{gcd=120;skills=MA_Door_S8_Shock:110,MA_Door_S8_Flash:130,MA_Door_S8_Burning:150,MA_Door_S9_Seal:150} @NearestPlayer{r=12} ~onTimer:20
   - skill{s=MA_Door_S8_EscapeTrick} @self ~onDamaged
-  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - rangedstance{min=5;max=11} @NearestPlayer{r=24} ~onTimer:10
   - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
 
 MA_Door_S6:
@@ -174,7 +174,7 @@ MA_Door_S6:
   Skills:
   - kitcast{gcd=120;skills=MA_Door_S8_Shock:100,MA_Door_S8_Flash:120,MA_Door_S8_Burning:140,MA_Door_S9_Seal:140} @NearestPlayer{r=12} ~onTimer:20
   - skill{s=MA_Door_S8_EscapeTrick} @self ~onDamaged
-  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - rangedstance{min=5;max=11} @NearestPlayer{r=24} ~onTimer:10
   - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
 
 MA_Door_S5:
@@ -187,7 +187,7 @@ MA_Door_S5:
   Skills:
   - kitcast{gcd=80;skills=MA_Door_S5_Blink:140,MA_Door_S8_Shock:100,MA_Door_S8_Flash:120,MA_Door_S8_Burning:140,MA_Door_S9_Seal:140} @NearestPlayer{r=12} ~onTimer:20
   - skill{s=MA_Door_S8_EscapeTrick} @self ~onDamaged
-  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - rangedstance{min=5;max=11} @NearestPlayer{r=24} ~onTimer:10
   - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
 
 # ── Justiciar (MELEE) ──
@@ -257,7 +257,7 @@ MA_Whitetower_S5:
   Skills:
   - kitcast{gcd=80;skills=MA_Whitetower_S5_Spellcast:120,MA_Whitetower_S6_Analysis:120} @NearestPlayer{r=14} ~onTimer:20
   - skill{s=MA_Whitetower_S5_MirrorCurse} @trigger ~onDamaged
-  - rangedstance{min=5;max=11} @NearestPlayer{r=16} ~onTimer:10
+  - rangedstance{min=5;max=11} @NearestPlayer{r=24} ~onTimer:10
   - provoke{seconds=8} @self ~onDamaged ?playerwithin{d=3}
   - effect:particles{p=end_rod;amount=4;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
 
