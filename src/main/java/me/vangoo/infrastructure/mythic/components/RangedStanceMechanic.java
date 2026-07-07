@@ -12,6 +12,7 @@ import me.vangoo.infrastructure.creatures.SafeLocations;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.persistence.PersistentDataType;
