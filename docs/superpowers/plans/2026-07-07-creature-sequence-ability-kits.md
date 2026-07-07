@@ -1197,14 +1197,15 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
 
 ---
 
-### Task 7: Оновити `.claude/rules/mythic-creatures.md` + повний прогін
+### Task 7: Оновити `.claude/rules/mythic-creatures.md` і скіл `designing-pathway-abilities` + повний прогін
 
 **Files:**
 - Modify: `.claude/rules/mythic-creatures.md`
+- Modify: `.claude/skills/designing-pathway-abilities/SKILL.md`
 
 **Interfaces:**
 - Consumes: терміни/імена з Tasks 1–6 (`kitcast`, `AbilityCastPlanner`, `MA_<Pathway>_S<seq>`, `retreat`, `blinkbehind`).
-- Produces: актуальне правило для майбутніх сесій.
+- Produces: актуальне правило для майбутніх сесій + нагадування синхронізувати кіти істот при додаванні гравцевих здібностей (синхронізація ручна — кіти НЕ успадковують зміни гравцевих здібностей автоматично).
 
 - [ ] **Step 1: Внести зміни в правило**
 
@@ -1250,19 +1251,46 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
   тільки в S5-шаблоні.
 ```
 
-- [ ] **Step 2: Повний прогін тестів**
+- [ ] **Step 2: Оновити скіл `designing-pathway-abilities`**
+
+У `.claude/skills/designing-pathway-abilities/SKILL.md`, секція **Process**, після кроку 6
+(«Register») вставити новий крок 7 (нинішній крок 7 «Verify» стає кроком 8):
+
+```markdown
+7. **Mirror into creature kits (manual sync).** Creature ability kits in
+   `src/main/resources/mythic-pack/` do NOT inherit player abilities — they are separate
+   YAML metaskills balanced independently. If the new ability is COMBAT-relevant, add its
+   mob version: a `MA_<Pathway>_S<seq>_<Ability>` metaskill in
+   `mythic-pack/Skills/<pathway>.yml` and a kit entry in every template
+   `MA_<Pathway>_S<N≤seq>` in `Mobs/templates.yml` (offensive → the `kitcast{skills=...}`
+   line; reactive/passive → its own trigger line with `Cooldown:`). See
+   `.claude/rules/mythic-creatures.md` § «Кіти здібностей (kitcast)». Utility/GUI
+   abilities are NOT mirrored.
+```
+
+І в секції **Red flags — STOP** додати рядок:
+
+```markdown
+- "Creature kits will pick this up automatically" → they won't; mirror combat abilities
+  into the mythic-pack kit or consciously skip (utility/GUI).
+```
+
+- [ ] **Step 3: Повний прогін тестів**
 
 ```powershell
 & $mvn -o clean test
 ```
 Expected: BUILD SUCCESS, усі тести зелені (в т.ч. ArchUnit, обидва пак-гарди, контракт-тест).
 
-- [ ] **Step 3: Коміт**
+- [ ] **Step 4: Коміт**
 
 ```powershell
-git add .claude/rules/mythic-creatures.md
+git add .claude/rules/mythic-creatures.md .claude/skills/designing-pathway-abilities/SKILL.md
 git commit -m @'
 docs(rules): document sequence ability kit mechanism for creatures
+
+Also reminds the pathway-ability skill to mirror new combat abilities
+into creature kits — the pack does not inherit player ability changes.
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
 '@
