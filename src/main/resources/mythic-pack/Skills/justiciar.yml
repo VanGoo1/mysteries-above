@@ -12,3 +12,61 @@ MA_Justiciar_AuraApex:
   - potion{type=SLOWNESS;duration=40;level=2;particles=false}
   - potion{type=MINING_FATIGUE;duration=40;level=1;particles=false}
   - potion{type=WEAKNESS;duration=40;level=1;particles=false}
+
+# ── Кіт S9..S5: мобові версії гравцевих здібностей Justiciar ──
+# Наступальна: наказ влади (Authority, S9)
+MA_Justiciar_S9_Authority:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - potion{type=SLOWNESS;duration=40;level=1;particles=false}
+  - potion{type=WEAKNESS;duration=40;level=1;particles=false}
+  - effect:sound{s=entity.wither.ambient;v=0.6;p=1.6}
+
+# Наступальна: погляд арбітра — мітка (ArbitersGaze, S9)
+MA_Justiciar_S9_ArbitersGaze:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - potion{type=GLOWING;duration=80;level=0;particles=false}
+  - effect:particles{p=wax_off;amount=8;hS=0.3;vS=0.5;y=1.6}
+
+# Пасивна аура-зона (поза ГКД): юрисдикція (AreaOfJurisdiction, S8; поглинає MA_Justiciar_Aura)
+MA_Justiciar_S8_Jurisdiction:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - potion{type=SLOWNESS;duration=50;level=1;particles=false}
+  - potion{type=MINING_FATIGUE;duration=50;level=1;particles=false}
+  - potion{type=WEAKNESS;duration=50;level=1;particles=false}
+
+# Наступальна: батіг болю + псі-пробій (WhipOfPain + PsychicPiercing, S7)
+MA_Justiciar_S7_Whip:
+  Skills:
+  - damage{amount=5}
+  - drainsanity{amount=1} 0.15
+  - effect:particles{p=crit;amount=12;hS=0.3;vS=0.5;y=1;speed=0.2}
+  - effect:sound{s=entity.ravager.attack;v=0.8;p=1.4}
+
+# Наступальна: тавро стримування — корінь (BrandOfRestraint, S7)
+MA_Justiciar_S7_Brand:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - potion{type=SLOWNESS;duration=30;level=4;particles=false}
+  - effect:particles{p=soul_fire_flame;amount=16;hS=0.3;vS=0.2;y=0.2;speed=0.01}
+
+# Наступальна: вирок — бурст (Verdict, S6)
+MA_Justiciar_S6_Verdict:
+  Skills:
+  - damage{amount=7}
+  - effect:particles{p=wax_off;amount=24;hS=0.5;vS=0.8;y=1;speed=0.05}
+  - effect:sound{s=block.anvil.land;v=0.8;p=1.2}
+
+# Наступальна: кара (Punishment, S5)
+MA_Justiciar_S5_Punishment:
+  Skills:
+  - damage{amount=10}
+  - potion{type=SLOWNESS;duration=30;level=1;particles=false}
+  - effect:particles{p=explosion;amount=2;y=1}
+  - effect:sound{s=entity.lightning_bolt.thunder;v=0.7;p=1.4}

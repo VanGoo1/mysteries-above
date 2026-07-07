@@ -12,3 +12,52 @@ MA_Door_SealApex:
   - potion{type=SLOWNESS;duration=80;level=2;particles=false}
   - potion{type=DARKNESS;duration=60;level=1;particles=false}
   - effect:particles{p=reverse_portal;amount=40;hS=0.6;vS=1.0;y=1;speed=0.05}
+
+# ── Кіт S9..S5: мобові версії гравцевих здібностей Door ──
+# Наступальна: печать дверей (DoorOpening, S9; поглинає MA_Door_Seal)
+MA_Door_S9_Seal:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - potion{type=SLOWNESS;duration=80;level=1;particles=false}
+  - potion{type=DARKNESS;duration=60;level=1;particles=false}
+  - effect:particles{p=reverse_portal;amount=40;hS=0.6;vS=1.0;y=1;speed=0.05}
+
+# Наступальна: сліпучий спалах (Flash, S8)
+MA_Door_S8_Flash:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - potion{type=BLINDNESS;duration=35;level=1;particles=false}
+  - effect:particles{p=flash;amount=1;y=1}
+  - effect:sound{s=entity.firework_rocket.blast;v=1;p=1.4}
+
+# Наступальна: підпал (Burning, S8)
+MA_Door_S8_Burning:
+  Skills:
+  - ignite{ticks=60}
+  - effect:particles{p=flame;amount=12;hS=0.3;vS=0.5;y=1;speed=0.02}
+
+# Наступальна: електричний розряд (ElectricShock, S8)
+MA_Door_S8_Shock:
+  Skills:
+  - damage{amount=3}
+  - potion{type=SLOWNESS;duration=20;level=2;particles=false}
+  - effect:particles{p=electric_spark;amount=14;hS=0.3;vS=0.6;y=1;speed=0.1}
+  - effect:sound{s=entity.lightning_bolt.impact;v=0.6;p=1.6}
+
+# Реактивна (поза ГКД): трюк утечі — телепорт убік при уроні (EscapeTrick, S8; scatter на себе)
+MA_Door_S8_EscapeTrick:
+  Cooldown: 15
+  Skills:
+  - effect:particles{p=portal;amount=30;hS=0.4;vS=0.8;y=1;speed=0.1} @self
+  - scatter{radius=7} @self
+  - effect:sound{s=entity.enderman.teleport;v=1;p=1} @self
+
+# Наступальна: блінк за спину + удар (Blink, S5)
+MA_Door_S5_Blink:
+  Skills:
+  - effect:particles{p=portal;amount=20;hS=0.4;vS=0.8;y=1} @self
+  - blinkbehind{distance=2}
+  - damage{amount=5}
+  - effect:sound{s=entity.enderman.teleport;v=1;p=0.8} @self
