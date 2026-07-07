@@ -219,16 +219,7 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
     }
 
     private String formatEffectName(PotionEffectType type) {
-        // Спроба отримати ключ через Paper API
-        String name;
-        try {
-            // Paper API: getKey() повертає NamespacedKey
-            var key = type.getKey();
-            name = key != null ? key.getKey() : type.getName();
-        } catch (Exception e) {
-            // Fallback для старіших версій
-            name = type.getName();
-        }
+        String name = type.getKey().getKey();
 
         if (name == null || name.isEmpty()) return "";
 
