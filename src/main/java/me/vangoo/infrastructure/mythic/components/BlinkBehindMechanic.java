@@ -10,6 +10,7 @@ import io.lumine.mythic.core.skills.SkillMechanic;
 import io.lumine.mythic.core.utils.annotations.MythicMechanic;
 import me.vangoo.infrastructure.creatures.SafeLocations;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.util.Vector;
 
@@ -42,8 +43,10 @@ public class BlinkBehindMechanic extends SkillMechanic implements ITargetedEntit
         Location behind = victim.getLocation().clone()
                 .subtract(facing.normalize().multiply(distance));
         Location dest = SafeLocations.passableNear(behind);
-        if (!dest.clone().subtract(0, 1, 0).getBlock().getType().isSolid()) {
-            return SkillResult.CONDITION_FAILED; // немає опори — блінк скасовано, ГКД уже витрачено
+        var below = dest.clone().subtract(0, 1, 0).getBlock();
+        boolean lava = dest.getBlock().getType() == Material.LAVA || below.getType() == Material.LAVA;
+        if (!below.getType().isSolid() || lava) {
+            return SkillResult.CONDITION_FAILED; // немає опори або лава — блінк скасовано, ГКД уже витрачено
         }
         dest.setDirection(victim.getLocation().toVector().subtract(dest.toVector())); // обличчям до цілі
         caster.teleport(dest);
