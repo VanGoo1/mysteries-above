@@ -1,5 +1,5 @@
 door_wanderer_9:
-  Template: MA_Door_Common
+  Template: MA_Door_S9
   Type: ENDERMAN
   Display: '&dВимірний Блукач'
   Health: 24
@@ -8,7 +8,7 @@ door_wanderer_9:
     MovementSpeed: 0.25
 
 door_spirit_eater_8:
-  Template: MA_Door_Common
+  Template: MA_Door_S8
   Type: DROWNED
   Display: '&3Пожирач Духів'
   Health: 40
@@ -18,7 +18,7 @@ door_spirit_eater_8:
     Scale: 1.1
 
 door_lavos_squid_7:
-  Template: MA_Door_Common
+  Template: MA_Door_S7
   Type: GUARDIAN
   Display: '&4Лавос-Кальмар'
   Health: 70
@@ -28,7 +28,7 @@ door_lavos_squid_7:
     Scale: 1.2
 
 door_asmann_6:
-  Template: MA_Door_Common
+  Template: MA_Door_S6
   Type: HUSK
   Display: '&6Асман'
   Health: 110
@@ -38,7 +38,7 @@ door_asmann_6:
     Scale: 1.35
 
 door_void_drifter_5:
-  Template: MA_Door_Apex
+  Template: MA_Door_S5
   Type: ENDERMAN
   Display: '&0Блукач Порожнечі'
   Health: 190

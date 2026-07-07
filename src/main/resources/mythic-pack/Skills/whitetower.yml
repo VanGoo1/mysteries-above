@@ -1,10 +1,3 @@
-MA_Whitetower_Reveal:
-  TargetConditions:
-  - isbeyonder true
-  Skills:
-  - potion{type=GLOWING;duration=40;level=1;particles=false}
-  - potion{type=BLINDNESS;duration=25;level=1;particles=false} 0.25
-
 # ── Кіт S9..S5: мобові версії гравцевих здібностей WhiteTower ──
 # S9–S7 гравцеві здібності не бойові (пасиви виражені у статах моба) — кіт стартує з S6.
 # Наступальна: аналіз — викриття (Analysis, S6; поглинає MA_Whitetower_Reveal)

@@ -1,18 +1,3 @@
-MA_Door_Seal:
-  TargetConditions:
-  - isbeyonder true
-  Skills:
-  - potion{type=SLOWNESS;duration=80;level=1;particles=false}
-  - potion{type=DARKNESS;duration=60;level=1;particles=false}
-  - effect:particles{p=reverse_portal;amount=40;hS=0.6;vS=1.0;y=1;speed=0.05}
-MA_Door_SealApex:
-  TargetConditions:
-  - isbeyonder true
-  Skills:
-  - potion{type=SLOWNESS;duration=80;level=2;particles=false}
-  - potion{type=DARKNESS;duration=60;level=1;particles=false}
-  - effect:particles{p=reverse_portal;amount=40;hS=0.6;vS=1.0;y=1;speed=0.05}
-
 # ── Кіт S9..S5: мобові версії гравцевих здібностей Door ──
 # Наступальна: печать дверей (DoorOpening, S9; поглинає MA_Door_Seal)
 MA_Door_S9_Seal:

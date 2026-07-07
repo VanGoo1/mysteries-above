@@ -1,4 +1,9 @@
-# Базові шаблони. Кожен pathway має Common/Apex — apex успадковує common і підсилює скіли.
+# Шаблони. MA_Base — спільні опції; MA_<Pathway>_S<seq> — кіт здібностей, накопичений
+# з послідовностей 9..N (модель прогресії гравців). Наступальні касти йдуть через kitcast
+# (ГКД ~6с, у S5 ~4с; пріоритет — здібності нижчої послідовності, перші у списку);
+# реактивні/пасивні — окремі тригерні рядки поза ГКД. Стійка: RANGED-шаблони мають
+# retreat-рядок (кайт при d<4), MELEE — ні. Числа тут — баланс істот, незалежний від
+# гравцевих здібностей.
 MA_Base:
   # Плейсхолдер: шаблон ніколи не спавниться, але MythicMobs вантажить кожен запис Mobs/*.yml
   # як моба і без Type кидає "No Type specified". Конкретні моби перекривають Type власним.
@@ -12,68 +17,207 @@ MA_Base:
     MaxCombatDistance: 32
     Despawn: true
 
-MA_Justiciar_Common:
+# ── Fool (RANGED з S8) ──
+MA_Fool_S9:
   Template: MA_Base
   Skills:
-  - skill{s=MA_Justiciar_Aura} @PlayersInRadius{r=12} ~onTimer:20
-  - effect:particles{p=wax_off;amount=3;hS=0.4;vS=0.4;y=1} @self ~onTimer:20
-MA_Justiciar_Apex:
-  Template: MA_Base
-  Skills:
-  - skill{s=MA_Justiciar_AuraApex} @PlayersInRadius{r=12} ~onTimer:20
-  - effect:particles{p=wax_off;amount=3;hS=0.4;vS=0.4;y=1} @self ~onTimer:20
-
-MA_Whitetower_Common:
-  Template: MA_Base
-  Skills:
-  - skill{s=MA_Whitetower_Reveal} @PlayersInRadius{r=12} ~onTimer:20
-  - shoot{type=SNOWBALL;velocity=1.6} @NearestPlayer{r=12} ~onTimer:100
-  - effect:particles{p=end_rod;amount=4;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
-MA_Whitetower_Apex:
-  Template: MA_Base
-  Skills:
-  - skill{s=MA_Whitetower_Reveal} @PlayersInRadius{r=12} ~onTimer:20
-  - shoot{type=SNOWBALL;velocity=1.6} @NearestPlayer{r=12} ~onTimer:70
-  - effect:particles{p=end_rod;amount=4;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
-
-MA_Visionary_Common:
-  Template: MA_Base
-  Skills:
-  - potion{type=INVISIBILITY;duration=45;particles=false} @self ~onTimer:20 ?!playerwithin{d=4}
-  - skill{s=MA_Visionary_Burst} @PlayersInRadius{r=4} ~onTimer:20 ?playerwithin{d=4}
-MA_Visionary_Apex:
-  Template: MA_Base
-  Skills:
-  - potion{type=INVISIBILITY;duration=45;particles=false} @self ~onTimer:20 ?!playerwithin{d=4}
-  - skill{s=MA_Visionary_BurstApex} @PlayersInRadius{r=4} ~onTimer:20 ?playerwithin{d=4}
-
-MA_Door_Common:
-  Template: MA_Base
-  Skills:
-  - skill{s=MA_Door_Seal} @NearestPlayer{r=12} ~onTimer:140
-MA_Door_Apex:
-  Template: MA_Base
-  Skills:
-  - skill{s=MA_Door_SealApex} @NearestPlayer{r=12} ~onTimer:100
-
-MA_Fool_Common:
-  Template: MA_Base
-  Skills:
-  - skill{s=MA_Fool_Pull} @NearestPlayer{r=12} ~onTimer:60
-  - skill{s=MA_Fool_Summon} @self ~onDamaged ?healthpercent{h=<35} 1
-  - effect:particles{p=witch;amount=4;hS=0.3;vS=0.5;y=1} @self ~onTimer:20
-MA_Fool_Apex:
-  Template: MA_Base
-  Skills:
-  - skill{s=MA_Fool_PullApex} @NearestPlayer{r=12} ~onTimer:60
-  - skill{s=MA_Fool_SummonApex} @self ~onDamaged ?healthpercent{h=<35} 1
+  - skill{s=MA_Fool_S9_DangerIntuition} @trigger ~onDamaged
   - effect:particles{p=witch;amount=4;hS=0.3;vS=0.5;y=1} @self ~onTimer:20
 
-MA_Error_Common:
+MA_Fool_S8:
   Template: MA_Base
   Skills:
-  - skill{s=MA_Error_Chaos} @NearestPlayer{r=12} ~onTimer:70
-MA_Error_Apex:
+  - kitcast{gcd=120;skills=MA_Fool_S8_PaperCutter:120} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Fool_S9_DangerIntuition} @trigger ~onDamaged
+  - potion{type=SPEED;duration=45;level=0;particles=false} @self ~onTimer:40
+  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+  - effect:particles{p=witch;amount=4;hS=0.3;vS=0.5;y=1} @self ~onTimer:20
+
+MA_Fool_S7:
   Template: MA_Base
   Skills:
-  - skill{s=MA_Error_ChaosApex} @NearestPlayer{r=12} ~onTimer:50
+  - kitcast{gcd=120;skills=MA_Fool_S7_AirBullet:160,MA_Fool_S8_PaperCutter:100} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Fool_S7_FlameJump} @NearestPlayer{r=3} ~onTimer:20 ?playerwithin{d=3}
+  - skill{s=MA_Fool_S9_DangerIntuition} @trigger ~onDamaged
+  - potion{type=SPEED;duration=45;level=0;particles=false} @self ~onTimer:40
+  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+  - effect:particles{p=witch;amount=4;hS=0.3;vS=0.5;y=1} @self ~onTimer:20
+
+# S6: гравцеві здібності S6 не бойові для моба — той самий кіт, коротші кулдауни
+MA_Fool_S6:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Fool_S7_AirBullet:140,MA_Fool_S8_PaperCutter:90} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Fool_S7_FlameJump} @NearestPlayer{r=3} ~onTimer:20 ?playerwithin{d=3}
+  - skill{s=MA_Fool_S9_DangerIntuition} @trigger ~onDamaged
+  - potion{type=SPEED;duration=45;level=0;particles=false} @self ~onTimer:40
+  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+  - effect:particles{p=witch;amount=4;hS=0.3;vS=0.5;y=1} @self ~onTimer:20
+
+MA_Fool_S5:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=80;skills=MA_Fool_S5_Marionette:200,MA_Fool_S7_AirBullet:140,MA_Fool_S8_PaperCutter:80} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Fool_S5_Puppets} @self ~onDamaged ?healthpercent{h=<35}
+  - skill{s=MA_Fool_S7_FlameJump} @NearestPlayer{r=3} ~onTimer:20 ?playerwithin{d=3}
+  - skill{s=MA_Fool_S9_DangerIntuition} @trigger ~onDamaged
+  - potion{type=SPEED;duration=45;level=0;particles=false} @self ~onTimer:40
+  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+  - effect:particles{p=witch;amount=4;hS=0.3;vS=0.5;y=1} @self ~onTimer:20
+
+# ── Visionary (MELEE, засідник) ──
+MA_Visionary_S9:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Visionary_S9_ScanGaze:200} @NearestPlayer{r=12} ~onTimer:20
+
+MA_Visionary_S8:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Visionary_S9_ScanGaze:200} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Visionary_S8_DangerSense} @self ~onDamaged
+
+MA_Visionary_S7:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Visionary_S9_ScanGaze:200} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Visionary_S7_Surge} @PlayersInRadius{r=4} ~onTimer:20 ?playerwithin{d=4}
+  - skill{s=MA_Visionary_S8_DangerSense} @self ~onDamaged
+
+MA_Visionary_S6:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Visionary_S6_Hypnosis:180,MA_Visionary_S9_ScanGaze:200} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Visionary_S7_Surge} @PlayersInRadius{r=4} ~onTimer:20 ?playerwithin{d=4}
+  - potion{type=INVISIBILITY;duration=45;particles=false} @self ~onTimer:20 ?!playerwithin{d=4}
+  - skill{s=MA_Visionary_S8_DangerSense} @self ~onDamaged
+
+MA_Visionary_S5:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=80;skills=MA_Visionary_S6_Hypnosis:140,MA_Visionary_S9_ScanGaze:160} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Visionary_S7_Surge} @PlayersInRadius{r=4} ~onTimer:20 ?playerwithin{d=4}
+  - potion{type=INVISIBILITY;duration=45;particles=false} @self ~onTimer:20 ?!playerwithin{d=4}
+  - skill{s=MA_Visionary_S8_DangerSense} @self ~onDamaged
+
+# ── Door (RANGED, блінк-скірмішер) ──
+MA_Door_S9:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Door_S9_Seal:140} @NearestPlayer{r=12} ~onTimer:20
+  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+
+MA_Door_S8:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Door_S8_Shock:120,MA_Door_S8_Flash:140,MA_Door_S8_Burning:160,MA_Door_S9_Seal:160} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Door_S8_EscapeTrick} @self ~onDamaged
+  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+
+# S7/S6: гравцеві здібності цих рівнів не бойові (дивінації/Record) — кіт S8, коротші кулдауни
+MA_Door_S7:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Door_S8_Shock:110,MA_Door_S8_Flash:130,MA_Door_S8_Burning:150,MA_Door_S9_Seal:150} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Door_S8_EscapeTrick} @self ~onDamaged
+  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+
+MA_Door_S6:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Door_S8_Shock:100,MA_Door_S8_Flash:120,MA_Door_S8_Burning:140,MA_Door_S9_Seal:140} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Door_S8_EscapeTrick} @self ~onDamaged
+  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+
+MA_Door_S5:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=80;skills=MA_Door_S5_Blink:140,MA_Door_S8_Shock:100,MA_Door_S8_Flash:120,MA_Door_S8_Burning:140,MA_Door_S9_Seal:140} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Door_S8_EscapeTrick} @self ~onDamaged
+  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+
+# ── Justiciar (MELEE) ──
+MA_Justiciar_S9:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Justiciar_S9_Authority:160,MA_Justiciar_S9_ArbitersGaze:200} @NearestPlayer{r=12} ~onTimer:20
+  - effect:particles{p=wax_off;amount=3;hS=0.4;vS=0.4;y=1} @self ~onTimer:20
+
+MA_Justiciar_S8:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Justiciar_S9_Authority:160,MA_Justiciar_S9_ArbitersGaze:200} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Justiciar_S8_Jurisdiction} @PlayersInRadius{r=6} ~onTimer:40
+  - effect:particles{p=wax_off;amount=3;hS=0.4;vS=0.4;y=1} @self ~onTimer:20
+
+MA_Justiciar_S7:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Justiciar_S7_Whip:120,MA_Justiciar_S7_Brand:180,MA_Justiciar_S9_Authority:160} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Justiciar_S8_Jurisdiction} @PlayersInRadius{r=6} ~onTimer:40
+  - effect:particles{p=wax_off;amount=3;hS=0.4;vS=0.4;y=1} @self ~onTimer:20
+
+MA_Justiciar_S6:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Justiciar_S6_Verdict:200,MA_Justiciar_S7_Whip:120,MA_Justiciar_S7_Brand:180,MA_Justiciar_S9_Authority:160} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Justiciar_S8_Jurisdiction} @PlayersInRadius{r=6} ~onTimer:40
+  - effect:particles{p=wax_off;amount=3;hS=0.4;vS=0.4;y=1} @self ~onTimer:20
+
+MA_Justiciar_S5:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=80;skills=MA_Justiciar_S5_Punishment:240,MA_Justiciar_S6_Verdict:160,MA_Justiciar_S7_Brand:140,MA_Justiciar_S7_Whip:100,MA_Justiciar_S9_Authority:120} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Justiciar_S8_Jurisdiction} @PlayersInRadius{r=6} ~onTimer:40
+  - effect:particles{p=wax_off;amount=3;hS=0.4;vS=0.4;y=1} @self ~onTimer:20
+
+# ── WhiteTower (S9–S7 без кіта: пасиви у статах; RANGED з S5) ──
+MA_Whitetower_S9:
+  Template: MA_Base
+  Skills:
+  - effect:particles{p=end_rod;amount=4;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
+
+MA_Whitetower_S8:
+  Template: MA_Base
+  Skills:
+  - effect:particles{p=end_rod;amount=4;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
+
+MA_Whitetower_S7:
+  Template: MA_Base
+  Skills:
+  - effect:particles{p=end_rod;amount=4;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
+
+MA_Whitetower_S6:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Whitetower_S6_Analysis:140} @NearestPlayer{r=12} ~onTimer:20
+  - effect:particles{p=end_rod;amount=4;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
+
+MA_Whitetower_S5:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=80;skills=MA_Whitetower_S5_Spellcast:120,MA_Whitetower_S6_Analysis:120} @NearestPlayer{r=14} ~onTimer:20
+  - skill{s=MA_Whitetower_S5_MirrorCurse} @trigger ~onDamaged
+  - retreat{strength=1.0;vertical=0.35} @NearestPlayer{r=4} ~onTimer:30 ?playerwithin{d=4}
+  - effect:particles{p=end_rod;amount=4;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
+
+# ── Error (MELEE, трикстер; гравцеві здібності S7–S5 ще не існують — кіт S8, сильніший) ──
+MA_Error_S9:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Error_S9_ShadowTheft:160} @NearestPlayer{r=12} ~onTimer:20
+  - effect:particles{p=smoke;amount=6;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
+
+MA_Error_S8:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Error_S8_SwindlerCharm:140,MA_Error_S9_ShadowTheft:140} @NearestPlayer{r=12} ~onTimer:20
+  - potion{type=SPEED;duration=45;level=0;particles=false} @self ~onTimer:40
+  - effect:particles{p=smoke;amount=6;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
+
+MA_Error_S7:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=100;skills=MA_Error_S8_SwindlerCharm:100,MA_Error_S9_ShadowTheft:100} @NearestPlayer{r=12} ~onTimer:20
+  - potion{type=SPEED;duration=45;level=0;particles=false} @self ~onTimer:40
+  - effect:particles{p=smoke;amount=6;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20

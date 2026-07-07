@@ -1,5 +1,5 @@
 error_sphinx_9:
-  Template: MA_Error_Common
+  Template: MA_Error_S9
   Type: ENDERMAN
   Display: '&7Сфінкс'
   Health: 24
@@ -8,7 +8,7 @@ error_sphinx_9:
     MovementSpeed: 0.25
 
 error_sphinx_8:
-  Template: MA_Error_Common
+  Template: MA_Error_S8
   Type: ENDERMAN
   Display: '&8Великий Сфінкс'
   Health: 40
@@ -18,7 +18,7 @@ error_sphinx_8:
     Scale: 1.1
 
 error_plague_serpent_7:
-  Template: MA_Error_Common
+  Template: MA_Error_S7
   Type: CAVE_SPIDER
   Display: '&2Чумний Змій'
   Health: 70

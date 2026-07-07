@@ -1,5 +1,5 @@
 justiciar_judge_9:
-  Template: MA_Justiciar_Common
+  Template: MA_Justiciar_S9
   Type: VINDICATOR
   Display: '&fСуддя'
   Health: 24
@@ -8,7 +8,7 @@ justiciar_judge_9:
     MovementSpeed: 0.25
 
 justiciar_terror_worm_8:
-  Template: MA_Justiciar_Common
+  Template: MA_Justiciar_S8
   Type: ZOGLIN
   Display: '&cЖахний Демон-Черв''як'
   Health: 40
@@ -18,7 +18,7 @@ justiciar_terror_worm_8:
     Scale: 1.1
 
 justiciar_flash_snake_7:
-  Template: MA_Justiciar_Common
+  Template: MA_Justiciar_S7
   Type: CAVE_SPIDER
   Display: '&eЧорний Змій-Спалах'
   Health: 70
@@ -28,7 +28,7 @@ justiciar_flash_snake_7:
     Scale: 1.2
 
 justiciar_silent_verdict_6:
-  Template: MA_Justiciar_Common
+  Template: MA_Justiciar_S6
   Type: EVOKER
   Display: '&7Безмовний Вирок'
   Health: 110
@@ -38,7 +38,7 @@ justiciar_silent_verdict_6:
     Scale: 1.35
 
 justiciar_retribution_5:
-  Template: MA_Justiciar_Apex
+  Template: MA_Justiciar_S5
   Type: IRON_GOLEM
   Display: '&4Караюча Влада'
   Health: 190
