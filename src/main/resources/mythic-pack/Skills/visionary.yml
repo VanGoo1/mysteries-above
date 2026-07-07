@@ -16,3 +16,43 @@ MA_Visionary_BurstApex:
   - potion{type=DARKNESS;duration=60;level=1;particles=false}
   - drainsanity{amount=1} 0.2
   - effect:particles{p=squid_ink;amount=8;hS=0.3;vS=0.5;y=1;speed=0.01}
+
+# ── Кіт S9..S5: мобові версії гравцевих здібностей Visionary ──
+# Наступальна: мітка-сканування — Glowing (ScanGaze, S9)
+MA_Visionary_S9_ScanGaze:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - potion{type=GLOWING;duration=60;level=0;particles=false}
+  - effect:particles{p=end_rod;amount=6;hS=0.2;vS=0.4;y=1;speed=0.01}
+
+# Реактивна (поза ГКД): відчуття небезпеки — резист при уроні (DangerSense, S8)
+MA_Visionary_S8_DangerSense:
+  Cooldown: 10
+  Skills:
+  - potion{type=RESISTANCE;duration=40;level=0;particles=false} @self
+  - effect:particles{p=squid_ink;amount=4;hS=0.3;vS=0.3;y=1} @self
+
+# Реактивна на зближення (поза ГКД): ментальний вибух (SurgeOfInsanity, S7;
+# поглинає MA_Visionary_Burst — тригериться з шаблону при d<4)
+MA_Visionary_S7_Surge:
+  Cooldown: 6
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - potion{type=NAUSEA;duration=70;level=1;particles=false}
+  - potion{type=BLINDNESS;duration=30;level=1;particles=false}
+  - potion{type=DARKNESS;duration=60;level=1;particles=false}
+  - drainsanity{amount=1} 0.2
+  - effect:particles{p=squid_ink;amount=8;hS=0.3;vS=0.5;y=1;speed=0.01}
+
+# Наступальна: бойовий гіпноз — «ступор» (BattleHypnotism, S6)
+MA_Visionary_S6_Hypnosis:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - potion{type=SLOWNESS;duration=30;level=3;particles=false}
+  - potion{type=WEAKNESS;duration=60;level=1;particles=false}
+  - drainsanity{amount=1} 0.15
+  - effect:particles{p=witch;amount=12;hS=0.3;vS=0.5;y=1.6}
+  - effect:sound{s=block.amethyst_block.chime;v=1;p=0.6}

@@ -21,3 +21,57 @@ MA_Fool_SummonApex:
   Cooldown: 30
   Skills:
   - summon{mob=MA_FoolPuppet;amount=2;radius=1}
+
+# ── Кіт S9..S5: мобові версії гравцевих здібностей Fool ──
+# Реактивна (поза ГКД): ухилення при отриманні урону (DangerIntuition, S9)
+MA_Fool_S9_DangerIntuition:
+  Cooldown: 10
+  Skills:
+  - retreat{strength=0.8;vertical=0.3}
+  - potion{type=SPEED;duration=40;level=0;particles=false} @self
+  - effect:particles{p=cloud;amount=6;hS=0.3;vS=0.3;y=0.5} @self
+
+# Наступальна: снаряд-лезо (PaperCutter, S8)
+MA_Fool_S8_PaperCutter:
+  Skills:
+  - projectile{onHitSkill=MA_Fool_S8_PaperCutter_Hit;velocity=14;interval=1;hitRadius=1;verticalHitRadius=1;maxRange=16}
+  - effect:sound{s=entity.snowball.throw;v=1;p=1.4} @self
+MA_Fool_S8_PaperCutter_Hit:
+  Skills:
+  - damage{amount=3}
+  - effect:particles{p=sweep_attack;amount=2;hS=0.2;vS=0.2;y=1}
+
+# Наступальна: повітряний болт із відкиданням (AirBullet, S7)
+MA_Fool_S7_AirBullet:
+  Skills:
+  - projectile{onHitSkill=MA_Fool_S7_AirBullet_Hit;velocity=18;interval=1;hitRadius=1.2;verticalHitRadius=1.2;maxRange=16}
+  - effect:sound{s=entity.breeze.shoot;v=1;p=1} @self
+MA_Fool_S7_AirBullet_Hit:
+  Skills:
+  - damage{amount=4}
+  - throw{velocity=7;velocityY=3}
+  - effect:particles{p=cloud;amount=10;hS=0.4;vS=0.4;y=1;speed=0.05}
+
+# Реактивна (поза ГКД): вогняний відскік, коли ціль впритул (FlameJump, S7)
+MA_Fool_S7_FlameJump:
+  Cooldown: 8
+  Skills:
+  - effect:particles{p=flame;amount=20;hS=0.4;vS=0.6;y=0.5;speed=0.02} @self
+  - retreat{strength=1.4;vertical=0.5}
+  - effect:sound{s=entity.blaze.shoot;v=1;p=1.2} @self
+
+# Наступальна: нитки маріонетки — pull+slowness (Marionette Control, S5; поглинає MA_Fool_Pull)
+MA_Fool_S5_Marionette:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - pull{velocity=1.2}
+  - potion{type=SLOWNESS;duration=40;level=1;particles=false}
+  - drainsanity{amount=1} 0.2
+  - effect:particles{p=witch;amount=10;hS=0.4;vS=0.6;y=1}
+
+# Реактивна (поза ГКД): ляльки при HP<35% (поглинає MA_Fool_Summon; 2 шт. — рівень S5/апекс)
+MA_Fool_S5_Puppets:
+  Cooldown: 30
+  Skills:
+  - summon{mob=MA_FoolPuppet;amount=2;radius=1}
