@@ -220,14 +220,6 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
 
     private String formatEffectName(PotionEffectType type) {
         String name = type.getKey().getKey();
-
-        if (name == null || name.isEmpty()) return "";
-
-        // Видаляємо префікс "minecraft:" якщо є
-        if (name.contains(":")) {
-            name = name.substring(name.indexOf(':') + 1);
-        }
-
         name = name.toLowerCase().replace("_", " ");
         return name.substring(0, 1).toUpperCase() + name.substring(1);
     }
