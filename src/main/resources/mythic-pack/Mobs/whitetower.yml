@@ -1,5 +1,5 @@
 whitetower_manticore_9:
-  Template: MA_Whitetower_Common
+  Template: MA_Whitetower_S9
   Type: PHANTOM
   Display: '&eМантикора'
   Health: 24
@@ -8,7 +8,7 @@ whitetower_manticore_9:
     MovementSpeed: 0.25
 
 whitetower_cave_monkey_8:
-  Template: MA_Whitetower_Common
+  Template: MA_Whitetower_S8
   Type: PIGLIN
   Display: '&6Печерна Мавпа'
   Health: 40
@@ -18,7 +18,7 @@ whitetower_cave_monkey_8:
     Scale: 1.1
 
 whitetower_phantom_python_7:
-  Template: MA_Whitetower_Common
+  Template: MA_Whitetower_S7
   Type: WOLF
   Display: '&8Фантомний Пітон'
   Health: 70
@@ -28,7 +28,7 @@ whitetower_phantom_python_7:
     Scale: 1.2
 
 whitetower_chameleon_6:
-  Template: MA_Whitetower_Common
+  Template: MA_Whitetower_S6
   Type: CAVE_SPIDER
   Display: '&aПризматичний Хамелеон'
   Health: 110
@@ -38,7 +38,7 @@ whitetower_chameleon_6:
     Scale: 1.35
 
 whitetower_void_beholder_5:
-  Template: MA_Whitetower_Apex
+  Template: MA_Whitetower_S5
   Type: SHULKER
   Display: '&5Бехолдер Порожнечі'
   Health: 190

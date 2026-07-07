@@ -1,5 +1,5 @@
 fool_nighthawk_9:
-  Template: MA_Fool_Common
+  Template: MA_Fool_S9
   Type: PHANTOM
   Display: '&8Нічний Яструб'
   Health: 24
@@ -8,7 +8,7 @@ fool_nighthawk_9:
     MovementSpeed: 0.25
 
 fool_joker_8:
-  Template: MA_Fool_Common
+  Template: MA_Fool_S8
   Type: VINDICATOR
   Display: '&cДжокер'
   Health: 40
@@ -18,7 +18,7 @@ fool_joker_8:
     Scale: 1.1
 
 fool_phantom_ink_7:
-  Template: MA_Fool_Common
+  Template: MA_Fool_S7
   Type: GUARDIAN
   Display: '&9Примарне Чорнило'
   Health: 70
@@ -28,7 +28,7 @@ fool_phantom_ink_7:
     Scale: 1.2
 
 fool_shapeshifter_6:
-  Template: MA_Fool_Common
+  Template: MA_Fool_S6
   Type: WITCH
   Display: '&5Перевертень'
   Health: 110
@@ -38,7 +38,7 @@ fool_shapeshifter_6:
     Scale: 1.35
 
 fool_puppeteer_5:
-  Template: MA_Fool_Apex
+  Template: MA_Fool_S5
   Type: EVOKER
   Display: '&dЛялькар'
   Health: 190

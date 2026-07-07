@@ -1,27 +1,3 @@
-MA_Fool_Pull:
-  TargetConditions:
-  - isbeyonder true
-  Skills:
-  - pull{velocity=0.9}
-  - potion{type=SLOWNESS;duration=40;level=1;particles=false}
-  - drainsanity{amount=1} 0.2
-MA_Fool_PullApex:
-  TargetConditions:
-  - isbeyonder true
-  Skills:
-  - pull{velocity=1.2}
-  - potion{type=SLOWNESS;duration=40;level=1;particles=false}
-  - drainsanity{amount=1} 0.2
-
-MA_Fool_Summon:
-  Cooldown: 30
-  Skills:
-  - summon{mob=MA_FoolPuppet;amount=1;radius=1}
-MA_Fool_SummonApex:
-  Cooldown: 30
-  Skills:
-  - summon{mob=MA_FoolPuppet;amount=2;radius=1}
-
 # ── Кіт S9..S5: мобові версії гравцевих здібностей Fool ──
 # Реактивна (поза ГКД): ухилення при отриманні урону (DangerIntuition, S9)
 MA_Fool_S9_DangerIntuition:

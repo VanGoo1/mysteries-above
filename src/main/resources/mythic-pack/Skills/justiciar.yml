@@ -1,18 +1,3 @@
-MA_Justiciar_Aura:
-  TargetConditions:
-  - isbeyonder true
-  Skills:
-  - potion{type=SLOWNESS;duration=40;level=1;particles=false}
-  - potion{type=MINING_FATIGUE;duration=40;level=1;particles=false}
-  - potion{type=WEAKNESS;duration=40;level=1;particles=false}
-MA_Justiciar_AuraApex:
-  TargetConditions:
-  - isbeyonder true
-  Skills:
-  - potion{type=SLOWNESS;duration=40;level=2;particles=false}
-  - potion{type=MINING_FATIGUE;duration=40;level=1;particles=false}
-  - potion{type=WEAKNESS;duration=40;level=1;particles=false}
-
 # ── Кіт S9..S5: мобові версії гравцевих здібностей Justiciar ──
 # Наступальна: наказ влади (Authority, S9)
 MA_Justiciar_S9_Authority:
