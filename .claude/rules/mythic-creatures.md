@@ -34,9 +34,14 @@
   одне джерело правди); додається в `skills=` кожного шаблону, де вона доступна.
 - **Реактивна/пасивна** (відповідь на урон/зближення, аури, саммон) → окремий тригерний
   рядок шаблону (`~onDamaged`, `?playerwithin`) З власним `Cooldown:` (секунди) — поза ГКД.
-- **Стійка:** RANGED-шаблон додає `retreat{...} @NearestPlayer{r=4} ~onTimer:30
-  ?playerwithin{d=4}` (кайт); MELEE — нічого. Кастомні механіки руху: `retreat`,
-  `blinkbehind` (в `infrastructure.mythic.components`).
+- **Стійка:** RANGED-шаблон вимикає рухові AI-цілі (`AIGoalSelectors: 0 clear` +
+  float/lookatplayers/randomlookaround) і додає `rangedstance{min=5;max=11}
+  @NearestPlayer{r=16} ~onTimer:10` (стоїть-кастує в смузі, відходить кроком,
+  мілі-відповідь у вікні провокації) + `provoke{seconds=8} @self ~onDamaged
+  ?playerwithin{d=3}` (удар впритул відкриває вікно; спільний стан — PDC
+  `mysteriesabove:provoked_until`). MELEE — нічого. Кастомні механіки руху:
+  `rangedstance`, `provoke`, `retreat` (ривок усередині метаскілів), `blinkbehind`
+  (в `infrastructure.mythic.components`).
 - Посилання на метаскіли пінить `MythicPackKitReferenceTest` (kitcast/skill{s=}/onHitSkill/
   randomskill → мусить існувати в Skills/*.yml).
 - Діра в гравцевому ростері (напр. Error 7–5) — кіт не росте: той самий kitcast із коротшими
