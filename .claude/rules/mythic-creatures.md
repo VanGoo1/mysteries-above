@@ -12,13 +12,35 @@
 
 ## Додати істоту
 
-1. Моб у `mythic-pack/Mobs/<pathway>.yml`: `Template: MA_<Pathway>_Common|Apex`, Type/Display/Health/Damage/Options.
-   Кожен запис Mobs/*.yml (шаблони теж) мусить резолвити `Type` напряму або через ланцюжок `Template:`,
-   інакше "No Type specified" на старті (гард — `MythicPackMobTypeTest`).
+1. Моб у `mythic-pack/Mobs/<pathway>.yml`: `Template: MA_<Pathway>_S<seq>` (шаблон = кіт
+   здібностей послідовностей 9..seq), Type/Display/Health/Damage/Options.
+   Кожен запис Mobs/*.yml (шаблони теж) мусить резолвити `Type` напряму або через ланцюжок
+   `Template:`, інакше "No Type specified" на старті (гард — `MythicPackMobTypeTest`).
 2. Запис у `creatures.yml`: `base_entity`, `tier`, `loot` (тільки інгредієнти), `spawn` (natural/structure).
 3. Нова поведінка → метаскіл у `mythic-pack/Skills/<pathway>.yml`; таргет-гейт — умова `isbeyonder`.
 4. Файл додано? Впиши його в `MythicPackInstaller.PACK_FILES`.
 5. Перевірка in-server: `/mm mobs spawn <id>`, скіли/лут/агро.
+
+## Кіти здібностей (kitcast)
+
+Кожен шаблон `MA_<Pathway>_S<seq>` має ОДИН рядок-диспетчер:
+`kitcast{gcd=<тіки>;skills=<Скіл:кулдаунТіки>,...} @NearestPlayer{r=12} ~onTimer:20` —
+повний кіт 9..seq явно, порядок = пріоритет (найнижча послідовність першою). ГКД+пріоритет
+рахує чистий `domain.creatures.AbilityCastPlanner` (юніт-тести), диспетчить
+`KitCastMechanic`. Метаскіли кітів іменуються `MA_<Pathway>_S<seq>_<Ability>` і мобово
+віддзеркалюють БОЙОВІ гравцеві здібності шляху; баланс істот — тільки в YAML пака.
+
+- **Наступальна здібність** → без `Cooldown:` у метаскілі (кулдаун у kitcast-рядку —
+  одне джерело правди); додається в `skills=` кожного шаблону, де вона доступна.
+- **Реактивна/пасивна** (відповідь на урон/зближення, аури, саммон) → окремий тригерний
+  рядок шаблону (`~onDamaged`, `?playerwithin`) З власним `Cooldown:` (секунди) — поза ГКД.
+- **Стійка:** RANGED-шаблон додає `retreat{...} @NearestPlayer{r=4} ~onTimer:30
+  ?playerwithin{d=4}` (кайт); MELEE — нічого. Кастомні механіки руху: `retreat`,
+  `blinkbehind` (в `infrastructure.mythic.components`).
+- Посилання на метаскіли пінить `MythicPackKitReferenceTest` (kitcast/skill{s=}/onHitSkill/
+  randomskill → мусить існувати в Skills/*.yml).
+- Діра в гравцевому ростері (напр. Error 7–5) — кіт не росте: той самий kitcast із коротшими
+  кулдаунами/меншим gcd у нижчому шаблоні.
 
 ## Межі (ArchitectureTest)
 
@@ -39,8 +61,8 @@
 ## Відомі спрощення
 
 - Таргет «найближчий потойбічний» апроксимовано `@NearestPlayer + isbeyonder` (не-потойбічний ближче — тік холостий).
-- Саммон ляльок Fool — скіл-кулдаун 30с при HP<35% (замість one-shot у старому коді).
-- Снаряд Whitetower (`shoot` на `@NearestPlayer`) не має `isbeyonder`-гейта і може летіти в не-потойбічного (шкода незначна).
+- Саммон ляльок Fool — реактивний скіл `MA_Fool_S5_Puppets` (кулдаун 30с при HP<35%),
+  тільки в S5-шаблоні.
 
 ## 3D-моделі (майбутнє)
 
