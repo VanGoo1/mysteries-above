@@ -29,7 +29,7 @@ public class KitCastMechanic extends SkillMechanic implements ITargetedEntitySki
 
     private final List<AbilityCastPlanner.KitEntry> kit;
     private final long gcdMillis;
-    // per-entity стан темпу кастів; мертві записи вичищаються ліниво в purgeDeadEntries
+    // per-entity стан темпу кастів; мертві записи вичищаються ліниво в purgeDeadEntities
     private final Map<UUID, AbilityCastPlanner> planners = new ConcurrentHashMap<>();
 
     // CustomComponentRegistry інстанціює компонент рефлексією саме через конструктор (load event)
@@ -45,7 +45,13 @@ public class KitCastMechanic extends SkillMechanic implements ITargetedEntitySki
         for (String part : raw.split(",")) {
             String[] pair = part.trim().split(":");
             if (pair.length != 2) continue;
-            entries.add(new AbilityCastPlanner.KitEntry(pair[0], Long.parseLong(pair[1]) * MILLIS_PER_TICK));
+            try {
+                entries.add(new AbilityCastPlanner.KitEntry(pair[0].trim(),
+                        Long.parseLong(pair[1].trim()) * MILLIS_PER_TICK));
+            } catch (NumberFormatException e) {
+                Bukkit.getLogger().warning("[MysteriesAbove] kitcast: invalid cooldown in '"
+                        + part.trim() + "' — entry skipped");
+            }
         }
         return List.copyOf(entries);
     }
