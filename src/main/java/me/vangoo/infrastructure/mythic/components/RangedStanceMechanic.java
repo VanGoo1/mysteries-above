@@ -89,6 +89,7 @@ public class RangedStanceMechanic extends SkillMechanic implements ITargetedEnti
         if (mob.getLocation().distance(victim.getLocation()) > MELEE_REACH) return;
         long last = lastAttackAt.getOrDefault(mob.getUniqueId(), 0L);
         if (now - last < ATTACK_INTERVAL_MILLIS) return;
+        if (mob.getAttribute(Attribute.ATTACK_DAMAGE) == null) return; // Type без атрибута атаки (Shulker) — без мілі
         mob.attack(victim);
         lastAttackAt.put(mob.getUniqueId(), now);
         purgeDeadEntries();
