@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * kitcast{skills=...}, randomskill{skills=...}, skill{s=...} та onHitSkill=... посилаються
  * на метаскіли за іменем-рядком; одрук виявляється лише в рантаймі ("Skill not found" у
  * консолі при касті). Тест пінить: кожне посилання з пака існує у Skills/*.yml.
+ * Обмеження: скан регекспами припускає, що s= стоїть одразу після дужки (skill{s=...});
+ * варіант з іншим порядком атрибутів (skill{delay=5;s=X}) тест не побачить.
  */
 class MythicPackKitReferenceTest {
 
