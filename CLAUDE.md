@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-- **Build**: `mvn clean package` (default goal; produces a shaded plugin JAR via maven-shade-plugin). Shading bundles `glowingentities`, `EffectLib`, and `triumph-gui`; `spigot-api`, `coreprotect`, and MythicMobs (`io.lumine:Mythic-Dist`) are `provided` — MythicMobs is a separate plugin dependency (`depend: [Citizens, MythicMobs]` in `plugin.yml`), not shaded into the JAR.
+- **Build**: `mvn clean package` (default goal; produces a shaded plugin JAR via maven-shade-plugin). Shading bundles `glowingentities`, `EffectLib`, and `triumph-gui`; `paper-api` (сервер — Paper), `coreprotect`, and MythicMobs (`io.lumine:Mythic-Dist`) are `provided` — MythicMobs is a separate plugin dependency (`depend: [Citizens, MythicMobs]` in `plugin.yml`), not shaded into the JAR.
 - **Run tests**: `mvn test` (JUnit 5; ArchUnit for architecture rules). Surefire + test deps live in `pom.xml`.
 - **Single test class**: `mvn test -Dtest=SpellRecipeTest`
 - **Single test method**: `mvn test -Dtest=SpellRecipeTest#aoeScalesWithPowerAndArea`

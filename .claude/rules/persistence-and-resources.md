@@ -27,4 +27,4 @@ paths:
 
 ## Залежності збірки
 
-Shade-йдуть `glowingentities`, `EffectLib`, `triumph-gui`; `spigot-api`, `coreprotect` та MythicMobs (`io.lumine:Mythic-Dist`) — `provided` (MythicMobs — plugin-залежність через `depend`, не shade). Нову бібліотеку додавай свідомо: або в shade (росте JAR), або як plugin-залежність у `plugin.yml`.
+Shade-йдуть `glowingentities`, `EffectLib`, `triumph-gui`; `paper-api`, `coreprotect` та MythicMobs (`io.lumine:Mythic-Dist`) — `provided` (MythicMobs — plugin-залежність через `depend`, не shade). Нову бібліотеку додавай свідомо: або в shade (росте JAR), або як plugin-залежність у `plugin.yml`.
