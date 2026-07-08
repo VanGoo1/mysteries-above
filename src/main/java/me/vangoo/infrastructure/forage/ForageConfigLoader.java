@@ -58,7 +58,7 @@ public class ForageConfigLoader {
             radius = spawn.getInt("search-radius", radius);
             particlePeriod = spawn.getLong("particle-period-ticks", particlePeriod);
             for (String name : spawn.getStringList("vegetation")) {
-                Material m = Material.matchMaterial(name.toUpperCase(Locale.ROOT));
+                Material m = matchMaterial(name);
                 if (m == null) {
                     plugin.getLogger().warning("forage.yml: unknown vegetation material '" + name + "', skipping");
                 } else {
@@ -66,7 +66,7 @@ public class ForageConfigLoader {
                 }
             }
             for (String name : spawn.getStringList("leaves")) {
-                Material m = Material.matchMaterial(name.toUpperCase(Locale.ROOT));
+                Material m = matchMaterial(name);
                 if (m == null) {
                     plugin.getLogger().warning("forage.yml: unknown leaves material '" + name + "', skipping");
                 } else {
@@ -85,9 +85,9 @@ public class ForageConfigLoader {
             ConfigurationSection ov = donors.getConfigurationSection("overrides");
             if (ov != null) {
                 for (String original : ov.getKeys(false)) {
-                    Material origM = Material.matchMaterial(original.toUpperCase(Locale.ROOT));
+                    Material origM = matchMaterial(original);
                     String donorName = ov.getString(original, "");
-                    Material donorM = Material.matchMaterial(donorName.toUpperCase(Locale.ROOT));
+                    Material donorM = matchMaterial(donorName);
                     if (origM == null || donorM == null || !donorM.isBlock()) {
                         plugin.getLogger().warning("forage.yml: invalid donor override '"
                                 + original + ": " + donorName + "', skipping");
@@ -134,12 +134,17 @@ public class ForageConfigLoader {
     /** Ім'я валідного блок-матеріалу або fallback (warning). */
     private String validDonorOr(String candidate, String fallback) {
         if (candidate == null) return fallback;
-        Material m = Material.matchMaterial(candidate.toUpperCase(Locale.ROOT));
+        Material m = matchMaterial(candidate);
         if (m == null || !m.isBlock()) {
             plugin.getLogger().warning("forage.yml: invalid donor '" + candidate
                     + "', falling back to " + fallback);
             return fallback;
         }
         return m.name();
+    }
+
+    /** Резолв імені матеріалу без урахування регістру; null, якщо невідомий. */
+    private static Material matchMaterial(String name) {
+        return name == null ? null : Material.matchMaterial(name.toUpperCase(Locale.ROOT));
     }
 }

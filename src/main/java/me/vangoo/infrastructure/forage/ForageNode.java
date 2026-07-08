@@ -49,6 +49,8 @@ public final class ForageNode {
         return new ForageNode(lower, originalLower, originalUpper, donor, ingredientId);
     }
 
+    // Припущення: Bisected серед цілей — лише двоблокова флора (список vegetation курує адмін);
+    // не-рослинні Bisected (двері, сходи) у forage.yml класифікувалися б хибно.
     private static Block normalizeToLower(Block b) {
         if (b.getBlockData() instanceof Bisected bis && bis.getHalf() == Bisected.Half.TOP) {
             return b.getRelative(BlockFace.DOWN);
@@ -97,7 +99,13 @@ public final class ForageNode {
         if (!isIntact()) return; // блок уже знесено інакше — не воскрешаємо рослину з повітря
         block.setBlockData(originalLower, false);
         if (originalUpper != null) {
-            block.getRelative(BlockFace.UP).setBlockData(originalUpper, false);
+            Block above = block.getRelative(BlockFace.UP);
+            // Верхню половину повертаємо лише в повітря: гравець міг зайняти цю позицію,
+            // поки нода жила — його блок не стираємо (нижня половина попнеться фізикою,
+            // як у задокументованому спрощенні зі зламаною опорою).
+            if (above.getType().isAir()) {
+                above.setBlockData(originalUpper, false);
+            }
         }
     }
 }
