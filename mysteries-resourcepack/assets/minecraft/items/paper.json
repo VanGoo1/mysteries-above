@@ -1,0 +1,523 @@
+{
+  "model": {
+    "type": "select",
+    "property": "custom_model_data",
+    "fallback": {
+      "type": "model",
+      "model": "item/paper"
+    },
+    "cases": [
+      {
+        "when": "permanent_passive",
+        "model": {
+          "type": "model",
+          "model": "item/permanent_passive"
+        }
+      },
+      {
+        "when": "active",
+        "model": {
+          "type": "model",
+          "model": "item/active"
+        }
+      },
+      {
+        "when": "passive",
+        "model": {
+          "type": "model",
+          "model": "item/passive"
+        }
+      },
+      {
+        "when": "lavos_squid_blood",
+        "model": {
+          "type": "model",
+          "model": "item/lavos_squid_blood"
+        }
+      },
+      {
+        "when": "manhal_fish_eyeball",
+        "model": {
+          "type": "model",
+          "model": "item/manhal_fish_eyeball"
+        }
+      },
+      {
+        "when": "adult_mind_dragon_blood",
+        "model": {
+          "type": "model",
+          "model": "item/adult_mind_dragon_blood"
+        }
+      },
+      {
+        "when": "asmann_complete_brain",
+        "model": {
+          "type": "model",
+          "model": "item/asmann_complete_brain"
+        }
+      },
+      {
+        "when": "astral_mist_essence",
+        "model": {
+          "type": "model",
+          "model": "item/astral_mist_essence"
+        }
+      },
+      {
+        "when": "autumn_crocus_essence",
+        "model": {
+          "type": "model",
+          "model": "item/autumn_crocus_essence"
+        }
+      },
+      {
+        "when": "black_hunting_lizard_spinal_fluid",
+        "model": {
+          "type": "model",
+          "model": "item/black_hunting_lizard_spinal_fluid"
+        }
+      },
+      {
+        "when": "crystalline_moon_orchid",
+        "model": {
+          "type": "model",
+          "model": "item/crystalline_moon_orchid"
+        }
+      },
+      {
+        "when": "cursed_wraith_artifact",
+        "model": {
+          "type": "model",
+          "model": "item/cursed_wraith_artifact"
+        }
+      },
+      {
+        "when": "deep_sea_marlin_blood",
+        "model": {
+          "type": "model",
+          "model": "item/deep_sea_marlin_blood"
+        }
+      },
+      {
+        "when": "dimensional_wanderer_eye",
+        "model": {
+          "type": "model",
+          "model": "item/dimensional_wanderer_eye"
+        }
+      },
+      {
+        "when": "dream_catcher_heart",
+        "model": {
+          "type": "model",
+          "model": "item/dream_catcher_heart"
+        }
+      },
+      {
+        "when": "elf_flower_petals",
+        "model": {
+          "type": "model",
+          "model": "item/elf_flower_petals"
+        }
+      },
+      {
+        "when": "ever_shifting_lotus",
+        "model": {
+          "type": "model",
+          "model": "item/ever_shifting_lotus"
+        }
+      },
+      {
+        "when": "goat_horned_blackfish_blood",
+        "model": {
+          "type": "model",
+          "model": "item/goat_horned_blackfish_blood"
+        }
+      },
+      {
+        "when": "illusory_chime_tree_fruit",
+        "model": {
+          "type": "model",
+          "model": "item/illusory_chime_tree_fruit"
+        }
+      },
+      {
+        "when": "imbued_ink_sac",
+        "model": {
+          "type": "model",
+          "model": "item/imbued_ink_sac"
+        }
+      },
+      {
+        "when": "iridescent_pearl_dust",
+        "model": {
+          "type": "model",
+          "model": "item/iridescent_pearl_dust"
+        }
+      },
+      {
+        "when": "meteorite_crystal",
+        "model": {
+          "type": "model",
+          "model": "item/meteorite_crystal"
+        }
+      },
+      {
+        "when": "mind_crystal_powder",
+        "model": {
+          "type": "model",
+          "model": "item/mind_crystal_powder"
+        }
+      },
+      {
+        "when": "mind_illusion_crystal",
+        "model": {
+          "type": "model",
+          "model": "item/mind_illusion_crystal"
+        }
+      },
+      {
+        "when": "mirror_dragon_blood",
+        "model": {
+          "type": "model",
+          "model": "item/mirror_dragon_blood"
+        }
+      },
+      {
+        "when": "mirror_dragon_eyes",
+        "model": {
+          "type": "model",
+          "model": "item/mirror_dragon_eyes"
+        }
+      },
+      {
+        "when": "red_chestnut_flower",
+        "model": {
+          "type": "model",
+          "model": "item/red_chestnut_flower"
+        }
+      },
+      {
+        "when": "spirit_eater_pouch",
+        "model": {
+          "type": "model",
+          "model": "item/spirit_eater_pouch"
+        }
+      },
+      {
+        "when": "split_personality_essence",
+        "model": {
+          "type": "model",
+          "model": "item/split_personality_essence"
+        }
+      },
+      {
+        "when": "starfaced_stone",
+        "model": {
+          "type": "model",
+          "model": "item/starfaced_stone"
+        }
+      },
+      {
+        "when": "string_grass_powder",
+        "model": {
+          "type": "model",
+          "model": "item/string_grass_powder"
+        }
+      },
+      {
+        "when": "thought_essence",
+        "model": {
+          "type": "model",
+          "model": "item/thought_essence"
+        }
+      },
+      {
+        "when": "tree_of_elders_fruit",
+        "model": {
+          "type": "model",
+          "model": "item/tree_of_elders_fruit"
+        }
+      },
+      {
+        "when": "void_drifter_heart",
+        "model": {
+          "type": "model",
+          "model": "item/void_drifter_heart"
+        }
+      },
+      {
+        "when": "wayfinder_tree_root",
+        "model": {
+          "type": "model",
+          "model": "item/wayfinder_tree_root"
+        }
+      },
+      {
+        "when": "glowing_starfaced",
+        "model": {
+          "type": "model",
+          "model": "item/glowing_starfaced"
+        }
+      },
+      {
+        "when": "ashes_of_a_broken_oath_seal",
+        "model": {
+          "type": "model",
+          "model": "item/ashes_of_a_broken_oath_seal"
+        }
+      },
+      {
+        "when": "ashes_of_a_forbidden_decree",
+        "model": {
+          "type": "model",
+          "model": "item/ashes_of_a_forbidden_decree"
+        }
+      },
+      {
+        "when": "ashes_of_a_public_execution",
+        "model": {
+          "type": "model",
+          "model": "item/ashes_of_a_public_execution"
+        }
+      },
+      {
+        "when": "bone_of_the_unyielding_frame",
+        "model": {
+          "type": "model",
+          "model": "item/bone_of_the_unyielding_frame"
+        }
+      },
+      {
+        "when": "brand_of_the_unforgiving_oath",
+        "model": {
+          "type": "model",
+          "model": "item/brand_of_the_unforgiving_oath"
+        }
+      },
+      {
+        "when": "chains_of_collective_fear",
+        "model": {
+          "type": "model",
+          "model": "item/chains_of_collective_fear"
+        }
+      },
+      {
+        "when": "core_of_retributive_authority",
+        "model": {
+          "type": "model",
+          "model": "item/core_of_retributive_authority"
+        }
+      },
+      {
+        "when": "dust_of_lake_spirit",
+        "model": {
+          "type": "model",
+          "model": "item/dust_of_lake_spirit"
+        }
+      },
+      {
+        "when": "eye_of_judicial_insight",
+        "model": {
+          "type": "model",
+          "model": "item/eye_of_judicial_insight"
+        }
+      },
+      {
+        "when": "eye_of_perfect_recognition",
+        "model": {
+          "type": "model",
+          "model": "item/eye_of_perfect_recognition"
+        }
+      },
+      {
+        "when": "fragment_of_a_sealed_domain",
+        "model": {
+          "type": "model",
+          "model": "item/fragment_of_a_sealed_domain"
+        }
+      },
+      {
+        "when": "heart_of_the_silent_verdict",
+        "model": {
+          "type": "model",
+          "model": "item/heart_of_the_silent_verdict"
+        }
+      },
+      {
+        "when": "heart_of_unquestioned_command",
+        "model": {
+          "type": "model",
+          "model": "item/heart_of_unquestioned_command"
+        }
+      },
+      {
+        "when": "horn_of_a_flash_patterned_black_snake",
+        "model": {
+          "type": "model",
+          "model": "item/horn_of_a_flash_patterned_black_snake"
+        }
+      },
+      {
+        "when": "pair_of_terror_demon_worms_eyes",
+        "model": {
+          "type": "model",
+          "model": "item/pair_of_terror_demon_worms_eyes"
+        }
+      },
+      {
+        "when": "shackles_of_the_guilty",
+        "model": {
+          "type": "model",
+          "model": "item/shackles_of_the_guilty"
+        }
+      },
+      {
+        "when": "silver_war_bears_right_palm",
+        "model": {
+          "type": "model",
+          "model": "item/silver_war_bears_right_palm"
+        }
+      },
+      {
+        "when": "thread_of_supernatural_intuition",
+        "model": {
+          "type": "model",
+          "model": "item/thread_of_supernatural_intuition"
+        }
+      },
+      {
+        "when": "ancient_rune_powder",
+        "model": {
+          "type": "model",
+          "model": "item/ancient_rune_powder"
+        }
+      },
+      {
+        "when": "condensed_astral_nebula",
+        "model": {
+          "type": "model",
+          "model": "item/condensed_astral_nebula"
+        }
+      },
+      {
+        "when": "crystallized_cave_monkey_brain",
+        "model": {
+          "type": "model",
+          "model": "item/crystallized_cave_monkey_brain"
+        }
+      },
+      {
+        "when": "devastated_blank_mask",
+        "model": {
+          "type": "model",
+          "model": "item/devastated_blank_mask"
+        }
+      },
+      {
+        "when": "light_antelope_blood",
+        "model": {
+          "type": "model",
+          "model": "item/light_antelope_blood"
+        }
+      },
+      {
+        "when": "liquid_silver_phantom_residue",
+        "model": {
+          "type": "model",
+          "model": "item/liquid_silver_phantom_residue"
+        }
+      },
+      {
+        "when": "manticore_bird_pituitary_gland",
+        "model": {
+          "type": "model",
+          "model": "item/manticore_bird_pituitary_gland"
+        }
+      },
+      {
+        "when": "memory_flower_petals",
+        "model": {
+          "type": "model",
+          "model": "item/memory_flower_petals"
+        }
+      },
+      {
+        "when": "mica_powder",
+        "model": {
+          "type": "model",
+          "model": "item/mica_powder"
+        }
+      },
+      {
+        "when": "mimicry_moss_spores",
+        "model": {
+          "type": "model",
+          "model": "item/mimicry_moss_spores"
+        }
+      },
+      {
+        "when": "peppermint_extract",
+        "model": {
+          "type": "model",
+          "model": "item/peppermint_extract"
+        }
+      },
+      {
+        "when": "phantom_python_vertical_eye",
+        "model": {
+          "type": "model",
+          "model": "item/phantom_python_vertical_eye"
+        }
+      },
+      {
+        "when": "prismatic_chameleon_heart",
+        "model": {
+          "type": "model",
+          "model": "item/prismatic_chameleon_heart"
+        }
+      },
+      {
+        "when": "pure_spirituality_tear",
+        "model": {
+          "type": "model",
+          "model": "item/pure_spirituality_tear"
+        }
+      },
+      {
+        "when": "rock_crystal_powder",
+        "model": {
+          "type": "model",
+          "model": "item/rock_crystal_powder"
+        }
+      },
+      {
+        "when": "steel_toothed_wolf_heart",
+        "model": {
+          "type": "model",
+          "model": "item/steel_toothed_wolf_heart"
+        }
+      },
+      {
+        "when": "tree_of_wisdom_sap",
+        "model": {
+          "type": "model",
+          "model": "item/tree_of_wisdom_sap"
+        }
+      },
+      {
+        "when": "void_beholder_petrified_eye",
+        "model": {
+          "type": "model",
+          "model": "item/void_beholder_petrified_eye"
+        }
+      },
+      {
+        "when": "yellow_amber_powder",
+        "model": {
+          "type": "model",
+          "model": "item/yellow_amber_powder"
+        }
+      }
+    ]
+  }
+}

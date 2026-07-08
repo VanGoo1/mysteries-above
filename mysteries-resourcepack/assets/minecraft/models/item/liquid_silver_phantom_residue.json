@@ -1,0 +1,6 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "item/liquid_silver_phantom_residue"
+    }
+}

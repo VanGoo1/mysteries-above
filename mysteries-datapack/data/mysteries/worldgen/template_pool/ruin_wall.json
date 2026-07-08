@@ -1,0 +1,16 @@
+{
+    "name": "mysteries:ruin_wall",
+    "fallback": "minecraft:empty",
+    "elements": [
+        {
+            "weight": 1,
+            "element": {
+                "element_type": "minecraft:single_pool_element",
+                "projection": "rigid",
+                "location": "mysteries:ruin_wall",
+                "processors": "mysteries:ruin_loot",
+                "override_liquid_settings": "ignore_waterlogging"
+            }
+        }
+    ]
+}
