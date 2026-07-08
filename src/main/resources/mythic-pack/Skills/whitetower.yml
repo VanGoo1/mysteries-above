@@ -19,7 +19,7 @@ MA_Whitetower_S5_Spellcast:
   - effect:sound{s=entity.evoker.cast_spell;v=1;p=1.2} @self
 MA_Whitetower_S5_Spellcast_Hit:
   Skills:
-  - damage{amount=5}
+  - damage{amount=7}
   - effect:particles{p=end_rod;amount=16;hS=0.3;vS=0.3;y=1;speed=0.05}
 
 # Реактивна (поза ГКД): дзеркальне прокляття — відбиття частки урону (MirrorCurse, S5)
