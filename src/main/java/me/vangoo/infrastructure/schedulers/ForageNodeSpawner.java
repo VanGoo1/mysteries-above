@@ -9,7 +9,6 @@ import me.vangoo.infrastructure.forage.ForageNodeCodec;
 import me.vangoo.infrastructure.forage.ForageNodeLocation;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
-import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Interaction;
 import org.bukkit.entity.Player;
@@ -101,16 +100,16 @@ public final class ForageNodeSpawner {
         }
         if (near >= config.maxNearby()) return;
 
-        Optional<Location> spot = ForageNodeLocation.findVegetationNear(player, config.vegetation(), config.searchRadius());
+        Optional<org.bukkit.block.Block> spot = ForageNodeLocation.findVegetationNear(player, config.vegetation(), config.searchRadius());
         if (spot.isEmpty()) return;
 
-        String biome = spot.get().getBlock().getBiome().name();
+        String biome = spot.get().getBiome().name();
         Optional<String> pick = selector.pickForBiome(biome, random.nextDouble());
         if (pick.isEmpty()) return;
 
         Optional<ItemStack> model = customItemService.createItemStack(pick.get());
         if (model.isEmpty()) return;
 
-        nodes.add(ForageNode.spawn(spot.get(), model.get(), pick.get(), codec));
+        nodes.add(ForageNode.spawn(spot.get().getLocation().add(0.5, 0.5, 0.5), model.get(), pick.get(), codec));
     }
 }
