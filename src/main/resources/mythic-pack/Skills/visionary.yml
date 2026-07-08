@@ -33,7 +33,7 @@ MA_Visionary_S6_Hypnosis:
   - isbeyonder true
   Skills:
   - potion{type=SLOWNESS;duration=30;level=3;particles=false}
-  - potion{type=WEAKNESS;duration=60;level=1;particles=false}
+  - potion{type=WEAKNESS;duration=60;level=0;particles=false}
   - drainsanity{amount=1} 0.15
   - effect:particles{p=witch;amount=12;hS=0.3;vS=0.5;y=1.6}
   - effect:sound{s=block.amethyst_block.chime;v=1;p=0.6}

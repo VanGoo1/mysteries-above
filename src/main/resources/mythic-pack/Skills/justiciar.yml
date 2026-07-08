@@ -5,7 +5,7 @@ MA_Justiciar_S9_Authority:
   - isbeyonder true
   Skills:
   - potion{type=SLOWNESS;duration=40;level=1;particles=false}
-  - potion{type=WEAKNESS;duration=40;level=1;particles=false}
+  - potion{type=WEAKNESS;duration=40;level=0;particles=false}
   - effect:sound{s=entity.wither.ambient;v=0.6;p=1.6}
 
 # Наступальна: погляд арбітра — мітка (ArbitersGaze, S9)
@@ -23,7 +23,6 @@ MA_Justiciar_S8_Jurisdiction:
   Skills:
   - potion{type=SLOWNESS;duration=50;level=1;particles=false}
   - potion{type=MINING_FATIGUE;duration=50;level=1;particles=false}
-  - potion{type=WEAKNESS;duration=50;level=1;particles=false}
 
 # Наступальна: батіг болю + псі-пробій (WhipOfPain + PsychicPiercing, S7)
 MA_Justiciar_S7_Whip:

@@ -16,6 +16,6 @@ MA_Error_S8_SwindlerCharm:
   - isbeyonder true
   Skills:
   - potion{type=NAUSEA;duration=80;level=0;particles=false}
-  - potion{type=WEAKNESS;duration=80;level=1;particles=false}
+  - potion{type=WEAKNESS;duration=80;level=0;particles=false}
   - drainsanity{amount=1} 0.1
   - effect:particles{p=smoke;amount=8;hS=0.4;vS=0.5;y=1.6}
