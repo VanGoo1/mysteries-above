@@ -144,6 +144,7 @@ public final class ForageNodeSpawner {
 
     private void particleTick() {
         for (ForageNode n : nodes.values()) {
+            if (!isChunkLoaded(n.getBlock())) continue; // не форсуємо синхронне завантаження чанка
             n.getBlock().getWorld().spawnParticle(
                     Particle.GLOW, n.particleLocation(), 2, 0.25, 0.25, 0.25, 0.0);
         }
@@ -151,6 +152,7 @@ public final class ForageNodeSpawner {
 
     private void prune() {
         for (ForageNode n : List.copyOf(nodes.values())) {
+            if (!isChunkLoaded(n.getBlock())) continue; // не форсуємо синхронне завантаження чанка
             if (!n.isIntact()) {
                 deregister(n); // блок знесено повз лістенер — не воскрешаємо рослину з повітря
             } else if (n.ageMillis() > ttlMillis) {
@@ -224,5 +226,9 @@ public final class ForageNodeSpawner {
 
     private static String key(Block b) {
         return b.getWorld().getUID() + ":" + b.getX() + ":" + b.getY() + ":" + b.getZ();
+    }
+
+    private static boolean isChunkLoaded(Block b) {
+        return b.getWorld().isChunkLoaded(b.getX() >> 4, b.getZ() >> 4);
     }
 }
