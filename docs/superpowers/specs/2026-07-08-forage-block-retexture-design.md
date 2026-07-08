@@ -23,7 +23,7 @@
 тому в світ ставиться блок, якого в Оверворлді природно не буває (нижчесвітні/ендові рослини), і його
 текстура перемальовується **цілком** (тільки PNG, без JSON-моделей):
 
-| Оригінал | Донор (дефолт) | Файл текстури |
+| Оригінал | Донор (дефолт) | Файл текстури (у `mysteries-resourcepack/`) |
 |---|---|---|
 | Трава / папороть | `WARPED_ROOTS` | `assets/minecraft/textures/block/warped_roots.png` |
 | Квіти | `CRIMSON_ROOTS` | `crimson_roots.png` |
@@ -126,23 +126,24 @@ forage:
 Валідація матеріалів (цілі, донори) — у `ForageConfigLoader`: warning + пропуск невалідних.
 Біомні таблиці `biomes:` — без змін.
 
-## Дуал-пак `mysteries.zip` (датапак + ресурспак в одному архіві)
+## Ресурспак `mysteries-resourcepack/`
 
-Датапак **фізично не може** передати клієнту текстури; але один zip може бути водночас
-датапаком (сервер читає `data/`) і ресурспаком (клієнт читає `assets/`).
+Датапак **фізично не може** передати клієнту текстури — вигляд блоків несе ресурспак. У репо
+тепер лежить **справжній** серверний ресурспак `mysteries-resourcepack/` (текстури всіх
+інгредієнтів через `items/paper.json` + `models/item` + `textures/item`) і розпакований датапак
+`mysteries-datapack/` (структури). Форедж-текстури додаються в ресурспак:
 
-- **Джерело правди в репо** — наявна тека `resourcepack/`: додаються текстури донорів
-  (`assets/minecraft/textures/block/{warped_roots,crimson_roots,nether_sprouts,azalea_leaves}.png`).
-  У репо кладуться **помітні заглушки**; користувач замінює на свої PNG. JSON-моделі не потрібні —
-  перемальовується текстура донора цілком.
-- **Збірка** — скрипт `scripts/build-pack.ps1`: бере `mysteries.zip` (його `data/` — джерело правди
-  для структур, лишається як є) і вливає в нього весь `resourcepack/` (`assets/` + вже наявні
-  3D-моделі інгредієнтів) → **один пак** на роздачу. `pack.mcmeta` виставляється з діапазоном
-  форматів, що задовольняє і сервер (data-формат, зараз `min_format: 88`), і клієнт
-  (resource-формат); точні числа звіряються з фактичною версією сервера/клієнта при реалізації.
-- **Роздача** — оновлений zip хоститься за прямим URL; `server.properties`:
-  `resource-pack=`, `resource-pack-sha1=` (README ресурспаку вже описує процес). У
-  `world/datapacks/` кладеться той самий файл.
+- **Текстури донорів** — `mysteries-resourcepack/assets/minecraft/textures/block/`
+  `{warped_roots,crimson_roots,nether_sprouts,azalea_leaves}.png`. Ванільні моделі донорів самі
+  підхоплюють ці текстури — **JSON-моделі не потрібні**, перемальовується текстура цілком.
+  У репо кладуться **помітні заглушки**; користувач замінює на свої PNG.
+- **README** усередині `mysteries-resourcepack/` — переноситься корисне зі старого скаффолда:
+  як додати текстуру нового інгредієнта (`items/paper.json` + модель + PNG), роздача з сервера
+  (`resource-pack=`, `resource-pack-sha1=` у `server.properties`), і новий розділ про
+  форедж-донорів.
+- **Старий скаффолд `resourcepack/` видаляється** — його заміняє `mysteries-resourcepack/`
+  (джерело правди). `mysteries.zip` у корені репо — застарілий архів датапака; його заміняє
+  розпакований `mysteries-datapack/`.
 
 ## Wiring (`ServiceContainer` + `MysteriesAbovePlugin`)
 
@@ -168,7 +169,8 @@ forage:
   5. `stop`/disable → усі ноди відновлені; вивантаження чанка (відійти далеко) → відновлено.
   6. Симульований креш (kill процесу) → після рестарту блоки лікуються при завантаженні чанків
      (PDC чиститься).
-  7. Зібраний `mysteries.zip`: клієнт приймає ресурспак, структури датапаку далі генеруються.
+  7. Оновлений `mysteries-resourcepack` (zip): клієнт приймає пак, донори виглядають
+     «зачаровано», наявні текстури інгредієнтів не зламані.
 
 ## Перевикористання (не переписуємо)
 
@@ -177,14 +179,14 @@ forage:
 - `CustomItemService` — резолв інгредієнта в `ItemStack` для дропу;
 - PDC-патерни (`CreatureCodec` та ін.) — взірець для chunk-PDC серіалізації;
 - тиризація луту (`LootTier`, `filterByTier`, лістенери) — не чіпається;
-- `resourcepack/` + README — база дуал-паку.
+- `mysteries-resourcepack/` — наявний серверний ресурспак; додаються лише 4 PNG донорів + README.
 
 ## Файли (орієнтовно)
 
 **Нові:**
 - `domain/forage/ForageDonorMap.java` (+ `ForageDonorMapTest`)
-- `resourcepack/assets/minecraft/textures/block/{warped_roots,crimson_roots,nether_sprouts,azalea_leaves}.png` (заглушки)
-- `scripts/build-pack.ps1`
+- `mysteries-resourcepack/assets/minecraft/textures/block/{warped_roots,crimson_roots,nether_sprouts,azalea_leaves}.png` (заглушки)
+- `mysteries-resourcepack/README.md` (інструкції зі старого скаффолда + розділ про донорів)
 
 **Змінені:**
 - `infrastructure/forage/ForageNode.java` (block-based: place/restore, двоблокова флора)
@@ -195,6 +197,7 @@ forage:
 - `presentation/listeners/ForageHarvestListener.java` (BlockBreak + краї + чанкові події)
 - `infrastructure/di/ServiceContainer.java`, `MysteriesAbovePlugin.java` (wiring подій)
 - `src/main/resources/forage.yml` (нові секції)
-- `resourcepack/README.md` (розділ про дуал-пак і збірку)
 
-**Видаляється:** сутнісний механізм ноди (ItemDisplay/Interaction, ПКМ-збір).
+**Видаляється:** сутнісний механізм ноди (ItemDisplay/Interaction, ПКМ-збір); старий скаффолд
+`resourcepack/` (його заміняє `mysteries-resourcepack/`); `mysteries.zip` у корені репо (його
+заміняє розпакований `mysteries-datapack/`).
