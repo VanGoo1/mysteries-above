@@ -1,70 +1,103 @@
 package me.vangoo.infrastructure.forage;
 
 import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.entity.Display;
-import org.bukkit.entity.Interaction;
-import org.bukkit.entity.ItemDisplay;
-import org.bukkit.inventory.ItemStack;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.Bisected;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.type.Leaves;
 
 /**
- * Логічна нода фореджу = видимий ItemDisplay (3D-модель інгредієнта) + Interaction-сутність
- * (клікабельний хітбокс для ПКМ). Обидві сутності тегуються ForageNodeCodec і прибираються парою.
+ * «Зачарований» блок фореджу: оригінальну вегетацію фізично підмінено на блок-донор, який
+ * ресурспак малює зачарованим. Нода пам'ятає оригінальний BlockData (для двоблокової флори —
+ * обидві половини) і вміє відновитись. Життєвий цикл: place -> (збір через BlockBreakEvent
+ * у лістенері | restore за TTL/нештатною подією).
  */
 public final class ForageNode {
 
-    /** Розмір кубічного хітбокса Interaction (блоки) — трохи більший за видиму модель. */
-    private static final float HITBOX_SIZE = 0.7f;
-
-    private final ItemDisplay display;
-    private final Interaction hitbox;
+    private final Block block;              // нижній/єдиний блок (донор)
+    private final BlockData originalLower;
+    private final BlockData originalUpper;  // null, якщо флора одноблокова
+    private final Material donor;
     private final String ingredientId;
     private final long createdAtMillis;
 
-    private ForageNode(ItemDisplay display, Interaction hitbox, String ingredientId, long createdAtMillis) {
-        this.display = display;
-        this.hitbox = hitbox;
+    private ForageNode(Block block, BlockData originalLower, BlockData originalUpper,
+                       Material donor, String ingredientId) {
+        this.block = block;
+        this.originalLower = originalLower;
+        this.originalUpper = originalUpper;
+        this.donor = donor;
         this.ingredientId = ingredientId;
-        this.createdAtMillis = createdAtMillis;
+        this.createdAtMillis = System.currentTimeMillis();
     }
 
-    public static ForageNode spawn(Location loc, ItemStack model, String ingredientId, ForageNodeCodec codec) {
-        World world = loc.getWorld();
-        if (world == null) throw new IllegalArgumentException("Location has no world");
+    /** Підмінити блок на донора. Верхня половина двоблокової флори нормалізується вниз. */
+    public static ForageNode place(Block target, Material donor, String ingredientId) {
+        Block lower = normalizeToLower(target);
+        BlockData originalLower = lower.getBlockData();
+        Block above = lower.getRelative(BlockFace.UP);
+        BlockData originalUpper = isUpperHalfOf(originalLower, above) ? above.getBlockData() : null;
 
-        ItemDisplay display = world.spawn(loc, ItemDisplay.class, d -> {
-            d.setItemStack(model);
-            d.setBillboard(Display.Billboard.CENTER);
-            d.setPersistent(false);
-        });
-
-        // Локація Interaction = нижній центр його хітбокса; опускаємо на пів-висоти, щоб коробка
-        // огорнула видиму модель і ПКМ влучав саме по ній.
-        Location hitboxLoc = loc.clone().subtract(0, HITBOX_SIZE / 2.0, 0);
-        Interaction hitbox = world.spawn(hitboxLoc, Interaction.class, in -> {
-            in.setInteractionWidth(HITBOX_SIZE);
-            in.setInteractionHeight(HITBOX_SIZE);
-            in.setResponsive(true);
-            in.setPersistent(false);
-        });
-
-        codec.tag(hitbox, ingredientId, display.getUniqueId());
-        codec.tag(display, ingredientId, hitbox.getUniqueId());
-        return new ForageNode(display, hitbox, ingredientId, System.currentTimeMillis());
+        if (originalUpper != null) above.setType(Material.AIR, false);
+        lower.setType(donor, false); // без фізики, щоб донор не «стрельнув» одразу
+        if (lower.getBlockData() instanceof Leaves leavesData) {
+            leavesData.setPersistent(true); // листя-донор не має осипатися
+            lower.setBlockData(leavesData, false);
+        }
+        return new ForageNode(lower, originalLower, originalUpper, donor, ingredientId);
     }
 
-    public boolean isAlive() {
-        return display.isValid() && hitbox.isValid();
+    private static Block normalizeToLower(Block b) {
+        if (b.getBlockData() instanceof Bisected bis && bis.getHalf() == Bisected.Half.TOP) {
+            return b.getRelative(BlockFace.DOWN);
+        }
+        return b;
     }
 
-    public long ageMillis() { return System.currentTimeMillis() - createdAtMillis; }
+    private static boolean isUpperHalfOf(BlockData lowerData, Block above) {
+        return lowerData instanceof Bisected
+                && above.getType() == lowerData.getMaterial()
+                && above.getBlockData() instanceof Bisected bis
+                && bis.getHalf() == Bisected.Half.TOP;
+    }
 
-    public Location getLocation() { return hitbox.getLocation(); }
+    /** Блок досі є донором (його не знесли фізикою чи іншим шляхом повз лістенер). */
+    public boolean isIntact() {
+        return block.getType() == donor;
+    }
 
-    public String getIngredientId() { return ingredientId; }
+    public long ageMillis() {
+        return System.currentTimeMillis() - createdAtMillis;
+    }
 
-    public void remove() {
-        if (!display.isDead()) display.remove();
-        if (!hitbox.isDead()) hitbox.remove();
+    public Block getBlock() {
+        return block;
+    }
+
+    public Location particleLocation() {
+        return block.getLocation().add(0.5, 0.7, 0.5);
+    }
+
+    public String getIngredientId() {
+        return ingredientId;
+    }
+
+    public BlockData originalLower() {
+        return originalLower;
+    }
+
+    public BlockData originalUpper() {
+        return originalUpper;
+    }
+
+    /** Повернути оригінальний блок (обидві половини для двоблокової флори). */
+    public void restore() {
+        if (!isIntact()) return; // блок уже знесено інакше — не воскрешаємо рослину з повітря
+        block.setBlockData(originalLower, false);
+        if (originalUpper != null) {
+            block.getRelative(BlockFace.UP).setBlockData(originalUpper, false);
+        }
     }
 }

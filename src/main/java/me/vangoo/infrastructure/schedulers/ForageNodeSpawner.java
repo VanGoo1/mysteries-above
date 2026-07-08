@@ -1,51 +1,56 @@
 package me.vangoo.infrastructure.schedulers;
 
 import me.vangoo.MysteriesAbovePlugin;
-import me.vangoo.application.services.CustomItemService;
 import me.vangoo.domain.forage.ForageSelector;
 import me.vangoo.infrastructure.forage.ForageConfig;
 import me.vangoo.infrastructure.forage.ForageNode;
 import me.vangoo.infrastructure.forage.ForageNodeCodec;
 import me.vangoo.infrastructure.forage.ForageNodeLocation;
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.GameMode;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Interaction;
+import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 
 /**
- * Ambient-спавн нод фореджу: періодично для кожного онлайн-гравця з шансом підкидає на найближчу
- * вегетацію видиму ноду допоміжного інгредієнта (біом-тематично). Без дистанційного гейту —
- * форедж усюди. Дзеркалить життєвий цикл AmbientCreatureSpawner (start/stop + один BukkitTask).
+ * Ambient-спавн «зачарованих» блоків фореджу: періодично для кожного онлайн-гравця з шансом
+ * підміняє найближчу вегетацію/листя на блок-донор (ресурспак малює його зачарованим) і
+ * пам'ятає оригінал для відновлення (TTL/stop/креш через PDC чанка). Без дистанційного
+ * гейту — форедж усюди. Інваріант: живі ноди існують лише в завантажених чанках.
  */
 public final class ForageNodeSpawner {
 
-    private static final double NEARBY_RADIUS = 32.0;
+    private static final double NEARBY_RADIUS_SQ = 32.0 * 32.0;
 
     private final MysteriesAbovePlugin plugin;
     private final ForageSelector selector;
-    private final CustomItemService customItemService;
     private final ForageNodeCodec codec;
     private final ForageConfig config;
     private final Random random = new Random();
-    private final List<ForageNode> nodes = new ArrayList<>();
+    /** Живі ноди за позицією блока (ключ — key(block)). */
+    private final Map<String, ForageNode> nodes = new HashMap<>();
     private final long intervalTicks;
     private final long ttlMillis;
 
-    private BukkitTask task;
+    private BukkitTask spawnTask;
+    private BukkitTask particleTask;
 
     public ForageNodeSpawner(MysteriesAbovePlugin plugin, ForageSelector selector,
-                             CustomItemService customItemService, ForageNodeCodec codec, ForageConfig config) {
+                             ForageNodeCodec codec, ForageConfig config) {
         this.plugin = plugin;
         this.selector = selector;
-        this.customItemService = customItemService;
         this.codec = codec;
         this.config = config;
         this.intervalTicks = Math.max(20L, config.intervalSeconds() * 20L);
@@ -53,23 +58,81 @@ public final class ForageNodeSpawner {
     }
 
     public void start() {
-        if (task != null && !task.isCancelled()) return;
-        task = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, intervalTicks, intervalTicks);
+        if (spawnTask != null && !spawnTask.isCancelled()) return;
+        healAllLoadedChunks();
+        spawnTask = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, intervalTicks, intervalTicks);
+        long particlePeriod = Math.max(10L, config.particlePeriodTicks());
+        particleTask = Bukkit.getScheduler().runTaskTimer(plugin, this::particleTick, particlePeriod, particlePeriod);
         plugin.getLogger().info("ForageNodeSpawner started");
     }
 
     public void stop() {
-        if (task != null && !task.isCancelled()) {
-            task.cancel();
-            task = null;
-        }
-        for (ForageNode n : nodes) n.remove();
-        nodes.clear();
+        if (spawnTask != null) { spawnTask.cancel(); spawnTask = null; }
+        if (particleTask != null) { particleTask.cancel(); particleTask = null; }
+        for (ForageNode n : List.copyOf(nodes.values())) restoreAndRemove(n);
         plugin.getLogger().info("ForageNodeSpawner stopped");
     }
 
+    /** Жива нода на цьому блоці. */
+    public Optional<ForageNode> nodeAt(Block block) {
+        return Optional.ofNullable(nodes.get(key(block)));
+    }
+
+    /** Збір гравцем: блок уже ламає подія — лише зняти з реєстру та PDC чанка. */
+    public void onHarvested(ForageNode node) {
+        deregister(node);
+    }
+
+    /** Дострокове/нештатне зняття: повернути оригінальний блок і зняти ноду. */
+    public void restoreAndRemove(ForageNode node) {
+        node.restore();
+        deregister(node);
+    }
+
+    public List<ForageNode> nodesInChunk(Chunk chunk) {
+        List<ForageNode> result = new ArrayList<>();
+        for (ForageNode n : nodes.values()) {
+            Block b = n.getBlock();
+            if (b.getWorld().equals(chunk.getWorld())
+                    && (b.getX() >> 4) == chunk.getX() && (b.getZ() >> 4) == chunk.getZ()) {
+                result.add(n);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Відновити «осиротілі» записи PDC чанка (лишились після крешу). Викликати лише коли
+     * в чанку немає живих нод (завантаження чанка; старт плагіна).
+     */
+    public void healChunk(Chunk chunk) {
+        List<ForageNodeCodec.StoredNode> stored = codec.read(chunk);
+        if (stored.isEmpty()) return;
+        World world = chunk.getWorld();
+        for (ForageNodeCodec.StoredNode s : stored) {
+            try {
+                Block b = world.getBlockAt(s.x(), s.y(), s.z());
+                b.setBlockData(Bukkit.createBlockData(s.lowerData()), false);
+                if (s.upperData() != null) {
+                    b.getRelative(BlockFace.UP).setBlockData(Bukkit.createBlockData(s.upperData()), false);
+                }
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("Forage heal: bad block data in chunk PDC: " + e.getMessage());
+            }
+        }
+        codec.clear(chunk);
+        plugin.getLogger().info("Forage: healed " + stored.size() + " stale node(s) in chunk "
+                + chunk.getX() + "," + chunk.getZ());
+    }
+
+    private void healAllLoadedChunks() {
+        for (World w : Bukkit.getWorlds()) {
+            for (Chunk c : w.getLoadedChunks()) healChunk(c);
+        }
+    }
+
     private void tick() {
-        pruneNodes();
+        prune();
         for (Player player : Bukkit.getOnlinePlayers()) {
             try {
                 trySpawnFor(player);
@@ -79,37 +142,87 @@ public final class ForageNodeSpawner {
         }
     }
 
-    private void pruneNodes() {
-        nodes.removeIf(n -> {
-            if (!n.isAlive() || n.ageMillis() > ttlMillis) {
-                n.remove();
-                return true;
+    private void particleTick() {
+        for (ForageNode n : nodes.values()) {
+            n.getBlock().getWorld().spawnParticle(
+                    Particle.GLOW, n.particleLocation(), 2, 0.25, 0.25, 0.25, 0.0);
+        }
+    }
+
+    private void prune() {
+        for (ForageNode n : List.copyOf(nodes.values())) {
+            if (!n.isIntact()) {
+                deregister(n); // блок знесено повз лістенер — не воскрешаємо рослину з повітря
+            } else if (n.ageMillis() > ttlMillis) {
+                restoreAndRemove(n); // не зібрали — тихо повертаємо оригінал
             }
-            return false;
-        });
+        }
     }
 
     private void trySpawnFor(Player player) {
         if (player.getGameMode() == GameMode.SPECTATOR
                 || player.getGameMode() == GameMode.CREATIVE) return;
         if (random.nextDouble() >= config.chance()) return;
+        if (countNear(player) >= config.maxNearby()) return;
 
-        int near = 0;
-        for (Entity e : player.getNearbyEntities(NEARBY_RADIUS, NEARBY_RADIUS, NEARBY_RADIUS)) {
-            if (e instanceof Interaction && codec.isForageNode(e)) near++;
-        }
-        if (near >= config.maxNearby()) return;
+        Optional<Block> target = findTarget(player);
+        if (target.isEmpty()) return;
+        Block block = target.get();
+        if (nodes.containsKey(key(block))) return;
 
-        Optional<org.bukkit.block.Block> spot = ForageNodeLocation.findVegetationNear(player, config.vegetation(), config.searchRadius());
-        if (spot.isEmpty()) return;
+        boolean isLeaves = config.leaves().contains(block.getType());
+        Material donor = Material.matchMaterial(
+                config.donors().donorFor(block.getType().name(), isLeaves));
+        if (donor == null) return; // донори валідує лоадер; це страховка
 
-        String biome = spot.get().getBiome().name();
-        Optional<String> pick = selector.pickForBiome(biome, random.nextDouble());
+        Optional<String> pick = selector.pickForBiome(block.getBiome().name(), random.nextDouble());
         if (pick.isEmpty()) return;
 
-        Optional<ItemStack> model = customItemService.createItemStack(pick.get());
-        if (model.isEmpty()) return;
+        register(ForageNode.place(block, donor, pick.get()));
+    }
 
-        nodes.add(ForageNode.spawn(spot.get().getLocation().add(0.5, 0.5, 0.5), model.get(), pick.get(), codec));
+    private Optional<Block> findTarget(Player player) {
+        boolean leavesFirst = !config.leaves().isEmpty() && random.nextBoolean();
+        if (leavesFirst) {
+            Optional<Block> leaves = ForageNodeLocation.findLeavesNear(
+                    player, config.leaves(), config.searchRadius());
+            if (leaves.isPresent()) return leaves;
+            return ForageNodeLocation.findVegetationNear(player, config.vegetation(), config.searchRadius());
+        }
+        Optional<Block> flora = ForageNodeLocation.findVegetationNear(
+                player, config.vegetation(), config.searchRadius());
+        if (flora.isPresent()) return flora;
+        return ForageNodeLocation.findLeavesNear(player, config.leaves(), config.searchRadius());
+    }
+
+    private int countNear(Player player) {
+        int count = 0;
+        for (ForageNode n : nodes.values()) {
+            Block b = n.getBlock();
+            if (b.getWorld().equals(player.getWorld())
+                    && b.getLocation().add(0.5, 0.5, 0.5).distanceSquared(player.getLocation()) <= NEARBY_RADIUS_SQ) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private void register(ForageNode node) {
+        Block b = node.getBlock();
+        nodes.put(key(b), node);
+        codec.add(b.getChunk(), new ForageNodeCodec.StoredNode(
+                b.getX(), b.getY(), b.getZ(),
+                node.originalLower().getAsString(),
+                node.originalUpper() == null ? null : node.originalUpper().getAsString()));
+    }
+
+    private void deregister(ForageNode node) {
+        Block b = node.getBlock();
+        nodes.remove(key(b));
+        codec.remove(b.getChunk(), b.getX(), b.getY(), b.getZ());
+    }
+
+    private static String key(Block b) {
+        return b.getWorld().getUID() + ":" + b.getX() + ":" + b.getY() + ":" + b.getZ();
     }
 }

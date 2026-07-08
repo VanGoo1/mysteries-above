@@ -270,7 +270,7 @@ public class ServiceContainer {
         me.vangoo.domain.forage.ForageSelector forageSelector =
                 new me.vangoo.domain.forage.ForageSelector(forageConfig.biomes());
         this.forageNodeSpawner = new me.vangoo.infrastructure.schedulers.ForageNodeSpawner(
-                (MysteriesAbovePlugin) plugin, forageSelector, this.customItemService, forageNodeCodec, forageConfig);
+                (MysteriesAbovePlugin) plugin, forageSelector, forageNodeCodec, forageConfig);
 
         this.abilityMenuItemUpdater = new AbilityMenuItemUpdater(
                 plugin,
