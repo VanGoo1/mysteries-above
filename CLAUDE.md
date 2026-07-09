@@ -71,6 +71,7 @@ The pure core of `domain` (`entities`, `services`, `spells`, `brewing`, `creatur
 ## Config & persistence
 
 - `src/main/resources/`: `plugin.yml` (commands + `mysteriesabove.admin` permission), `config.yml`, `custom-items.yml`, `global_loot.yml`, `creatures.yml`, `potion-recipes.yml`, `forage.yml` (форедж: цілі/донори/біомні таблиці — див. `.claude/rules/forage.md`). `plugin.yml` and `*.yml` are Maven-filtered resources; `mythic-pack/**` (see below) is not.
+  `config.yml` містить секції `creatures.*` (спавн істот) і `convergence.*` (приховане тяжіння Закону Конвергенції); обидві читає `ServiceContainer` через `plugin.getConfig()`.
 - Mob content (stats, appearance, skills, templates) lives in the MythicMobs pack `src/main/resources/mythic-pack/`, installed to the server by `MythicPackInstaller`; spawn/loot rules stay in code (`domain.creatures` + `creatures.yml`). See `.claude/rules/mythic-creatures.md` for the full mechanism.
 - Клієнтські ассети (текстури інгредієнтів, «зачаровані» блоки фореджу) — серверний ресурспак `mysteries-resourcepack/`; датапак структур — `mysteries-datapack/`. Обидва роздаються поза Maven-збіркою (див. README ресурспаку).
 - Player state persists to `beyonders.json` in the plugin data folder, written by `BatchedBeyonderRepository` (batched save every 5 minutes + save on disable). Recipe unlocks persist to `recipe_unlocks.json`.
