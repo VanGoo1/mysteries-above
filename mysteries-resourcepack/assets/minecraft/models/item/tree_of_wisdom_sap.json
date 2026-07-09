@@ -1,0 +1,6 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "item/tree_of_wisdom_sap"
+    }
+}

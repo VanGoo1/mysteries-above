@@ -1,0 +1,16 @@
+{
+    "name": "mysteries:cyan_castle",
+    "fallback": "minecraft:empty",
+    "elements": [
+        {
+            "weight": 1,
+            "element": {
+                "element_type": "minecraft:single_pool_element",
+                "projection": "rigid",
+                "location": "mysteries:cyan_castle",
+                "processors": "mysteries:castle_loot",
+                "override_liquid_settings": "ignore_waterlogging"
+            }
+        }
+    ]
+}

@@ -1,7 +1,7 @@
 # forage.yml
 # Природний форедж допоміжних інгредієнтів: на вегетації біля гравця з'являється видима 3D-нода
-# допоміжного інгредієнта; ПКМ по ній -> інгредієнт падає на землю. Лише наявні auxiliary з
-# potion-recipes.yml. Біом-тематично, для всіх гравців.
+# допоміжного інгредієнта; блок підмінюється на «зачарованого» донора; ламаєш -> падає лише
+# інгредієнт. Лише наявні auxiliary з potion-recipes.yml. Біом-тематично, для всіх гравців.
 forage:
   spawn:
     interval-seconds: 40      # як часто планувальник перевіряє гравців
@@ -9,6 +9,14 @@ forage:
     max-nearby: 3             # не спавнити, якщо стільки нод вже в радіусі 32 блоки
     ttl-seconds: 90           # нода зникає, якщо її не зібрали
     search-radius: 8          # радіус пошуку вегетації біля гравця (на рівні ніг)
+    particle-period-ticks: 40 # період тихих GLOW-частинок над зачарованими блоками
+    leaves:                   # цілі в кронах (повні блоки листя)
+      - OAK_LEAVES
+      - BIRCH_LEAVES
+      - SPRUCE_LEAVES
+      - DARK_OAK_LEAVES
+      - JUNGLE_LEAVES
+      - ACACIA_LEAVES
     vegetation:               # на чому з'являються ноди (НАЗЕМНА флора, без листя крон)
       - SHORT_GRASS
       - TALL_GRASS
@@ -24,6 +32,20 @@ forage:
       - ALLIUM
       - RED_TULIP
       - LILY_OF_THE_VALLEY
+  donors:                     # оригінал -> блок-донор; ресурспак малює донора «зачарованим»
+    default-plant: WARPED_ROOTS
+    default-leaves: AZALEA_LEAVES
+    overrides:
+      POPPY: CRIMSON_ROOTS
+      DANDELION: CRIMSON_ROOTS
+      CORNFLOWER: CRIMSON_ROOTS
+      OXEYE_DAISY: CRIMSON_ROOTS
+      BLUE_ORCHID: CRIMSON_ROOTS
+      AZURE_BLUET: CRIMSON_ROOTS
+      ALLIUM: CRIMSON_ROOTS
+      RED_TULIP: CRIMSON_ROOTS
+      LILY_OF_THE_VALLEY: CRIMSON_ROOTS
+      SWEET_BERRY_BUSH: NETHER_SPROUTS
   biomes:                     # біом -> зважена таблиця допоміжних id (усі — наявні auxiliary)
     PLAINS:
       - { id: elf_flower_petals, weight: 50 }

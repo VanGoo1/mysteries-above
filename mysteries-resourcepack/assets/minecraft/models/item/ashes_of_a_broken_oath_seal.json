@@ -1,0 +1,6 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "item/ashes_of_a_broken_oath_seal"
+    }
+}

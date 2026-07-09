@@ -1,7 +1,0 @@
-{
-  "pack": {
-    "pack_format": 64,
-    "description": "Mysteries Above — моделі інгредієнтів/фореджу",
-    "supported_formats": { "min_inclusive": 46, "max_inclusive": 99 }
-  }
-}
