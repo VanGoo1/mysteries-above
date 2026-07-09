@@ -111,18 +111,9 @@ public class Agility extends PermanentPassiveAbility {
                         context.effects().playWaveEffect(
                                 landLocation,
                                 2.5,
-                                Particle.CLOUD,
+                                Particle.WHITE_ASH,
                                 10
                         );
-
-                        context.effects().playSphereEffect(
-                                landLocation,
-                                1.2,
-                                Particle.WHITE_ASH,
-                                15
-                        );
-
-                        context.effects().playSound(landLocation, Sound.ENTITY_PHANTOM_FLAP, 1.0f, 1.6f);
                         context.effects().playSound(landLocation, Sound.BLOCK_WOOL_STEP, 1.4f, 1.0f);
 
                     } else {
