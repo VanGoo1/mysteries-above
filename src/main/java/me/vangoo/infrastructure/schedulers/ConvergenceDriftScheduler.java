@@ -113,14 +113,18 @@ public final class ConvergenceDriftScheduler {
     private List<ResonantBeyonder> collectMagnets() {
         List<ResonantBeyonder> magnets = new ArrayList<>();
         for (Player player : Bukkit.getOnlinePlayers()) {
-            Beyonder b = beyonderService.getBeyonder(player.getUniqueId());
-            if (b == null) continue;
-            String pathway = b.getPathway().getName();
-            String group = groupOf(pathway);
-            if (group == null) continue;
-            Location loc = player.getLocation();
-            magnets.add(new ResonantBeyonder(player.getUniqueId(), pathway, group,
-                    b.getSequenceLevel(), loc.getX(), loc.getZ()));
+            try {
+                Beyonder b = beyonderService.getBeyonder(player.getUniqueId());
+                if (b == null) continue;
+                String pathway = b.getPathway().getName();
+                String group = groupOf(pathway);
+                if (group == null) continue;
+                Location loc = player.getLocation();
+                magnets.add(new ResonantBeyonder(player.getUniqueId(), pathway, group,
+                        b.getSequenceLevel(), loc.getX(), loc.getZ()));
+            } catch (Exception e) {
+                plugin.getLogger().warning("Convergence magnet collection error for " + player.getName() + ": " + e);
+            }
         }
         return magnets;
     }
