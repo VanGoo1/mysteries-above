@@ -65,9 +65,11 @@ public final class CreatureSelector {
     }
 
     /**
-     * Вибір істоти для ambient-спавну (закон конвергенції): серед істот ШЛЯХУ гравця, чий
-     * natural-біом збігається з поточним. Без «порогу неспавну» — рішення «спавнити» вже
-     * прийняв планувальник; цей метод лише обирає, КОГО. {@code roll} у [0,1).
+     * Вибір істоти для ambient-спавну: серед усіх істот, чий natural-біом збігається з поточним,
+     * незалежно від шляху. Закон конвергенції лишається ВАГОВИМ ухилом (свій шлях і «наступна
+     * потрібна» послідовність важать більше через {@link #multiplier}), а не жорстким фільтром.
+     * Без «порогу неспавну» — рішення «спавнити» вже прийняв планувальник; цей метод лише обирає,
+     * КОГО. {@code roll} у [0,1).
      */
     public Optional<CreatureDefinition> pickForAmbient(String biome, ConvergenceBias bias, double roll) {
         if (bias == null) return Optional.empty();
@@ -77,7 +79,6 @@ public final class CreatureSelector {
             SpawnRule s = def.spawn();
             if (s.naturalChance() <= 0.0) continue;
             if (!s.naturalBiomes().contains(biome)) continue;
-            if (def.pathway() == null || !def.pathway().equalsIgnoreCase(bias.pathway())) continue;
             candidates.add(def);
         }
         if (candidates.isEmpty()) return Optional.empty();

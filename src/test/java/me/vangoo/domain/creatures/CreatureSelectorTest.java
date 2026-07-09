@@ -145,11 +145,24 @@ class CreatureSelectorTest {
     }
 
     @Test
-    void ambientEmptyWhenPathwayMismatch() {
+    void ambientIncludesOtherPathways() {
         CreatureDefinition a = def("a", natural(0.2), "visionary", 9);
         CreatureSelector s = new CreatureSelector(List.of(a));
-        ConvergenceBias bias = new ConvergenceBias("Error", 5);
-        assertTrue(s.pickForAmbient("OCEAN", bias, 0.5).isEmpty());
+        ConvergenceBias bias = new ConvergenceBias("Error", 5); // different pathway
+        // off-pathway creature is now eligible because its biome matches
+        assertEquals("a", s.pickForAmbient("OCEAN", bias, 0.5).get().id());
+    }
+
+    @Test
+    void ambientMixesPathwaysOwnFavored() {
+        CreatureDefinition own = def("own", natural(0.2), "visionary", 8);   // next-needed for seq9 bias -> x4
+        CreatureDefinition other = def("other", natural(0.2), "error", 8);   // off-pathway -> x1
+        CreatureSelector s = new CreatureSelector(List.of(own, other));
+        ConvergenceBias bias = new ConvergenceBias("Visionary", 9);
+        // weights: own = 0.2*4 = 0.8, other = 0.2*1 = 0.2, sum = 1.0
+        // target = roll*1.0; own in [0,0.8), other in [0.8,1.0)
+        assertEquals("own", s.pickForAmbient("OCEAN", bias, 0.5).get().id());
+        assertEquals("other", s.pickForAmbient("OCEAN", bias, 0.9).get().id());
     }
 
     @Test
