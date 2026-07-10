@@ -63,6 +63,8 @@ public class ServiceContainer {
     private me.vangoo.infrastructure.market.MarketConfig marketConfig;
     private MarketItemClassifier marketItemClassifier;
     private GatheringSnapshotRepository gatheringSnapshotRepository;
+    private me.vangoo.infrastructure.market.GatheringVenueProvider gatheringVenueProvider;
+    private me.vangoo.infrastructure.market.GatheringAnonymizer gatheringAnonymizer;
 
     // UI and menus
     private AbilityMenu abilityMenu;
@@ -176,6 +178,8 @@ public class ServiceContainer {
                 characteristicCodec, recipeBookFactory, customItemService, currencyCodec);
         this.gatheringSnapshotRepository = new GatheringSnapshotRepository(
                 plugin.getDataFolder() + File.separator + "gathering-state.json");
+        this.gatheringVenueProvider = new me.vangoo.infrastructure.market.GatheringVenueProvider();
+        this.gatheringAnonymizer = new me.vangoo.infrastructure.market.GatheringAnonymizer();
         this.characteristicExtractor = new CharacteristicExtractor(characteristicCodec);
         this.wardenRemnantCodec = new WardenRemnantCodec(plugin);
         this.potionManager = new PotionManager(pathwayManager, potionItemFactory, customItemService, recipeConfig);
@@ -335,6 +339,8 @@ public class ServiceContainer {
     public me.vangoo.infrastructure.market.MarketConfig getMarketConfig() { return marketConfig; }
     public MarketItemClassifier getMarketItemClassifier() { return marketItemClassifier; }
     public GatheringSnapshotRepository getGatheringSnapshotRepository() { return gatheringSnapshotRepository; }
+    public me.vangoo.infrastructure.market.GatheringVenueProvider getGatheringVenueProvider() { return gatheringVenueProvider; }
+    public me.vangoo.infrastructure.market.GatheringAnonymizer getGatheringAnonymizer() { return gatheringAnonymizer; }
 
     public AbilityMenu getAbilityMenu() { return abilityMenu; }
     public BossBarUtil getBossBarUtil() { return bossBarUtil; }
