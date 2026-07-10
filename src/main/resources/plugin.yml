@@ -50,6 +50,9 @@ commands:
     usage: /coins give <player> <pounds> [coppets]
     permission: mysteriesabove.admin
     permission-message: "§cYou do not have permission to use this command."
+  gathering:
+    description: Secret Beyonder gathering (underground market)
+    usage: /gathering <join|menu> | /gathering <start|stop> (admin)
 permissions:
   mysteriesabove.admin:
     description: Gives access to all administrative commands

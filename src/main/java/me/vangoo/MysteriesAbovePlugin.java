@@ -295,5 +295,10 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         CoinsCommand coinsCommand = new CoinsCommand(services.getWalletService());
         getCommand("coins").setExecutor(coinsCommand);
         getCommand("coins").setTabCompleter(coinsCommand);
+
+        GatheringCommand gatheringCommand = new GatheringCommand(
+                services.getGatheringService(), services.getMarketMenu());
+        getCommand("gathering").setExecutor(gatheringCommand);
+        getCommand("gathering").setTabCompleter(gatheringCommand);
     }
 }
