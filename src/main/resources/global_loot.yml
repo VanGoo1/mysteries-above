@@ -625,3 +625,15 @@ global_loot:
       amount_min: 1
       amount_max: 1
       tier: rare
+
+    # --- Валюта підпільного ринку (рідкісна; НЕ Характеристика — інваріант луту дотримано) ---
+    gold_pound:
+      item_id: "currency:pound"
+      weight: 12
+      amount_min: 1
+      amount_max: 3
+    coppet:
+      item_id: "currency:coppet"
+      weight: 25
+      amount_min: 2
+      amount_max: 8

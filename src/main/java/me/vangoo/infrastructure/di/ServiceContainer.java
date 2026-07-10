@@ -175,7 +175,7 @@ public class ServiceContainer {
         this.lootTableConfigLoader = new LootTableConfigLoader(plugin);
         lootTableConfigLoader.loadLootTable();
         this.lootGenerationService = new LootGenerationService(
-                plugin, customItemService, potionManager, recipeBookFactory);
+                plugin, customItemService, potionManager, recipeBookFactory, currencyCodec);
     }
 
     private void initializeApplicationServices(fr.skytasul.glowingentities.GlowingEntities glowingEntities,

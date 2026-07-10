@@ -21,17 +21,20 @@ public class LootGenerationService {
     private final CustomItemService customItemService;
     private final PotionManager potionManager;
     private final RecipeBookFactory recipeBookFactory;
+    private final me.vangoo.infrastructure.items.CurrencyCodec currencyCodec;
     private final Random random = new Random();
 
     public LootGenerationService(
             Plugin plugin,
             CustomItemService customItemService,
             PotionManager potionManager,
-            RecipeBookFactory recipeBookFactory) {
+            RecipeBookFactory recipeBookFactory,
+            me.vangoo.infrastructure.items.CurrencyCodec currencyCodec) {
         this.plugin = plugin;
         this.customItemService = customItemService;
         this.potionManager = potionManager;
         this.recipeBookFactory = recipeBookFactory;
+        this.currencyCodec = currencyCodec;
     }
 
     /**
@@ -175,6 +178,8 @@ public class LootGenerationService {
         }
         if (itemId.startsWith("potion:")) return createPotion(itemId);
         if (itemId.startsWith("recipe:")) return createRecipeBook(itemId);
+        if (itemId.equals("currency:pound")) return currencyCodec.createPounds(1);
+        if (itemId.equals("currency:coppet")) return currencyCodec.createCoppets(1);
 
         String actualId = itemId.startsWith("custom:") ? itemId.substring(7) : itemId;
         return customItemService.createItemStack(actualId).orElse(null);
