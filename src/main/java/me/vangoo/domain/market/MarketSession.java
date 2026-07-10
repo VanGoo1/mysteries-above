@@ -84,9 +84,12 @@ public final class MarketSession {
         if (existing != null) {
             return existing;
         }
+        // Діапазон розширюється разом із кількістю учасників, щоб щонайменше половина
+        // кандидатів завжди була вільна — інакше зі 100-м учасником цикл зависав би назавжди.
+        int bound = Math.max(99, (aliases.size() + 1) * 2);
         int alias;
         do {
-            alias = 1 + random.nextInt(99);
+            alias = 1 + random.nextInt(bound);
         } while (aliases.containsValue(alias));
         aliases.put(playerId, alias);
         return alias;

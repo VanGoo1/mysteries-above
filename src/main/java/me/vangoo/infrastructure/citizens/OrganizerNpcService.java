@@ -19,6 +19,9 @@ public class OrganizerNpcService {
         despawn(); // страховка від подвійного спавну
         npc = CitizensAPI.getNPCRegistry().createNPC(EntityType.PLAYER,
                 ChatColor.DARK_PURPLE + "Посередник");
+        // createNPC персистить у Citizens saves.yml за замовчуванням; SHOULD_SAVE=false гарантує,
+        // що аварійне завершення сервера під час OPEN не лишить осиротілого NPC на диску.
+        npc.data().set(NPC.Metadata.SHOULD_SAVE, false);
         npc.setProtected(true); // невразливий до атак
         npc.spawn(location);
     }

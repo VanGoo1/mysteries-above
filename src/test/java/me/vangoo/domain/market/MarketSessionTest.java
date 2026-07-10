@@ -6,7 +6,10 @@ import me.vangoo.domain.market.MarketSession.Settlement;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,6 +37,22 @@ class MarketSessionTest {
         assertNotEquals(a, b);
         assertEquals(a, session.registerParticipant(seller)); // ідемпотентно
         assertEquals("Незнайомець №" + a, session.aliasOf(seller));
+    }
+
+    @Test
+    void registeringMoreThanNinetyNineParticipantsTerminatesWithDistinctAliases() {
+        // Понад 99 учасників вичерпує діапазон 1..99 — цикл рандомізації має
+        // розширювати межі, інакше зависає назавжди на головному потоці.
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+            Set<Integer> assigned = new HashSet<>();
+            assigned.add(session.registerParticipant(seller));
+            assigned.add(session.registerParticipant(buyer));
+            for (int i = 0; i < 120; i++) {
+                int alias = session.registerParticipant(UUID.randomUUID());
+                assertTrue(assigned.add(alias), "Псевдонім №" + alias + " видано повторно");
+            }
+            assertEquals(122, assigned.size());
+        });
     }
 
     @Test
