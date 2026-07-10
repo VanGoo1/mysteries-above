@@ -53,7 +53,9 @@ public class GatheringListener implements Listener {
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onChat(AsyncPlayerChatEvent event) {
         Player sender = event.getPlayer();
-        if (!gatheringService.isOpenParticipant(sender)) {
+        // Async-потік: читаємо лише потокобезпечний сигнал (UUID-перевантаження),
+        // усе доступ до session/aliases відкладаємо в головний потік нижче.
+        if (!gatheringService.isOpenParticipant(sender.getUniqueId())) {
             return;
         }
         event.setCancelled(true);

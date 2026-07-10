@@ -40,6 +40,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Оркестратор Зборів Потойбічних: фази (IDLE→ANNOUNCED→OPEN→CLOSING→IDLE),
@@ -64,8 +65,14 @@ public class GatheringService {
     private final RecipeUnlockService recipeUnlockService;
     private final PotionManager potionManager;
 
-    private GatheringPhase phase = GatheringPhase.IDLE;
+    private volatile GatheringPhase phase = GatheringPhase.IDLE;
     private MarketSession session;
+    /**
+     * Потокобезпечне дзеркало учасників відкритого збору для читання з async-потоку
+     * (обробник AsyncPlayerChatEvent). Мутується лише в головному потоці (open/close);
+     * решта стану (session/aliases) — не чіпати поза головним потоком.
+     */
+    private final Set<UUID> openParticipantIds = ConcurrentHashMap.newKeySet();
     private final Map<UUID, EscrowEntry> escrow = new HashMap<>();
     private final Set<UUID> joined = new LinkedHashSet<>();
     private final Map<UUID, Location> returnLocations = new HashMap<>();
@@ -199,6 +206,7 @@ public class GatheringService {
         Location venue = venueProvider.venueSpawn();
         for (Player player : attendees) {
             session.registerParticipant(player.getUniqueId());
+            openParticipantIds.add(player.getUniqueId());
             returnLocations.put(player.getUniqueId(), player.getLocation());
             player.teleport(venue);
             anonymizer.mask(player, session.aliasOf(player.getUniqueId()));
@@ -250,6 +258,7 @@ public class GatheringService {
         organizerNpc.despawn();
         session = null;
         joined.clear();
+        openParticipantIds.clear();
         phase = GatheringPhase.IDLE;
         persist();
     }
@@ -394,6 +403,14 @@ public class GatheringService {
     public boolean isOpenParticipant(Player player) {
         return phase == GatheringPhase.OPEN && session != null
                 && session.isParticipant(player.getUniqueId());
+    }
+
+    /**
+     * Потокобезпечний варіант для async-контексту (чат зали): читає лише volatile-фазу
+     * і concurrent-set учасників, не торкаючись session/aliases.
+     */
+    public boolean isOpenParticipant(UUID playerId) {
+        return phase == GatheringPhase.OPEN && openParticipantIds.contains(playerId);
     }
 
     public List<Lot> activeLots() {
