@@ -280,5 +280,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 services.getCharacteristicCodec(), services.getPotionManager());
         getCommand("characteristic").setExecutor(characteristicCommand);
         getCommand("characteristic").setTabCompleter(characteristicCommand);
+
+        CoinsCommand coinsCommand = new CoinsCommand(services.getWalletService());
+        getCommand("coins").setExecutor(coinsCommand);
+        getCommand("coins").setTabCompleter(coinsCommand);
     }
 }
