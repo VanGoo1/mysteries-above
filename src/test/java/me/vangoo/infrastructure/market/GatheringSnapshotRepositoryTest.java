@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
 
@@ -60,6 +61,17 @@ class GatheringSnapshotRepositoryTest {
     void loadReturnsEmptyWhenFileIsEmpty(@TempDir File tempDir) throws Exception {
         File file = new File(tempDir, "gathering-state.json");
         assertTrue(file.createNewFile());
+
+        GatheringSnapshotRepository repository = new GatheringSnapshotRepository(file.getPath());
+
+        assertTrue(repository.load().isEmpty());
+    }
+
+    @Test
+    void loadReturnsEmptyWhenFileIsTruncatedJson(@TempDir File tempDir) throws Exception {
+        // A crash mid-FileWriter leaves a non-empty but syntactically invalid file.
+        File file = new File(tempDir, "gathering-state.json");
+        Files.writeString(file.toPath(), "{ \"nextGatheringEpochMillis\": 123,");
 
         GatheringSnapshotRepository repository = new GatheringSnapshotRepository(file.getPath());
 

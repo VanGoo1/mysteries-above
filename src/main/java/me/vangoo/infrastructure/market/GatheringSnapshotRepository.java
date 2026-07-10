@@ -2,6 +2,7 @@ package me.vangoo.infrastructure.market;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
@@ -47,6 +48,11 @@ public class GatheringSnapshotRepository {
             return Optional.ofNullable(gson.fromJson(reader, Snapshot.class));
         } catch (IOException e) {
             LOGGER.warning("Failed to load gathering snapshot: " + e.getMessage());
+            return Optional.empty();
+        } catch (JsonSyntaxException e) {
+            // A crash mid-write leaves a truncated/corrupt file; ignore it and recover
+            // as if there were no snapshot rather than crashing plugin boot.
+            LOGGER.warning("Corrupt gathering snapshot ignored: " + e.getMessage());
             return Optional.empty();
         }
     }
