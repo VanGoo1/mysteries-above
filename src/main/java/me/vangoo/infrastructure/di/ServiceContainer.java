@@ -19,6 +19,7 @@ import me.vangoo.presentation.listeners.MarionetteExitListener;
 import me.vangoo.presentation.listeners.MainBodyAbilityListener;
 import me.vangoo.presentation.listeners.MarionetteLifecycleListener;
 import me.vangoo.presentation.listeners.MarionetteRestorer;
+import me.vangoo.infrastructure.citizens.OrganizerNpcService;
 import me.vangoo.MysteriesAbovePlugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -65,6 +66,7 @@ public class ServiceContainer {
     private GatheringSnapshotRepository gatheringSnapshotRepository;
     private me.vangoo.infrastructure.market.GatheringVenueProvider gatheringVenueProvider;
     private me.vangoo.infrastructure.market.GatheringAnonymizer gatheringAnonymizer;
+    private OrganizerNpcService organizerNpcService;
 
     // UI and menus
     private AbilityMenu abilityMenu;
@@ -180,6 +182,7 @@ public class ServiceContainer {
                 plugin.getDataFolder() + File.separator + "gathering-state.json");
         this.gatheringVenueProvider = new me.vangoo.infrastructure.market.GatheringVenueProvider();
         this.gatheringAnonymizer = new me.vangoo.infrastructure.market.GatheringAnonymizer();
+        this.organizerNpcService = new OrganizerNpcService();
         this.characteristicExtractor = new CharacteristicExtractor(characteristicCodec);
         this.wardenRemnantCodec = new WardenRemnantCodec(plugin);
         this.potionManager = new PotionManager(pathwayManager, potionItemFactory, customItemService, recipeConfig);
@@ -341,6 +344,7 @@ public class ServiceContainer {
     public GatheringSnapshotRepository getGatheringSnapshotRepository() { return gatheringSnapshotRepository; }
     public me.vangoo.infrastructure.market.GatheringVenueProvider getGatheringVenueProvider() { return gatheringVenueProvider; }
     public me.vangoo.infrastructure.market.GatheringAnonymizer getGatheringAnonymizer() { return gatheringAnonymizer; }
+    public OrganizerNpcService getOrganizerNpcService() { return organizerNpcService; }
 
     public AbilityMenu getAbilityMenu() { return abilityMenu; }
     public BossBarUtil getBossBarUtil() { return bossBarUtil; }
