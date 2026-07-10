@@ -261,6 +261,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(forageHarvestListener, this);
         getServer().getPluginManager().registerEvents(services.getChatPromptService(), this);
         getServer().getPluginManager().registerEvents(services.getGatheringListener(), this);
+        getServer().getPluginManager().registerEvents(services.getOrganizerClickListener(), this);
     }
 
     private void registerCommands() {

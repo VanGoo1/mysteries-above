@@ -109,6 +109,7 @@ public class ServiceContainer {
     private MarionetteLifecycleListener marionetteLifecycleListener;
     private MarionetteRestorer marionetteRestorer;
     private me.vangoo.presentation.listeners.GatheringListener gatheringListener;
+    private me.vangoo.presentation.listeners.OrganizerClickListener organizerClickListener;
 
     // Recipes
     private RecipeBookCraftingRecipe recipeBookCraftingRecipe;
@@ -325,6 +326,8 @@ public class ServiceContainer {
         this.marionetteRestorer = new MarionetteRestorer(pathwayManager);
         this.gatheringListener = new me.vangoo.presentation.listeners.GatheringListener(
                 plugin, gatheringService, gatheringVenueProvider);
+        this.organizerClickListener = new me.vangoo.presentation.listeners.OrganizerClickListener(
+                organizerNpcService, gatheringService);
     }
 
     private void initializeRecipes() {
@@ -399,6 +402,7 @@ public class ServiceContainer {
     public MarionetteLifecycleListener getMarionetteLifecycleListener() { return marionetteLifecycleListener; }
     public MarionetteRestorer getMarionetteRestorer() { return marionetteRestorer; }
     public me.vangoo.presentation.listeners.GatheringListener getGatheringListener() { return gatheringListener; }
+    public me.vangoo.presentation.listeners.OrganizerClickListener getOrganizerClickListener() { return organizerClickListener; }
 
     public RecipeBookCraftingRecipe getRecipeBookCraftingRecipe() { return recipeBookCraftingRecipe; }
 
