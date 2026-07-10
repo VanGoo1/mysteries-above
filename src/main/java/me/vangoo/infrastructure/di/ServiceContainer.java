@@ -4,6 +4,7 @@ import me.vangoo.application.services.*;
 import me.vangoo.domain.valueobjects.CustomItem;
 import me.vangoo.infrastructure.*;
 import me.vangoo.infrastructure.abilities.AbilityItemFactory;
+import me.vangoo.infrastructure.market.GatheringSnapshotRepository;
 import me.vangoo.infrastructure.items.*;
 import me.vangoo.infrastructure.listeners.RampageEventListener;
 import me.vangoo.infrastructure.listeners.RampageRemnantDeathListener;
@@ -61,6 +62,7 @@ public class ServiceContainer {
     private WalletService walletService;
     private me.vangoo.infrastructure.market.MarketConfig marketConfig;
     private MarketItemClassifier marketItemClassifier;
+    private GatheringSnapshotRepository gatheringSnapshotRepository;
 
     // UI and menus
     private AbilityMenu abilityMenu;
@@ -172,6 +174,8 @@ public class ServiceContainer {
         this.marketConfig = me.vangoo.infrastructure.market.MarketConfig.load(plugin);
         this.marketItemClassifier = new MarketItemClassifier(
                 characteristicCodec, recipeBookFactory, customItemService, currencyCodec);
+        this.gatheringSnapshotRepository = new GatheringSnapshotRepository(
+                plugin.getDataFolder() + File.separator + "gathering-state.json");
         this.characteristicExtractor = new CharacteristicExtractor(characteristicCodec);
         this.wardenRemnantCodec = new WardenRemnantCodec(plugin);
         this.potionManager = new PotionManager(pathwayManager, potionItemFactory, customItemService, recipeConfig);
@@ -330,6 +334,7 @@ public class ServiceContainer {
     public WalletService getWalletService() { return walletService; }
     public me.vangoo.infrastructure.market.MarketConfig getMarketConfig() { return marketConfig; }
     public MarketItemClassifier getMarketItemClassifier() { return marketItemClassifier; }
+    public GatheringSnapshotRepository getGatheringSnapshotRepository() { return gatheringSnapshotRepository; }
 
     public AbilityMenu getAbilityMenu() { return abilityMenu; }
     public BossBarUtil getBossBarUtil() { return bossBarUtil; }
