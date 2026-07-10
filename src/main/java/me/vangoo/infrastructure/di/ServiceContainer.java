@@ -59,6 +59,8 @@ public class ServiceContainer {
     private CharacteristicCodec characteristicCodec;
     private CurrencyCodec currencyCodec;
     private WalletService walletService;
+    private me.vangoo.infrastructure.market.MarketConfig marketConfig;
+    private MarketItemClassifier marketItemClassifier;
 
     // UI and menus
     private AbilityMenu abilityMenu;
@@ -167,6 +169,9 @@ public class ServiceContainer {
         this.characteristicCodec = new CharacteristicCodec();
         this.currencyCodec = new CurrencyCodec();
         this.walletService = new WalletService(currencyCodec);
+        this.marketConfig = me.vangoo.infrastructure.market.MarketConfig.load(plugin);
+        this.marketItemClassifier = new MarketItemClassifier(
+                characteristicCodec, recipeBookFactory, customItemService, currencyCodec);
         this.characteristicExtractor = new CharacteristicExtractor(characteristicCodec);
         this.wardenRemnantCodec = new WardenRemnantCodec(plugin);
         this.potionManager = new PotionManager(pathwayManager, potionItemFactory, customItemService, recipeConfig);
@@ -323,6 +328,8 @@ public class ServiceContainer {
     public CharacteristicCodec getCharacteristicCodec() { return characteristicCodec; }
     public CurrencyCodec getCurrencyCodec() { return currencyCodec; }
     public WalletService getWalletService() { return walletService; }
+    public me.vangoo.infrastructure.market.MarketConfig getMarketConfig() { return marketConfig; }
+    public MarketItemClassifier getMarketItemClassifier() { return marketItemClassifier; }
 
     public AbilityMenu getAbilityMenu() { return abilityMenu; }
     public BossBarUtil getBossBarUtil() { return bossBarUtil; }
