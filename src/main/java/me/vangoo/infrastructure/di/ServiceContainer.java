@@ -71,6 +71,8 @@ public class ServiceContainer {
     // UI and menus
     private AbilityMenu abilityMenu;
     private BossBarUtil bossBarUtil;
+    private me.vangoo.presentation.listeners.ChatPromptService chatPromptService;
+    private me.vangoo.infrastructure.ui.MarketMenu marketMenu;
 
     // Application services
     private BeyonderService beyonderService;
@@ -267,6 +269,10 @@ public class ServiceContainer {
                 pathwayManager,
                 abilityContextFactory
         );
+
+        this.chatPromptService = new me.vangoo.presentation.listeners.ChatPromptService(plugin);
+        this.marketMenu = new me.vangoo.infrastructure.ui.MarketMenu(
+                plugin, gatheringService, walletService, chatPromptService);
     }
 
     private void initializeSchedulers() {
@@ -360,6 +366,8 @@ public class ServiceContainer {
 
     public AbilityMenu getAbilityMenu() { return abilityMenu; }
     public BossBarUtil getBossBarUtil() { return bossBarUtil; }
+    public me.vangoo.presentation.listeners.ChatPromptService getChatPromptService() { return chatPromptService; }
+    public me.vangoo.infrastructure.ui.MarketMenu getMarketMenu() { return marketMenu; }
 
     public BeyonderService getBeyonderService() { return beyonderService; }
     public AbilityExecutor getAbilityExecutor() { return abilityExecutor; }
