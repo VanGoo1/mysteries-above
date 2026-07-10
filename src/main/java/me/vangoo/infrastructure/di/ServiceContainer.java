@@ -87,6 +87,7 @@ public class ServiceContainer {
     private me.vangoo.infrastructure.schedulers.AmbientCreatureSpawner ambientCreatureSpawner;
     private me.vangoo.infrastructure.forage.ForageNodeCodec forageNodeCodec;
     private me.vangoo.infrastructure.schedulers.ForageNodeSpawner forageNodeSpawner;
+    private GatheringScheduler gatheringScheduler;
 
     // Event listeners
     private RampageEventListener rampageEventListener;
@@ -105,6 +106,7 @@ public class ServiceContainer {
     private MainBodyAbilityListener mainBodyAbilityListener;
     private MarionetteLifecycleListener marionetteLifecycleListener;
     private MarionetteRestorer marionetteRestorer;
+    private me.vangoo.presentation.listeners.GatheringListener gatheringListener;
 
     // Recipes
     private RecipeBookCraftingRecipe recipeBookCraftingRecipe;
@@ -303,6 +305,8 @@ public class ServiceContainer {
                 beyonderService,
                 abilityMenu
         );
+
+        this.gatheringScheduler = new GatheringScheduler(plugin, gatheringService);
     }
 
     private void initializeEventListeners() {
@@ -313,6 +317,8 @@ public class ServiceContainer {
         this.mainBodyAbilityListener = new MainBodyAbilityListener(beyonderService, abilityExecutor, pathwayManager);
         this.marionetteLifecycleListener = new MarionetteLifecycleListener(abilityContextFactory, pathwayManager, characteristicExtractor);
         this.marionetteRestorer = new MarionetteRestorer(pathwayManager);
+        this.gatheringListener = new me.vangoo.presentation.listeners.GatheringListener(
+                plugin, gatheringService, gatheringVenueProvider);
     }
 
     private void initializeRecipes() {
@@ -368,6 +374,7 @@ public class ServiceContainer {
     public me.vangoo.infrastructure.schedulers.AmbientCreatureSpawner getAmbientCreatureSpawner() { return ambientCreatureSpawner; }
     public me.vangoo.infrastructure.forage.ForageNodeCodec getForageNodeCodec() { return forageNodeCodec; }
     public me.vangoo.infrastructure.schedulers.ForageNodeSpawner getForageNodeSpawner() { return forageNodeSpawner; }
+    public GatheringScheduler getGatheringScheduler() { return gatheringScheduler; }
 
     public RampageEventListener getRampageEventListener() { return rampageEventListener; }
     public CharacteristicExtractor getCharacteristicExtractor() { return characteristicExtractor; }
@@ -383,6 +390,7 @@ public class ServiceContainer {
     public MainBodyAbilityListener getMainBodyAbilityListener() { return mainBodyAbilityListener; }
     public MarionetteLifecycleListener getMarionetteLifecycleListener() { return marionetteLifecycleListener; }
     public MarionetteRestorer getMarionetteRestorer() { return marionetteRestorer; }
+    public me.vangoo.presentation.listeners.GatheringListener getGatheringListener() { return gatheringListener; }
 
     public RecipeBookCraftingRecipe getRecipeBookCraftingRecipe() { return recipeBookCraftingRecipe; }
 
@@ -397,6 +405,7 @@ public class ServiceContainer {
         abilityMenuItemUpdater.start();
         ambientCreatureSpawner.start();
         forageNodeSpawner.start();
+        gatheringScheduler.start();
 
         // Start batched save scheduler (every 5 minutes)
         startBatchedSaveScheduler();
@@ -432,6 +441,9 @@ public class ServiceContainer {
         }
         if (forageNodeSpawner != null) {
             forageNodeSpawner.stop();
+        }
+        if (gatheringScheduler != null) {
+            gatheringScheduler.stop();
         }
     }
 
