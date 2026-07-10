@@ -77,6 +77,7 @@ public class ServiceContainer {
     private AbilityExecutor abilityExecutor;
     private AbilityContextFactory abilityContextFactory;
     private PotionManager potionManager;
+    private GatheringService gatheringService;
 
     // Schedulers
     private PassiveAbilityScheduler passiveAbilityScheduler;
@@ -247,6 +248,11 @@ public class ServiceContainer {
                 customItemService,
                 characteristicCodec
         );
+
+        this.gatheringService = new GatheringService(plugin, marketConfig, walletService,
+                marketItemClassifier, gatheringVenueProvider, gatheringAnonymizer,
+                gatheringSnapshotRepository, organizerNpcService, beyonderService,
+                recipeUnlockService, potionManager);
     }
 
     private void initializeUI() {
@@ -353,6 +359,7 @@ public class ServiceContainer {
     public AbilityExecutor getAbilityExecutor() { return abilityExecutor; }
     public AbilityContextFactory getAbilityContextFactory() { return abilityContextFactory; }
     public PotionManager getPotionManager() { return potionManager; }
+    public GatheringService getGatheringService() { return gatheringService; }
 
     public PassiveAbilityScheduler getPassiveAbilityScheduler() { return passiveAbilityScheduler; }
     public MasteryRegenerationScheduler getMasteryRegenerationScheduler() { return masteryRegenerationScheduler; }

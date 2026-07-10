@@ -85,6 +85,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         // Start schedulers
         services.startSchedulers();
 
+        // Відновлення після рестарту/крашу: незакрита сесія Зборів → повернення власникам
+        services.getGatheringService().initializeFromSnapshot();
+
         // Setup event subscriptions
         services.getEventPublisher().subscribeToAbility(ev -> {
             getLogger().info("[GLOBAL-SUB] Got ability event: " + ev.abilityName() + " from " + ev.casterId());
@@ -166,6 +169,11 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         }
         if (glowingEntities != null) {
             glowingEntities.disable();
+        }
+
+        // Коректно закрити активний збір (повернути ескроу/телепортувати учасників) ДО збереження
+        if (services != null) {
+            services.getGatheringService().forceCloseIfActive();
         }
 
         // Save all data and cleanup
