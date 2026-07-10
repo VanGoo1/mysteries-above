@@ -42,6 +42,22 @@ class PoundMoneyTest {
         assertEquals(0, PoundMoney.ofCoppets(0).commission(0.10).coppets());
     }
 
+    @Test
+    void timesScalesCoppets() {
+        assertEquals(60, PoundMoney.ofCoppets(20).times(3).coppets());
+        assertEquals(3, PoundMoney.ofCoppets(20).times(3).wholePounds());
+    }
+
+    @Test
+    void timesZeroIsZeroMoney() {
+        assertTrue(PoundMoney.ofCoppets(20).times(0).isZero());
+    }
+
+    @Test
+    void timesRejectsNegativeFactor() {
+        assertThrows(IllegalArgumentException.class, () -> PoundMoney.ofCoppets(20).times(-1));
+    }
+
     // --- CoinChange (жадібний розмін: спершу коппети, потім фунти) ---
 
     @Test

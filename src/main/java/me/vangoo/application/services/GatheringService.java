@@ -1,7 +1,6 @@
 package me.vangoo.application.services;
 
 import me.vangoo.domain.market.GatheringPhase;
-import me.vangoo.domain.market.MarketItemCategory;
 import me.vangoo.domain.market.MarketSession;
 import me.vangoo.domain.market.MarketSession.AcceptResult;
 import me.vangoo.domain.market.MarketSession.BuyOrder;
@@ -382,7 +381,7 @@ public class GatheringService {
             if (unit.isZero()) {
                 throw new MarketException("Посередник: «За таке я не дам і коппета»");
             }
-            PoundMoney total = PoundMoney.ofCoppets(unit.coppets() * hand.getAmount());
+            PoundMoney total = unit.times(hand.getAmount());
             seller.getInventory().setItemInMainHand(null);
             walletService.give(seller, total);
             seller.sendMessage(PREFIX + ChatColor.GREEN + "Посередник забрав "

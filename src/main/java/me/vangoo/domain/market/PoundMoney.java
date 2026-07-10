@@ -46,6 +46,14 @@ public record PoundMoney(int coppets) {
         return new PoundMoney(coppets - other.coppets);
     }
 
+    /** Множить суму на кількість одиниць (напр. ціна за одиницю × стак); factor не може бути від'ємним. */
+    public PoundMoney times(int factor) {
+        if (factor < 0) {
+            throw new IllegalArgumentException("Множник не може бути від'ємним: " + factor);
+        }
+        return new PoundMoney(coppets * factor);
+    }
+
     /** Комісія організатора: ceil(coppets × rate). */
     public PoundMoney commission(double rate) {
         return new PoundMoney((int) Math.ceil(coppets * rate));
