@@ -57,6 +57,8 @@ public class ServiceContainer {
     private LootTableConfigLoader lootTableConfigLoader;
     private LootGenerationService lootGenerationService;
     private CharacteristicCodec characteristicCodec;
+    private CurrencyCodec currencyCodec;
+    private WalletService walletService;
 
     // UI and menus
     private AbilityMenu abilityMenu;
@@ -163,6 +165,8 @@ public class ServiceContainer {
         PotionRecipeConfigLoader recipeConfigLoader = new PotionRecipeConfigLoader(plugin);
         Map<String, Map<Integer, RecipeDefinition>> recipeConfig = recipeConfigLoader.load();
         this.characteristicCodec = new CharacteristicCodec();
+        this.currencyCodec = new CurrencyCodec();
+        this.walletService = new WalletService(currencyCodec);
         this.characteristicExtractor = new CharacteristicExtractor(characteristicCodec);
         this.wardenRemnantCodec = new WardenRemnantCodec(plugin);
         this.potionManager = new PotionManager(pathwayManager, potionItemFactory, customItemService, recipeConfig);
@@ -317,6 +321,8 @@ public class ServiceContainer {
     public LootTableConfigLoader getLootTableConfigLoader() { return lootTableConfigLoader; }
     public LootGenerationService getLootGenerationService() { return lootGenerationService; }
     public CharacteristicCodec getCharacteristicCodec() { return characteristicCodec; }
+    public CurrencyCodec getCurrencyCodec() { return currencyCodec; }
+    public WalletService getWalletService() { return walletService; }
 
     public AbilityMenu getAbilityMenu() { return abilityMenu; }
     public BossBarUtil getBossBarUtil() { return bossBarUtil; }
