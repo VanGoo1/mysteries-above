@@ -107,6 +107,15 @@ class MarketNegotiationTest {
                 () -> session.listLot(sellerA, "custom:crimson_star", 1, PoundMoney.ofCoppets(1)));
     }
 
+    @Test
+    void closeIsIdempotentAndNeverRefundsLotTwice() {
+        UUID lotId = session.listLot(sellerA, "custom:crimson_star", 1, PoundMoney.ofCoppets(10));
+        List<Refund> first = session.close();
+        assertEquals(List.of(new Refund(sellerA, lotId)), first);
+        // Другий close (напр. плановий кінець + шлях on-disable) не повертає лот удруге
+        assertTrue(session.close().isEmpty());
+    }
+
     /**
      * Інваріант збереження: після довільного сценарію «зайшло = видано + повернено»
      * і для ескроу-предметів, і для грошей (сплачено = виручка + комісія).

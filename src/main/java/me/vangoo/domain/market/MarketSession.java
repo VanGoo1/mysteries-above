@@ -263,6 +263,9 @@ public final class MarketSession {
 
     /** Закриває сесію: усі непродані лоти й відкриті торги → повернення власникам. */
     public List<Refund> close() {
+        if (closed) {
+            return List.of();
+        }
         closed = true;
         List<Refund> refunds = new ArrayList<>();
         for (Lot lot : lots.values()) {
