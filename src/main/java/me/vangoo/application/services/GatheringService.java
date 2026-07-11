@@ -482,6 +482,16 @@ public class GatheringService implements GatheringAbilityGuard {
         });
     }
 
+    /** Ціна скупки за весь стак у руці, якщо організатор це скуповує (для підтвердження). */
+    public Optional<PoundMoney> buybackPayout(ItemStack hand) {
+        if (hand == null || hand.getType().isAir()) {
+            return Optional.empty();
+        }
+        return classifier.classify(hand).map(c -> config.buyback()
+                .unitPriceFor(c.category(), c.sequence(), c.itemKey()).times(hand.getAmount()))
+                .filter(total -> !total.isZero());
+    }
+
     // ── В'ю для GUI ──────────────────────────────────────────────────────────
 
     public boolean isOpenParticipant(Player player) {

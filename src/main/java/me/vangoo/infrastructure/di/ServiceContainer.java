@@ -73,6 +73,7 @@ public class ServiceContainer {
     private BossBarUtil bossBarUtil;
     private me.vangoo.presentation.listeners.ChatPromptService chatPromptService;
     private me.vangoo.infrastructure.ui.MarketMenu marketMenu;
+    private me.vangoo.infrastructure.ui.ConfirmationMenu confirmationMenu;
 
     // Application services
     private BeyonderService beyonderService;
@@ -277,6 +278,7 @@ public class ServiceContainer {
         this.marketItemNamer = new MarketItemNamer(customItemService);
         this.marketMenu = new me.vangoo.infrastructure.ui.MarketMenu(
                 plugin, gatheringService, walletService, chatPromptService, marketItemNamer);
+        this.confirmationMenu = new me.vangoo.infrastructure.ui.ConfirmationMenu(plugin);
     }
 
     private void initializeSchedulers() {
@@ -330,7 +332,7 @@ public class ServiceContainer {
         this.gatheringListener = new me.vangoo.presentation.listeners.GatheringListener(
                 plugin, gatheringService, gatheringVenueProvider, marketMenu);
         this.organizerClickListener = new me.vangoo.presentation.listeners.OrganizerClickListener(
-                organizerNpcService, gatheringService);
+                organizerNpcService, gatheringService, confirmationMenu, walletService);
     }
 
     private void initializeRecipes() {
@@ -374,6 +376,7 @@ public class ServiceContainer {
     public BossBarUtil getBossBarUtil() { return bossBarUtil; }
     public me.vangoo.presentation.listeners.ChatPromptService getChatPromptService() { return chatPromptService; }
     public me.vangoo.infrastructure.ui.MarketMenu getMarketMenu() { return marketMenu; }
+    public me.vangoo.infrastructure.ui.ConfirmationMenu getConfirmationMenu() { return confirmationMenu; }
 
     public BeyonderService getBeyonderService() { return beyonderService; }
     public AbilityExecutor getAbilityExecutor() { return abilityExecutor; }
