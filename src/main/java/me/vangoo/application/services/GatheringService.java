@@ -742,7 +742,7 @@ public class GatheringService implements GatheringAbilityGuard {
         try {
             action.run();
             return true;
-        } catch (MarketException e) {
+        } catch (MarketException | IllegalArgumentException e) {
             player.sendMessage(PREFIX + ChatColor.RED + e.getMessage());
             return false;
         }
