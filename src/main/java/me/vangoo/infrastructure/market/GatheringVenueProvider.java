@@ -24,6 +24,18 @@ public class GatheringVenueProvider {
         return new Location(world, 0.5, PLATFORM_Y + 1, 0.5);
     }
 
+    public Location organizerSpawn() {
+        World world = getOrCreateWorld();
+        VenueLayout.Spot s = VenueLayout.organizer();
+        return new Location(world, s.x(), PLATFORM_Y + 1, s.z(), s.yaw(), 0f);
+    }
+
+    public Location attendeeSpawn(int index, int total) {
+        World world = getOrCreateWorld();
+        VenueLayout.Spot s = VenueLayout.attendee(index, total);
+        return new Location(world, s.x(), PLATFORM_Y + 1, s.z(), s.yaw(), 0f);
+    }
+
     public boolean isVenueWorld(World world) {
         return world != null && WORLD_NAME.equals(world.getName());
     }

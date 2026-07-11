@@ -245,16 +245,17 @@ public class GatheringService implements GatheringAbilityGuard {
         }
         phase = GatheringPhase.OPEN;
         session = new MarketSession(config.commissionRate(), new Random());
-        Location venue = venueProvider.venueSpawn();
-        for (Player player : attendees) {
+        int total = attendees.size();
+        for (int i = 0; i < total; i++) {
+            Player player = attendees.get(i);
             session.registerParticipant(player.getUniqueId());
             openParticipantIds.add(player.getUniqueId());
             returnLocations.put(player.getUniqueId(), player.getLocation());
-            player.teleport(venue);
+            player.teleport(venueProvider.attendeeSpawn(i, total));
             anonymizer.mask(player, session.aliasOf(player.getUniqueId()));
             frozen.add(player.getUniqueId());
         }
-        organizerNpc.spawn(venue);
+        organizerNpc.spawn(venueProvider.organizerSpawn());
         briefing = new OrganizerBriefing(plugin, this::frozenAudience, this::onBriefingComplete);
         briefing.start();
         long durationTicks = config.durationMinutes() * 60L * 20L;
