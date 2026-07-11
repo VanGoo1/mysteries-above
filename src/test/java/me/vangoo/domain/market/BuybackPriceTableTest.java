@@ -37,4 +37,17 @@ class BuybackPriceTableTest {
     void exactOverrideWinsOverCategoryDefault() {
         assertEquals(5, table.unitPriceFor(MarketItemCategory.INGREDIENT, -1, "custom:stellar_aqua_crystal").coppets());
     }
+
+    @Test
+    void completeTablePricesEverySequence() {
+        java.util.Map<Integer, Integer> full = java.util.Map.of(
+                9, 80, 8, 130, 7, 220, 6, 360, 5, 540,
+                4, 780, 3, 1100, 2, 1500, 1, 2000, 0, 2600);
+        BuybackPriceTable complete = new BuybackPriceTable(2, 200, full, java.util.Map.of());
+        for (int seq = 0; seq <= 9; seq++) {
+            assertTrue(complete.unitPriceFor(
+                            MarketItemCategory.CHARACTERISTIC, seq, "characteristic:Fool:" + seq).coppets() > 0,
+                    "characteristic seq " + seq + " must have a non-zero buyback price");
+        }
+    }
 }
