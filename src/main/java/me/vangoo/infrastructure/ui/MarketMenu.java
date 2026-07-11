@@ -6,6 +6,7 @@ import dev.triumphteam.gui.guis.PaginatedGui;
 import me.vangoo.application.services.GatheringService;
 import me.vangoo.application.services.MarketItemNamer;
 import me.vangoo.application.services.WalletService;
+import me.vangoo.domain.market.Consideration;
 import me.vangoo.domain.market.MarketSession.BuyOrder;
 import me.vangoo.domain.market.MarketSession.Lot;
 import me.vangoo.domain.market.MarketSession.NegotiationView;
@@ -147,7 +148,7 @@ public class MarketMenu {
 
     private void promptListLot(Player player) {
         prompts.prompt(player, PRICE_HINT + ChatColor.GRAY + " — за предмет у вашій руці",
-                withPrice(player, price -> gatheringService.listLotFromHand(player, price)));
+                withPrice(player, price -> gatheringService.listLotFromHand(player, Consideration.money(price))));
     }
 
     // ── Замовлення ───────────────────────────────────────────────────────────
@@ -175,7 +176,7 @@ public class MarketMenu {
                 }
                 prompts.prompt(player, PRICE_HINT + ChatColor.GRAY + " — ваша ціна за це замовлення",
                         withPrice(player, price ->
-                                gatheringService.offerFromHand(player, order.orderId(), price)));
+                                gatheringService.offerFromHand(player, order.orderId(), Consideration.money(price))));
             }));
         }
         gui.open(player);
@@ -239,7 +240,7 @@ public class MarketMenu {
                 } else if (myTurn && e.getClick() == org.bukkit.event.inventory.ClickType.RIGHT) {
                     prompts.prompt(player, PRICE_HINT + ChatColor.GRAY + " — ваша зустрічна ціна",
                             withPrice(player, price ->
-                                    gatheringService.counter(player, view.negotiationId(), price)));
+                                    gatheringService.counter(player, view.negotiationId(), Consideration.money(price))));
                 }
             }));
         }

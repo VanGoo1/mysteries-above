@@ -1,5 +1,6 @@
 package me.vangoo.application.services;
 
+import me.vangoo.domain.market.CoinChange;
 import me.vangoo.domain.market.Consideration;
 import me.vangoo.domain.market.GatheringConduct;
 import me.vangoo.domain.market.GatheringPhase;
@@ -67,6 +68,7 @@ public class GatheringService implements GatheringAbilityGuard {
     private final BeyonderService beyonderService;
     private final RecipeUnlockService recipeUnlockService;
     private final PotionManager potionManager;
+    private final MarketItemNamer namer;
 
     private volatile GatheringPhase phase = GatheringPhase.IDLE;
     private MarketSession session;
@@ -97,7 +99,8 @@ public class GatheringService implements GatheringAbilityGuard {
                             MarketItemClassifier classifier, GatheringVenueProvider venueProvider,
                             GatheringAnonymizer anonymizer, GatheringSnapshotRepository snapshotRepository,
                             OrganizerNpcService organizerNpc, BeyonderService beyonderService,
-                            RecipeUnlockService recipeUnlockService, PotionManager potionManager) {
+                            RecipeUnlockService recipeUnlockService, PotionManager potionManager,
+                            MarketItemNamer namer) {
         this.plugin = plugin;
         this.config = config;
         this.walletService = walletService;
@@ -109,6 +112,7 @@ public class GatheringService implements GatheringAbilityGuard {
         this.beyonderService = beyonderService;
         this.recipeUnlockService = recipeUnlockService;
         this.potionManager = potionManager;
+        this.namer = namer;
     }
 
     // ── Відновлення після рестарту/крашу ────────────────────────────────────
@@ -360,27 +364,33 @@ public class GatheringService implements GatheringAbilityGuard {
 
     // ── Ринкові операції (усі вимагають OPEN + учасник) ──────────────────────
 
-    public boolean listLotFromHand(Player seller, PoundMoney price) {
+    public boolean listLotFromHand(Player seller, Consideration price) {
         return guarded(seller, () -> {
             ItemStack hand = requireHandItem(seller);
             var classified = classifier.classify(hand).orElseThrow(() -> new MarketException(
                     "Це не потойбічна річ — на ринку їй не місце (інгредієнти, Характеристики, книги рецептів)"));
-            UUID lotId = session.listLot(seller.getUniqueId(), classified.itemKey(), hand.getAmount(),
-                    Consideration.money(price));
+            UUID lotId = session.listLot(seller.getUniqueId(), classified.itemKey(), hand.getAmount(), price);
             escrow.put(lotId, new EscrowEntry(seller.getUniqueId(), hand.clone()));
             seller.getInventory().setItemInMainHand(null);
             seller.sendMessage(PREFIX + ChatColor.GREEN + "Лот виставлено: "
-                    + describe(hand) + ChatColor.GREEN + " за " + price.format());
+                    + describe(hand) + ChatColor.GREEN + " за " + describeConsideration(price));
             persist();
         });
     }
 
     public boolean buyLot(Player buyer, UUID lotId) {
         return guarded(buyer, () -> {
+            Lot lot = session.activeLots().stream().filter(l -> l.lotId().equals(lotId)).findFirst()
+                    .orElseThrow(() -> new MarketException("Лот уже недоступний"));
+            if (lot.price().isBarter()
+                    && countMatching(buyer, lot.price().item().itemKey()) < lot.price().item().amount()) {
+                throw new MarketException("Для обміну потрібно " + describeConsideration(lot.price())
+                        + " — у вас цього немає");
+            }
             Settlement s = session.buyLot(buyer.getUniqueId(), lotId,
                     walletService.countPounds(buyer), walletService.countCoppets(buyer));
             settle(buyer, s);
-            buyer.sendMessage(PREFIX + ChatColor.GREEN + "Куплено за " + s.price().money().format() + ".");
+            buyer.sendMessage(PREFIX + ChatColor.GREEN + "Куплено за " + describeConsideration(s.price()) + ".");
         });
     }
 
@@ -393,7 +403,7 @@ public class GatheringService implements GatheringAbilityGuard {
         });
     }
 
-    public boolean offerFromHand(Player seller, UUID orderId, PoundMoney price) {
+    public boolean offerFromHand(Player seller, UUID orderId, Consideration price) {
         return guarded(seller, () -> {
             BuyOrder order = session.openOrders().stream()
                     .filter(o -> o.orderId().equals(orderId)).findFirst()
@@ -405,24 +415,24 @@ public class GatheringService implements GatheringAbilityGuard {
                 throw new MarketException("У руці має бути саме те, що замовлено: потрібна кількість — "
                         + order.amount());
             }
-            UUID negotiationId = session.offerOnOrder(seller.getUniqueId(), orderId, Consideration.money(price));
+            UUID negotiationId = session.offerOnOrder(seller.getUniqueId(), orderId, price);
             escrow.put(negotiationId, new EscrowEntry(seller.getUniqueId(), hand.clone()));
             seller.getInventory().setItemInMainHand(null);
-            seller.sendMessage(PREFIX + ChatColor.GREEN + "Пропозицію зроблено: " + price.format());
+            seller.sendMessage(PREFIX + ChatColor.GREEN + "Пропозицію зроблено: " + describeConsideration(price));
             notify(order.buyerId(), PREFIX + ChatColor.YELLOW + session.aliasOf(seller.getUniqueId())
-                    + " пропонує ваше замовлення за " + price.format()
+                    + " пропонує ваше замовлення за " + describeConsideration(price)
                     + ChatColor.GRAY + " — див. «Мої угоди»");
             persist();
         });
     }
 
-    public boolean counter(Player actor, UUID negotiationId, PoundMoney price) {
+    public boolean counter(Player actor, UUID negotiationId, Consideration price) {
         return guarded(actor, () -> {
-            session.counter(actor.getUniqueId(), negotiationId, Consideration.money(price));
-            actor.sendMessage(PREFIX + ChatColor.GREEN + "Зустрічна ціна: " + price.format());
+            session.counter(actor.getUniqueId(), negotiationId, price);
+            actor.sendMessage(PREFIX + ChatColor.GREEN + "Зустрічна ціна: " + describeConsideration(price));
             otherParty(negotiationId, actor.getUniqueId()).ifPresent(other -> notify(other,
                     PREFIX + ChatColor.YELLOW + session.aliasOf(actor.getUniqueId())
-                            + " дає зустрічну ціну " + price.format()
+                            + " дає зустрічну ціну " + describeConsideration(price)
                             + ChatColor.GRAY + " — див. «Мої угоди»"));
             persist();
         });
@@ -440,6 +450,10 @@ public class GatheringService implements GatheringAbilityGuard {
                 persist();
                 throw new MarketException("Покупець покинув збір — торг скасовано");
             }
+            if (view.currentPrice().isBarter()
+                    && countMatching(buyer, view.currentPrice().item().itemKey()) < view.currentPrice().item().amount()) {
+                throw new MarketException("У покупця немає предмета для обміну — торг лишається відкритим");
+            }
             AcceptResult result = session.accept(actor.getUniqueId(), negotiationId,
                     walletService.countPounds(buyer), walletService.countCoppets(buyer));
             for (Refund released : result.releasedEscrows()) {
@@ -449,7 +463,7 @@ public class GatheringService implements GatheringAbilityGuard {
             }
             settle(buyer, result.settlement());
             actor.sendMessage(PREFIX + ChatColor.GREEN + "Угоду укладено: "
-                    + result.settlement().price().money().format());
+                    + describeConsideration(result.settlement().price()));
         });
     }
 
@@ -490,6 +504,44 @@ public class GatheringService implements GatheringAbilityGuard {
         return classifier.classify(hand).map(c -> config.buyback()
                 .unitPriceFor(c.category(), c.sequence(), c.itemKey()).times(hand.getAmount()))
                 .filter(total -> !total.isZero());
+    }
+
+    // ── Бартер: вимоги, опис ціни, перевірка перед підтвердженням ────────────
+
+    /** Читає предметну вимогу з OFF-HAND зразка (не споживає його). */
+    public Optional<Consideration.ItemDemand> readDemand(ItemStack offhand) {
+        if (offhand == null || offhand.getType().isAir()) {
+            return Optional.empty();
+        }
+        return classifier.classify(offhand)
+                .map(c -> new Consideration.ItemDemand(c.itemKey(), offhand.getAmount()));
+    }
+
+    /** Укр-опис ціни: «предмет ×n + N ф» / лише предмет / лише гроші. */
+    public String describeConsideration(Consideration price) {
+        StringBuilder sb = new StringBuilder();
+        if (price.isBarter()) {
+            sb.append(namer.displayName(price.item().itemKey())).append(" ×").append(price.item().amount());
+            if (price.hasMoney()) {
+                sb.append(" + ").append(price.money().format());
+            }
+        } else {
+            sb.append(price.money().format());
+        }
+        return sb.toString();
+    }
+
+    /** Причина, чому покупець не може заплатити цю ціну (для перевірки перед підтвердженням); empty — може. */
+    public Optional<String> barterShortfall(Player buyer, Consideration price) {
+        if (price.isBarter() && countMatching(buyer, price.item().itemKey()) < price.item().amount()) {
+            return Optional.of("Для обміну потрібно " + describeConsideration(price)
+                    + " — у вас цього немає");
+        }
+        if (price.hasMoney() && CoinChange.make(walletService.countPounds(buyer),
+                walletService.countCoppets(buyer), price.money()).isEmpty()) {
+            return Optional.of("Недостатньо монет: потрібно " + price.money().format());
+        }
+        return Optional.empty();
     }
 
     // ── В'ю для GUI ──────────────────────────────────────────────────────────
@@ -679,10 +731,20 @@ public class GatheringService implements GatheringAbilityGuard {
         if (entry != null) {
             deliverItem(s.payerId(), entry.stack());
         }
+        if (s.price().isBarter()) {
+            for (ItemStack chunk : removeMatching(buyer, s.price().item().itemKey(), s.price().item().amount())) {
+                deliverItem(s.payeeId(), chunk);
+            }
+        }
         deliverMoney(s.payeeId(), s.sellerProceeds());
-        notify(s.payeeId(), PREFIX + ChatColor.GREEN + "Вашу річ продано: +"
-                + s.sellerProceeds().format() + ChatColor.GRAY + " (комісія посередника: "
-                + s.commissionPaid().format() + ")");
+        if (s.sellerProceeds().isZero()) {
+            notify(s.payeeId(), PREFIX + ChatColor.GREEN + "Вашу річ обміняно за "
+                    + describeConsideration(s.price()) + ".");
+        } else {
+            notify(s.payeeId(), PREFIX + ChatColor.GREEN + "Вашу річ продано: +"
+                    + s.sellerProceeds().format() + ChatColor.GRAY + " (комісія посередника: "
+                    + s.commissionPaid().format() + ")");
+        }
         persist();
     }
 
@@ -781,6 +843,47 @@ public class GatheringService implements GatheringAbilityGuard {
 
     private long intervalMillis() {
         return config.intervalDays() * 24L * 60L * 60L * 1000L;
+    }
+
+    /** Скільки одиниць itemKey має гравець (за класифікатором). */
+    private int countMatching(Player player, String itemKey) {
+        int total = 0;
+        for (ItemStack stack : player.getInventory().getContents()) {
+            if (stack == null || stack.getType().isAir()) {
+                continue;
+            }
+            if (classifier.classify(stack).map(c -> c.itemKey().equals(itemKey)).orElse(false)) {
+                total += stack.getAmount();
+            }
+        }
+        return total;
+    }
+
+    /** Знімає amount одиниць itemKey у гравця; повертає зняті стаки для видачі продавцю. */
+    private List<ItemStack> removeMatching(Player player, String itemKey, int amount) {
+        List<ItemStack> removed = new ArrayList<>();
+        int remaining = amount;
+        ItemStack[] contents = player.getInventory().getContents();
+        for (int i = 0; i < contents.length && remaining > 0; i++) {
+            ItemStack stack = contents[i];
+            if (stack == null || stack.getType().isAir()) {
+                continue;
+            }
+            if (!classifier.classify(stack).map(c -> c.itemKey().equals(itemKey)).orElse(false)) {
+                continue;
+            }
+            int take = Math.min(stack.getAmount(), remaining);
+            remaining -= take;
+            ItemStack chunk = stack.clone();
+            chunk.setAmount(take);
+            removed.add(chunk);
+            if (take == stack.getAmount()) {
+                player.getInventory().setItem(i, null);
+            } else {
+                stack.setAmount(stack.getAmount() - take);
+            }
+        }
+        return removed;
     }
 
     private String describe(ItemStack stack) {

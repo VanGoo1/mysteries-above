@@ -256,10 +256,11 @@ public class ServiceContainer {
                 characteristicCodec
         );
 
+        this.marketItemNamer = new MarketItemNamer(customItemService);
         this.gatheringService = new GatheringService(plugin, marketConfig, walletService,
                 marketItemClassifier, gatheringVenueProvider, gatheringAnonymizer,
                 gatheringSnapshotRepository, organizerNpcService, beyonderService,
-                recipeUnlockService, potionManager);
+                recipeUnlockService, potionManager, marketItemNamer);
         this.abilityExecutor.setGatheringAbilityGuard(gatheringService);
     }
 
@@ -275,7 +276,6 @@ public class ServiceContainer {
         );
 
         this.chatPromptService = new me.vangoo.presentation.listeners.ChatPromptService(plugin);
-        this.marketItemNamer = new MarketItemNamer(customItemService);
         this.marketMenu = new me.vangoo.infrastructure.ui.MarketMenu(
                 plugin, gatheringService, walletService, chatPromptService, marketItemNamer);
         this.confirmationMenu = new me.vangoo.infrastructure.ui.ConfirmationMenu(plugin);
