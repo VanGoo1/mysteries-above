@@ -75,8 +75,9 @@ public class MarketMenu {
                         "Активні торги: прийняти / зустрічна / відмова"),
                 e -> runSynced(player, () -> openNegotiations(player))));
         gui.setItem(2, 8, new GuiItem(button(Material.GOLD_NUGGET, ChatColor.GREEN + "Виставити лот",
-                        "Продати предмет із ГОЛОВНОЇ РУКИ за вашу ціну"),
-                e -> promptListLot(player)));
+                        "Продати предмет із ГОЛОВНОЇ РУКИ за вашу ціну",
+                        "Ціна — монетами або предметом взамін (бартер)"),
+                e -> runSynced(player, () -> promptListLot(player))));
         gui.setItem(3, 5, new GuiItem(button(Material.SUNFLOWER,
                 ChatColor.GOLD + "Ваш гаманець",
                 walletService.countPounds(player) + " ф "
@@ -167,9 +168,7 @@ public class MarketMenu {
     }
 
     private void promptListLot(Player player) {
-        promptConsideration(player, "Ви хочете за це: ",
-                ". Напишіть доплату монетами «<ф> <к>» або «0»:",
-                " — за предмет у вашій руці",
+        chooseConsideration(player, "🕯 Ціна лота",
                 price -> gatheringService.listLotFromHand(player, price));
     }
 
@@ -190,16 +189,14 @@ public class MarketMenu {
                     ChatColor.DARK_GRAY + "Замовник: " + gatheringService.aliasOf(order.buyerId()));
             appendLore(display, List.of("", own
                     ? ChatColor.GRAY + "Це ваше замовлення — чекайте на пропозиції"
-                    : ChatColor.GREEN + "▸ Клацніть із предметом у РУЦІ, щоб запропонувати ціну"));
+                    : ChatColor.GREEN + "▸ Тримайте замовлене в РУЦІ й клацніть, щоб дати ціну"));
             gui.addItem(new GuiItem(display, e -> {
                 e.setCancelled(true);
                 if (own) {
                     return;
                 }
-                promptConsideration(player, "Ви просите за це: ",
-                        ". Доплата монетами «<ф> <к>» або «0»:",
-                        " — ваша ціна за це замовлення",
-                        price -> gatheringService.offerFromHand(player, order.orderId(), price));
+                runSynced(player, () -> chooseConsideration(player, "🕯 Ваша ціна",
+                        price -> gatheringService.offerFromHand(player, order.orderId(), price)));
             }));
         }
         gui.open(player);
@@ -284,10 +281,8 @@ public class MarketMenu {
                         runSynced(player, () -> openNegotiations(player));
                     }
                 } else if (myTurn && e.getClick() == org.bukkit.event.inventory.ClickType.RIGHT) {
-                    promptConsideration(player, "Зустрічна: за це — ",
-                            ". Доплата монетами «<ф> <к>» або «0»:",
-                            " — ваша зустрічна ціна",
-                            price -> gatheringService.counter(player, view.negotiationId(), price));
+                    runSynced(player, () -> chooseConsideration(player, "🕯 Зустрічна ціна",
+                            price -> gatheringService.counter(player, view.negotiationId(), price)));
                 }
             }));
         }
@@ -317,18 +312,61 @@ public class MarketMenu {
         return item;
     }
 
-    private void promptConsideration(Player player, String presentPrefix, String bootSuffix,
-                                      String absentSuffix, Consumer<Consideration> action) {
-        var demand = gatheringService.readDemand(player.getInventory().getItemInOffHand());
-        if (demand.isPresent()) {
-            String hint = ChatColor.GOLD + presentPrefix + ChatColor.WHITE
-                    + namer.displayName(demand.get().itemKey()) + " ×" + demand.get().amount()
-                    + ChatColor.GOLD + bootSuffix;
-            prompts.prompt(player, hint, withBoot(player, boot -> action.accept(Consideration.of(demand.get(), boot))));
-        } else {
-            prompts.prompt(player, PRICE_HINT + ChatColor.GRAY + absentSuffix,
-                    withPrice(player, price -> action.accept(Consideration.money(price))));
+    /** Вибір типу ціни: монетами або предметом (бартер). Відкриває міні-меню. */
+    private void chooseConsideration(Player player, String title, Consumer<Consideration> action) {
+        Gui gui = Gui.gui()
+                .title(Component.text(title).color(NamedTextColor.DARK_PURPLE).decorate(TextDecoration.BOLD))
+                .rows(3)
+                .disableAllInteractions()
+                .create();
+        gui.setItem(2, 3, new GuiItem(button(Material.GOLD_NUGGET, ChatColor.GOLD + "Монетами",
+                        "Ціна у фунтах і коппетах"),
+                e -> promptMoney(player, action)));
+        gui.setItem(2, 7, new GuiItem(button(Material.CHEST, ChatColor.AQUA + "Предметом (бартер)",
+                        "Попросити предмет взамін", "Опційно + доплата монетами"),
+                e -> runSynced(player, () -> openBarterPicker(player, title, action))));
+        gui.setItem(2, 5, new GuiItem(button(Material.BARRIER, ChatColor.GRAY + "Скасувати"),
+                e -> player.closeInventory()));
+        gui.open(player);
+    }
+
+    private void promptMoney(Player player, Consumer<Consideration> action) {
+        prompts.prompt(player, PRICE_HINT,
+                withPrice(player, price -> action.accept(Consideration.money(price))));
+    }
+
+    /** Пікер предмета-вимоги (зі знайомих інгредієнтів) → кількість → опційна доплата монетами. */
+    private void openBarterPicker(Player player, String title, Consumer<Consideration> action) {
+        List<ItemStack> options = gatheringService.knownIngredientStacks(player);
+        if (options.isEmpty()) {
+            player.sendMessage(ChatColor.RED
+                    + "[Збори] Ви не знаєте предметів, які можна попросити взамін.");
+            return;
         }
+        PaginatedGui gui = paginated(title + " — обмін",
+                () -> chooseConsideration(player, title, action));
+        for (ItemStack sample : options) {
+            String itemKey = gatheringService.classifyKey(sample).orElse(null);
+            if (itemKey == null) {
+                continue;
+            }
+            ItemStack display = sample.clone();
+            appendLore(display, List.of("", ChatColor.GREEN + "▸ Клацніть, щоб просити це взамін"));
+            gui.addItem(new GuiItem(display, e -> {
+                e.setCancelled(true);
+                prompts.prompt(player, ChatColor.GOLD + "Скільки штук просити? (1–64):", qtyInput -> {
+                    int qty = parseAmount(qtyInput);
+                    if (qty <= 0) {
+                        player.sendMessage(ChatColor.RED + "Невірна кількість.");
+                        return;
+                    }
+                    Consideration.ItemDemand demand = new Consideration.ItemDemand(itemKey, qty);
+                    prompts.prompt(player, ChatColor.GOLD + "Доплата монетами «<ф> <к>» або «0»:",
+                            withBoot(player, boot -> action.accept(Consideration.of(demand, boot))));
+                });
+            }));
+        }
+        gui.open(player);
     }
 
     private Consumer<String> withBoot(Player player, Consumer<PoundMoney> action) {
