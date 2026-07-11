@@ -43,15 +43,17 @@ public class MarketMenu {
     private final WalletService walletService;
     private final ChatPromptService prompts;
     private final MarketItemNamer namer;
+    private final ConfirmationMenu confirm;
 
     public MarketMenu(Plugin plugin, GatheringService gatheringService,
                       WalletService walletService, ChatPromptService prompts,
-                      MarketItemNamer namer) {
+                      MarketItemNamer namer, ConfirmationMenu confirm) {
         this.plugin = plugin;
         this.gatheringService = gatheringService;
         this.walletService = walletService;
         this.prompts = prompts;
         this.namer = namer;
+        this.confirm = confirm;
     }
 
     // ── Головне меню ─────────────────────────────────────────────────────────
@@ -127,7 +129,7 @@ public class MarketMenu {
             boolean own = lot.sellerId().equals(player.getUniqueId());
             List<String> lore = new ArrayList<>(List.of(
                     "",
-                    ChatColor.GOLD + "Ціна: " + lot.price().money().format(),
+                    ChatColor.GOLD + "Ціна: " + gatheringService.describeConsideration(lot.price()),
                     ChatColor.DARK_GRAY + "Продавець: " + gatheringService.aliasOf(lot.sellerId()),
                     ""));
             lore.add(own ? ChatColor.GRAY + "Це ваш лот (повернеться після збору, якщо не продано)"
@@ -139,16 +141,39 @@ public class MarketMenu {
                     return;
                 }
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-                gatheringService.buyLot(player, lot.lotId());
-                runSynced(player, () -> openLots(player)); // оновити список
+                if (lot.price().isBarter()) {
+                    var shortfall = gatheringService.barterShortfall(player, lot.price());
+                    if (shortfall.isPresent()) {
+                        player.sendMessage(ChatColor.RED + "[Збори] " + shortfall.get());
+                        return;
+                    }
+                    ItemStack give = payLabel(lot.price());
+                    ItemStack get = gatheringService.escrowStack(lot.lotId());
+                    confirm.open(player, give, get, "🕯 Обмін", () -> {
+                        gatheringService.buyLot(player, lot.lotId());
+                        runSynced(player, () -> openLots(player));
+                    });
+                } else {
+                    gatheringService.buyLot(player, lot.lotId());
+                    runSynced(player, () -> openLots(player)); // оновити список
+                }
             }));
         }
         gui.open(player);
     }
 
     private void promptListLot(Player player) {
-        prompts.prompt(player, PRICE_HINT + ChatColor.GRAY + " — за предмет у вашій руці",
-                withPrice(player, price -> gatheringService.listLotFromHand(player, Consideration.money(price))));
+        var demand = gatheringService.readDemand(player.getInventory().getItemInOffHand());
+        if (demand.isPresent()) {
+            String hint = ChatColor.GOLD + "Ви хочете за це: " + ChatColor.WHITE
+                    + namer.displayName(demand.get().itemKey()) + " ×" + demand.get().amount()
+                    + ChatColor.GOLD + ". Напишіть доплату монетами «<ф> <к>» або «0»:";
+            prompts.prompt(player, hint, withBoot(player, boot ->
+                    gatheringService.listLotFromHand(player, Consideration.of(demand.get(), boot))));
+        } else {
+            prompts.prompt(player, PRICE_HINT + ChatColor.GRAY + " — за предмет у вашій руці",
+                    withPrice(player, price -> gatheringService.listLotFromHand(player, Consideration.money(price))));
+        }
     }
 
     // ── Замовлення ───────────────────────────────────────────────────────────
@@ -174,9 +199,18 @@ public class MarketMenu {
                 if (own) {
                     return;
                 }
-                prompts.prompt(player, PRICE_HINT + ChatColor.GRAY + " — ваша ціна за це замовлення",
-                        withPrice(player, price ->
-                                gatheringService.offerFromHand(player, order.orderId(), Consideration.money(price))));
+                var demand = gatheringService.readDemand(player.getInventory().getItemInOffHand());
+                if (demand.isPresent()) {
+                    String hint = ChatColor.GOLD + "Ви просите за це: " + ChatColor.WHITE
+                            + namer.displayName(demand.get().itemKey()) + " ×" + demand.get().amount()
+                            + ChatColor.GOLD + ". Доплата монетами «<ф> <к>» або «0»:";
+                    prompts.prompt(player, hint, withBoot(player, boot ->
+                            gatheringService.offerFromHand(player, order.orderId(), Consideration.of(demand.get(), boot))));
+                } else {
+                    prompts.prompt(player, PRICE_HINT + ChatColor.GRAY + " — ваша ціна за це замовлення",
+                            withPrice(player, price ->
+                                    gatheringService.offerFromHand(player, order.orderId(), Consideration.money(price))));
+                }
             }));
         }
         gui.open(player);
@@ -218,7 +252,7 @@ public class MarketMenu {
             ItemStack display = button(Material.BELL,
                     ChatColor.YELLOW + (iAmSeller ? "Ви продаєте: " : "Ви купуєте: ")
                             + ChatColor.WHITE + namer.displayName(view.itemKey()) + " ×" + view.amount(),
-                    ChatColor.GOLD + "Поточна ціна: " + view.currentPrice().money().format());
+                    ChatColor.GOLD + "Поточна ціна: " + gatheringService.describeConsideration(view.currentPrice()));
             List<String> lore = new ArrayList<>(List.of(
                     ChatColor.DARK_GRAY + "Інша сторона: " + gatheringService.aliasOf(other), ""));
             if (myTurn) {
@@ -235,12 +269,40 @@ public class MarketMenu {
                     gatheringService.withdraw(player, view.negotiationId());
                     runSynced(player, () -> openNegotiations(player));
                 } else if (myTurn && e.getClick() == org.bukkit.event.inventory.ClickType.LEFT) {
-                    gatheringService.accept(player, view.negotiationId());
-                    runSynced(player, () -> openNegotiations(player));
+                    if (view.currentPrice().isBarter()) {
+                        // покупець віддає ціну й отримує товар; продавець — навпаки
+                        ItemStack priceLabel = payLabel(view.currentPrice());
+                        ItemStack goodLabel = gatheringService.escrowStack(view.negotiationId());
+                        ItemStack give = iAmSeller ? goodLabel : priceLabel;
+                        ItemStack get = iAmSeller ? priceLabel : goodLabel;
+                        if (!iAmSeller) {
+                            var shortfall = gatheringService.barterShortfall(player, view.currentPrice());
+                            if (shortfall.isPresent()) {
+                                player.sendMessage(ChatColor.RED + "[Збори] " + shortfall.get());
+                                return;
+                            }
+                        }
+                        confirm.open(player, give, get, "🕯 Обмін", () -> {
+                            gatheringService.accept(player, view.negotiationId());
+                            runSynced(player, () -> openNegotiations(player));
+                        });
+                    } else {
+                        gatheringService.accept(player, view.negotiationId());
+                        runSynced(player, () -> openNegotiations(player));
+                    }
                 } else if (myTurn && e.getClick() == org.bukkit.event.inventory.ClickType.RIGHT) {
-                    prompts.prompt(player, PRICE_HINT + ChatColor.GRAY + " — ваша зустрічна ціна",
-                            withPrice(player, price ->
-                                    gatheringService.counter(player, view.negotiationId(), Consideration.money(price))));
+                    var demand = gatheringService.readDemand(player.getInventory().getItemInOffHand());
+                    if (demand.isPresent()) {
+                        String hint = ChatColor.GOLD + "Зустрічна: за це — " + ChatColor.WHITE
+                                + namer.displayName(demand.get().itemKey()) + " ×" + demand.get().amount()
+                                + ChatColor.GOLD + ". Доплата монетами «<ф> <к>» або «0»:";
+                        prompts.prompt(player, hint, withBoot(player, boot ->
+                                gatheringService.counter(player, view.negotiationId(), Consideration.of(demand.get(), boot))));
+                    } else {
+                        prompts.prompt(player, PRICE_HINT + ChatColor.GRAY + " — ваша зустрічна ціна",
+                                withPrice(player, price ->
+                                        gatheringService.counter(player, view.negotiationId(), Consideration.money(price))));
+                    }
                 }
             }));
         }
@@ -257,6 +319,27 @@ public class MarketMenu {
                 return;
             }
             action.accept(price);
+        };
+    }
+
+    private ItemStack payLabel(Consideration price) {
+        Material icon = price.isBarter() ? Material.PAPER : Material.GOLD_NUGGET;
+        ItemStack item = new ItemStack(icon);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(ChatColor.GOLD + gatheringService.describeConsideration(price));
+        meta.setLore(new ArrayList<>());
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    private Consumer<String> withBoot(Player player, Consumer<PoundMoney> action) {
+        return input -> {
+            PoundMoney boot = ChatPromptService.parsePrice(input);
+            if (boot == null) {
+                player.sendMessage(ChatColor.RED + "Невірна доплата. Формат: «2 15», «7» або «0».");
+                return;
+            }
+            action.accept(boot);
         };
     }
 

@@ -276,9 +276,9 @@ public class ServiceContainer {
         );
 
         this.chatPromptService = new me.vangoo.presentation.listeners.ChatPromptService(plugin);
-        this.marketMenu = new me.vangoo.infrastructure.ui.MarketMenu(
-                plugin, gatheringService, walletService, chatPromptService, marketItemNamer);
         this.confirmationMenu = new me.vangoo.infrastructure.ui.ConfirmationMenu(plugin);
+        this.marketMenu = new me.vangoo.infrastructure.ui.MarketMenu(
+                plugin, gatheringService, walletService, chatPromptService, marketItemNamer, confirmationMenu);
     }
 
     private void initializeSchedulers() {
