@@ -63,14 +63,6 @@ public class OrganizerBriefing {
         }
     }
 
-    /** Дострокове завершення (гравець пропустив доповідь присіданням). Ідемпотентно. */
-    public void skip() {
-        if (task == null) {
-            return;
-        }
-        finish();
-    }
-
     private void tick() {
         if (lineIndex >= SCRIPT.size()) {
             finish();

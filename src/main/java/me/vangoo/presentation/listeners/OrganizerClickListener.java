@@ -5,8 +5,11 @@ import me.vangoo.domain.market.PoundMoney;
 import me.vangoo.infrastructure.citizens.OrganizerNpcService;
 import me.vangoo.infrastructure.ui.ConfirmationMenu;
 import net.citizensnpcs.api.event.NPCRightClickEvent;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
@@ -34,21 +37,25 @@ public class OrganizerClickListener implements Listener {
         if (!organizerNpc.isOrganizer(event.getNPC())) {
             return;
         }
-        var player = event.getClicker();
+        Player player = event.getClicker();
         ItemStack hand = player.getInventory().getItemInMainHand();
         if (hand.getType().isAir()) {
-            player.sendMessage(ChatColor.DARK_PURPLE + "" + ChatColor.ITALIC
-                    + "Посередник: «Покажи, що приніс — візьми річ у руку.»");
+            organizerSay(player, "Покажи, що приніс — візьми річ у руку.");
             return;
         }
         Optional<PoundMoney> payout = gatheringService.buybackPayout(hand);
         if (payout.isEmpty()) {
-            player.sendMessage(ChatColor.DARK_PURPLE + "" + ChatColor.ITALIC
-                    + "Посередник: «За таке я не дам і коппета.»");
+            organizerSay(player, "За таке я не дам і коппета.");
             return;
         }
         ItemStack coins = coinLabel(payout.get());
         confirmationMenu.open(player, hand.clone(), coins, "🕯 Скупка", () -> gatheringService.buybackFromHand(player));
+    }
+
+    /** Репліка Посередника — в action bar (як його доповідь), а не в чат. */
+    private void organizerSay(Player player, String line) {
+        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(
+                ChatColor.DARK_PURPLE + "" + ChatColor.ITALIC + "Посередник: «" + line + "»"));
     }
 
     private ItemStack coinLabel(PoundMoney money) {

@@ -23,6 +23,7 @@ import me.vangoo.infrastructure.market.GatheringSnapshotRepository.Snapshot;
 import me.vangoo.infrastructure.market.GatheringVenueProvider;
 import me.vangoo.infrastructure.market.MarketConfig;
 import me.vangoo.infrastructure.market.OrganizerBriefing;
+import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -273,9 +274,10 @@ public class GatheringService implements GatheringAbilityGuard {
         persist();
     }
 
+    /** Аудиторія доповіді — лише ще заморожені гравці; хто пропустив, більше її не бачить. */
     private List<Player> frozenAudience() {
         List<Player> players = new ArrayList<>();
-        for (UUID id : openParticipantIds) {
+        for (UUID id : frozen) {
             Player p = Bukkit.getPlayer(id);
             if (p != null && p.isOnline()) {
                 players.add(p);
@@ -284,11 +286,12 @@ public class GatheringService implements GatheringAbilityGuard {
         return players;
     }
 
+    /** Природне завершення скрипту доповіді: звільняє всіх, хто ще заморожений. */
     private void onBriefingComplete() {
-        frozen.clear();
-        briefed.addAll(openParticipantIds);
-        broadcastToParticipants(PREFIX + ChatColor.GREEN
-                + "Тепер ви вільні. Торгуйте — кафедра поруч.");
+        for (UUID id : Set.copyOf(frozen)) {
+            freeFrozen(Bukkit.getPlayer(id), id);
+        }
+        briefing = null;
     }
 
     public boolean isFrozen(UUID playerId) {
@@ -299,13 +302,27 @@ public class GatheringService implements GatheringAbilityGuard {
         return briefed.contains(playerId);
     }
 
-    /** Присідання під час доповіді дострокового завершує її для всіх заморожених. */
+    /**
+     * Присідання під час доповіді достроково звільняє САМЕ цього гравця (доповідь для
+     * решти триває). Коли заморожених не лишилось — зупиняємо спільний тік доповіді.
+     */
     public void skipBriefing(Player player) {
         if (!isFrozen(player.getUniqueId())) {
             return;
         }
-        if (briefing != null) {
-            briefing.skip();
+        freeFrozen(player, player.getUniqueId());
+        if (frozen.isEmpty() && briefing != null) {
+            briefing.cancel();
+            briefing = null;
+        }
+    }
+
+    /** Звільняє одного гравця: знімає заморозку, позначає briefed і подає сигнал в action bar. */
+    private void freeFrozen(Player player, UUID id) {
+        frozen.remove(id);
+        briefed.add(id);
+        if (player != null && player.isOnline()) {
+            organizerSay(player, ChatColor.GREEN + "Тепер ви вільні. Торгуйте — кафедра поруч.");
         }
     }
 
@@ -491,7 +508,7 @@ public class GatheringService implements GatheringAbilityGuard {
             PoundMoney total = unit.times(hand.getAmount());
             seller.getInventory().setItemInMainHand(null);
             walletService.give(seller, total);
-            seller.sendMessage(PREFIX + ChatColor.GREEN + "Посередник забрав "
+            organizerSay(seller, ChatColor.GREEN + "Посередник забрав "
                     + describe(hand) + ChatColor.GREEN + " і відсипав " + total.format());
         });
     }
@@ -506,16 +523,7 @@ public class GatheringService implements GatheringAbilityGuard {
                 .filter(total -> !total.isZero());
     }
 
-    // ── Бартер: вимоги, опис ціни, перевірка перед підтвердженням ────────────
-
-    /** Читає предметну вимогу з OFF-HAND зразка (не споживає його). */
-    public Optional<Consideration.ItemDemand> readDemand(ItemStack offhand) {
-        if (offhand == null || offhand.getType().isAir()) {
-            return Optional.empty();
-        }
-        return classifier.classify(offhand)
-                .map(c -> new Consideration.ItemDemand(c.itemKey(), offhand.getAmount()));
-    }
+    // ── Бартер: опис ціни, перевірка перед підтвердженням ────────────────────
 
     /** Укр-опис ціни: «предмет ×n + N ф» / лише предмет / лише гроші. */
     public String describeConsideration(Consideration price) {
@@ -783,6 +791,11 @@ public class GatheringService implements GatheringAbilityGuard {
         if (player != null && player.isOnline()) {
             player.sendMessage(message);
         }
+    }
+
+    /** Слова Посередника — в action bar (як доповідь), а не в чат. */
+    private void organizerSay(Player player, String message) {
+        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
     }
 
     private Optional<UUID> otherParty(UUID negotiationId, UUID actorId) {
