@@ -80,6 +80,7 @@ public class ServiceContainer {
     private AbilityContextFactory abilityContextFactory;
     private PotionManager potionManager;
     private GatheringService gatheringService;
+    private MarketItemNamer marketItemNamer;
 
     // Schedulers
     private PassiveAbilityScheduler passiveAbilityScheduler;
@@ -272,8 +273,9 @@ public class ServiceContainer {
         );
 
         this.chatPromptService = new me.vangoo.presentation.listeners.ChatPromptService(plugin);
+        this.marketItemNamer = new MarketItemNamer(customItemService);
         this.marketMenu = new me.vangoo.infrastructure.ui.MarketMenu(
-                plugin, gatheringService, walletService, chatPromptService);
+                plugin, gatheringService, walletService, chatPromptService, marketItemNamer);
     }
 
     private void initializeSchedulers() {

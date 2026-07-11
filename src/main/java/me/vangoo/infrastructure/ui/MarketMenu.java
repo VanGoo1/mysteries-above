@@ -4,6 +4,7 @@ import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
 import dev.triumphteam.gui.guis.PaginatedGui;
 import me.vangoo.application.services.GatheringService;
+import me.vangoo.application.services.MarketItemNamer;
 import me.vangoo.application.services.WalletService;
 import me.vangoo.domain.market.MarketSession.BuyOrder;
 import me.vangoo.domain.market.MarketSession.Lot;
@@ -40,13 +41,16 @@ public class MarketMenu {
     private final GatheringService gatheringService;
     private final WalletService walletService;
     private final ChatPromptService prompts;
+    private final MarketItemNamer namer;
 
     public MarketMenu(Plugin plugin, GatheringService gatheringService,
-                      WalletService walletService, ChatPromptService prompts) {
+                      WalletService walletService, ChatPromptService prompts,
+                      MarketItemNamer namer) {
         this.plugin = plugin;
         this.gatheringService = gatheringService;
         this.walletService = walletService;
         this.prompts = prompts;
+        this.namer = namer;
     }
 
     // ── Головне меню ─────────────────────────────────────────────────────────
@@ -125,8 +129,8 @@ public class MarketMenu {
         for (BuyOrder order : gatheringService.openOrders()) {
             boolean own = order.buyerId().equals(player.getUniqueId());
             ItemStack display = button(Material.PAPER,
-                    ChatColor.AQUA + "Шукають: " + ChatColor.WHITE + order.itemKey()
-                            + " ×" + order.amount(),
+                    ChatColor.AQUA + "Шукають: " + ChatColor.WHITE
+                            + namer.displayName(order.itemKey()) + " ×" + order.amount(),
                     ChatColor.DARK_GRAY + "Замовник: " + gatheringService.aliasOf(order.buyerId()));
             appendLore(display, List.of("", own
                     ? ChatColor.GRAY + "Це ваше замовлення — чекайте на пропозиції"
@@ -179,7 +183,7 @@ public class MarketMenu {
             UUID other = iAmSeller ? view.buyerId() : view.sellerId();
             ItemStack display = button(Material.BELL,
                     ChatColor.YELLOW + (iAmSeller ? "Ви продаєте: " : "Ви купуєте: ")
-                            + ChatColor.WHITE + view.itemKey() + " ×" + view.amount(),
+                            + ChatColor.WHITE + namer.displayName(view.itemKey()) + " ×" + view.amount(),
                     ChatColor.GOLD + "Поточна ціна: " + view.currentPrice().format());
             List<String> lore = new ArrayList<>(List.of(
                     ChatColor.DARK_GRAY + "Інша сторона: " + gatheringService.aliasOf(other), ""));
