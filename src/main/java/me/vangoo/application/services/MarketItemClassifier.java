@@ -8,6 +8,7 @@ import me.vangoo.infrastructure.items.RecipeBookFactory;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -17,13 +18,19 @@ import java.util.Optional;
  */
 public class MarketItemClassifier {
 
-    /** sequence = −1, якщо категорія без послідовності (інгредієнт). */
+    /** sequence = −1, якщо послідовність невідома (інгредієнт не входить у жоден рецепт). */
     public record ClassifiedItem(MarketItemCategory category, String itemKey, int sequence) {}
 
     private final CharacteristicCodec characteristicCodec;
     private final RecipeBookFactory recipeBookFactory;
     private final CustomItemService customItemService;
     private final CurrencyCodec currencyCodec;
+    /**
+     * itemKey інгредієнта → його послідовність (найсильніша, де він ужитий у рецептах).
+     * Інжектується сеттером після побудови потонів (див. ServiceContainer) — потони
+     * створюються ПІСЛЯ класифікатора, тож конструкторної залежності тут бути не може.
+     */
+    private Map<String, Integer> ingredientSequenceByKey = Map.of();
 
     public MarketItemClassifier(CharacteristicCodec characteristicCodec,
                                 RecipeBookFactory recipeBookFactory,
@@ -33,6 +40,11 @@ public class MarketItemClassifier {
         this.recipeBookFactory = recipeBookFactory;
         this.customItemService = customItemService;
         this.currencyCodec = currencyCodec;
+    }
+
+    /** Провід: індекс «itemKey інгредієнта → послідовність», побудований з рецептів на старті. */
+    public void setIngredientSequenceIndex(Map<String, Integer> index) {
+        this.ingredientSequenceByKey = Map.copyOf(index);
     }
 
     public Optional<ClassifiedItem> classify(ItemStack item) {
@@ -59,7 +71,11 @@ public class MarketItemClassifier {
         }
         if (customItemService.isCustomItem(item)) {
             return customItemService.getCustomItem(item)
-                    .map(ci -> new ClassifiedItem(MarketItemCategory.INGREDIENT, "custom:" + ci.id(), -1));
+                    .map(ci -> {
+                        String key = "custom:" + ci.id();
+                        return new ClassifiedItem(MarketItemCategory.INGREDIENT, key,
+                                ingredientSequenceByKey.getOrDefault(key, -1));
+                    });
         }
         return Optional.empty();
     }

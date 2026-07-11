@@ -194,6 +194,11 @@ public class ServiceContainer {
         this.characteristicExtractor = new CharacteristicExtractor(characteristicCodec);
         this.wardenRemnantCodec = new WardenRemnantCodec(plugin);
         this.potionManager = new PotionManager(pathwayManager, potionItemFactory, customItemService, recipeConfig);
+        // Ціна скупки інгредієнтів скейлиться від послідовності рецепта, де вони вжиті:
+        // будуємо індекс itemKey→послідовність із потонів (створених щойно вище) й інжектимо
+        // в класифікатор (він створений раніше, тож лише сеттером).
+        this.marketItemClassifier.setIngredientSequenceIndex(
+                IngredientSequenceIndex.build(potionManager.getPotions(), customItemService));
 
         // Loot system
         this.lootTableConfigLoader = new LootTableConfigLoader(plugin);

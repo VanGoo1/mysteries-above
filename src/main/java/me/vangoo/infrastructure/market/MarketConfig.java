@@ -14,6 +14,19 @@ public record MarketConfig(int intervalDays,
                            double commissionRate,
                            BuybackPriceTable buyback) {
 
+    /**
+     * Дефолтні ціни скупки за одиницю (коппети) для кожної послідовності (9 = найслабша …
+     * 0 = найсильніша). Слугують фолбеком, коли на сервері старий config.yml без відповідних
+     * секцій — Bukkit НЕ перезаписує наявний config.yml при оновленні плагіна, тож без цих
+     * дефолтів організатор відмовляв би скуповувати («не дам і коппета»). Дублюють config.yml.
+     */
+    private static final Map<Integer, Integer> DEFAULT_INGREDIENT_COPPETS = Map.of(
+            9, 3, 8, 5, 7, 8, 6, 13, 5, 20, 4, 32, 3, 50, 2, 75, 1, 105, 0, 140);
+    private static final Map<Integer, Integer> DEFAULT_RECIPE_BOOK_COPPETS = Map.of(
+            9, 120, 8, 170, 7, 240, 6, 330, 5, 450, 4, 600, 3, 780, 2, 980, 1, 1200, 0, 1500);
+    private static final Map<Integer, Integer> DEFAULT_CHARACTERISTIC_COPPETS = Map.of(
+            9, 80, 8, 130, 7, 220, 6, 360, 5, 540, 4, 780, 3, 1100, 2, 1500, 1, 2000, 0, 2600);
+
     public static MarketConfig load(Plugin plugin) {
         var cfg = plugin.getConfig();
         int intervalDays = cfg.getInt("market.gathering.interval-days", 7);
@@ -21,18 +34,13 @@ public record MarketConfig(int intervalDays,
         int duration = cfg.getInt("market.gathering.duration-minutes", 15);
         double rate = cfg.getDouble("market.commission-rate", 0.10);
 
-        Map<Integer, Integer> bySeq = new HashMap<>();
-        ConfigurationSection seqSection =
-                cfg.getConfigurationSection("market.buyback.characteristic-coppets-by-seq");
-        if (seqSection != null) {
-            for (String key : seqSection.getKeys(false)) {
-                try {
-                    bySeq.put(Integer.parseInt(key), seqSection.getInt(key));
-                } catch (NumberFormatException e) {
-                    plugin.getLogger().warning("market.buyback: bad sequence key '" + key + "', skipped");
-                }
-            }
-        }
+        Map<Integer, Integer> ingredientBySeq = loadSeqMap(plugin,
+                "market.buyback.ingredient-coppets-by-seq", DEFAULT_INGREDIENT_COPPETS);
+        Map<Integer, Integer> recipeBySeq = loadSeqMap(plugin,
+                "market.buyback.recipe-book-coppets-by-seq", DEFAULT_RECIPE_BOOK_COPPETS);
+        Map<Integer, Integer> characteristicBySeq = loadSeqMap(plugin,
+                "market.buyback.characteristic-coppets-by-seq", DEFAULT_CHARACTERISTIC_COPPETS);
+
         Map<String, Integer> overrides = new HashMap<>();
         ConfigurationSection overridesSection =
                 cfg.getConfigurationSection("market.buyback.overrides");
@@ -42,9 +50,30 @@ public record MarketConfig(int intervalDays,
             }
         }
         BuybackPriceTable table = new BuybackPriceTable(
-                cfg.getInt("market.buyback.ingredient-coppets", 2),
-                cfg.getInt("market.buyback.recipe-book-coppets", 10),
-                bySeq, overrides);
+                ingredientBySeq,
+                cfg.getInt("market.buyback.ingredient-coppets", 2), // фолбек для інгр. без послідовності
+                recipeBySeq, characteristicBySeq, overrides);
         return new MarketConfig(intervalDays, joinWindow, duration, rate, table);
+    }
+
+    /** Читає мапу «послідовність → коппети»; якщо секції нема (старий config) — дефолти. */
+    private static Map<Integer, Integer> loadSeqMap(Plugin plugin, String path,
+                                                    Map<Integer, Integer> defaults) {
+        Map<Integer, Integer> bySeq = new HashMap<>();
+        ConfigurationSection section = plugin.getConfig().getConfigurationSection(path);
+        if (section != null) {
+            for (String key : section.getKeys(false)) {
+                try {
+                    bySeq.put(Integer.parseInt(key), section.getInt(key));
+                } catch (NumberFormatException e) {
+                    plugin.getLogger().warning(path + ": bad sequence key '" + key + "', skipped");
+                }
+            }
+        }
+        if (bySeq.isEmpty()) {
+            bySeq.putAll(defaults);
+            plugin.getLogger().info(path + " missing; using built-in defaults");
+        }
+        return bySeq;
     }
 }
