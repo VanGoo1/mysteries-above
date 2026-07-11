@@ -293,6 +293,16 @@ public class GatheringService implements GatheringAbilityGuard {
         return briefed.contains(playerId);
     }
 
+    /** Присідання під час доповіді дострокового завершує її для всіх заморожених. */
+    public void skipBriefing(Player player) {
+        if (!isFrozen(player.getUniqueId())) {
+            return;
+        }
+        if (briefing != null) {
+            briefing.skip();
+        }
+    }
+
     private void close() {
         if (phase != GatheringPhase.OPEN) {
             return;

@@ -20,6 +20,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.plugin.Plugin;
 
 import java.util.UUID;
@@ -29,6 +30,8 @@ import java.util.UUID;
  * анонімний чат зали («Незнайомець №N»), захист блоків світу-заглушки.
  */
 public class GatheringListener implements Listener {
+
+    private static final String PREFIX = ChatColor.DARK_PURPLE + "[Збори] " + ChatColor.RESET;
 
     private final Plugin plugin;
     private final GatheringService gatheringService;
@@ -68,6 +71,16 @@ public class GatheringListener implements Listener {
     }
 
     @EventHandler
+    public void onFrozenSneak(PlayerToggleSneakEvent event) {
+        if (!event.isSneaking()) {
+            return; // цікавить лише момент, коли гравець ПОЧАВ присідати
+        }
+        if (gatheringService.isFrozen(event.getPlayer().getUniqueId())) {
+            gatheringService.skipBriefing(event.getPlayer());
+        }
+    }
+
+    @EventHandler
     public void onLecternClick(PlayerInteractEvent event) {
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getClickedBlock() == null) {
             return;
@@ -78,9 +91,14 @@ public class GatheringListener implements Listener {
         }
         event.setCancelled(true); // глушить дефолтне GUI кафедри
         Player player = event.getPlayer();
-        if (gatheringService.isOpenParticipant(player)) {
-            marketMenu.openMain(player);
+        if (!gatheringService.isOpenParticipant(player)) {
+            return;
         }
+        if (!gatheringService.hasBeenBriefed(player.getUniqueId())) {
+            player.sendMessage(PREFIX + ChatColor.RED + "Спершу вислухайте Посередника.");
+            return;
+        }
+        marketMenu.openMain(player);
     }
 
     /**

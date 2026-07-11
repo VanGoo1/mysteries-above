@@ -73,6 +73,10 @@ public class GatheringCommand implements CommandExecutor, TabCompleter {
                     player.sendMessage(PREFIX + ChatColor.RED + "Ринок зараз не відкритий для вас.");
                     return true;
                 }
+                if (!gatheringService.hasBeenBriefed(player.getUniqueId())) {
+                    player.sendMessage(PREFIX + ChatColor.RED + "Спершу вислухайте Посередника.");
+                    return true;
+                }
                 marketMenu.openMain(player);
             }
             default -> sender.sendMessage(PREFIX + ChatColor.GRAY
