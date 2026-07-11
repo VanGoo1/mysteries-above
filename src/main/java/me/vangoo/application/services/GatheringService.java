@@ -78,6 +78,7 @@ public class GatheringService {
     private final Map<UUID, Location> returnLocations = new HashMap<>();
     private final Map<UUID, List<ItemStack>> pendingReturns = new HashMap<>();
     private final Map<UUID, ParticipantHome> crashHomes = new HashMap<>();
+    private final Set<UUID> bannedFromNext = new HashSet<>();
     private long nextGatheringMillis;
     private final List<BukkitTask> phaseTasks = new ArrayList<>();
 
@@ -111,6 +112,9 @@ public class GatheringService {
         }
         Snapshot snapshot = loaded.get();
         nextGatheringMillis = snapshot.nextGatheringEpochMillis();
+        if (snapshot.bannedFromNext() != null) {
+            snapshot.bannedFromNext().forEach(id -> bannedFromNext.add(UUID.fromString(id)));
+        }
         for (EscrowItem item : snapshot.pendingReturns()) {
             queueReturn(UUID.fromString(item.ownerId()),
                     GatheringSnapshotRepository.decodeStack(item.base64Stack()));
@@ -651,6 +655,8 @@ public class GatheringService {
         List<EscrowItem> returns = new ArrayList<>();
         pendingReturns.forEach((owner, stacks) -> stacks.forEach(stack -> returns.add(
                 new EscrowItem(owner.toString(), GatheringSnapshotRepository.encodeStack(stack)))));
-        snapshotRepository.save(new Snapshot(nextGatheringMillis, homes, escrowItems, returns));
+        List<String> banned = new ArrayList<>();
+        bannedFromNext.forEach(id -> banned.add(id.toString()));
+        snapshotRepository.save(new Snapshot(nextGatheringMillis, homes, escrowItems, returns, banned));
     }
 }

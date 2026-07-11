@@ -44,7 +44,8 @@ class GatheringSnapshotRepositoryTest {
                 ),
                 List.of(
                         new EscrowItem("player-3", "base64-pending-return")
-                )
+                ),
+                List.of("player-4", "player-5")
         );
 
         writer.save(original);

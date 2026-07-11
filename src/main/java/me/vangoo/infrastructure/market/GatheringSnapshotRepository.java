@@ -31,7 +31,8 @@ public class GatheringSnapshotRepository {
     public record Snapshot(long nextGatheringEpochMillis,
                             List<ParticipantHome> participants,
                             List<EscrowItem> escrow,
-                            List<EscrowItem> pendingReturns) {}
+                            List<EscrowItem> pendingReturns,
+                            List<String> bannedFromNext) {}
 
     private final File file;
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
