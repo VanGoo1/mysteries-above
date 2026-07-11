@@ -328,7 +328,7 @@ public class ServiceContainer {
         this.marionetteLifecycleListener = new MarionetteLifecycleListener(abilityContextFactory, pathwayManager, characteristicExtractor);
         this.marionetteRestorer = new MarionetteRestorer(pathwayManager);
         this.gatheringListener = new me.vangoo.presentation.listeners.GatheringListener(
-                plugin, gatheringService, gatheringVenueProvider);
+                plugin, gatheringService, gatheringVenueProvider, marketMenu);
         this.organizerClickListener = new me.vangoo.presentation.listeners.OrganizerClickListener(
                 organizerNpcService, gatheringService);
     }

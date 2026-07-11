@@ -20,6 +20,7 @@ import me.vangoo.infrastructure.market.GatheringSnapshotRepository.ParticipantHo
 import me.vangoo.infrastructure.market.GatheringSnapshotRepository.Snapshot;
 import me.vangoo.infrastructure.market.GatheringVenueProvider;
 import me.vangoo.infrastructure.market.MarketConfig;
+import me.vangoo.infrastructure.market.OrganizerBriefing;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -89,6 +90,7 @@ public class GatheringService implements GatheringAbilityGuard {
     private long nextGatheringMillis;
     private long openAtMillis;
     private final List<BukkitTask> phaseTasks = new ArrayList<>();
+    private OrganizerBriefing briefing;
 
     public GatheringService(Plugin plugin, MarketConfig config, WalletService walletService,
                             MarketItemClassifier classifier, GatheringVenueProvider venueProvider,
@@ -249,15 +251,11 @@ public class GatheringService implements GatheringAbilityGuard {
             returnLocations.put(player.getUniqueId(), player.getLocation());
             player.teleport(venue);
             anonymizer.mask(player, session.aliasOf(player.getUniqueId()));
+            frozen.add(player.getUniqueId());
         }
         organizerNpc.spawn(venue);
-        broadcastToParticipants(ChatColor.DARK_PURPLE + "" + ChatColor.ITALIC
-                + "Посередник: Вітаю в місці, якого немає на жодній мапі. Тут ніхто не має імені.");
-        broadcastToParticipants(ChatColor.DARK_PURPLE + "" + ChatColor.ITALIC
-                + "Посередник: Я ручаюся за справжність кожної речі. Торгуйте — /gathering menu. "
-                + "Маєте непотріб — принесіть мені, скуплю.");
-        broadcastToParticipants(PREFIX + ChatColor.GRAY + "Збір триватиме "
-                + config.durationMinutes() + " хв.");
+        briefing = new OrganizerBriefing(plugin, this::frozenAudience, this::onBriefingComplete);
+        briefing.start();
         long durationTicks = config.durationMinutes() * 60L * 20L;
         if (config.durationMinutes() > 5) {
             schedule(() -> broadcastToParticipants(PREFIX + ChatColor.YELLOW
@@ -267,6 +265,32 @@ public class GatheringService implements GatheringAbilityGuard {
                 + "Збір закінчиться за 1 хвилину!"), durationTicks - 60L * 20L);
         schedule(this::close, durationTicks);
         persist();
+    }
+
+    private List<Player> frozenAudience() {
+        List<Player> players = new ArrayList<>();
+        for (UUID id : openParticipantIds) {
+            Player p = Bukkit.getPlayer(id);
+            if (p != null && p.isOnline()) {
+                players.add(p);
+            }
+        }
+        return players;
+    }
+
+    private void onBriefingComplete() {
+        frozen.clear();
+        briefed.addAll(openParticipantIds);
+        broadcastToParticipants(PREFIX + ChatColor.GREEN
+                + "Тепер ви вільні. Торгуйте — кафедра поруч.");
+    }
+
+    public boolean isFrozen(UUID playerId) {
+        return frozen.contains(playerId);
+    }
+
+    public boolean hasBeenBriefed(UUID playerId) {
+        return briefed.contains(playerId);
     }
 
     private void close() {
@@ -295,6 +319,14 @@ public class GatheringService implements GatheringAbilityGuard {
         }
         anonymizer.unmaskAll();
         organizerNpc.despawn();
+        if (briefing != null) {
+            briefing.cancel();
+            briefing = null;
+        }
+        frozen.clear();
+        briefed.clear();
+        conduct.reset();
+        lastViolationAt.clear();
         session = null;
         joined.clear();
         openParticipantIds.clear();

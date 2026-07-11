@@ -59,6 +59,8 @@ public class GatheringVenueProvider {
         for (int[] corner : new int[][]{{-HALF, -HALF}, {-HALF, HALF}, {HALF, -HALF}, {HALF, HALF}}) {
             world.getBlockAt(corner[0], PLATFORM_Y + 1, corner[1]).setType(Material.SOUL_LANTERN);
         }
+        // Кафедра ринку: правий клік відкриває меню (обробляє GatheringListener)
+        world.getBlockAt(1, PLATFORM_Y + 1, 0).setType(Material.LECTERN);
     }
 
     /** Порожній генератор: жодних чанків, лише void. */

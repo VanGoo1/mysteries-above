@@ -2,18 +2,23 @@ package me.vangoo.presentation.listeners;
 
 import me.vangoo.application.services.GatheringService;
 import me.vangoo.infrastructure.market.GatheringVenueProvider;
+import me.vangoo.infrastructure.ui.MarketMenu;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 
@@ -28,12 +33,14 @@ public class GatheringListener implements Listener {
     private final Plugin plugin;
     private final GatheringService gatheringService;
     private final GatheringVenueProvider venueProvider;
+    private final MarketMenu marketMenu;
 
     public GatheringListener(Plugin plugin, GatheringService gatheringService,
-                             GatheringVenueProvider venueProvider) {
+                             GatheringVenueProvider venueProvider, MarketMenu marketMenu) {
         this.plugin = plugin;
         this.gatheringService = gatheringService;
         this.venueProvider = venueProvider;
+        this.marketMenu = marketMenu;
     }
 
     @EventHandler
@@ -46,6 +53,34 @@ public class GatheringListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         gatheringService.handleQuit(event.getPlayer());
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onFrozenMove(PlayerMoveEvent event) {
+        if (!gatheringService.isFrozen(event.getPlayer().getUniqueId())) {
+            return;
+        }
+        if (event.getTo() != null && (event.getFrom().getBlockX() != event.getTo().getBlockX()
+                || event.getFrom().getBlockY() != event.getTo().getBlockY()
+                || event.getFrom().getBlockZ() != event.getTo().getBlockZ())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onLecternClick(PlayerInteractEvent event) {
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getClickedBlock() == null) {
+            return;
+        }
+        if (event.getClickedBlock().getType() != Material.LECTERN
+                || !venueProvider.isVenueWorld(event.getClickedBlock().getWorld())) {
+            return;
+        }
+        event.setCancelled(true); // глушить дефолтне GUI кафедри
+        Player player = event.getPlayer();
+        if (gatheringService.isOpenParticipant(player)) {
+            marketMenu.openMain(player);
+        }
     }
 
     /**
