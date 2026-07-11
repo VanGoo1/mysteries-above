@@ -78,6 +78,39 @@ public class MarketMenu {
                 ChatColor.GOLD + "Ваш гаманець",
                 walletService.countPounds(player) + " ф "
                         + walletService.countCoppets(player) + " к (монетами)")));
+        gui.setItem(1, 5, new GuiItem(button(Material.KNOWLEDGE_BOOK,
+                        ChatColor.LIGHT_PURPLE + "Принципи торгівлі",
+                        "Правила й порядок торгів (як розповів Посередник)"),
+                e -> runSynced(player, () -> openPrinciples(player))));
+        gui.open(player);
+    }
+
+    private void openPrinciples(Player player) {
+        if (!gatheringService.hasBeenBriefed(player.getUniqueId())) {
+            player.sendMessage(ChatColor.RED + "[Збори] Спершу вислухайте Посередника.");
+            runSynced(player, () -> openMain(player));
+            return;
+        }
+        Gui gui = Gui.gui()
+                .title(Component.text("🕯 Принципи торгівлі").color(NamedTextColor.DARK_PURPLE)
+                        .decorate(TextDecoration.BOLD))
+                .rows(6)
+                .disableAllInteractions()
+                .create();
+        ItemStack scroll = button(Material.WRITTEN_BOOK, ChatColor.GOLD + "Порядок торгів");
+        appendLore(scroll, List.of(
+                "",
+                ChatColor.WHITE + "• Лот: виставте річ із ГОЛОВНОЇ РУКИ за свою ціну.",
+                ChatColor.WHITE + "• Замовлення: попросіть потрібне — продавці дадуть оферти.",
+                ChatColor.WHITE + "• Торг: приймайте, давайте зустрічну ціну або відмовляйтесь.",
+                ChatColor.WHITE + "• Скупка: принесіть непотріб Посереднику за монету.",
+                ChatColor.WHITE + "• Комісія: з кожної угоди Посередник бере частку.",
+                ChatColor.WHITE + "• Анонімність: усі бачать лише «Незнайомець №N».",
+                "",
+                ChatColor.RED + "• Насильство й здібності тут заборонені."));
+        gui.setItem(3, 5, new GuiItem(scroll, e -> e.setCancelled(true)));
+        gui.setItem(6, 1, new GuiItem(button(Material.BARRIER, ChatColor.GRAY + "◄ Назад"),
+                e -> Bukkit.getScheduler().runTask(plugin, () -> openMain(player))));
         gui.open(player);
     }
 
