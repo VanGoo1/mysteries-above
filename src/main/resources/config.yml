@@ -22,11 +22,11 @@ market:
 
   buyback:                    # скупка організатором (коппети за одиницю; джерело емісії)
     ingredient-coppets: 2
-    recipe-book-coppets: 10
+    recipe-book-coppets: 200  # рецепт розблоковує просування — рідкісний, високий викуп
     characteristic-coppets-by-seq:
-      "9": 40
-      "8": 60
-      "7": 90
-      "6": 130
-      "5": 180
+      "9": 80
+      "8": 130
+      "7": 220
+      "6": 360
+      "5": 540
     overrides: {}             # точкові ціни: "custom:<id>": коппети
