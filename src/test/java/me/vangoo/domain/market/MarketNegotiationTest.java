@@ -1,5 +1,6 @@
 package me.vangoo.domain.market;
 
+import me.vangoo.domain.market.Consideration;
 import me.vangoo.domain.market.MarketSession.AcceptResult;
 import me.vangoo.domain.market.MarketSession.MarketException;
 import me.vangoo.domain.market.MarketSession.Refund;
@@ -43,19 +44,19 @@ class MarketNegotiationTest {
     @Test
     void turnAlternatesAndOnlyReceiverAccepts() {
         UUID orderId = session.placeOrder(buyer, "custom:crimson_star", 1, KNOWN);
-        UUID negId = session.offerOnOrder(sellerA, orderId, PoundMoney.ofCoppets(20));
+        UUID negId = session.offerOnOrder(sellerA, orderId, Consideration.money(PoundMoney.ofCoppets(20)));
         // Продавець назвав ціну → хід покупця; продавець прийняти не може
         assertThrows(MarketException.class, () -> session.accept(sellerA, negId, 99, 99));
         // Покупець дає зустрічну → хід продавця; покупець прийняти не може
-        session.counter(buyer, negId, PoundMoney.ofCoppets(14));
+        session.counter(buyer, negId, Consideration.money(PoundMoney.ofCoppets(14)));
         assertThrows(MarketException.class, () -> session.accept(buyer, negId, 99, 99));
-        assertThrows(MarketException.class, () -> session.counter(buyer, negId, PoundMoney.ofCoppets(1)));
+        assertThrows(MarketException.class, () -> session.counter(buyer, negId, Consideration.money(PoundMoney.ofCoppets(1))));
         // Продавець приймає зустрічну; платить ЗАВЖДИ покупець
         AcceptResult result = session.accept(sellerA, negId, 1, 0); // гаманець ПОКУПЦЯ: 1 фунт
         Settlement s = result.settlement();
         assertEquals(buyer, s.payerId());
         assertEquals(sellerA, s.payeeId());
-        assertEquals(14, s.price().coppets());
+        assertEquals(14, s.price().money().coppets());
         assertEquals(2, s.commissionPaid().coppets());   // ceil(14×0.10)
         assertEquals(12, s.sellerProceeds().coppets());
         assertEquals(negId, s.escrowRef());
@@ -65,51 +66,51 @@ class MarketNegotiationTest {
     @Test
     void firstAcceptClosesOrderAndReleasesSiblings() {
         UUID orderId = session.placeOrder(buyer, "custom:crimson_star", 1, KNOWN);
-        UUID negA = session.offerOnOrder(sellerA, orderId, PoundMoney.ofCoppets(20));
-        UUID negB = session.offerOnOrder(sellerB, orderId, PoundMoney.ofCoppets(18));
+        UUID negA = session.offerOnOrder(sellerA, orderId, Consideration.money(PoundMoney.ofCoppets(20)));
+        UUID negB = session.offerOnOrder(sellerB, orderId, Consideration.money(PoundMoney.ofCoppets(18)));
         AcceptResult result = session.accept(buyer, negB, 1, 0);
         // Паралельний торг A автоматично скасовано з поверненням його ескроу
         assertEquals(List.of(new Refund(sellerA, negA)), result.releasedEscrows());
         // Другий accept по мертвому торгу неможливий
         assertThrows(MarketException.class, () -> session.accept(buyer, negA, 9, 9));
-        assertThrows(MarketException.class, () -> session.offerOnOrder(sellerA, orderId, PoundMoney.ofCoppets(5)));
+        assertThrows(MarketException.class, () -> session.offerOnOrder(sellerA, orderId, Consideration.money(PoundMoney.ofCoppets(5))));
     }
 
     @Test
     void acceptWithoutBuyerFundsKeepsNegotiationOpen() {
         UUID orderId = session.placeOrder(buyer, "custom:crimson_star", 1, KNOWN);
-        UUID negId = session.offerOnOrder(sellerA, orderId, PoundMoney.ofCoppets(30));
+        UUID negId = session.offerOnOrder(sellerA, orderId, Consideration.money(PoundMoney.ofCoppets(30)));
         assertThrows(MarketException.class, () -> session.accept(buyer, negId, 1, 5)); // 25 < 30
         // торг живий — покупець може торгуватись далі
-        session.counter(buyer, negId, PoundMoney.ofCoppets(25));
+        session.counter(buyer, negId, Consideration.money(PoundMoney.ofCoppets(25)));
     }
 
     @Test
     void withdrawByEitherPartyRefundsSeller() {
         UUID orderId = session.placeOrder(buyer, "custom:crimson_star", 1, KNOWN);
-        UUID negId = session.offerOnOrder(sellerA, orderId, PoundMoney.ofCoppets(30));
+        UUID negId = session.offerOnOrder(sellerA, orderId, Consideration.money(PoundMoney.ofCoppets(30)));
         Refund refund = session.withdraw(buyer, negId);
         assertEquals(new Refund(sellerA, negId), refund);
-        assertThrows(MarketException.class, () -> session.counter(buyer, negId, PoundMoney.ofCoppets(1)));
+        assertThrows(MarketException.class, () -> session.counter(buyer, negId, Consideration.money(PoundMoney.ofCoppets(1))));
     }
 
     @Test
     void closeRefundsUnsoldLotsAndOpenNegotiations() {
-        UUID lotId = session.listLot(sellerA, "custom:crimson_star", 1, PoundMoney.ofCoppets(10));
+        UUID lotId = session.listLot(sellerA, "custom:crimson_star", 1, Consideration.money(PoundMoney.ofCoppets(10)));
         UUID orderId = session.placeOrder(buyer, "custom:crimson_star", 1, KNOWN);
-        UUID negId = session.offerOnOrder(sellerB, orderId, PoundMoney.ofCoppets(30));
+        UUID negId = session.offerOnOrder(sellerB, orderId, Consideration.money(PoundMoney.ofCoppets(30)));
         List<Refund> refunds = session.close();
         assertTrue(refunds.contains(new Refund(sellerA, lotId)));
         assertTrue(refunds.contains(new Refund(sellerB, negId)));
         assertEquals(2, refunds.size());
         // після закриття всі операції відхиляються
         assertThrows(MarketException.class,
-                () -> session.listLot(sellerA, "custom:crimson_star", 1, PoundMoney.ofCoppets(1)));
+                () -> session.listLot(sellerA, "custom:crimson_star", 1, Consideration.money(PoundMoney.ofCoppets(1))));
     }
 
     @Test
     void closeIsIdempotentAndNeverRefundsLotTwice() {
-        UUID lotId = session.listLot(sellerA, "custom:crimson_star", 1, PoundMoney.ofCoppets(10));
+        UUID lotId = session.listLot(sellerA, "custom:crimson_star", 1, Consideration.money(PoundMoney.ofCoppets(10)));
         List<Refund> first = session.close();
         assertEquals(List.of(new Refund(sellerA, lotId)), first);
         // Другий close (напр. плановий кінець + шлях on-disable) не повертає лот удруге
@@ -122,10 +123,10 @@ class MarketNegotiationTest {
      */
     @Test
     void conservationInvariantHolds() {
-        UUID lotId = session.listLot(sellerA, "custom:crimson_star", 2, PoundMoney.ofCoppets(30));
+        UUID lotId = session.listLot(sellerA, "custom:crimson_star", 2, Consideration.money(PoundMoney.ofCoppets(30)));
         UUID orderId = session.placeOrder(buyer, "custom:dimensional_wanderer_eye", 1, KNOWN);
-        UUID negA = session.offerOnOrder(sellerA, orderId, PoundMoney.ofCoppets(20));
-        UUID negB = session.offerOnOrder(sellerB, orderId, PoundMoney.ofCoppets(25));
+        UUID negA = session.offerOnOrder(sellerA, orderId, Consideration.money(PoundMoney.ofCoppets(20)));
+        UUID negB = session.offerOnOrder(sellerB, orderId, Consideration.money(PoundMoney.ofCoppets(25)));
         // ескроу зайшло: lotId, negA, negB
         Settlement lotSale = session.buyLot(buyer, lotId, 2, 0);
         AcceptResult acceptA = session.accept(buyer, negA, 1, 0);
@@ -141,9 +142,36 @@ class MarketNegotiationTest {
 
         // Гроші: сплачене покупцем = виручка продавців + комісія
         for (Settlement s : List.of(lotSale, acceptA.settlement())) {
-            assertEquals(s.price().coppets(),
+            assertEquals(s.price().money().coppets(),
                     s.sellerProceeds().coppets() + s.commissionPaid().coppets());
-            assertEquals(s.price().coppets(), s.payerCharge().paidCoppets());
+            assertEquals(s.price().money().coppets(), s.payerCharge().paidCoppets());
         }
+    }
+
+    @Test
+    void barterOfferChargesNoCommissionAndEchoesDemand() {
+        Consideration.ItemDemand demand = new Consideration.ItemDemand("characteristic:Door:7", 1);
+        UUID orderId = session.placeOrder(buyer, "custom:crimson_star", 1, KNOWN);
+        UUID negId = session.offerOnOrder(sellerA, orderId,
+                Consideration.of(demand, PoundMoney.ofCoppets(0)));
+        AcceptResult result = session.accept(buyer, negId, 0, 0); // no money needed for pure barter
+        Settlement s = result.settlement();
+        assertTrue(s.price().isBarter());
+        assertEquals(demand, s.price().item());
+        assertEquals(0, s.commissionPaid().coppets());
+        assertEquals(0, s.sellerProceeds().coppets());
+        assertEquals(0, s.payerCharge().paidCoppets());
+    }
+
+    @Test
+    void barterWithBootMovesBootWithoutCommission() {
+        Consideration.ItemDemand demand = new Consideration.ItemDemand("custom:crimson_star", 2);
+        UUID lotId = session.listLot(sellerA, "custom:dimensional_wanderer_eye", 1,
+                Consideration.of(demand, PoundMoney.ofCoppets(40)));
+        Settlement s = session.buyLot(buyer, lotId, 2, 0); // 2 pounds = 40 coppets boot
+        assertTrue(s.price().isBarter());
+        assertEquals(0, s.commissionPaid().coppets());   // barter: no commission even on boot
+        assertEquals(40, s.sellerProceeds().coppets());  // full boot to seller
+        assertEquals(40, s.payerCharge().paidCoppets());
     }
 }

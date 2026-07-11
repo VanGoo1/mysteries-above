@@ -24,10 +24,10 @@ public final class MarketSession {
     }
 
     public record Lot(UUID lotId, UUID sellerId, String itemKey, int amount,
-                      PoundMoney price, boolean sold) {}
+                      Consideration price, boolean sold) {}
 
     /** Команда застосунку: хто платить, хто отримує, скільки згорає, який ескроу передати. */
-    public record Settlement(UUID payerId, UUID payeeId, PoundMoney price, PoundMoney commissionPaid,
+    public record Settlement(UUID payerId, UUID payeeId, Consideration price, PoundMoney commissionPaid,
                              PoundMoney sellerProceeds, CoinChange payerCharge,
                              UUID escrowRef, String itemKey, int amount) {}
 
@@ -40,7 +40,7 @@ public final class MarketSession {
 
     /** Проєкція торгу для GUI (без мутабельного стану назовні). */
     public record NegotiationView(UUID negotiationId, UUID orderId, UUID sellerId, UUID buyerId,
-                                  PoundMoney currentPrice, UUID turnOf, NegotiationState state,
+                                  Consideration currentPrice, UUID turnOf, NegotiationState state,
                                   String itemKey, int amount) {}
 
     public record AcceptResult(Settlement settlement, List<Refund> releasedEscrows) {}
@@ -50,7 +50,7 @@ public final class MarketSession {
         final UUID orderId;
         final UUID sellerId;
         final UUID buyerId;
-        PoundMoney currentPrice;
+        Consideration currentPrice;
         UUID turnOf; // хто ОТРИМАВ останню ціну — тільки він може прийняти або дати зустрічну
         NegotiationState state = NegotiationState.OPEN;
 
@@ -107,15 +107,13 @@ public final class MarketSession {
         return "Незнайомець №" + alias;
     }
 
-    public UUID listLot(UUID sellerId, String itemKey, int amount, PoundMoney price) {
+    public UUID listLot(UUID sellerId, String itemKey, int amount, Consideration price) {
         ensureOpen();
         ensureParticipant(sellerId);
         if (amount <= 0) {
             throw new MarketException("Кількість має бути додатною");
         }
-        if (price.isZero()) {
-            throw new MarketException("Ціна має бути більшою за нуль");
-        }
+        // Consideration's own invariant guarantees price is non-empty (money > 0 or an item demand).
         UUID lotId = UUID.randomUUID();
         lots.put(lotId, new Lot(lotId, sellerId, itemKey, amount, price, false));
         return lotId;
@@ -141,12 +139,12 @@ public final class MarketSession {
         if (lot.sellerId().equals(buyerId)) {
             throw new MarketException("Це ваш власний лот");
         }
-        CoinChange charge = CoinChange.make(buyerPounds, buyerCoppets, lot.price())
-                .orElseThrow(() -> new MarketException("Недостатньо монет: потрібно " + lot.price().format()));
+        CoinChange charge = CoinChange.make(buyerPounds, buyerCoppets, lot.price().money())
+                .orElseThrow(() -> new MarketException("Недостатньо монет: потрібно " + lot.price().money().format()));
         lots.put(lotId, new Lot(lot.lotId(), lot.sellerId(), lot.itemKey(), lot.amount(), lot.price(), true));
         PoundMoney commission = lot.price().commission(commissionRate);
         return new Settlement(buyerId, lot.sellerId(), lot.price(), commission,
-                lot.price().minus(commission), charge, lotId, lot.itemKey(), lot.amount());
+                lot.price().money().minus(commission), charge, lotId, lot.itemKey(), lot.amount());
     }
 
     public UUID placeOrder(UUID buyerId, String itemKey, int amount, Set<String> allowedKeys) {
@@ -174,7 +172,7 @@ public final class MarketSession {
     }
 
     /** Оферта продавця. Застосунок кладе предмет у ескроу за повернутим negotiationId. */
-    public UUID offerOnOrder(UUID sellerId, UUID orderId, PoundMoney price) {
+    public UUID offerOnOrder(UUID sellerId, UUID orderId, Consideration price) {
         ensureOpen();
         ensureParticipant(sellerId);
         BuyOrder order = orders.get(orderId);
@@ -184,9 +182,6 @@ public final class MarketSession {
         if (order.buyerId().equals(sellerId)) {
             throw new MarketException("Це ваше власне замовлення");
         }
-        if (price.isZero()) {
-            throw new MarketException("Ціна має бути більшою за нуль");
-        }
         UUID negotiationId = UUID.randomUUID();
         Negotiation negotiation = new Negotiation(negotiationId, orderId, sellerId, order.buyerId());
         negotiation.currentPrice = price;
@@ -195,14 +190,11 @@ public final class MarketSession {
         return negotiationId;
     }
 
-    public void counter(UUID actorId, UUID negotiationId, PoundMoney newPrice) {
+    public void counter(UUID actorId, UUID negotiationId, Consideration newPrice) {
         ensureOpen();
         Negotiation negotiation = openNegotiation(negotiationId);
         if (!negotiation.turnOf.equals(actorId)) {
             throw new MarketException("Зараз не ваш хід у цьому торзі");
-        }
-        if (newPrice.isZero()) {
-            throw new MarketException("Ціна має бути більшою за нуль");
         }
         negotiation.currentPrice = newPrice;
         negotiation.turnOf = actorId.equals(negotiation.buyerId)
@@ -220,9 +212,9 @@ public final class MarketSession {
             throw new MarketException("Прийняти може лише той, хто отримав останню ціну");
         }
         BuyOrder order = orders.get(negotiation.orderId);
-        CoinChange charge = CoinChange.make(buyerPounds, buyerCoppets, negotiation.currentPrice)
+        CoinChange charge = CoinChange.make(buyerPounds, buyerCoppets, negotiation.currentPrice.money())
                 .orElseThrow(() -> new MarketException(
-                        "У покупця недостатньо монет: потрібно " + negotiation.currentPrice.format()));
+                        "У покупця недостатньо монет: потрібно " + negotiation.currentPrice.money().format()));
         negotiation.state = NegotiationState.ACCEPTED;
         orders.put(order.orderId(),
                 new BuyOrder(order.orderId(), order.buyerId(), order.itemKey(), order.amount(), true));
@@ -235,7 +227,7 @@ public final class MarketSession {
         }
         PoundMoney commission = negotiation.currentPrice.commission(commissionRate);
         Settlement settlement = new Settlement(negotiation.buyerId, negotiation.sellerId,
-                negotiation.currentPrice, commission, negotiation.currentPrice.minus(commission),
+                negotiation.currentPrice, commission, negotiation.currentPrice.money().minus(commission),
                 charge, negotiationId, order.itemKey(), order.amount());
         return new AcceptResult(settlement, released);
     }

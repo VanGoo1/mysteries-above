@@ -57,33 +57,34 @@ class MarketSessionTest {
 
     @Test
     void listedLotIsVisibleAndAnonymousViewCarriesData() {
-        UUID lotId = session.listLot(seller, "custom:stellar_aqua_crystal", 2, PoundMoney.of(1, 5));
+        UUID lotId = session.listLot(seller, "custom:stellar_aqua_crystal", 2,
+                Consideration.money(PoundMoney.of(1, 5)));
         Lot lot = session.activeLots().stream()
                 .filter(l -> l.lotId().equals(lotId)).findFirst().orElseThrow();
         assertEquals("custom:stellar_aqua_crystal", lot.itemKey());
         assertEquals(2, lot.amount());
-        assertEquals(PoundMoney.of(1, 5), lot.price());
+        assertEquals(PoundMoney.of(1, 5), lot.price().money());
         assertFalse(lot.sold());
     }
 
     @Test
     void rejectsInvalidListings() {
         assertThrows(MarketException.class,
-                () -> session.listLot(seller, "custom:x", 0, PoundMoney.ofCoppets(5)));
+                () -> session.listLot(seller, "custom:x", 0, Consideration.money(PoundMoney.ofCoppets(5))));
+        assertThrows(IllegalArgumentException.class,
+                () -> session.listLot(seller, "custom:x", 1, Consideration.money(PoundMoney.ofCoppets(0))));
         assertThrows(MarketException.class,
-                () -> session.listLot(seller, "custom:x", 1, PoundMoney.ofCoppets(0)));
-        assertThrows(MarketException.class,
-                () -> session.listLot(stranger, "custom:x", 1, PoundMoney.ofCoppets(5)));
+                () -> session.listLot(stranger, "custom:x", 1, Consideration.money(PoundMoney.ofCoppets(5))));
     }
 
     @Test
     void buyLotSettlesWithCommission() {
-        UUID lotId = session.listLot(seller, "custom:x", 1, PoundMoney.ofCoppets(30));
+        UUID lotId = session.listLot(seller, "custom:x", 1, Consideration.money(PoundMoney.ofCoppets(30)));
         // покупець: 2 фунти, 0 коппетів
         Settlement s = session.buyLot(buyer, lotId, 2, 0);
         assertEquals(buyer, s.payerId());
         assertEquals(seller, s.payeeId());
-        assertEquals(30, s.price().coppets());
+        assertEquals(30, s.price().money().coppets());
         assertEquals(3, s.commissionPaid().coppets());     // ceil(30×0.10)
         assertEquals(27, s.sellerProceeds().coppets());    // 30 − 3
         assertEquals(30, s.payerCharge().paidCoppets());
@@ -93,14 +94,14 @@ class MarketSessionTest {
 
     @Test
     void doubleBuyIsImpossible() {
-        UUID lotId = session.listLot(seller, "custom:x", 1, PoundMoney.ofCoppets(10));
+        UUID lotId = session.listLot(seller, "custom:x", 1, Consideration.money(PoundMoney.ofCoppets(10)));
         session.buyLot(buyer, lotId, 1, 0);
         assertThrows(MarketException.class, () -> session.buyLot(buyer, lotId, 1, 0));
     }
 
     @Test
     void cannotBuyOwnLotOrWithoutFunds() {
-        UUID lotId = session.listLot(seller, "custom:x", 1, PoundMoney.ofCoppets(30));
+        UUID lotId = session.listLot(seller, "custom:x", 1, Consideration.money(PoundMoney.ofCoppets(30)));
         assertThrows(MarketException.class, () -> session.buyLot(seller, lotId, 5, 5));
         assertThrows(MarketException.class, () -> session.buyLot(buyer, lotId, 1, 9)); // 29 к < 30 к
         assertEquals(1, session.activeLots().size()); // невдалі спроби не знімають лот
@@ -108,7 +109,7 @@ class MarketSessionTest {
 
     @Test
     void nonParticipantCannotBuy() {
-        UUID lotId = session.listLot(seller, "custom:x", 1, PoundMoney.ofCoppets(10));
+        UUID lotId = session.listLot(seller, "custom:x", 1, Consideration.money(PoundMoney.ofCoppets(10)));
         assertThrows(MarketException.class, () -> session.buyLot(stranger, lotId, 5, 5));
     }
 }

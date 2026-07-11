@@ -126,7 +126,7 @@ public class MarketMenu {
             boolean own = lot.sellerId().equals(player.getUniqueId());
             List<String> lore = new ArrayList<>(List.of(
                     "",
-                    ChatColor.GOLD + "Ціна: " + lot.price().format(),
+                    ChatColor.GOLD + "Ціна: " + lot.price().money().format(),
                     ChatColor.DARK_GRAY + "Продавець: " + gatheringService.aliasOf(lot.sellerId()),
                     ""));
             lore.add(own ? ChatColor.GRAY + "Це ваш лот (повернеться після збору, якщо не продано)"
@@ -217,7 +217,7 @@ public class MarketMenu {
             ItemStack display = button(Material.BELL,
                     ChatColor.YELLOW + (iAmSeller ? "Ви продаєте: " : "Ви купуєте: ")
                             + ChatColor.WHITE + namer.displayName(view.itemKey()) + " ×" + view.amount(),
-                    ChatColor.GOLD + "Поточна ціна: " + view.currentPrice().format());
+                    ChatColor.GOLD + "Поточна ціна: " + view.currentPrice().money().format());
             List<String> lore = new ArrayList<>(List.of(
                     ChatColor.DARK_GRAY + "Інша сторона: " + gatheringService.aliasOf(other), ""));
             if (myTurn) {

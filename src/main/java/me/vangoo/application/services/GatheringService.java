@@ -1,5 +1,6 @@
 package me.vangoo.application.services;
 
+import me.vangoo.domain.market.Consideration;
 import me.vangoo.domain.market.GatheringConduct;
 import me.vangoo.domain.market.GatheringPhase;
 import me.vangoo.domain.market.MarketSession;
@@ -363,7 +364,8 @@ public class GatheringService implements GatheringAbilityGuard {
             ItemStack hand = requireHandItem(seller);
             var classified = classifier.classify(hand).orElseThrow(() -> new MarketException(
                     "Це не потойбічна річ — на ринку їй не місце (інгредієнти, Характеристики, книги рецептів)"));
-            UUID lotId = session.listLot(seller.getUniqueId(), classified.itemKey(), hand.getAmount(), price);
+            UUID lotId = session.listLot(seller.getUniqueId(), classified.itemKey(), hand.getAmount(),
+                    Consideration.money(price));
             escrow.put(lotId, new EscrowEntry(seller.getUniqueId(), hand.clone()));
             seller.getInventory().setItemInMainHand(null);
             seller.sendMessage(PREFIX + ChatColor.GREEN + "Лот виставлено: "
@@ -377,7 +379,7 @@ public class GatheringService implements GatheringAbilityGuard {
             Settlement s = session.buyLot(buyer.getUniqueId(), lotId,
                     walletService.countPounds(buyer), walletService.countCoppets(buyer));
             settle(buyer, s);
-            buyer.sendMessage(PREFIX + ChatColor.GREEN + "Куплено за " + s.price().format() + ".");
+            buyer.sendMessage(PREFIX + ChatColor.GREEN + "Куплено за " + s.price().money().format() + ".");
         });
     }
 
@@ -402,7 +404,7 @@ public class GatheringService implements GatheringAbilityGuard {
                 throw new MarketException("У руці має бути саме те, що замовлено: потрібна кількість — "
                         + order.amount());
             }
-            UUID negotiationId = session.offerOnOrder(seller.getUniqueId(), orderId, price);
+            UUID negotiationId = session.offerOnOrder(seller.getUniqueId(), orderId, Consideration.money(price));
             escrow.put(negotiationId, new EscrowEntry(seller.getUniqueId(), hand.clone()));
             seller.getInventory().setItemInMainHand(null);
             seller.sendMessage(PREFIX + ChatColor.GREEN + "Пропозицію зроблено: " + price.format());
@@ -415,7 +417,7 @@ public class GatheringService implements GatheringAbilityGuard {
 
     public boolean counter(Player actor, UUID negotiationId, PoundMoney price) {
         return guarded(actor, () -> {
-            session.counter(actor.getUniqueId(), negotiationId, price);
+            session.counter(actor.getUniqueId(), negotiationId, Consideration.money(price));
             actor.sendMessage(PREFIX + ChatColor.GREEN + "Зустрічна ціна: " + price.format());
             otherParty(negotiationId, actor.getUniqueId()).ifPresent(other -> notify(other,
                     PREFIX + ChatColor.YELLOW + session.aliasOf(actor.getUniqueId())
@@ -446,7 +448,7 @@ public class GatheringService implements GatheringAbilityGuard {
             }
             settle(buyer, result.settlement());
             actor.sendMessage(PREFIX + ChatColor.GREEN + "Угоду укладено: "
-                    + result.settlement().price().format());
+                    + result.settlement().price().money().format());
         });
     }
 
@@ -660,7 +662,7 @@ public class GatheringService implements GatheringAbilityGuard {
     // ── Приватні хелпери ─────────────────────────────────────────────────────
 
     private void settle(Player buyer, Settlement s) {
-        walletService.charge(buyer, s.price()).orElseThrow(
+        walletService.charge(buyer, s.price().money()).orElseThrow(
                 () -> new IllegalStateException("Wallet changed between check and charge"));
         EscrowEntry entry = escrow.remove(s.escrowRef());
         if (entry != null) {
