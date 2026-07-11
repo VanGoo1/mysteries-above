@@ -123,6 +123,9 @@ public class GatheringService implements GatheringAbilityGuard {
         if (snapshot.bannedFromNext() != null) {
             snapshot.bannedFromNext().forEach(id -> bannedFromNext.add(UUID.fromString(id)));
         }
+        if (snapshot.skipThisRound() != null) {
+            snapshot.skipThisRound().forEach(id -> skipThisRound.add(UUID.fromString(id)));
+        }
         for (EscrowItem item : snapshot.pendingReturns()) {
             queueReturn(UUID.fromString(item.ownerId()),
                     GatheringSnapshotRepository.decodeStack(item.base64Stack()));
@@ -745,6 +748,8 @@ public class GatheringService implements GatheringAbilityGuard {
                 new EscrowItem(owner.toString(), GatheringSnapshotRepository.encodeStack(stack)))));
         List<String> banned = new ArrayList<>();
         bannedFromNext.forEach(id -> banned.add(id.toString()));
-        snapshotRepository.save(new Snapshot(nextGatheringMillis, homes, escrowItems, returns, banned));
+        List<String> skip = new ArrayList<>();
+        skipThisRound.forEach(id -> skip.add(id.toString()));
+        snapshotRepository.save(new Snapshot(nextGatheringMillis, homes, escrowItems, returns, banned, skip));
     }
 }

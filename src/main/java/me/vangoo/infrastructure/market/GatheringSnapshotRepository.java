@@ -32,7 +32,8 @@ public class GatheringSnapshotRepository {
                             List<ParticipantHome> participants,
                             List<EscrowItem> escrow,
                             List<EscrowItem> pendingReturns,
-                            List<String> bannedFromNext) {}
+                            List<String> bannedFromNext,
+                            List<String> skipThisRound) {}
 
     private final File file;
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
