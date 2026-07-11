@@ -14,6 +14,20 @@
 - Гроші: вся математика в коппетах (1 фунт = 20 коппетів). Емісія: скупка NPC
   (`BuybackPriceTable`, конфіг `market.buyback.*`) + лут (`currency:pound` /
   `currency:coppet` у `global_loot.yml`). Сток: комісія `market.commission-rate` (згорає).
+- **Ціни скупки скейляться від послідовності для ВСІХ категорій** (9 = найслабша …
+  0 = найсильніша): `ingredient-coppets-by-seq`, `recipe-book-coppets-by-seq`,
+  `characteristic-coppets-by-seq` (мапи `seq→коппети`) + `overrides` (точкова ціна на
+  `custom:<id>`, перекриває скейл) + `ingredient-coppets` (плоский фолбек для інгредієнта
+  БЕЗ послідовності). Кожна мапа має ФОЛБЕК у коді
+  (`MarketConfig.DEFAULT_*_COPPETS`, вантажить `loadSeqMap`): якщо серверний config.yml без
+  секції (Bukkit не перезаписує наявний config при оновленні плагіна) — беруться дефолти,
+  інакше скуповувалося б за нуль.
+- **Послідовність інгредієнта виводиться з рецептів**, а не з предмета (у `CustomItem`
+  її нема): `IngredientSequenceIndex.build` (application) сканує потони всіх шляхів і мапить
+  `custom:<id> → найнижча (найсильніша) послідовність рецепта, де інгредієнт ужитий`;
+  індекс інжектиться сеттером у `MarketItemClassifier` у `ServiceContainer` ПІСЛЯ побудови
+  `PotionManager` (потони створюються після класифікатора). Інгредієнт поза рецептами →
+  `sequence = -1` → плоский фолбек `ingredient-coppets`.
 - Краш-безпека: `gathering-state.json` (`GatheringSnapshotRepository`) пишеться після
   кожної мутації; відновлення НЕ продовжує сесію — усе в чергу повернень
   (видається лістенером при вході гравця).
@@ -36,10 +50,14 @@
   покупця НЕ ескроюється — його знімають атомарно на сеттлменті
   (`GatheringService.removeMatching` → `deliverItem` продавцю). Тому схема
   снепшота й інваріант збереження ескроу не змінюються.
-- **Введення ціни:** головна рука = товар, який віддаєш; OFF-HAND = зразок
-  предмета, який просиш (його `amount` = потрібна кількість, не споживається);
-  чат-промпт = грошовий буст (`0` дозволено за наявності предметної вимоги).
-  Порожня off-hand → чисто грошова ціна = стара поведінка.
+- **Введення ціни — через GUI, не off-hand.** Головна рука = товар, який
+  віддаєш (лот/оферта). Тип ціни обирається в `MarketMenu.chooseConsideration`
+  (міні-меню «Монетами / Предметом»): «Монетами» → чат-промпт суми
+  (`Consideration.money`); «Предметом (бартер)» → `openBarterPicker` (пікер зі
+  знайомих гравцю інгредієнтів `knownIngredientStacks`) → чат-промпт кількості →
+  чат-промпт грошового бусту (`0` дозволено) → `Consideration.of(demand, boot)`.
+  Предметну вимогу можна попросити ЛИШЕ зі знайомих інгредієнтів (обмеження
+  пікера). Колишній off-hand-механізм прибрано як зовсім непомітний для гравця.
 - **Перед-перевірки:** `buyLot`/`accept` звіряють, що покупець має предметну
   вимогу (`countMatching`) ДО мутації домену (симетрично до перевірки монет);
   брак предмета лишає торг відкритим. Утиліта `barterShortfall` дає текст
@@ -95,25 +113,32 @@
 
 - `infrastructure.market.OrganizerBriefing` — самотіковий об'єкт (власний
   `BukkitTask`, `start()`/`cancel()`), друкує захардкожений `SCRIPT`
-  по літері в action bar усіх учасників (звук `BLOCK_WOODEN_BUTTON_CLICK_ON`
+  по літері в action bar АУДИТОРІЇ (звук `BLOCK_WOODEN_BUTTON_CLICK_ON`
   на кожній видимій літері), тримає повний рядок `LINE_HOLD_TICKS`, кличе
   `onComplete` по завершенні. Створюється й стартує в `GatheringService.open()`
-  одразу після телепорту й анонімізації учасників.
+  одразу після телепорту й анонімізації учасників. Аудиторія — `frozenAudience()`
+  = лише ще заморожені гравці (той, хто пропустив, доповіді більше не бачить).
 - На час доповіді гравці — у множині `frozen` (`GatheringService`);
   `GatheringListener.onFrozenMove` скасовує `PlayerMoveEvent`, поки
-  `gatheringService.isFrozen(playerId)`. `onBriefingComplete()` очищає
-  `frozen` і додає учасників у `briefed`. Обидва — instance-`Set<UUID>`,
-  чистяться також при `expel`/`close` (`frozen.remove` / `briefed.remove`;
-  `handleQuit()` — НЕ чистить, лише `expel`/`close`).
-- Пропуск доповіді: `PlayerToggleSneakEvent` (початок присідання) на
-  замороженому гравці кличе `GatheringService.skipBriefing(player)` →
-  `OrganizerBriefing.skip()` (ідемпотентно — `no-op`, якщо `task == null`,
-  тобто доповідь уже завершилась). Це той самий `finish()`, що й природне
-  завершення скрипту — одне завершення на всю аудиторію, без окремого
-  повідомлення.
+  `gatheringService.isFrozen(playerId)`. `onBriefingComplete()` (природний кінець
+  скрипту) звільняє всіх, хто ще заморожений (`freeFrozen` для кожного). `frozen`
+  і `briefed` — instance-`Set<UUID>`, чистяться також при `expel`/`close`
+  (`frozen.remove` / `briefed.remove`; `handleQuit()` — НЕ чистить).
+- **Пропуск доповіді — ПЕР-ГРАВЦЕВИЙ** (не на всю залу): `PlayerToggleSneakEvent`
+  (початок присідання) на замороженому гравці кличе
+  `GatheringService.skipBriefing(player)`, що звільняє САМЕ його
+  (`freeFrozen`: `frozen.remove` + `briefed.add` + сигнал «Тепер ви вільні» в
+  action bar) — доповідь для решти триває. Коли заморожених більше не лишилось,
+  `skipBriefing` глушить спільний тік (`briefing.cancel()`). (Раніше пропуск
+  одним завершував доповідь для всіх — це був баг.)
 - Меню ринку (`/gathering menu`, кафедра) гейтоване не лише на
   `isOpenParticipant`, а й на `hasBeenBriefed` — інакше заморожений гравець
   міг відкрити торги до завершення доповіді.
+- **Усі слова Посередника — в action bar**, не в чат (як і сама доповідь):
+  репліки при скупці (`OrganizerClickListener.organizerSay` — «Покажи, що
+  приніс», «За таке не дам і коппета»), результат скупки та сигнал звільнення
+  (`GatheringService.organizerSay`). Наратив-запрошення `announce()` («Шепіт у
+  пітьмі…» з клікабельним `[Прийти]`) лишається в чаті — це не мова Посередника.
 
 ## Кафедра (lectern)
 
@@ -152,8 +177,11 @@
 
 1. Значення в `MarketItemCategory` (domain) + гілка в `MarketItemClassifier.classify`
    (порядок перевірок: Характеристика → книга рецептів → custom item; зілля/ванільне/монети → empty).
-2. Ціна скупки: `BuybackPriceTable.unitPriceFor` + секція `market.buyback.*` у config.yml
-   (+ кейс у `BuybackPriceTableTest`).
+2. Ціна скупки: `BuybackPriceTable.unitPriceFor` (мапа `seq→коппети` для категорії) +
+   секція `market.buyback.<категорія>-coppets-by-seq` у config.yml + дефолт-мапа в
+   `MarketConfig.DEFAULT_*_COPPETS` (фолбек для старого config) + кейс у
+   `BuybackPriceTableTest`. Якщо в категорії немає власної послідовності — треба джерело
+   послідовності (як `IngredientSequenceIndex` для інгредієнтів) + плоский фолбек.
 
 ## Заборони
 
