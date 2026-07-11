@@ -1,7 +1,6 @@
 package me.vangoo.presentation.listeners;
 
 import me.vangoo.application.services.GatheringService;
-import me.vangoo.application.services.WalletService;
 import me.vangoo.domain.market.PoundMoney;
 import me.vangoo.infrastructure.citizens.OrganizerNpcService;
 import me.vangoo.infrastructure.ui.ConfirmationMenu;
@@ -22,14 +21,12 @@ public class OrganizerClickListener implements Listener {
     private final OrganizerNpcService organizerNpc;
     private final GatheringService gatheringService;
     private final ConfirmationMenu confirmationMenu;
-    private final WalletService walletService;
 
     public OrganizerClickListener(OrganizerNpcService organizerNpc, GatheringService gatheringService,
-                                  ConfirmationMenu confirmationMenu, WalletService walletService) {
+                                  ConfirmationMenu confirmationMenu) {
         this.organizerNpc = organizerNpc;
         this.gatheringService = gatheringService;
         this.confirmationMenu = confirmationMenu;
-        this.walletService = walletService;
     }
 
     @EventHandler

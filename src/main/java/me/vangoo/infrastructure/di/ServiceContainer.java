@@ -332,7 +332,7 @@ public class ServiceContainer {
         this.gatheringListener = new me.vangoo.presentation.listeners.GatheringListener(
                 plugin, gatheringService, gatheringVenueProvider, marketMenu);
         this.organizerClickListener = new me.vangoo.presentation.listeners.OrganizerClickListener(
-                organizerNpcService, gatheringService, confirmationMenu, walletService);
+                organizerNpcService, gatheringService, confirmationMenu);
     }
 
     private void initializeRecipes() {
