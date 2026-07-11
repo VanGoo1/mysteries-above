@@ -60,7 +60,17 @@
   `GatheringListener.onFrozenMove` скасовує `PlayerMoveEvent`, поки
   `gatheringService.isFrozen(playerId)`. `onBriefingComplete()` очищає
   `frozen` і додає учасників у `briefed`. Обидва — instance-`Set<UUID>`,
-  чистяться також при `expel`/виході (`frozen.remove` / `briefed.remove`).
+  чистяться також при `expel`/`close` (`frozen.remove` / `briefed.remove`;
+  `handleQuit()` — НЕ чистить, лише `expel`/`close`).
+- Пропуск доповіді: `PlayerToggleSneakEvent` (початок присідання) на
+  замороженому гравці кличе `GatheringService.skipBriefing(player)` →
+  `OrganizerBriefing.skip()` (ідемпотентно — `no-op`, якщо `task == null`,
+  тобто доповідь уже завершилась). Це той самий `finish()`, що й природне
+  завершення скрипту — одне завершення на всю аудиторію, без окремого
+  повідомлення.
+- Меню ринку (`/gathering menu`, кафедра) гейтоване не лише на
+  `isOpenParticipant`, а й на `hasBeenBriefed` — інакше заморожений гравець
+  міг відкрити торги до завершення доповіді.
 
 ## Кафедра (lectern)
 

@@ -79,4 +79,26 @@ class GatheringSnapshotRepositoryTest {
 
         assertTrue(repository.load().isEmpty());
     }
+
+    @Test
+    void loadNullsBanFieldsWhenMissingFromOldSchema(@TempDir File tempDir) throws Exception {
+        // Pre-existing file written before bannedFromNext/skipThisRound were added:
+        // only the original 4 fields are present.
+        File file = new File(tempDir, "gathering-state.json");
+        Files.writeString(file.toPath(), """
+                {
+                  "nextGatheringEpochMillis": 1720000000000,
+                  "participants": [],
+                  "escrow": [],
+                  "pendingReturns": []
+                }
+                """);
+
+        GatheringSnapshotRepository repository = new GatheringSnapshotRepository(file.getPath());
+        Optional<Snapshot> loaded = repository.load();
+
+        assertTrue(loaded.isPresent());
+        assertNull(loaded.get().bannedFromNext());
+        assertNull(loaded.get().skipThisRound());
+    }
 }
