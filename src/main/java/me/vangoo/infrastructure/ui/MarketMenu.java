@@ -149,6 +149,10 @@ public class MarketMenu {
                     }
                     ItemStack give = payLabel(lot.price());
                     ItemStack get = gatheringService.escrowStack(lot.lotId());
+                    if (get == null) {
+                        player.sendMessage(ChatColor.RED + "[Збори] Лот уже недоступний.");
+                        return;
+                    }
                     confirm.open(player, give, get, "🕯 Обмін", () -> {
                         gatheringService.buyLot(player, lot.lotId());
                         runSynced(player, () -> openLots(player));
@@ -163,17 +167,10 @@ public class MarketMenu {
     }
 
     private void promptListLot(Player player) {
-        var demand = gatheringService.readDemand(player.getInventory().getItemInOffHand());
-        if (demand.isPresent()) {
-            String hint = ChatColor.GOLD + "Ви хочете за це: " + ChatColor.WHITE
-                    + namer.displayName(demand.get().itemKey()) + " ×" + demand.get().amount()
-                    + ChatColor.GOLD + ". Напишіть доплату монетами «<ф> <к>» або «0»:";
-            prompts.prompt(player, hint, withBoot(player, boot ->
-                    gatheringService.listLotFromHand(player, Consideration.of(demand.get(), boot))));
-        } else {
-            prompts.prompt(player, PRICE_HINT + ChatColor.GRAY + " — за предмет у вашій руці",
-                    withPrice(player, price -> gatheringService.listLotFromHand(player, Consideration.money(price))));
-        }
+        promptConsideration(player, "Ви хочете за це: ",
+                ". Напишіть доплату монетами «<ф> <к>» або «0»:",
+                " — за предмет у вашій руці",
+                price -> gatheringService.listLotFromHand(player, price));
     }
 
     // ── Замовлення ───────────────────────────────────────────────────────────
@@ -199,18 +196,10 @@ public class MarketMenu {
                 if (own) {
                     return;
                 }
-                var demand = gatheringService.readDemand(player.getInventory().getItemInOffHand());
-                if (demand.isPresent()) {
-                    String hint = ChatColor.GOLD + "Ви просите за це: " + ChatColor.WHITE
-                            + namer.displayName(demand.get().itemKey()) + " ×" + demand.get().amount()
-                            + ChatColor.GOLD + ". Доплата монетами «<ф> <к>» або «0»:";
-                    prompts.prompt(player, hint, withBoot(player, boot ->
-                            gatheringService.offerFromHand(player, order.orderId(), Consideration.of(demand.get(), boot))));
-                } else {
-                    prompts.prompt(player, PRICE_HINT + ChatColor.GRAY + " — ваша ціна за це замовлення",
-                            withPrice(player, price ->
-                                    gatheringService.offerFromHand(player, order.orderId(), Consideration.money(price))));
-                }
+                promptConsideration(player, "Ви просите за це: ",
+                        ". Доплата монетами «<ф> <к>» або «0»:",
+                        " — ваша ціна за це замовлення",
+                        price -> gatheringService.offerFromHand(player, order.orderId(), price));
             }));
         }
         gui.open(player);
@@ -273,6 +262,10 @@ public class MarketMenu {
                         // покупець віддає ціну й отримує товар; продавець — навпаки
                         ItemStack priceLabel = payLabel(view.currentPrice());
                         ItemStack goodLabel = gatheringService.escrowStack(view.negotiationId());
+                        if (goodLabel == null) {
+                            player.sendMessage(ChatColor.RED + "[Збори] Річ уже недоступна.");
+                            return;
+                        }
                         ItemStack give = iAmSeller ? goodLabel : priceLabel;
                         ItemStack get = iAmSeller ? priceLabel : goodLabel;
                         if (!iAmSeller) {
@@ -291,18 +284,10 @@ public class MarketMenu {
                         runSynced(player, () -> openNegotiations(player));
                     }
                 } else if (myTurn && e.getClick() == org.bukkit.event.inventory.ClickType.RIGHT) {
-                    var demand = gatheringService.readDemand(player.getInventory().getItemInOffHand());
-                    if (demand.isPresent()) {
-                        String hint = ChatColor.GOLD + "Зустрічна: за це — " + ChatColor.WHITE
-                                + namer.displayName(demand.get().itemKey()) + " ×" + demand.get().amount()
-                                + ChatColor.GOLD + ". Доплата монетами «<ф> <к>» або «0»:";
-                        prompts.prompt(player, hint, withBoot(player, boot ->
-                                gatheringService.counter(player, view.negotiationId(), Consideration.of(demand.get(), boot))));
-                    } else {
-                        prompts.prompt(player, PRICE_HINT + ChatColor.GRAY + " — ваша зустрічна ціна",
-                                withPrice(player, price ->
-                                        gatheringService.counter(player, view.negotiationId(), Consideration.money(price))));
-                    }
+                    promptConsideration(player, "Зустрічна: за це — ",
+                            ". Доплата монетами «<ф> <к>» або «0»:",
+                            " — ваша зустрічна ціна",
+                            price -> gatheringService.counter(player, view.negotiationId(), price));
                 }
             }));
         }
@@ -330,6 +315,20 @@ public class MarketMenu {
         meta.setLore(new ArrayList<>());
         item.setItemMeta(meta);
         return item;
+    }
+
+    private void promptConsideration(Player player, String presentPrefix, String bootSuffix,
+                                      String absentSuffix, Consumer<Consideration> action) {
+        var demand = gatheringService.readDemand(player.getInventory().getItemInOffHand());
+        if (demand.isPresent()) {
+            String hint = ChatColor.GOLD + presentPrefix + ChatColor.WHITE
+                    + namer.displayName(demand.get().itemKey()) + " ×" + demand.get().amount()
+                    + ChatColor.GOLD + bootSuffix;
+            prompts.prompt(player, hint, withBoot(player, boot -> action.accept(Consideration.of(demand.get(), boot))));
+        } else {
+            prompts.prompt(player, PRICE_HINT + ChatColor.GRAY + absentSuffix,
+                    withPrice(player, price -> action.accept(Consideration.money(price))));
+        }
     }
 
     private Consumer<String> withBoot(Player player, Consumer<PoundMoney> action) {
