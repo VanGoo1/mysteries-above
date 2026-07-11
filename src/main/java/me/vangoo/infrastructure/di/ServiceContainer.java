@@ -89,6 +89,7 @@ public class ServiceContainer {
     private RampageScheduler rampageScheduler;
     private AbilityMenuItemUpdater abilityMenuItemUpdater;
     private me.vangoo.infrastructure.schedulers.AmbientCreatureSpawner ambientCreatureSpawner;
+    private me.vangoo.infrastructure.schedulers.ConvergenceDriftScheduler convergenceDriftScheduler;
     private me.vangoo.infrastructure.forage.ForageNodeCodec forageNodeCodec;
     private me.vangoo.infrastructure.schedulers.ForageNodeSpawner forageNodeSpawner;
     private GatheringScheduler gatheringScheduler;
@@ -309,6 +310,16 @@ public class ServiceContainer {
                 (MysteriesAbovePlugin) plugin, beyonderService, creatureSelector, mythicCreatureGateway,
                 creatureRegistry, ambientMinDistance, ambientInterval, ambientChance, ambientMaxNearby);
 
+        long convInterval = plugin.getConfig().getLong("convergence.interval-ticks", 200L);
+        double convRadius = plugin.getConfig().getDouble("convergence.radius", 128.0);
+        double convDrift = plugin.getConfig().getDouble("convergence.item-drift-speed", 0.08);
+        double convMobNudge = plugin.getConfig().getDouble("convergence.mob-nudge-chance", 0.5);
+        double convWhisper = plugin.getConfig().getDouble("convergence.whisper-chance", 0.03);
+        this.convergenceDriftScheduler = new me.vangoo.infrastructure.schedulers.ConvergenceDriftScheduler(
+                (MysteriesAbovePlugin) plugin, beyonderService, pathwayManager, mythicCreatureGateway,
+                creatureRegistry, characteristicCodec, wardenRemnantCodec,
+                convInterval, convRadius, convDrift, convMobNudge, convWhisper);
+
         me.vangoo.infrastructure.forage.ForageConfigLoader forageConfigLoader =
                 new me.vangoo.infrastructure.forage.ForageConfigLoader(plugin);
         me.vangoo.infrastructure.forage.ForageConfig forageConfig = forageConfigLoader.load();
@@ -394,6 +405,7 @@ public class ServiceContainer {
     public RampageScheduler getRampageScheduler() { return rampageScheduler; }
     public AbilityMenuItemUpdater getAbilityMenuItemUpdater() { return abilityMenuItemUpdater; }
     public me.vangoo.infrastructure.schedulers.AmbientCreatureSpawner getAmbientCreatureSpawner() { return ambientCreatureSpawner; }
+    public me.vangoo.infrastructure.schedulers.ConvergenceDriftScheduler getConvergenceDriftScheduler() { return convergenceDriftScheduler; }
     public me.vangoo.infrastructure.forage.ForageNodeCodec getForageNodeCodec() { return forageNodeCodec; }
     public me.vangoo.infrastructure.schedulers.ForageNodeSpawner getForageNodeSpawner() { return forageNodeSpawner; }
     public GatheringScheduler getGatheringScheduler() { return gatheringScheduler; }
@@ -427,6 +439,7 @@ public class ServiceContainer {
         rampageScheduler.start();
         abilityMenuItemUpdater.start();
         ambientCreatureSpawner.start();
+        convergenceDriftScheduler.start();
         forageNodeSpawner.start();
         gatheringScheduler.start();
 
@@ -461,6 +474,9 @@ public class ServiceContainer {
         }
         if (ambientCreatureSpawner != null) {
             ambientCreatureSpawner.stop();
+        }
+        if (convergenceDriftScheduler != null) {
+            convergenceDriftScheduler.stop();
         }
         if (forageNodeSpawner != null) {
             forageNodeSpawner.stop();
