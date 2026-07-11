@@ -84,7 +84,7 @@ public class MarketMenu {
     // ── Лоти ─────────────────────────────────────────────────────────────────
 
     private void openLots(Player player) {
-        PaginatedGui gui = paginated("🕯 Лоти");
+        PaginatedGui gui = paginated("🕯 Лоти", () -> openMain(player));
         for (Lot lot : gatheringService.activeLots()) {
             ItemStack display = gatheringService.escrowStack(lot.lotId());
             if (display == null) {
@@ -120,7 +120,7 @@ public class MarketMenu {
     // ── Замовлення ───────────────────────────────────────────────────────────
 
     private void openOrders(Player player) {
-        PaginatedGui gui = paginated("🕯 Замовлення");
+        PaginatedGui gui = paginated("🕯 Замовлення", () -> openMain(player));
         // Кнопка «створити» — фіксований слот унизу
         gui.setItem(6, 5, new GuiItem(button(Material.NETHER_STAR,
                         ChatColor.GREEN + "Створити замовлення",
@@ -149,7 +149,7 @@ public class MarketMenu {
     }
 
     private void openKnownIngredients(Player player) {
-        PaginatedGui gui = paginated("🕯 Інгредієнти ваших рецептів");
+        PaginatedGui gui = paginated("🕯 Інгредієнти ваших рецептів", () -> openOrders(player));
         for (ItemStack sample : gatheringService.knownIngredientStacks(player)) {
             String itemKey = gatheringService.classifyKey(sample).orElse(null);
             if (itemKey == null) {
@@ -175,7 +175,7 @@ public class MarketMenu {
     // ── Мої угоди (торг) ─────────────────────────────────────────────────────
 
     private void openNegotiations(Player player) {
-        PaginatedGui gui = paginated("🕯 Мої угоди");
+        PaginatedGui gui = paginated("🕯 Мої угоди", () -> openMain(player));
         UUID me = player.getUniqueId();
         for (NegotiationView view : gatheringService.negotiationsOf(me)) {
             boolean myTurn = view.turnOf().equals(me);
@@ -235,7 +235,7 @@ public class MarketMenu {
         }
     }
 
-    private PaginatedGui paginated(String title) {
+    private PaginatedGui paginated(String title, Runnable back) {
         PaginatedGui gui = Gui.paginated()
                 .title(Component.text(title).color(NamedTextColor.DARK_PURPLE)
                         .decorate(TextDecoration.BOLD))
@@ -243,6 +243,8 @@ public class MarketMenu {
                 .pageSize(36)
                 .disableAllInteractions()
                 .create();
+        gui.setItem(6, 1, new GuiItem(button(Material.BARRIER, ChatColor.GRAY + "◄ Назад"),
+                e -> Bukkit.getScheduler().runTask(plugin, back)));
         gui.setItem(6, 3, new GuiItem(button(Material.ARROW, ChatColor.GRAY + "◄ Попередня"),
                 e -> gui.previous()));
         gui.setItem(6, 7, new GuiItem(button(Material.ARROW, ChatColor.GRAY + "Наступна ►"),
