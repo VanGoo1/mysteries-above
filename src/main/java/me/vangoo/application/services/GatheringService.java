@@ -1,5 +1,6 @@
 package me.vangoo.application.services;
 
+import me.vangoo.domain.market.GatheringConduct;
 import me.vangoo.domain.market.GatheringPhase;
 import me.vangoo.domain.market.MarketSession;
 import me.vangoo.domain.market.MarketSession.AcceptResult;
@@ -47,7 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * телепорт/анонімність/NPC, ескроу реальних стаків і виконання Settlement/Refund
  * команд чистої MarketSession. Після кожної мутації — снепшот на диск.
  */
-public class GatheringService {
+public class GatheringService implements GatheringAbilityGuard {
 
     private static final String PREFIX = ChatColor.DARK_PURPLE + "[Збори] " + ChatColor.RESET;
 
@@ -79,6 +80,12 @@ public class GatheringService {
     private final Map<UUID, List<ItemStack>> pendingReturns = new HashMap<>();
     private final Map<UUID, ParticipantHome> crashHomes = new HashMap<>();
     private final Set<UUID> bannedFromNext = new HashSet<>();
+    private final GatheringConduct conduct = new GatheringConduct();
+    private final Map<UUID, Long> lastViolationAt = new HashMap<>();
+    private final Set<UUID> skipThisRound = new HashSet<>();
+    private static final long VIOLATION_DEBOUNCE_MILLIS = 2000L;
+    private final Set<UUID> frozen = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> briefed = new HashSet<>();
     private long nextGatheringMillis;
     private long openAtMillis;
     private final List<BukkitTask> phaseTasks = new ArrayList<>();
@@ -152,6 +159,9 @@ public class GatheringService {
         }
         phase = GatheringPhase.ANNOUNCED;
         joined.clear();
+        skipThisRound.clear();
+        skipThisRound.addAll(bannedFromNext);
+        bannedFromNext.clear();
         nextGatheringMillis = System.currentTimeMillis() + intervalMillis();
         persist();
 
@@ -191,6 +201,11 @@ public class GatheringService {
     public boolean join(Player player) {
         if (phase != GatheringPhase.ANNOUNCED) {
             player.sendMessage(PREFIX + ChatColor.RED + "Зараз немає відкритого запрошення.");
+            return false;
+        }
+        if (skipThisRound.contains(player.getUniqueId())) {
+            player.sendMessage(PREFIX + ChatColor.RED
+                    + "Вас не пустять на цей збір — минулого разу ви порушили спокій.");
             return false;
         }
         if (beyonderService.getBeyonder(player.getUniqueId()) == null) {
@@ -423,6 +438,7 @@ public class GatheringService {
 
     public boolean isOpenParticipant(Player player) {
         return phase == GatheringPhase.OPEN && session != null
+                && openParticipantIds.contains(player.getUniqueId())
                 && session.isParticipant(player.getUniqueId());
     }
 
@@ -539,6 +555,61 @@ public class GatheringService {
         }
         anonymizer.unmask(player);
         persist();
+    }
+
+    // ── Порушення спокою / бан ───────────────────────────────────────────────
+
+    @Override
+    public boolean interceptAbility(UUID playerId) {
+        if (!isOpenParticipant(playerId)) {
+            return false;
+        }
+        Player player = Bukkit.getPlayer(playerId);
+        if (player != null) {
+            recordViolation(player);
+        }
+        return true;
+    }
+
+    /** Порушення спокою (удар / спроба здібності): попередження, тоді кік + бан. */
+    public void recordViolation(Player player) {
+        UUID id = player.getUniqueId();
+        long now = System.currentTimeMillis();
+        Long last = lastViolationAt.get(id);
+        if (last != null && now - last < VIOLATION_DEBOUNCE_MILLIS) {
+            return;
+        }
+        lastViolationAt.put(id, now);
+        switch (conduct.recordViolation(id)) {
+            case WARN -> player.sendMessage(PREFIX + ChatColor.RED
+                    + "⚠ Насильство тут не терплять. Наступного разу — виганяю.");
+            case KICK -> {
+                player.sendMessage(PREFIX + ChatColor.DARK_RED
+                        + "Вас виганяють зі Зборів. На наступний збір вас не пустять.");
+                bannedFromNext.add(id);
+                expel(player);
+                persist();
+            }
+        }
+    }
+
+    /** Мирне вигнання порушника (мирить ескроу/анонімність/телепорт, як handleQuit, але для онлайн-гравця). */
+    private void expel(Player player) {
+        UUID id = player.getUniqueId();
+        if (session != null) {
+            for (NegotiationView view : session.negotiationsOf(id)) {
+                try {
+                    releaseEscrow(session.withdraw(id, view.negotiationId()));
+                } catch (MarketException ignored) {
+                }
+            }
+        }
+        openParticipantIds.remove(id);
+        frozen.remove(id);
+        briefed.remove(id);
+        anonymizer.unmask(player);
+        Location home = returnLocations.remove(id);
+        player.teleport(home != null ? home : Bukkit.getWorlds().get(0).getSpawnLocation());
     }
 
     // ── Приватні хелпери ─────────────────────────────────────────────────────

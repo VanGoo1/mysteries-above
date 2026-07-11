@@ -4,12 +4,14 @@ import me.vangoo.application.services.GatheringService;
 import me.vangoo.infrastructure.market.GatheringVenueProvider;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -73,6 +75,23 @@ public class GatheringListener implements Listener {
             }
             plugin.getLogger().info("[Gathering chat] " + sender.getName() + ": " + message);
         });
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onVenueDamage(EntityDamageByEntityEvent event) {
+        if (!venueProvider.isVenueWorld(event.getEntity().getWorld())) {
+            return;
+        }
+        if (!(event.getDamager() instanceof Player attacker)) {
+            return;
+        }
+        Entity victim = event.getEntity();
+        if (!(victim instanceof Player) || victim.hasMetadata("NPC")) {
+            return; // NPC-Посередник або не гравець — не рахуємо
+        }
+        if (gatheringService.isOpenParticipant(attacker)) {
+            gatheringService.recordViolation(attacker);
+        }
     }
 
     @EventHandler(ignoreCancelled = true)

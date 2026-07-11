@@ -259,6 +259,7 @@ public class ServiceContainer {
                 marketItemClassifier, gatheringVenueProvider, gatheringAnonymizer,
                 gatheringSnapshotRepository, organizerNpcService, beyonderService,
                 recipeUnlockService, potionManager);
+        this.abilityExecutor.setGatheringAbilityGuard(gatheringService);
     }
 
     private void initializeUI() {
