@@ -1,0 +1,926 @@
+package me.vangoo.application.services;
+
+import me.vangoo.domain.market.CoinChange;
+import me.vangoo.domain.market.Consideration;
+import me.vangoo.domain.market.GatheringConduct;
+import me.vangoo.domain.market.GatheringPhase;
+import me.vangoo.domain.market.MarketSession;
+import me.vangoo.domain.market.MarketSession.AcceptResult;
+import me.vangoo.domain.market.MarketSession.BuyOrder;
+import me.vangoo.domain.market.MarketSession.Lot;
+import me.vangoo.domain.market.MarketSession.MarketException;
+import me.vangoo.domain.market.MarketSession.NegotiationView;
+import me.vangoo.domain.market.MarketSession.Refund;
+import me.vangoo.domain.market.MarketSession.Settlement;
+import me.vangoo.domain.market.PoundMoney;
+import me.vangoo.domain.valueobjects.UnlockedRecipe;
+import me.vangoo.infrastructure.citizens.OrganizerNpcService;
+import me.vangoo.infrastructure.market.GatheringAnonymizer;
+import me.vangoo.infrastructure.market.GatheringSnapshotRepository;
+import me.vangoo.infrastructure.market.GatheringSnapshotRepository.EscrowItem;
+import me.vangoo.infrastructure.market.GatheringSnapshotRepository.ParticipantHome;
+import me.vangoo.infrastructure.market.GatheringSnapshotRepository.Snapshot;
+import me.vangoo.infrastructure.market.GatheringVenueProvider;
+import me.vangoo.infrastructure.market.MarketConfig;
+import me.vangoo.infrastructure.market.OrganizerBriefing;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.TextComponent;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitTask;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Оркестратор Зборів Потойбічних: фази (IDLE→ANNOUNCED→OPEN→CLOSING→IDLE),
+ * телепорт/анонімність/NPC, ескроу реальних стаків і виконання Settlement/Refund
+ * команд чистої MarketSession. Після кожної мутації — снепшот на диск.
+ */
+public class GatheringService implements GatheringAbilityGuard {
+
+    private static final String PREFIX = ChatColor.DARK_PURPLE + "[Збори] " + ChatColor.RESET;
+
+    private record EscrowEntry(UUID ownerId, ItemStack stack) {}
+
+    private final Plugin plugin;
+    private final MarketConfig config;
+    private final WalletService walletService;
+    private final MarketItemClassifier classifier;
+    private final GatheringVenueProvider venueProvider;
+    private final GatheringAnonymizer anonymizer;
+    private final GatheringSnapshotRepository snapshotRepository;
+    private final OrganizerNpcService organizerNpc;
+    private final BeyonderService beyonderService;
+    private final RecipeUnlockService recipeUnlockService;
+    private final PotionManager potionManager;
+    private final MarketItemNamer namer;
+
+    private volatile GatheringPhase phase = GatheringPhase.IDLE;
+    private MarketSession session;
+    /**
+     * Потокобезпечне дзеркало учасників відкритого збору для читання з async-потоку
+     * (обробник AsyncPlayerChatEvent). Мутується лише в головному потоці (open/close);
+     * решта стану (session/aliases) — не чіпати поза головним потоком.
+     */
+    private final Set<UUID> openParticipantIds = ConcurrentHashMap.newKeySet();
+    private final Map<UUID, EscrowEntry> escrow = new HashMap<>();
+    private final Set<UUID> joined = new LinkedHashSet<>();
+    private final Map<UUID, Location> returnLocations = new HashMap<>();
+    private final Map<UUID, List<ItemStack>> pendingReturns = new HashMap<>();
+    private final Map<UUID, ParticipantHome> crashHomes = new HashMap<>();
+    private final Set<UUID> bannedFromNext = new HashSet<>();
+    private final GatheringConduct conduct = new GatheringConduct();
+    private final Map<UUID, Long> lastViolationAt = new HashMap<>();
+    private final Set<UUID> skipThisRound = new HashSet<>();
+    private static final long VIOLATION_DEBOUNCE_MILLIS = 2000L;
+    private final Set<UUID> frozen = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> briefed = new HashSet<>();
+    private long nextGatheringMillis;
+    private long openAtMillis;
+    private final List<BukkitTask> phaseTasks = new ArrayList<>();
+    private OrganizerBriefing briefing;
+
+    public GatheringService(Plugin plugin, MarketConfig config, WalletService walletService,
+                            MarketItemClassifier classifier, GatheringVenueProvider venueProvider,
+                            GatheringAnonymizer anonymizer, GatheringSnapshotRepository snapshotRepository,
+                            OrganizerNpcService organizerNpc, BeyonderService beyonderService,
+                            RecipeUnlockService recipeUnlockService, PotionManager potionManager,
+                            MarketItemNamer namer) {
+        this.plugin = plugin;
+        this.config = config;
+        this.walletService = walletService;
+        this.classifier = classifier;
+        this.venueProvider = venueProvider;
+        this.anonymizer = anonymizer;
+        this.snapshotRepository = snapshotRepository;
+        this.organizerNpc = organizerNpc;
+        this.beyonderService = beyonderService;
+        this.recipeUnlockService = recipeUnlockService;
+        this.potionManager = potionManager;
+        this.namer = namer;
+    }
+
+    // ── Відновлення після рестарту/крашу ────────────────────────────────────
+
+    /** Викликати з onEnable. Незакрита сесія НЕ продовжується — все повертається власникам. */
+    public void initializeFromSnapshot() {
+        Optional<Snapshot> loaded = snapshotRepository.load();
+        if (loaded.isEmpty()) {
+            nextGatheringMillis = System.currentTimeMillis() + intervalMillis();
+            persist();
+            return;
+        }
+        Snapshot snapshot = loaded.get();
+        nextGatheringMillis = snapshot.nextGatheringEpochMillis();
+        if (snapshot.bannedFromNext() != null) {
+            snapshot.bannedFromNext().forEach(id -> bannedFromNext.add(UUID.fromString(id)));
+        }
+        if (snapshot.skipThisRound() != null) {
+            snapshot.skipThisRound().forEach(id -> skipThisRound.add(UUID.fromString(id)));
+        }
+        for (EscrowItem item : snapshot.pendingReturns()) {
+            queueReturn(UUID.fromString(item.ownerId()),
+                    GatheringSnapshotRepository.decodeStack(item.base64Stack()));
+        }
+        // Краш посеред збору: ескроу → повернення, доми учасників → на телепорт при вході
+        for (EscrowItem item : snapshot.escrow()) {
+            queueReturn(UUID.fromString(item.ownerId()),
+                    GatheringSnapshotRepository.decodeStack(item.base64Stack()));
+        }
+        for (ParticipantHome home : snapshot.participants()) {
+            crashHomes.put(UUID.fromString(home.playerId()), home);
+        }
+        if (!snapshot.escrow().isEmpty() || !snapshot.participants().isEmpty()) {
+            plugin.getLogger().warning("Gathering session was interrupted by restart; "
+                    + "escrow queued for return to " + snapshot.escrow().size() + " owners");
+        }
+        persist();
+    }
+
+    // ── Фази ─────────────────────────────────────────────────────────────────
+
+    public GatheringPhase phase() {
+        return phase;
+    }
+
+    public long nextGatheringMillis() {
+        return nextGatheringMillis;
+    }
+
+    /** Оголошення збору (планувальник або /gathering start). */
+    public void announce() {
+        if (!phase.canTransitionTo(GatheringPhase.ANNOUNCED)) {
+            return;
+        }
+        phase = GatheringPhase.ANNOUNCED;
+        joined.clear();
+        skipThisRound.clear();
+        skipThisRound.addAll(bannedFromNext);
+        bannedFromNext.clear();
+        nextGatheringMillis = System.currentTimeMillis() + intervalMillis();
+        persist();
+
+        TextComponent invite = new TextComponent(PREFIX + ChatColor.LIGHT_PURPLE
+                + "Шепіт у пітьмі: сьогодні Потойбічні збираються в таємному місці... ");
+        TextComponent button = new TextComponent(ChatColor.GREEN + "" + ChatColor.BOLD + "[Прийти]");
+        button.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/gathering join"));
+        button.setHoverEvent(new net.md_5.bungee.api.chat.HoverEvent(
+                net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT,
+                new ComponentBuilder(ChatColor.GRAY + "Погодитись піти на Збори").create()));
+        invite.addExtra(button);
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (beyonderService.getBeyonder(player.getUniqueId()) != null) {
+                player.spigot().sendMessage(invite);
+                player.sendMessage(PREFIX + ChatColor.GRAY + "Вікно згоди — "
+                        + config.joinWindowMinutes() + " хв. Візьміть речі на обмін із собою.");
+            }
+        }
+        long joinWindowTicks = config.joinWindowMinutes() * 60L * 20L;
+        openAtMillis = System.currentTimeMillis() + config.joinWindowMinutes() * 60L * 1000L;
+        phaseTasks.add(Bukkit.getScheduler().runTaskTimer(plugin, this::announceCountdown, 20L * 60L, 20L * 60L));
+        schedule(() -> open(), joinWindowTicks);
+    }
+
+    private void announceCountdown() {
+        if (phase != GatheringPhase.ANNOUNCED) {
+            return;
+        }
+        long remainingMillis = openAtMillis - System.currentTimeMillis();
+        long minutes = Math.round(remainingMillis / 60000.0);
+        String when = minutes <= 1 ? "менше ніж за хвилину" : "за " + minutes + " хв";
+        for (UUID id : joined) {
+            notify(id, PREFIX + ChatColor.LIGHT_PURPLE + "Збори розпочнуться " + when + ".");
+        }
+    }
+
+    public boolean join(Player player) {
+        if (phase != GatheringPhase.ANNOUNCED) {
+            player.sendMessage(PREFIX + ChatColor.RED + "Зараз немає відкритого запрошення.");
+            return false;
+        }
+        if (skipThisRound.contains(player.getUniqueId())) {
+            player.sendMessage(PREFIX + ChatColor.RED
+                    + "Вас не пустять на цей збір — минулого разу ви порушили спокій.");
+            return false;
+        }
+        if (beyonderService.getBeyonder(player.getUniqueId()) == null) {
+            player.sendMessage(PREFIX + ChatColor.RED + "Збори — лише для Потойбічних.");
+            return false;
+        }
+        if (joined.add(player.getUniqueId())) {
+            player.sendMessage(PREFIX + ChatColor.GREEN
+                    + "Ви відчуваєте тяжіння... Не опирайтесь, коли настане час.");
+        }
+        return true;
+    }
+
+    private void open() {
+        if (phase != GatheringPhase.ANNOUNCED) {
+            return;
+        }
+        cancelPhaseTasks();
+        List<Player> attendees = new ArrayList<>();
+        for (UUID id : joined) {
+            Player player = Bukkit.getPlayer(id);
+            if (player != null && player.isOnline()) {
+                attendees.add(player);
+            }
+        }
+        if (attendees.isEmpty()) {
+            phase = GatheringPhase.IDLE;
+            cancelPhaseTasks();
+            persist();
+            return;
+        }
+        phase = GatheringPhase.OPEN;
+        session = new MarketSession(config.commissionRate(), new Random());
+        int total = attendees.size();
+        for (int i = 0; i < total; i++) {
+            Player player = attendees.get(i);
+            session.registerParticipant(player.getUniqueId());
+            openParticipantIds.add(player.getUniqueId());
+            returnLocations.put(player.getUniqueId(), player.getLocation());
+            player.teleport(venueProvider.attendeeSpawn(i, total));
+            anonymizer.mask(player, session.aliasOf(player.getUniqueId()));
+            frozen.add(player.getUniqueId());
+        }
+        organizerNpc.spawn(venueProvider.organizerSpawn());
+        briefing = new OrganizerBriefing(plugin, this::frozenAudience, this::onBriefingComplete);
+        briefing.start();
+        long durationTicks = config.durationMinutes() * 60L * 20L;
+        if (config.durationMinutes() > 5) {
+            schedule(() -> broadcastToParticipants(PREFIX + ChatColor.YELLOW
+                    + "Збір закінчиться за 5 хвилин!"), durationTicks - 5 * 60L * 20L);
+        }
+        schedule(() -> broadcastToParticipants(PREFIX + ChatColor.YELLOW
+                + "Збір закінчиться за 1 хвилину!"), durationTicks - 60L * 20L);
+        schedule(this::close, durationTicks);
+        persist();
+    }
+
+    /** Аудиторія доповіді — лише ще заморожені гравці; хто пропустив, більше її не бачить. */
+    private List<Player> frozenAudience() {
+        List<Player> players = new ArrayList<>();
+        for (UUID id : frozen) {
+            Player p = Bukkit.getPlayer(id);
+            if (p != null && p.isOnline()) {
+                players.add(p);
+            }
+        }
+        return players;
+    }
+
+    /** Природне завершення скрипту доповіді: звільняє всіх, хто ще заморожений. */
+    private void onBriefingComplete() {
+        for (UUID id : Set.copyOf(frozen)) {
+            freeFrozen(Bukkit.getPlayer(id), id);
+        }
+        briefing = null;
+    }
+
+    public boolean isFrozen(UUID playerId) {
+        return frozen.contains(playerId);
+    }
+
+    public boolean hasBeenBriefed(UUID playerId) {
+        return briefed.contains(playerId);
+    }
+
+    /**
+     * Присідання під час доповіді достроково звільняє САМЕ цього гравця (доповідь для
+     * решти триває). Коли заморожених не лишилось — зупиняємо спільний тік доповіді.
+     */
+    public void skipBriefing(Player player) {
+        if (!isFrozen(player.getUniqueId())) {
+            return;
+        }
+        freeFrozen(player, player.getUniqueId());
+        if (frozen.isEmpty() && briefing != null) {
+            briefing.cancel();
+            briefing = null;
+        }
+    }
+
+    /** Звільняє одного гравця: знімає заморозку, позначає briefed і подає сигнал в action bar. */
+    private void freeFrozen(Player player, UUID id) {
+        frozen.remove(id);
+        briefed.add(id);
+        if (player != null && player.isOnline()) {
+            organizerSay(player, ChatColor.GREEN + "Тепер ви вільні. Торгуйте — кафедра поруч.");
+        }
+    }
+
+    private void close() {
+        if (phase != GatheringPhase.OPEN) {
+            return;
+        }
+        phase = GatheringPhase.CLOSING;
+        cancelPhaseTasks();
+        for (Refund refund : session.close()) {
+            releaseEscrow(refund);
+        }
+        // Захист: якщо в ескроу щось лишилось (не мало б) — теж повернути
+        for (Map.Entry<UUID, EscrowEntry> orphan : Map.copyOf(escrow).entrySet()) {
+            escrow.remove(orphan.getKey());
+            deliverItem(orphan.getValue().ownerId(), orphan.getValue().stack());
+        }
+        for (UUID id : Set.copyOf(returnLocations.keySet())) {
+            Player player = Bukkit.getPlayer(id);
+            if (player != null && player.isOnline()) {
+                anonymizer.unmask(player);
+                player.teleport(returnLocations.remove(id));
+                player.sendMessage(PREFIX + ChatColor.GRAY
+                        + "Збір завершено. Ви знову там, звідки прийшли.");
+            }
+            // офлайн: локація лишається — handleJoin поверне при вході
+        }
+        anonymizer.unmaskAll();
+        organizerNpc.despawn();
+        if (briefing != null) {
+            briefing.cancel();
+            briefing = null;
+        }
+        frozen.clear();
+        briefed.clear();
+        conduct.reset();
+        lastViolationAt.clear();
+        session = null;
+        joined.clear();
+        openParticipantIds.clear();
+        phase = GatheringPhase.IDLE;
+        persist();
+    }
+
+    /** /gathering stop та onDisable: коректно закрити активний збір. */
+    public void forceCloseIfActive() {
+        if (phase == GatheringPhase.OPEN) {
+            close();
+        } else if (phase == GatheringPhase.ANNOUNCED) {
+            phase = GatheringPhase.IDLE;
+            cancelPhaseTasks();
+            joined.clear();
+            persist();
+        }
+    }
+
+    // ── Ринкові операції (усі вимагають OPEN + учасник) ──────────────────────
+
+    public boolean listLotFromHand(Player seller, Consideration price) {
+        return guarded(seller, () -> {
+            ItemStack hand = requireHandItem(seller);
+            var classified = classifier.classify(hand).orElseThrow(() -> new MarketException(
+                    "Це не потойбічна річ — на ринку їй не місце (інгредієнти, Характеристики, книги рецептів)"));
+            UUID lotId = session.listLot(seller.getUniqueId(), classified.itemKey(), hand.getAmount(), price);
+            escrow.put(lotId, new EscrowEntry(seller.getUniqueId(), hand.clone()));
+            seller.getInventory().setItemInMainHand(null);
+            seller.sendMessage(PREFIX + ChatColor.GREEN + "Лот виставлено: "
+                    + describe(hand) + ChatColor.GREEN + " за " + describeConsideration(price));
+            persist();
+        });
+    }
+
+    public boolean buyLot(Player buyer, UUID lotId) {
+        return guarded(buyer, () -> {
+            Lot lot = session.activeLots().stream().filter(l -> l.lotId().equals(lotId)).findFirst()
+                    .orElseThrow(() -> new MarketException("Лот уже недоступний"));
+            if (lot.price().isBarter()
+                    && countMatching(buyer, lot.price().item().itemKey()) < lot.price().item().amount()) {
+                throw new MarketException("Для обміну потрібно " + describeConsideration(lot.price())
+                        + " — у вас цього немає");
+            }
+            Settlement s = session.buyLot(buyer.getUniqueId(), lotId,
+                    walletService.countPounds(buyer), walletService.countCoppets(buyer));
+            settle(buyer, s);
+            buyer.sendMessage(PREFIX + ChatColor.GREEN + "Куплено за " + describeConsideration(s.price()) + ".");
+        });
+    }
+
+    public boolean placeOrder(Player buyer, String itemKey, int amount) {
+        return guarded(buyer, () -> {
+            session.placeOrder(buyer.getUniqueId(), itemKey, amount, knownIngredientKeys(buyer));
+            buyer.sendMessage(PREFIX + ChatColor.GREEN
+                    + "Замовлення розміщено. Чекайте на пропозиції продавців.");
+            persist();
+        });
+    }
+
+    public boolean offerFromHand(Player seller, UUID orderId, Consideration price) {
+        return guarded(seller, () -> {
+            BuyOrder order = session.openOrders().stream()
+                    .filter(o -> o.orderId().equals(orderId)).findFirst()
+                    .orElseThrow(() -> new MarketException("Замовлення вже недоступне"));
+            ItemStack hand = requireHandItem(seller);
+            var classified = classifier.classify(hand).orElseThrow(
+                    () -> new MarketException("Це не потойбічна річ"));
+            if (!classified.itemKey().equals(order.itemKey()) || hand.getAmount() != order.amount()) {
+                throw new MarketException("У руці має бути саме те, що замовлено: потрібна кількість — "
+                        + order.amount());
+            }
+            UUID negotiationId = session.offerOnOrder(seller.getUniqueId(), orderId, price);
+            escrow.put(negotiationId, new EscrowEntry(seller.getUniqueId(), hand.clone()));
+            seller.getInventory().setItemInMainHand(null);
+            seller.sendMessage(PREFIX + ChatColor.GREEN + "Пропозицію зроблено: " + describeConsideration(price));
+            notify(order.buyerId(), PREFIX + ChatColor.YELLOW + session.aliasOf(seller.getUniqueId())
+                    + " пропонує ваше замовлення за " + describeConsideration(price)
+                    + ChatColor.GRAY + " — див. «Мої угоди»");
+            persist();
+        });
+    }
+
+    public boolean counter(Player actor, UUID negotiationId, Consideration price) {
+        return guarded(actor, () -> {
+            session.counter(actor.getUniqueId(), negotiationId, price);
+            actor.sendMessage(PREFIX + ChatColor.GREEN + "Зустрічна ціна: " + describeConsideration(price));
+            otherParty(negotiationId, actor.getUniqueId()).ifPresent(other -> notify(other,
+                    PREFIX + ChatColor.YELLOW + session.aliasOf(actor.getUniqueId())
+                            + " дає зустрічну ціну " + describeConsideration(price)
+                            + ChatColor.GRAY + " — див. «Мої угоди»"));
+            persist();
+        });
+    }
+
+    public boolean accept(Player actor, UUID negotiationId) {
+        return guarded(actor, () -> {
+            NegotiationView view = session.negotiationsOf(actor.getUniqueId()).stream()
+                    .filter(n -> n.negotiationId().equals(negotiationId)).findFirst()
+                    .orElseThrow(() -> new MarketException("Цей торг уже завершено"));
+            Player buyer = Bukkit.getPlayer(view.buyerId());
+            if (buyer == null || !buyer.isOnline()) {
+                Refund refund = session.withdraw(actor.getUniqueId(), negotiationId);
+                releaseEscrow(refund);
+                persist();
+                throw new MarketException("Покупець покинув збір — торг скасовано");
+            }
+            if (view.currentPrice().isBarter()
+                    && countMatching(buyer, view.currentPrice().item().itemKey()) < view.currentPrice().item().amount()) {
+                throw new MarketException("У покупця немає предмета для обміну — торг лишається відкритим");
+            }
+            AcceptResult result = session.accept(actor.getUniqueId(), negotiationId,
+                    walletService.countPounds(buyer), walletService.countCoppets(buyer));
+            for (Refund released : result.releasedEscrows()) {
+                releaseEscrow(released);
+                notify(released.ownerId(), PREFIX + ChatColor.GRAY
+                        + "Замовлення закрили без вас — вашу річ повернуто.");
+            }
+            settle(buyer, result.settlement());
+            actor.sendMessage(PREFIX + ChatColor.GREEN + "Угоду укладено: "
+                    + describeConsideration(result.settlement().price()));
+        });
+    }
+
+    public boolean withdraw(Player actor, UUID negotiationId) {
+        return guarded(actor, () -> {
+            Refund refund = session.withdraw(actor.getUniqueId(), negotiationId);
+            releaseEscrow(refund);
+            actor.sendMessage(PREFIX + ChatColor.GRAY + "Торг скасовано.");
+            otherPartyOfClosed(refund, actor.getUniqueId());
+            persist();
+        });
+    }
+
+    /** Скупка організатором: предмет із руки згорає, монети з'являються (емісія). */
+    public boolean buybackFromHand(Player seller) {
+        return guarded(seller, () -> {
+            ItemStack hand = requireHandItem(seller);
+            var classified = classifier.classify(hand).orElseThrow(
+                    () -> new MarketException("Посередник: «Таке я не скуповую»"));
+            PoundMoney unit = config.buyback().unitPriceFor(
+                    classified.category(), classified.sequence(), classified.itemKey());
+            if (unit.isZero()) {
+                throw new MarketException("Посередник: «За таке я не дам і коппета»");
+            }
+            PoundMoney total = unit.times(hand.getAmount());
+            seller.getInventory().setItemInMainHand(null);
+            walletService.give(seller, total);
+            organizerSay(seller, ChatColor.GREEN + "Посередник забрав "
+                    + describe(hand) + ChatColor.GREEN + " і відсипав " + total.format());
+        });
+    }
+
+    /** Ціна скупки за весь стак у руці, якщо організатор це скуповує (для підтвердження). */
+    public Optional<PoundMoney> buybackPayout(ItemStack hand) {
+        if (hand == null || hand.getType().isAir()) {
+            return Optional.empty();
+        }
+        return classifier.classify(hand).map(c -> config.buyback()
+                .unitPriceFor(c.category(), c.sequence(), c.itemKey()).times(hand.getAmount()))
+                .filter(total -> !total.isZero());
+    }
+
+    // ── Бартер: опис ціни, перевірка перед підтвердженням ────────────────────
+
+    /** Укр-опис ціни: «предмет ×n + N ф» / лише предмет / лише гроші. */
+    public String describeConsideration(Consideration price) {
+        StringBuilder sb = new StringBuilder();
+        if (price.isBarter()) {
+            sb.append(namer.displayName(price.item().itemKey())).append(" ×").append(price.item().amount());
+            if (price.hasMoney()) {
+                sb.append(" + ").append(price.money().format());
+            }
+        } else {
+            sb.append(price.money().format());
+        }
+        return sb.toString();
+    }
+
+    /** Причина, чому покупець не може заплатити цю ціну (для перевірки перед підтвердженням); empty — може. */
+    public Optional<String> barterShortfall(Player buyer, Consideration price) {
+        if (price.isBarter() && countMatching(buyer, price.item().itemKey()) < price.item().amount()) {
+            return Optional.of("Для обміну потрібно " + describeConsideration(price)
+                    + " — у вас цього немає");
+        }
+        if (price.hasMoney() && CoinChange.make(walletService.countPounds(buyer),
+                walletService.countCoppets(buyer), price.money()).isEmpty()) {
+            return Optional.of("Недостатньо монет: потрібно " + price.money().format());
+        }
+        return Optional.empty();
+    }
+
+    // ── В'ю для GUI ──────────────────────────────────────────────────────────
+
+    public boolean isOpenParticipant(Player player) {
+        return phase == GatheringPhase.OPEN && session != null
+                && openParticipantIds.contains(player.getUniqueId())
+                && session.isParticipant(player.getUniqueId());
+    }
+
+    /**
+     * Потокобезпечний варіант для async-контексту (чат зали): читає лише volatile-фазу
+     * і concurrent-set учасників, не торкаючись session/aliases.
+     */
+    public boolean isOpenParticipant(UUID playerId) {
+        return phase == GatheringPhase.OPEN && openParticipantIds.contains(playerId);
+    }
+
+    public List<Lot> activeLots() {
+        return session == null ? List.of() : session.activeLots();
+    }
+
+    public List<BuyOrder> openOrders() {
+        return session == null ? List.of() : session.openOrders();
+    }
+
+    public List<NegotiationView> negotiationsOf(UUID playerId) {
+        return session == null ? List.of() : session.negotiationsOf(playerId);
+    }
+
+    public String aliasOf(UUID playerId) {
+        return session == null ? "?" : session.aliasOf(playerId);
+    }
+
+    /** Клон ескроу-стака для рендера в GUI (оригінал лишається у сховищі). */
+    public ItemStack escrowStack(UUID escrowRef) {
+        EscrowEntry entry = escrow.get(escrowRef);
+        return entry == null ? null : entry.stack().clone();
+    }
+
+    /** itemKey предмета, якщо він валідний для ринку (делегат для GUI). */
+    public Optional<String> classifyKey(ItemStack stack) {
+        return classifier.classify(stack).map(c -> c.itemKey());
+    }
+
+    /** itemKey-и інгредієнтів усіх розблокованих гравцем рецептів. */
+    public Set<String> knownIngredientKeys(Player player) {
+        Set<String> keys = new HashSet<>();
+        for (ItemStack stack : knownIngredientStacks(player)) {
+            classifier.classify(stack).ifPresent(c -> keys.add(c.itemKey()));
+        }
+        return keys;
+    }
+
+    /** Стаки-зразки інгредієнтів відомих рецептів (для меню створення замовлення). */
+    public List<ItemStack> knownIngredientStacks(Player player) {
+        List<ItemStack> stacks = new ArrayList<>();
+        Set<String> seenKeys = new HashSet<>();
+        for (UnlockedRecipe recipe : recipeUnlockService.getUnlockedRecipes(player.getUniqueId())) {
+            potionManager.getPotionsPathway(recipe.pathwayName()).ifPresent(potions -> {
+                ItemStack[] ingredients = potions.getIngredients(recipe.sequence());
+                if (ingredients == null) {
+                    return;
+                }
+                for (ItemStack ingredient : ingredients) {
+                    classifier.classify(ingredient).ifPresent(c -> {
+                        if (seenKeys.add(c.itemKey())) {
+                            ItemStack sample = ingredient.clone();
+                            sample.setAmount(1);
+                            stacks.add(sample);
+                        }
+                    });
+                }
+            });
+        }
+        return stacks;
+    }
+
+    // ── Вхід/вихід гравців ───────────────────────────────────────────────────
+
+    public void handleJoin(Player player) {
+        UUID id = player.getUniqueId();
+        // 1) черга повернень (предмети/монети з минулих сесій)
+        List<ItemStack> queued = pendingReturns.remove(id);
+        if (queued != null) {
+            for (ItemStack stack : queued) {
+                player.getInventory().addItem(stack).values()
+                        .forEach(rest -> player.getWorld().dropItem(player.getLocation(), rest));
+            }
+            player.sendMessage(PREFIX + ChatColor.GREEN + "Вам повернуто речі зі Зборів.");
+            persist();
+        }
+        // 2) застряг у світі-заглушці (краш/вихід під час збору) → додому
+        if (venueProvider.isVenueWorld(player.getWorld()) && !isOpenParticipant(player)) {
+            Location home = returnLocations.remove(id);
+            if (home == null) {
+                ParticipantHome crashHome = crashHomes.remove(id);
+                if (crashHome != null && Bukkit.getWorld(crashHome.world()) != null) {
+                    home = new Location(Bukkit.getWorld(crashHome.world()), crashHome.x(),
+                            crashHome.y(), crashHome.z(), crashHome.yaw(), crashHome.pitch());
+                }
+            }
+            player.teleport(home != null ? home
+                    : Bukkit.getWorlds().get(0).getSpawnLocation());
+            persist();
+        }
+    }
+
+    public void handleQuit(Player player) {
+        if (!isOpenParticipant(player)) {
+            return;
+        }
+        // Його відкриті торги скасовуються (ескроу продавцям), лоти лишаються висіти
+        for (NegotiationView view : session.negotiationsOf(player.getUniqueId())) {
+            try {
+                Refund refund = session.withdraw(player.getUniqueId(), view.negotiationId());
+                releaseEscrow(refund);
+            } catch (MarketException ignored) {
+                // торг уже закрився паралельно — нічого повертати
+            }
+        }
+        anonymizer.unmask(player);
+        persist();
+    }
+
+    // ── Порушення спокою / бан ───────────────────────────────────────────────
+
+    @Override
+    public boolean interceptAbility(UUID playerId) {
+        if (!isOpenParticipant(playerId)) {
+            return false;
+        }
+        Player player = Bukkit.getPlayer(playerId);
+        if (player != null) {
+            recordViolation(player);
+        }
+        return true;
+    }
+
+    /** Порушення спокою (удар / спроба здібності): попередження, тоді кік + бан. */
+    public void recordViolation(Player player) {
+        UUID id = player.getUniqueId();
+        long now = System.currentTimeMillis();
+        Long last = lastViolationAt.get(id);
+        if (last != null && now - last < VIOLATION_DEBOUNCE_MILLIS) {
+            return;
+        }
+        lastViolationAt.put(id, now);
+        switch (conduct.recordViolation(id)) {
+            case WARN -> player.sendMessage(PREFIX + ChatColor.RED
+                    + "⚠ Насильство тут не терплять. Наступного разу — виганяю.");
+            case KICK -> {
+                player.sendMessage(PREFIX + ChatColor.DARK_RED
+                        + "Вас виганяють зі Зборів. На наступний збір вас не пустять.");
+                bannedFromNext.add(id);
+                expel(player);
+                persist();
+            }
+        }
+    }
+
+    /** Мирне вигнання порушника (мирить ескроу/анонімність/телепорт, як handleQuit, але для онлайн-гравця). */
+    private void expel(Player player) {
+        UUID id = player.getUniqueId();
+        if (session != null) {
+            for (NegotiationView view : session.negotiationsOf(id)) {
+                try {
+                    releaseEscrow(session.withdraw(id, view.negotiationId()));
+                } catch (MarketException ignored) {
+                }
+            }
+        }
+        openParticipantIds.remove(id);
+        frozen.remove(id);
+        briefed.remove(id);
+        anonymizer.unmask(player);
+        Location home = returnLocations.remove(id);
+        player.teleport(home != null ? home : Bukkit.getWorlds().get(0).getSpawnLocation());
+    }
+
+    // ── Приватні хелпери ─────────────────────────────────────────────────────
+
+    private void settle(Player buyer, Settlement s) {
+        walletService.charge(buyer, s.price().money()).orElseThrow(
+                () -> new IllegalStateException("Wallet changed between check and charge"));
+        EscrowEntry entry = escrow.remove(s.escrowRef());
+        if (entry != null) {
+            deliverItem(s.payerId(), entry.stack());
+        }
+        if (s.price().isBarter()) {
+            for (ItemStack chunk : removeMatching(buyer, s.price().item().itemKey(), s.price().item().amount())) {
+                deliverItem(s.payeeId(), chunk);
+            }
+        }
+        deliverMoney(s.payeeId(), s.sellerProceeds());
+        if (s.sellerProceeds().isZero()) {
+            notify(s.payeeId(), PREFIX + ChatColor.GREEN + "Вашу річ обміняно за "
+                    + describeConsideration(s.price()) + ".");
+        } else {
+            notify(s.payeeId(), PREFIX + ChatColor.GREEN + "Вашу річ продано: +"
+                    + s.sellerProceeds().format() + ChatColor.GRAY + " (комісія посередника: "
+                    + s.commissionPaid().format() + ")");
+        }
+        persist();
+    }
+
+    private void releaseEscrow(Refund refund) {
+        EscrowEntry entry = escrow.remove(refund.escrowRef());
+        if (entry != null) {
+            deliverItem(refund.ownerId(), entry.stack());
+        }
+    }
+
+    private void deliverItem(UUID ownerId, ItemStack stack) {
+        Player owner = Bukkit.getPlayer(ownerId);
+        if (owner != null && owner.isOnline()) {
+            owner.getInventory().addItem(stack).values()
+                    .forEach(rest -> owner.getWorld().dropItem(owner.getLocation(), rest));
+        } else {
+            queueReturn(ownerId, stack);
+        }
+    }
+
+    private void deliverMoney(UUID ownerId, PoundMoney money) {
+        Player owner = Bukkit.getPlayer(ownerId);
+        if (owner != null && owner.isOnline()) {
+            walletService.give(owner, money);
+        } else {
+            walletService.asStacks(money).forEach(stack -> queueReturn(ownerId, stack));
+        }
+    }
+
+    private void queueReturn(UUID ownerId, ItemStack stack) {
+        pendingReturns.computeIfAbsent(ownerId, k -> new ArrayList<>()).add(stack);
+    }
+
+    private void notify(UUID playerId, String message) {
+        Player player = Bukkit.getPlayer(playerId);
+        if (player != null && player.isOnline()) {
+            player.sendMessage(message);
+        }
+    }
+
+    /** Слова Посередника — в action bar (як доповідь), а не в чат. */
+    private void organizerSay(Player player, String message) {
+        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
+    }
+
+    private Optional<UUID> otherParty(UUID negotiationId, UUID actorId) {
+        return session.negotiationsOf(actorId).stream()
+                .filter(n -> n.negotiationId().equals(negotiationId))
+                .map(n -> n.sellerId().equals(actorId) ? n.buyerId() : n.sellerId())
+                .findFirst();
+    }
+
+    private void otherPartyOfClosed(Refund refund, UUID actorId) {
+        if (!refund.ownerId().equals(actorId)) {
+            notify(refund.ownerId(), PREFIX + ChatColor.GRAY
+                    + "Торг скасовано — вашу річ повернуто.");
+        }
+    }
+
+    private ItemStack requireHandItem(Player player) {
+        ItemStack hand = player.getInventory().getItemInMainHand();
+        if (hand == null || hand.getType().isAir()) {
+            throw new MarketException("Візьміть предмет у головну руку");
+        }
+        return hand;
+    }
+
+    private boolean guarded(Player player, Runnable action) {
+        if (!isOpenParticipant(player)) {
+            player.sendMessage(PREFIX + ChatColor.RED + "Ринок зараз не відкритий для вас.");
+            return false;
+        }
+        try {
+            action.run();
+            return true;
+        } catch (MarketException | IllegalArgumentException e) {
+            player.sendMessage(PREFIX + ChatColor.RED + e.getMessage());
+            return false;
+        }
+    }
+
+    private void broadcastToParticipants(String message) {
+        if (session == null) {
+            return;
+        }
+        for (UUID id : returnLocations.keySet()) {
+            notify(id, message);
+        }
+    }
+
+    private void schedule(Runnable action, long delayTicks) {
+        if (delayTicks > 0) {
+            phaseTasks.add(Bukkit.getScheduler().runTaskLater(plugin, action, delayTicks));
+        }
+    }
+
+    private void cancelPhaseTasks() {
+        phaseTasks.forEach(BukkitTask::cancel);
+        phaseTasks.clear();
+    }
+
+    private long intervalMillis() {
+        return config.intervalDays() * 24L * 60L * 60L * 1000L;
+    }
+
+    /** Скільки одиниць itemKey має гравець (за класифікатором). */
+    private int countMatching(Player player, String itemKey) {
+        int total = 0;
+        for (ItemStack stack : player.getInventory().getContents()) {
+            if (stack == null || stack.getType().isAir()) {
+                continue;
+            }
+            if (classifier.classify(stack).map(c -> c.itemKey().equals(itemKey)).orElse(false)) {
+                total += stack.getAmount();
+            }
+        }
+        return total;
+    }
+
+    /** Знімає amount одиниць itemKey у гравця; повертає зняті стаки для видачі продавцю. */
+    private List<ItemStack> removeMatching(Player player, String itemKey, int amount) {
+        List<ItemStack> removed = new ArrayList<>();
+        int remaining = amount;
+        ItemStack[] contents = player.getInventory().getContents();
+        for (int i = 0; i < contents.length && remaining > 0; i++) {
+            ItemStack stack = contents[i];
+            if (stack == null || stack.getType().isAir()) {
+                continue;
+            }
+            if (!classifier.classify(stack).map(c -> c.itemKey().equals(itemKey)).orElse(false)) {
+                continue;
+            }
+            int take = Math.min(stack.getAmount(), remaining);
+            remaining -= take;
+            ItemStack chunk = stack.clone();
+            chunk.setAmount(take);
+            removed.add(chunk);
+            if (take == stack.getAmount()) {
+                player.getInventory().setItem(i, null);
+            } else {
+                stack.setAmount(stack.getAmount() - take);
+            }
+        }
+        return removed;
+    }
+
+    private String describe(ItemStack stack) {
+        String name = stack.hasItemMeta() && stack.getItemMeta().hasDisplayName()
+                ? stack.getItemMeta().getDisplayName()
+                : stack.getType().name().toLowerCase().replace('_', ' ');
+        return name + ChatColor.RESET + " ×" + stack.getAmount();
+    }
+
+    private void persist() {
+        List<ParticipantHome> homes = new ArrayList<>();
+        returnLocations.forEach((id, loc) -> homes.add(new ParticipantHome(id.toString(),
+                loc.getWorld().getName(), loc.getX(), loc.getY(), loc.getZ(),
+                loc.getYaw(), loc.getPitch())));
+        List<EscrowItem> escrowItems = new ArrayList<>();
+        escrow.forEach((ref, entry) -> escrowItems.add(new EscrowItem(
+                entry.ownerId().toString(), GatheringSnapshotRepository.encodeStack(entry.stack()))));
+        List<EscrowItem> returns = new ArrayList<>();
+        pendingReturns.forEach((owner, stacks) -> stacks.forEach(stack -> returns.add(
+                new EscrowItem(owner.toString(), GatheringSnapshotRepository.encodeStack(stack)))));
+        List<String> banned = new ArrayList<>();
+        bannedFromNext.forEach(id -> banned.add(id.toString()));
+        List<String> skip = new ArrayList<>();
+        skipThisRound.forEach(id -> skip.add(id.toString()));
+        snapshotRepository.save(new Snapshot(nextGatheringMillis, homes, escrowItems, returns, banned, skip));
+    }
+}

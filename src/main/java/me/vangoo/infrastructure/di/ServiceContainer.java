@@ -4,6 +4,7 @@ import me.vangoo.application.services.*;
 import me.vangoo.domain.valueobjects.CustomItem;
 import me.vangoo.infrastructure.*;
 import me.vangoo.infrastructure.abilities.AbilityItemFactory;
+import me.vangoo.infrastructure.market.GatheringSnapshotRepository;
 import me.vangoo.infrastructure.items.*;
 import me.vangoo.infrastructure.listeners.RampageEventListener;
 import me.vangoo.infrastructure.listeners.RampageRemnantDeathListener;
@@ -18,6 +19,7 @@ import me.vangoo.presentation.listeners.MarionetteExitListener;
 import me.vangoo.presentation.listeners.MainBodyAbilityListener;
 import me.vangoo.presentation.listeners.MarionetteLifecycleListener;
 import me.vangoo.presentation.listeners.MarionetteRestorer;
+import me.vangoo.infrastructure.citizens.OrganizerNpcService;
 import me.vangoo.MysteriesAbovePlugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -57,16 +59,29 @@ public class ServiceContainer {
     private LootTableConfigLoader lootTableConfigLoader;
     private LootGenerationService lootGenerationService;
     private CharacteristicCodec characteristicCodec;
+    private CurrencyCodec currencyCodec;
+    private WalletService walletService;
+    private me.vangoo.infrastructure.market.MarketConfig marketConfig;
+    private MarketItemClassifier marketItemClassifier;
+    private GatheringSnapshotRepository gatheringSnapshotRepository;
+    private me.vangoo.infrastructure.market.GatheringVenueProvider gatheringVenueProvider;
+    private me.vangoo.infrastructure.market.GatheringAnonymizer gatheringAnonymizer;
+    private OrganizerNpcService organizerNpcService;
 
     // UI and menus
     private AbilityMenu abilityMenu;
     private BossBarUtil bossBarUtil;
+    private me.vangoo.presentation.listeners.ChatPromptService chatPromptService;
+    private me.vangoo.infrastructure.ui.MarketMenu marketMenu;
+    private me.vangoo.infrastructure.ui.ConfirmationMenu confirmationMenu;
 
     // Application services
     private BeyonderService beyonderService;
     private AbilityExecutor abilityExecutor;
     private AbilityContextFactory abilityContextFactory;
     private PotionManager potionManager;
+    private GatheringService gatheringService;
+    private MarketItemNamer marketItemNamer;
 
     // Schedulers
     private PassiveAbilityScheduler passiveAbilityScheduler;
@@ -77,6 +92,7 @@ public class ServiceContainer {
     private me.vangoo.infrastructure.schedulers.ConvergenceDriftScheduler convergenceDriftScheduler;
     private me.vangoo.infrastructure.forage.ForageNodeCodec forageNodeCodec;
     private me.vangoo.infrastructure.schedulers.ForageNodeSpawner forageNodeSpawner;
+    private GatheringScheduler gatheringScheduler;
 
     // Event listeners
     private RampageEventListener rampageEventListener;
@@ -95,6 +111,8 @@ public class ServiceContainer {
     private MainBodyAbilityListener mainBodyAbilityListener;
     private MarionetteLifecycleListener marionetteLifecycleListener;
     private MarionetteRestorer marionetteRestorer;
+    private me.vangoo.presentation.listeners.GatheringListener gatheringListener;
+    private me.vangoo.presentation.listeners.OrganizerClickListener organizerClickListener;
 
     // Recipes
     private RecipeBookCraftingRecipe recipeBookCraftingRecipe;
@@ -164,15 +182,30 @@ public class ServiceContainer {
         PotionRecipeConfigLoader recipeConfigLoader = new PotionRecipeConfigLoader(plugin);
         Map<String, Map<Integer, RecipeDefinition>> recipeConfig = recipeConfigLoader.load();
         this.characteristicCodec = new CharacteristicCodec();
+        this.currencyCodec = new CurrencyCodec();
+        this.walletService = new WalletService(currencyCodec);
+        this.marketConfig = me.vangoo.infrastructure.market.MarketConfig.load(plugin);
+        this.marketItemClassifier = new MarketItemClassifier(
+                characteristicCodec, recipeBookFactory, customItemService, currencyCodec);
+        this.gatheringSnapshotRepository = new GatheringSnapshotRepository(
+                plugin.getDataFolder() + File.separator + "gathering-state.json");
+        this.gatheringVenueProvider = new me.vangoo.infrastructure.market.GatheringVenueProvider();
+        this.gatheringAnonymizer = new me.vangoo.infrastructure.market.GatheringAnonymizer();
+        this.organizerNpcService = new OrganizerNpcService();
         this.characteristicExtractor = new CharacteristicExtractor(characteristicCodec);
         this.wardenRemnantCodec = new WardenRemnantCodec(plugin);
         this.potionManager = new PotionManager(pathwayManager, potionItemFactory, customItemService, recipeConfig);
+        // Ціна скупки інгредієнтів скейлиться від послідовності рецепта, де вони вжиті:
+        // будуємо індекс itemKey→послідовність із потонів (створених щойно вище) й інжектимо
+        // в класифікатор (він створений раніше, тож лише сеттером).
+        this.marketItemClassifier.setIngredientSequenceIndex(
+                IngredientSequenceIndex.build(potionManager.getPotions(), customItemService));
 
         // Loot system
         this.lootTableConfigLoader = new LootTableConfigLoader(plugin);
         lootTableConfigLoader.loadLootTable();
         this.lootGenerationService = new LootGenerationService(
-                plugin, customItemService, potionManager, recipeBookFactory);
+                plugin, customItemService, potionManager, recipeBookFactory, currencyCodec);
     }
 
     private void initializeApplicationServices(fr.skytasul.glowingentities.GlowingEntities glowingEntities,
@@ -228,6 +261,13 @@ public class ServiceContainer {
                 customItemService,
                 characteristicCodec
         );
+
+        this.marketItemNamer = new MarketItemNamer(customItemService);
+        this.gatheringService = new GatheringService(plugin, marketConfig, walletService,
+                marketItemClassifier, gatheringVenueProvider, gatheringAnonymizer,
+                gatheringSnapshotRepository, organizerNpcService, beyonderService,
+                recipeUnlockService, potionManager, marketItemNamer);
+        this.abilityExecutor.setGatheringAbilityGuard(gatheringService);
     }
 
     private void initializeUI() {
@@ -240,6 +280,11 @@ public class ServiceContainer {
                 pathwayManager,
                 abilityContextFactory
         );
+
+        this.chatPromptService = new me.vangoo.presentation.listeners.ChatPromptService(plugin);
+        this.confirmationMenu = new me.vangoo.infrastructure.ui.ConfirmationMenu(plugin);
+        this.marketMenu = new me.vangoo.infrastructure.ui.MarketMenu(
+                plugin, gatheringService, walletService, chatPromptService, marketItemNamer, confirmationMenu);
     }
 
     private void initializeSchedulers() {
@@ -288,6 +333,8 @@ public class ServiceContainer {
                 beyonderService,
                 abilityMenu
         );
+
+        this.gatheringScheduler = new GatheringScheduler(plugin, gatheringService);
     }
 
     private void initializeEventListeners() {
@@ -298,6 +345,10 @@ public class ServiceContainer {
         this.mainBodyAbilityListener = new MainBodyAbilityListener(beyonderService, abilityExecutor, pathwayManager);
         this.marionetteLifecycleListener = new MarionetteLifecycleListener(abilityContextFactory, pathwayManager, characteristicExtractor);
         this.marionetteRestorer = new MarionetteRestorer(pathwayManager);
+        this.gatheringListener = new me.vangoo.presentation.listeners.GatheringListener(
+                plugin, gatheringService, gatheringVenueProvider, marketMenu);
+        this.organizerClickListener = new me.vangoo.presentation.listeners.OrganizerClickListener(
+                organizerNpcService, gatheringService, confirmationMenu);
     }
 
     private void initializeRecipes() {
@@ -328,14 +379,26 @@ public class ServiceContainer {
     public LootTableConfigLoader getLootTableConfigLoader() { return lootTableConfigLoader; }
     public LootGenerationService getLootGenerationService() { return lootGenerationService; }
     public CharacteristicCodec getCharacteristicCodec() { return characteristicCodec; }
+    public CurrencyCodec getCurrencyCodec() { return currencyCodec; }
+    public WalletService getWalletService() { return walletService; }
+    public me.vangoo.infrastructure.market.MarketConfig getMarketConfig() { return marketConfig; }
+    public MarketItemClassifier getMarketItemClassifier() { return marketItemClassifier; }
+    public GatheringSnapshotRepository getGatheringSnapshotRepository() { return gatheringSnapshotRepository; }
+    public me.vangoo.infrastructure.market.GatheringVenueProvider getGatheringVenueProvider() { return gatheringVenueProvider; }
+    public me.vangoo.infrastructure.market.GatheringAnonymizer getGatheringAnonymizer() { return gatheringAnonymizer; }
+    public OrganizerNpcService getOrganizerNpcService() { return organizerNpcService; }
 
     public AbilityMenu getAbilityMenu() { return abilityMenu; }
     public BossBarUtil getBossBarUtil() { return bossBarUtil; }
+    public me.vangoo.presentation.listeners.ChatPromptService getChatPromptService() { return chatPromptService; }
+    public me.vangoo.infrastructure.ui.MarketMenu getMarketMenu() { return marketMenu; }
+    public me.vangoo.infrastructure.ui.ConfirmationMenu getConfirmationMenu() { return confirmationMenu; }
 
     public BeyonderService getBeyonderService() { return beyonderService; }
     public AbilityExecutor getAbilityExecutor() { return abilityExecutor; }
     public AbilityContextFactory getAbilityContextFactory() { return abilityContextFactory; }
     public PotionManager getPotionManager() { return potionManager; }
+    public GatheringService getGatheringService() { return gatheringService; }
 
     public PassiveAbilityScheduler getPassiveAbilityScheduler() { return passiveAbilityScheduler; }
     public MasteryRegenerationScheduler getMasteryRegenerationScheduler() { return masteryRegenerationScheduler; }
@@ -345,6 +408,7 @@ public class ServiceContainer {
     public me.vangoo.infrastructure.schedulers.ConvergenceDriftScheduler getConvergenceDriftScheduler() { return convergenceDriftScheduler; }
     public me.vangoo.infrastructure.forage.ForageNodeCodec getForageNodeCodec() { return forageNodeCodec; }
     public me.vangoo.infrastructure.schedulers.ForageNodeSpawner getForageNodeSpawner() { return forageNodeSpawner; }
+    public GatheringScheduler getGatheringScheduler() { return gatheringScheduler; }
 
     public RampageEventListener getRampageEventListener() { return rampageEventListener; }
     public CharacteristicExtractor getCharacteristicExtractor() { return characteristicExtractor; }
@@ -360,6 +424,8 @@ public class ServiceContainer {
     public MainBodyAbilityListener getMainBodyAbilityListener() { return mainBodyAbilityListener; }
     public MarionetteLifecycleListener getMarionetteLifecycleListener() { return marionetteLifecycleListener; }
     public MarionetteRestorer getMarionetteRestorer() { return marionetteRestorer; }
+    public me.vangoo.presentation.listeners.GatheringListener getGatheringListener() { return gatheringListener; }
+    public me.vangoo.presentation.listeners.OrganizerClickListener getOrganizerClickListener() { return organizerClickListener; }
 
     public RecipeBookCraftingRecipe getRecipeBookCraftingRecipe() { return recipeBookCraftingRecipe; }
 
@@ -375,6 +441,7 @@ public class ServiceContainer {
         ambientCreatureSpawner.start();
         convergenceDriftScheduler.start();
         forageNodeSpawner.start();
+        gatheringScheduler.start();
 
         // Start batched save scheduler (every 5 minutes)
         startBatchedSaveScheduler();
@@ -413,6 +480,9 @@ public class ServiceContainer {
         }
         if (forageNodeSpawner != null) {
             forageNodeSpawner.stop();
+        }
+        if (gatheringScheduler != null) {
+            gatheringScheduler.stop();
         }
     }
 

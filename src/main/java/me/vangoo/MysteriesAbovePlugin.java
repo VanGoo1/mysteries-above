@@ -85,6 +85,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         // Start schedulers
         services.startSchedulers();
 
+        // Відновлення після рестарту/крашу: незакрита сесія Зборів → повернення власникам
+        services.getGatheringService().initializeFromSnapshot();
+
         // Setup event subscriptions
         services.getEventPublisher().subscribeToAbility(ev -> {
             getLogger().info("[GLOBAL-SUB] Got ability event: " + ev.abilityName() + " from " + ev.casterId());
@@ -166,6 +169,11 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         }
         if (glowingEntities != null) {
             glowingEntities.disable();
+        }
+
+        // Коректно закрити активний збір (повернути ескроу/телепортувати учасників) ДО збереження
+        if (services != null) {
+            services.getGatheringService().forceCloseIfActive();
         }
 
         // Save all data and cleanup
@@ -251,6 +259,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         ForageHarvestListener forageHarvestListener = new ForageHarvestListener(
                 services.getForageNodeSpawner(), services.getCustomItemService(), this);
         getServer().getPluginManager().registerEvents(forageHarvestListener, this);
+        getServer().getPluginManager().registerEvents(services.getChatPromptService(), this);
+        getServer().getPluginManager().registerEvents(services.getGatheringListener(), this);
+        getServer().getPluginManager().registerEvents(services.getOrganizerClickListener(), this);
     }
 
     private void registerCommands() {
@@ -280,5 +291,14 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 services.getCharacteristicCodec(), services.getPotionManager());
         getCommand("characteristic").setExecutor(characteristicCommand);
         getCommand("characteristic").setTabCompleter(characteristicCommand);
+
+        CoinsCommand coinsCommand = new CoinsCommand(services.getWalletService());
+        getCommand("coins").setExecutor(coinsCommand);
+        getCommand("coins").setTabCompleter(coinsCommand);
+
+        GatheringCommand gatheringCommand = new GatheringCommand(
+                services.getGatheringService(), services.getMarketMenu());
+        getCommand("gathering").setExecutor(gatheringCommand);
+        getCommand("gathering").setTabCompleter(gatheringCommand);
     }
 }

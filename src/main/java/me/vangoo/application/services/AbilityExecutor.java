@@ -18,6 +18,11 @@ public class AbilityExecutor {
     private final AbilityContextFactory abilityContextFactory;
     private final SanityPenaltyHandler sanityPenaltyHandler;
     private final DomainEventPublisher eventPublisher;
+    private GatheringAbilityGuard gatheringAbilityGuard;
+
+    public void setGatheringAbilityGuard(GatheringAbilityGuard guard) {
+        this.gatheringAbilityGuard = guard;
+    }
 
     public AbilityExecutor(BeyonderService beyonderService, AbilityLockManager abilityLockManager,
                            RampageManager rampageManager, PassiveAbilityManager passiveAbilityManager,
@@ -36,6 +41,11 @@ public class AbilityExecutor {
         Player player = getPlayer(beyonder.getPlayerId());
         if (player == null) {
             return AbilityResult.failure("Player not found");
+        }
+
+        if (gatheringAbilityGuard != null
+                && gatheringAbilityGuard.interceptAbility(beyonder.getPlayerId())) {
+            return AbilityResult.failure("Тут ваші сили мовчать.");
         }
 
         // Check ability locks
