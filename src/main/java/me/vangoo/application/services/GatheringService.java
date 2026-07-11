@@ -80,6 +80,7 @@ public class GatheringService {
     private final Map<UUID, ParticipantHome> crashHomes = new HashMap<>();
     private final Set<UUID> bannedFromNext = new HashSet<>();
     private long nextGatheringMillis;
+    private long openAtMillis;
     private final List<BukkitTask> phaseTasks = new ArrayList<>();
 
     public GatheringService(Plugin plugin, MarketConfig config, WalletService walletService,
@@ -169,7 +170,22 @@ public class GatheringService {
                         + config.joinWindowMinutes() + " хв. Візьміть речі на обмін із собою.");
             }
         }
-        schedule(() -> open(), config.joinWindowMinutes() * 60L * 20L);
+        long joinWindowTicks = config.joinWindowMinutes() * 60L * 20L;
+        openAtMillis = System.currentTimeMillis() + config.joinWindowMinutes() * 60L * 1000L;
+        phaseTasks.add(Bukkit.getScheduler().runTaskTimer(plugin, this::announceCountdown, 20L * 60L, 20L * 60L));
+        schedule(() -> open(), joinWindowTicks);
+    }
+
+    private void announceCountdown() {
+        if (phase != GatheringPhase.ANNOUNCED) {
+            return;
+        }
+        long remainingMillis = openAtMillis - System.currentTimeMillis();
+        long minutes = Math.round(remainingMillis / 60000.0);
+        String when = minutes <= 1 ? "менше ніж за хвилину" : "за " + minutes + " хв";
+        for (UUID id : joined) {
+            notify(id, PREFIX + ChatColor.LIGHT_PURPLE + "Збори розпочнуться " + when + ".");
+        }
     }
 
     public boolean join(Player player) {
@@ -192,6 +208,7 @@ public class GatheringService {
         if (phase != GatheringPhase.ANNOUNCED) {
             return;
         }
+        cancelPhaseTasks();
         List<Player> attendees = new ArrayList<>();
         for (UUID id : joined) {
             Player player = Bukkit.getPlayer(id);
