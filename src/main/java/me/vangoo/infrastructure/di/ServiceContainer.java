@@ -71,7 +71,6 @@ public class ServiceContainer {
     // UI and menus
     private AbilityMenu abilityMenu;
     private BossBarUtil bossBarUtil;
-    private me.vangoo.presentation.listeners.ChatPromptService chatPromptService;
     private me.vangoo.infrastructure.ui.MarketMenu marketMenu;
     private me.vangoo.infrastructure.ui.ConfirmationMenu confirmationMenu;
 
@@ -113,6 +112,7 @@ public class ServiceContainer {
     private MarionetteRestorer marionetteRestorer;
     private me.vangoo.presentation.listeners.GatheringListener gatheringListener;
     private me.vangoo.presentation.listeners.OrganizerClickListener organizerClickListener;
+    private me.vangoo.presentation.listeners.CurrencyExchangeListener currencyExchangeListener;
 
     // Recipes
     private RecipeBookCraftingRecipe recipeBookCraftingRecipe;
@@ -281,10 +281,9 @@ public class ServiceContainer {
                 abilityContextFactory
         );
 
-        this.chatPromptService = new me.vangoo.presentation.listeners.ChatPromptService(plugin);
         this.confirmationMenu = new me.vangoo.infrastructure.ui.ConfirmationMenu(plugin);
         this.marketMenu = new me.vangoo.infrastructure.ui.MarketMenu(
-                plugin, gatheringService, walletService, chatPromptService, marketItemNamer, confirmationMenu);
+                plugin, gatheringService, walletService, marketItemNamer, confirmationMenu);
     }
 
     private void initializeSchedulers() {
@@ -349,6 +348,8 @@ public class ServiceContainer {
                 plugin, gatheringService, gatheringVenueProvider, marketMenu);
         this.organizerClickListener = new me.vangoo.presentation.listeners.OrganizerClickListener(
                 organizerNpcService, gatheringService, confirmationMenu);
+        this.currencyExchangeListener = new me.vangoo.presentation.listeners.CurrencyExchangeListener(
+                currencyCodec, confirmationMenu);
     }
 
     private void initializeRecipes() {
@@ -390,7 +391,6 @@ public class ServiceContainer {
 
     public AbilityMenu getAbilityMenu() { return abilityMenu; }
     public BossBarUtil getBossBarUtil() { return bossBarUtil; }
-    public me.vangoo.presentation.listeners.ChatPromptService getChatPromptService() { return chatPromptService; }
     public me.vangoo.infrastructure.ui.MarketMenu getMarketMenu() { return marketMenu; }
     public me.vangoo.infrastructure.ui.ConfirmationMenu getConfirmationMenu() { return confirmationMenu; }
 
@@ -426,6 +426,7 @@ public class ServiceContainer {
     public MarionetteRestorer getMarionetteRestorer() { return marionetteRestorer; }
     public me.vangoo.presentation.listeners.GatheringListener getGatheringListener() { return gatheringListener; }
     public me.vangoo.presentation.listeners.OrganizerClickListener getOrganizerClickListener() { return organizerClickListener; }
+    public me.vangoo.presentation.listeners.CurrencyExchangeListener getCurrencyExchangeListener() { return currencyExchangeListener; }
 
     public RecipeBookCraftingRecipe getRecipeBookCraftingRecipe() { return recipeBookCraftingRecipe; }
 

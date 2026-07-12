@@ -10,8 +10,6 @@ import me.vangoo.domain.market.Consideration;
 import me.vangoo.domain.market.MarketSession.BuyOrder;
 import me.vangoo.domain.market.MarketSession.Lot;
 import me.vangoo.domain.market.MarketSession.NegotiationView;
-import me.vangoo.domain.market.PoundMoney;
-import me.vangoo.presentation.listeners.ChatPromptService;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -35,25 +33,26 @@ import java.util.function.Consumer;
  */
 public class MarketMenu {
 
-    private static final String PRICE_HINT =
-            ChatColor.GOLD + "Напишіть ціну в чат: «<фунти> <коппети>», напр. «2 15» або «7»";
+    private static final int MIN_QTY = 1, MAX_QTY = 64;
 
     private final Plugin plugin;
     private final GatheringService gatheringService;
     private final WalletService walletService;
-    private final ChatPromptService prompts;
     private final MarketItemNamer namer;
     private final ConfirmationMenu confirm;
+    private final MoneyPicker moneyPicker;
+    private final AmountPicker amountPicker;
 
     public MarketMenu(Plugin plugin, GatheringService gatheringService,
-                      WalletService walletService, ChatPromptService prompts,
+                      WalletService walletService,
                       MarketItemNamer namer, ConfirmationMenu confirm) {
         this.plugin = plugin;
         this.gatheringService = gatheringService;
         this.walletService = walletService;
-        this.prompts = prompts;
         this.namer = namer;
         this.confirm = confirm;
+        this.moneyPicker = new MoneyPicker(plugin);
+        this.amountPicker = new AmountPicker(plugin);
     }
 
     // ── Головне меню ─────────────────────────────────────────────────────────
@@ -213,14 +212,9 @@ public class MarketMenu {
             appendLore(display, List.of("", ChatColor.GREEN + "▸ Клацніть, щоб замовити"));
             gui.addItem(new GuiItem(display, e -> {
                 e.setCancelled(true);
-                prompts.prompt(player, ChatColor.GOLD + "Напишіть кількість (1–64):", input -> {
-                    int amount = parseAmount(input);
-                    if (amount <= 0) {
-                        player.sendMessage(ChatColor.RED + "Невірна кількість.");
-                        return;
-                    }
-                    gatheringService.placeOrder(player, itemKey, amount);
-                });
+                runSynced(player, () -> amountPicker.open(player, "🕯 Кількість", MIN_QTY, MAX_QTY,
+                        amount -> gatheringService.placeOrder(player, itemKey, amount),
+                        () -> openKnownIngredients(player)));
             }));
         }
         gui.open(player);
@@ -291,17 +285,6 @@ public class MarketMenu {
 
     // ── Хелпери ──────────────────────────────────────────────────────────────
 
-    private Consumer<String> withPrice(Player player, Consumer<PoundMoney> action) {
-        return input -> {
-            PoundMoney price = ChatPromptService.parsePrice(input);
-            if (price == null || price.isZero()) {
-                player.sendMessage(ChatColor.RED + "Невірна ціна. Формат: «2 15» або «7».");
-                return;
-            }
-            action.accept(price);
-        };
-    }
-
     private ItemStack payLabel(Consideration price) {
         Material icon = price.isBarter() ? Material.PAPER : Material.GOLD_NUGGET;
         ItemStack item = new ItemStack(icon);
@@ -321,7 +304,7 @@ public class MarketMenu {
                 .create();
         gui.setItem(2, 3, new GuiItem(button(Material.GOLD_NUGGET, ChatColor.GOLD + "Монетами",
                         "Ціна у фунтах і коппетах"),
-                e -> promptMoney(player, action)));
+                e -> runSynced(player, () -> promptMoney(player, title, action))));
         gui.setItem(2, 7, new GuiItem(button(Material.CHEST, ChatColor.AQUA + "Предметом (бартер)",
                         "Попросити предмет взамін", "Опційно + доплата монетами"),
                 e -> runSynced(player, () -> openBarterPicker(player, title, action))));
@@ -330,9 +313,10 @@ public class MarketMenu {
         gui.open(player);
     }
 
-    private void promptMoney(Player player, Consumer<Consideration> action) {
-        prompts.prompt(player, PRICE_HINT,
-                withPrice(player, price -> action.accept(Consideration.money(price))));
+    private void promptMoney(Player player, String title, Consumer<Consideration> action) {
+        moneyPicker.open(player, title, false,
+                price -> action.accept(Consideration.money(price)),
+                () -> chooseConsideration(player, title, action));
     }
 
     /** Пікер предмета-вимоги (зі знайомих інгредієнтів) → кількість → опційна доплата монетами. */
@@ -354,39 +338,17 @@ public class MarketMenu {
             appendLore(display, List.of("", ChatColor.GREEN + "▸ Клацніть, щоб просити це взамін"));
             gui.addItem(new GuiItem(display, e -> {
                 e.setCancelled(true);
-                prompts.prompt(player, ChatColor.GOLD + "Скільки штук просити? (1–64):", qtyInput -> {
-                    int qty = parseAmount(qtyInput);
-                    if (qty <= 0) {
-                        player.sendMessage(ChatColor.RED + "Невірна кількість.");
-                        return;
-                    }
-                    Consideration.ItemDemand demand = new Consideration.ItemDemand(itemKey, qty);
-                    prompts.prompt(player, ChatColor.GOLD + "Доплата монетами «<ф> <к>» або «0»:",
-                            withBoot(player, boot -> action.accept(Consideration.of(demand, boot))));
-                });
+                runSynced(player, () -> amountPicker.open(player, title + " — кількість", MIN_QTY, MAX_QTY,
+                        qty -> {
+                            Consideration.ItemDemand demand = new Consideration.ItemDemand(itemKey, qty);
+                            moneyPicker.open(player, title + " — доплата", true,
+                                    boot -> action.accept(Consideration.of(demand, boot)),
+                                    () -> openBarterPicker(player, title, action));
+                        },
+                        () -> openBarterPicker(player, title, action)));
             }));
         }
         gui.open(player);
-    }
-
-    private Consumer<String> withBoot(Player player, Consumer<PoundMoney> action) {
-        return input -> {
-            PoundMoney boot = ChatPromptService.parsePrice(input);
-            if (boot == null) {
-                player.sendMessage(ChatColor.RED + "Невірна доплата. Формат: «2 15», «7» або «0».");
-                return;
-            }
-            action.accept(boot);
-        };
-    }
-
-    private int parseAmount(String input) {
-        try {
-            int amount = Integer.parseInt(input.trim());
-            return (amount >= 1 && amount <= 64) ? amount : -1;
-        } catch (NumberFormatException e) {
-            return -1;
-        }
     }
 
     private PaginatedGui paginated(String title, Runnable back) {

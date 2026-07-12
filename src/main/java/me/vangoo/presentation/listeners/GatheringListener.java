@@ -101,10 +101,7 @@ public class GatheringListener implements Listener {
         marketMenu.openMain(player);
     }
 
-    /**
-     * Анонімний чат зали. NORMAL: ChatPromptService (LOWEST, Task 15) уже забрав
-     * свої відповіді й скасував подію.
-     */
+    /** Анонімний чат зали: підміняє репліки учасників на «Незнайомець №N». */
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onChat(AsyncPlayerChatEvent event) {
         Player sender = event.getPlayer();
