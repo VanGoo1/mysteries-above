@@ -26,14 +26,14 @@ public final class CurrencyCodec {
     public static final String MODEL_COPPET = "coppet";
 
     public ItemStack createPounds(int amount) {
-        return createCoin(Material.GOLD_NUGGET, amount, COIN_POUND, MODEL_POUND,
+        return createCoin(Material.MUSIC_DISC_MELLOHI, amount, COIN_POUND, MODEL_POUND,
                 ChatColor.GOLD + "Золотий фунт",
                 ChatColor.GRAY + "Тверда валюта Потойбічних.",
                 ChatColor.DARK_GRAY + "1 фунт = 20 коппетів");
     }
 
     public ItemStack createCoppets(int amount) {
-        return createCoin(Material.COPPER_INGOT, amount, COIN_COPPET, MODEL_COPPET,
+        return createCoin(Material.MUSIC_DISC_STAL, amount, COIN_COPPET, MODEL_COPPET,
                 ChatColor.YELLOW + "Коппет",
                 ChatColor.GRAY + "Дрібна монета Потойбічних.",
                 ChatColor.DARK_GRAY + "20 коппетів = 1 фунт");
@@ -45,8 +45,19 @@ public final class CurrencyCodec {
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName(displayName);
         meta.setLore(List.of("", loreLine1, loreLine2));
+        // Диск у ванілі стакається до 1 — піднімаємо ліміт стака (гаманець стакає монети до 64).
+        meta.setMaxStackSize(64);
+        // Незнищенний: диск не має міцності, це підстраховка від будь-якого зношення.
+        meta.setUnbreakable(true);
         meta.addEnchant(Enchantment.UNBREAKING, 1, true); // лише для світіння
-        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_ATTRIBUTES);
+        meta.addItemFlags(
+                ItemFlag.HIDE_ENCHANTS,
+                ItemFlag.HIDE_ATTRIBUTES,
+                ItemFlag.HIDE_ADDITIONAL_TOOLTIP,
+                ItemFlag.HIDE_UNBREAKABLE
+        );
+        // Підготовка під текстуру ресурс-паку (рядковий custom-model-data, як у Характеристик):
+        // MODEL_POUND/MODEL_COPPET — стабільні ключі, під які підставляється будь-яка твоя текстура.
         try {
             CustomModelDataComponent cmd = meta.getCustomModelDataComponent();
             cmd.setStrings(List.of(modelKey));
@@ -55,7 +66,27 @@ public final class CurrencyCodec {
             // Старіше API без CustomModelDataComponent — предмет лишається валідним.
         }
         item.setItemMeta(meta);
-        return new NBTBuilder(item).setString(NBT_COIN, coinType).build();
+        ItemStack built = new NBTBuilder(item).setString(NBT_COIN, coinType).build();
+        tryStripJukeboxPlayable(built);
+        return built;
+    }
+
+    /**
+     * Best-effort: прибирає компонент {@code jukebox_playable}, щоб монету-диск не можна було
+     * вставити в jukebox (і програти музику). Реалізовано через Paper DataComponent API
+     * ({@code ItemStack.unsetData(DataComponentTypes.JUKEBOX_PLAYABLE)}) РЕФЛЕКСІЄЮ — бо
+     * компілюємось проти spigot-api без цього API. На Paper спрацьовує; на чистому Spigot мовчки
+     * нічого не робить. Той самий захист, що в {@code CharacteristicCodec}.
+     */
+    private void tryStripJukeboxPlayable(ItemStack item) {
+        try {
+            Class<?> typesClass = Class.forName("io.papermc.paper.datacomponent.DataComponentTypes");
+            Class<?> typeClass = Class.forName("io.papermc.paper.datacomponent.DataComponentType");
+            Object jukeboxType = typesClass.getField("JUKEBOX_PLAYABLE").get(null);
+            item.getClass().getMethod("unsetData", typeClass).invoke(item, jukeboxType);
+        } catch (Throwable ignored) {
+            // Spigot/стара версія без DataComponent API — лишаємо предмет як є.
+        }
     }
 
     public boolean isPound(ItemStack item) {

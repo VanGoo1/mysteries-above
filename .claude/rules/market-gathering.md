@@ -14,6 +14,11 @@
 - Гроші: вся математика в коппетах (1 фунт = 20 коппетів). Емісія: скупка NPC
   (`BuybackPriceTable`, конфіг `market.buyback.*`) + лут (`currency:pound` /
   `currency:coppet` у `global_loot.yml`). Сток: комісія `market.commission-rate` (згорає).
+- Предмети монет (`CurrencyCodec`): «Золотий фунт» = `MUSIC_DISC_MELLOHI`, «Коппет» =
+  `MUSIC_DISC_STAL` — самостійні пластинки, підготовані під заміну текстури РЕСУРС-ПАКОМ
+  так само, як Характеристики (рядковий custom-model-data `gold_pound` / `coppet`,
+  `setMaxStackSize(64)`, `unbreakable`, item-flags). `jukebox_playable` знято рефлексією
+  (`tryStripJukeboxPlayable`, як у `CharacteristicCodec`) — у програвальник не вставляються.
 - **Ціни скупки скейляться від послідовності для ВСІХ категорій** (9 = найслабша …
   0 = найсильніша): `ingredient-coppets-by-seq`, `recipe-book-coppets-by-seq`,
   `characteristic-coppets-by-seq` (мапи `seq→коппети`) + `overrides` (точкова ціна на
