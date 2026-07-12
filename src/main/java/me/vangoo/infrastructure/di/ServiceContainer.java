@@ -71,7 +71,6 @@ public class ServiceContainer {
     // UI and menus
     private AbilityMenu abilityMenu;
     private BossBarUtil bossBarUtil;
-    private me.vangoo.presentation.listeners.ChatPromptService chatPromptService;
     private me.vangoo.infrastructure.ui.MarketMenu marketMenu;
     private me.vangoo.infrastructure.ui.ConfirmationMenu confirmationMenu;
 
@@ -282,10 +281,9 @@ public class ServiceContainer {
                 abilityContextFactory
         );
 
-        this.chatPromptService = new me.vangoo.presentation.listeners.ChatPromptService(plugin);
         this.confirmationMenu = new me.vangoo.infrastructure.ui.ConfirmationMenu(plugin);
         this.marketMenu = new me.vangoo.infrastructure.ui.MarketMenu(
-                plugin, gatheringService, walletService, chatPromptService, marketItemNamer, confirmationMenu);
+                plugin, gatheringService, walletService, marketItemNamer, confirmationMenu);
     }
 
     private void initializeSchedulers() {
@@ -393,7 +391,6 @@ public class ServiceContainer {
 
     public AbilityMenu getAbilityMenu() { return abilityMenu; }
     public BossBarUtil getBossBarUtil() { return bossBarUtil; }
-    public me.vangoo.presentation.listeners.ChatPromptService getChatPromptService() { return chatPromptService; }
     public me.vangoo.infrastructure.ui.MarketMenu getMarketMenu() { return marketMenu; }
     public me.vangoo.infrastructure.ui.ConfirmationMenu getConfirmationMenu() { return confirmationMenu; }
 
