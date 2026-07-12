@@ -63,6 +63,7 @@ public class ServiceContainer {
     private WalletService walletService;
     private me.vangoo.infrastructure.market.MarketConfig marketConfig;
     private MarketItemClassifier marketItemClassifier;
+    private Map<String, Map<Integer, RecipeDefinition>> potionRecipeConfig;
     private GatheringSnapshotRepository gatheringSnapshotRepository;
     private me.vangoo.infrastructure.market.GatheringVenueProvider gatheringVenueProvider;
     private me.vangoo.infrastructure.market.GatheringAnonymizer gatheringAnonymizer;
@@ -181,6 +182,7 @@ public class ServiceContainer {
         // Initialize potion manager first (needed for loot service)
         PotionRecipeConfigLoader recipeConfigLoader = new PotionRecipeConfigLoader(plugin);
         Map<String, Map<Integer, RecipeDefinition>> recipeConfig = recipeConfigLoader.load();
+        this.potionRecipeConfig = recipeConfig;
         this.characteristicCodec = new CharacteristicCodec();
         this.currencyCodec = new CurrencyCodec();
         this.walletService = new WalletService(currencyCodec);
@@ -384,6 +386,7 @@ public class ServiceContainer {
     public WalletService getWalletService() { return walletService; }
     public me.vangoo.infrastructure.market.MarketConfig getMarketConfig() { return marketConfig; }
     public MarketItemClassifier getMarketItemClassifier() { return marketItemClassifier; }
+    public Map<String, Map<Integer, RecipeDefinition>> getPotionRecipeConfig() { return potionRecipeConfig; }
     public GatheringSnapshotRepository getGatheringSnapshotRepository() { return gatheringSnapshotRepository; }
     public me.vangoo.infrastructure.market.GatheringVenueProvider getGatheringVenueProvider() { return gatheringVenueProvider; }
     public me.vangoo.infrastructure.market.GatheringAnonymizer getGatheringAnonymizer() { return gatheringAnonymizer; }
