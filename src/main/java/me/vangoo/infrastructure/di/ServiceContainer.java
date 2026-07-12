@@ -113,6 +113,7 @@ public class ServiceContainer {
     private MarionetteRestorer marionetteRestorer;
     private me.vangoo.presentation.listeners.GatheringListener gatheringListener;
     private me.vangoo.presentation.listeners.OrganizerClickListener organizerClickListener;
+    private me.vangoo.presentation.listeners.CurrencyExchangeListener currencyExchangeListener;
 
     // Recipes
     private RecipeBookCraftingRecipe recipeBookCraftingRecipe;
@@ -349,6 +350,8 @@ public class ServiceContainer {
                 plugin, gatheringService, gatheringVenueProvider, marketMenu);
         this.organizerClickListener = new me.vangoo.presentation.listeners.OrganizerClickListener(
                 organizerNpcService, gatheringService, confirmationMenu);
+        this.currencyExchangeListener = new me.vangoo.presentation.listeners.CurrencyExchangeListener(
+                currencyCodec, confirmationMenu);
     }
 
     private void initializeRecipes() {
@@ -426,6 +429,7 @@ public class ServiceContainer {
     public MarionetteRestorer getMarionetteRestorer() { return marionetteRestorer; }
     public me.vangoo.presentation.listeners.GatheringListener getGatheringListener() { return gatheringListener; }
     public me.vangoo.presentation.listeners.OrganizerClickListener getOrganizerClickListener() { return organizerClickListener; }
+    public me.vangoo.presentation.listeners.CurrencyExchangeListener getCurrencyExchangeListener() { return currencyExchangeListener; }
 
     public RecipeBookCraftingRecipe getRecipeBookCraftingRecipe() { return recipeBookCraftingRecipe; }
 
