@@ -68,3 +68,26 @@ convergence:
   item-drift-speed: 0.08   # базовий горизонтальний velocity-нудж есенції-предмета
   mob-nudge-chance: 0.5    # базова P(pathfind до магніта) при strength = 1
   whisper-chance: 0.03     # рідкісний тихий ненапрямний звук притягнутому Beyonder'у
+
+# ── Церкви (Економіка 6b) ────────────────────────────────────────────
+church:
+  # Мінімальний сумарний вклад рангів: Вірянин, Служка, Диякон, Єпископ, Кардинал
+  rank-thresholds: [0, 200, 600, 1500, 3500]
+  rejoin-cooldown-days: 3
+  tasks:
+    refresh-hours: 24
+    max-active: 2
+  order:
+    brew-hours: 12
+    points-by-seq: {9: 60, 8: 90, 7: 140, 6: 200, 5: 280, 4: 380, 3: 500, 2: 650, 1: 850, 0: 1100}
+  donation:
+    ingredient-points-by-seq: {9: 2, 8: 3, 7: 5, 6: 8, 5: 12, 4: 18, 3: 26, 2: 36, 1: 48, 0: 62}
+    recipe-points-by-seq: {9: 40, 8: 55, 7: 75, 6: 100, 5: 135, 4: 180, 3: 240, 2: 310, 1: 390, 0: 480}
+    characteristic-points-by-seq: {9: 100, 8: 160, 7: 260, 6: 400, 5: 600, 4: 850, 3: 1150, 2: 1550, 1: 2000, 0: 2600}
+    points-per-coppet: 1
+  vault:
+    seed:
+      brews-per-recipe: 3
+      characteristics-per-seq: 1
+  spawn:
+    village-offset: 24
