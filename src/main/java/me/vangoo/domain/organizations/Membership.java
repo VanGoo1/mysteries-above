@@ -16,6 +16,7 @@ public class Membership {
     private long lastTaskRefreshEpochMillis;
     private ChurchTask initiationTask;      // null = не активна
     private String initiationPathway;       // шлях зілля, обраний при ініціації
+    private PotionOrder activeOrder;        // null = нема замовлення
 
     public Membership(UUID playerId, String institutionId) {
         this.playerId = playerId;
@@ -83,6 +84,12 @@ public class Membership {
         this.initiationTask = null;
         this.initiationPathway = null;
     }
+
+    public PotionOrder activeOrder() { return activeOrder; }
+
+    public void setActiveOrder(PotionOrder order) { this.activeOrder = order; }
+
+    public void clearActiveOrder() { this.activeOrder = null; }
 
     private static void requirePositive(int points) {
         if (points <= 0) {
