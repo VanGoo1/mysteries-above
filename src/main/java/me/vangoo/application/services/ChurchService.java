@@ -715,14 +715,18 @@ public class ChurchService {
     // ── Сховище церкви (правило 11) ──────────────────────────────────────────
 
     public void seedVaultIfAbsent(String institutionId) {
-        if (vaults.containsKey(institutionId)) {
+        ChurchVault existing = vaults.get(institutionId);
+        // Непорожнє сховище завжди містить неспоживні ключі "recipe:<p>:<seq>" —
+        // це надійна ознака "вже засіяно"; порожнє могло з'явитись лише через
+        // ліниву вставку в vaultOf() і мусить бути засіяне тут.
+        if (existing != null && !existing.snapshot().isEmpty()) {
             return;
         }
         Institution church = registry.byId(institutionId).orElse(null);
         if (church == null) {
             return;
         }
-        ChurchVault vault = new ChurchVault();
+        ChurchVault vault = existing != null ? existing : new ChurchVault();
         for (PathwayAccess access : church.accesses()) {
             if (pathwayManager.getPathway(access.pathwayName()) == null) {
                 continue;
