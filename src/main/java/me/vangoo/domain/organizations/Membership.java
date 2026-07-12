@@ -12,6 +12,10 @@ public class Membership {
     private final String institutionId;
     private int lifetimeContribution;
     private int balance;
+    private java.util.List<ChurchTask> tasks = new java.util.ArrayList<>();
+    private long lastTaskRefreshEpochMillis;
+    private ChurchTask initiationTask;      // null = не активна
+    private String initiationPathway;       // шлях зілля, обраний при ініціації
 
     public Membership(UUID playerId, String institutionId) {
         this.playerId = playerId;
@@ -52,6 +56,32 @@ public class Membership {
 
     public ChurchRank rank(int[] thresholds) {
         return ChurchRank.of(lifetimeContribution, thresholds);
+    }
+
+    public java.util.List<ChurchTask> tasks() { return tasks; }
+
+    public void setTasks(java.util.List<ChurchTask> tasks) {
+        this.tasks = new java.util.ArrayList<>(tasks);
+    }
+
+    public long lastTaskRefreshEpochMillis() { return lastTaskRefreshEpochMillis; }
+
+    public void setLastTaskRefreshEpochMillis(long millis) {
+        this.lastTaskRefreshEpochMillis = millis;
+    }
+
+    public ChurchTask initiationTask() { return initiationTask; }
+
+    public String initiationPathway() { return initiationPathway; }
+
+    public void setInitiation(ChurchTask task, String pathwayName) {
+        this.initiationTask = task;
+        this.initiationPathway = pathwayName;
+    }
+
+    public void clearInitiation() {
+        this.initiationTask = null;
+        this.initiationPathway = null;
     }
 
     private static void requirePositive(int points) {
