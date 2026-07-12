@@ -29,6 +29,7 @@ import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -82,6 +83,8 @@ public class GatheringService implements GatheringAbilityGuard {
     private final Map<UUID, EscrowEntry> escrow = new HashMap<>();
     private final Set<UUID> joined = new LinkedHashSet<>();
     private final Map<UUID, Location> returnLocations = new HashMap<>();
+    /** Режим гри гравця ДО збору — щоб повернути його при виході (у залі всі в ADVENTURE). */
+    private final Map<UUID, GameMode> previousGameModes = new HashMap<>();
     private final Map<UUID, List<ItemStack>> pendingReturns = new HashMap<>();
     private final Map<UUID, ParticipantHome> crashHomes = new HashMap<>();
     private final Set<UUID> bannedFromNext = new HashSet<>();
@@ -256,7 +259,9 @@ public class GatheringService implements GatheringAbilityGuard {
             session.registerParticipant(player.getUniqueId());
             openParticipantIds.add(player.getUniqueId());
             returnLocations.put(player.getUniqueId(), player.getLocation());
+            previousGameModes.put(player.getUniqueId(), player.getGameMode());
             player.teleport(venueProvider.attendeeSpawn(i, total));
+            player.setGameMode(GameMode.ADVENTURE);
             anonymizer.mask(player, session.aliasOf(player.getUniqueId()));
             frozen.add(player.getUniqueId());
         }
@@ -345,6 +350,7 @@ public class GatheringService implements GatheringAbilityGuard {
             if (player != null && player.isOnline()) {
                 anonymizer.unmask(player);
                 player.teleport(returnLocations.remove(id));
+                restoreGameMode(player);
                 player.sendMessage(PREFIX + ChatColor.GRAY
                         + "Збір завершено. Ви знову там, звідки прийшли.");
             }
@@ -654,6 +660,7 @@ public class GatheringService implements GatheringAbilityGuard {
             }
             player.teleport(home != null ? home
                     : Bukkit.getWorlds().get(0).getSpawnLocation());
+            restoreGameMode(player);
             persist();
         }
     }
@@ -728,9 +735,20 @@ public class GatheringService implements GatheringAbilityGuard {
         anonymizer.unmask(player);
         Location home = returnLocations.remove(id);
         player.teleport(home != null ? home : Bukkit.getWorlds().get(0).getSpawnLocation());
+        restoreGameMode(player);
     }
 
     // ── Приватні хелпери ─────────────────────────────────────────────────────
+
+    /**
+     * Повертає гравцю режим гри, який був до збору. Якщо запис загублено (напр.
+     * рестарт сервера під час збору) — безпечний дефолт SURVIVAL, щоб гравець не
+     * лишився замкненим у ADVENTURE.
+     */
+    private void restoreGameMode(Player player) {
+        GameMode previous = previousGameModes.remove(player.getUniqueId());
+        player.setGameMode(previous != null ? previous : GameMode.SURVIVAL);
+    }
 
     private void settle(Player buyer, Settlement s) {
         walletService.charge(buyer, s.price().money()).orElseThrow(
