@@ -70,15 +70,21 @@ The pure core of `domain` (`entities`, `services`, `spells`, `brewing`, `creatur
 
 ## Config & persistence
 
-- `src/main/resources/`: `plugin.yml` (commands + `mysteriesabove.admin` permission), `config.yml` (секції `creatures.*`, `market.*`, `convergence.*`), `custom-items.yml`, `global_loot.yml`, `creatures.yml`, `potion-recipes.yml`, `forage.yml` (форедж: цілі/донори/біомні таблиці — див. `.claude/rules/forage.md`). `plugin.yml` and `*.yml` are Maven-filtered resources; `mythic-pack/**` (see below) is not.
-  `config.yml` містить секції `creatures.*` (спавн істот), `market.*` (підпільний ринок) і `convergence.*` (приховане тяжіння Закону Конвергенції); усі читає `ServiceContainer` через `plugin.getConfig()`.
+- `src/main/resources/`: `plugin.yml` (commands + `mysteriesabove.admin` permission), `config.yml` (секції `creatures.*`, `market.*`, `convergence.*`, `church.*`), `custom-items.yml`, `global_loot.yml`, `creatures.yml`, `potion-recipes.yml`, `forage.yml` (форедж: цілі/донори/біомні таблиці — див. `.claude/rules/forage.md`). `plugin.yml` and `*.yml` are Maven-filtered resources; `mythic-pack/**` (see below) is not.
+  `config.yml` містить секції `creatures.*` (спавн істот), `market.*` (підпільний ринок), `convergence.*` (приховане тяжіння Закону Конвергенції) і `church.*` (церкви: ранги/завдання/замовлення/пожертви/сід сховищ — див. `.claude/rules/church-organizations.md`); усі читає `ServiceContainer` через `plugin.getConfig()`.
 - Mob content (stats, appearance, skills, templates) lives in the MythicMobs pack `src/main/resources/mythic-pack/`, installed to the server by `MythicPackInstaller`; spawn/loot rules stay in code (`domain.creatures` + `creatures.yml`). See `.claude/rules/mythic-creatures.md` for the full mechanism.
 - Клієнтські ассети (текстури інгредієнтів, «зачаровані» блоки фореджу) — серверний ресурспак `mysteries-resourcepack/`; датапак структур — `mysteries-datapack/`. Обидва роздаються поза Maven-збіркою (див. README ресурспаку).
 - Player state persists to `beyonders.json` in the plugin data folder, written by `BatchedBeyonderRepository` (batched save every 5 minutes + save on disable). Recipe unlocks persist to `recipe_unlocks.json`.
 - Підпільний ринок: стан зборів персиститься в `gathering-state.json`
   (`GatheringSnapshotRepository`; час наступного збору + ескроу + черга повернень);
   світ-заглушка `mysteries_gathering` створюється ідемпотентно. Див. `.claude/rules/market-gathering.md`.
-- Admin commands (all require `mysteriesabove.admin`): `/pathway`, `/mastery`, `/rampager`, `/potion`, `/custom-items`, `/recipe`, `/structure`, `/characteristic`, `/coins`. Creature testing goes through MythicMobs' own command: `/mm mobs spawn <id>`. `/gathering` — гравецька команда (join/menu), її start/stop — адмінські (перевірка права в коді).
+- Церкви (Економіка 6b): `memberships.json` (членства/кулдаун/флаг ініціації),
+  `church-sites.json` (сайти храмів + оброблені села), `churches-state.json` (сховища церков) —
+  усі пишуться після кожної мутації (`ChurchService`, каркас `GatheringSnapshotRepository`).
+  Секція `church.*` у `config.yml` (ранги/завдання/замовлення/пожертви/сід сховищ) читає
+  `ChurchConfig` з дефолтами в коді. Реєстр інституцій — код (`InstitutionRegistry`), не конфіг.
+  Див. `.claude/rules/church-organizations.md`.
+- Admin commands (all require `mysteriesabove.admin`): `/pathway`, `/mastery`, `/rampager`, `/potion`, `/custom-items`, `/recipe`, `/structure`, `/characteristic`, `/coins`. Creature testing goes through MythicMobs' own command: `/mm mobs spawn <id>`. `/gathering` — гравецька команда (join/menu), її start/stop — адмінські (перевірка права в коді). `/church` — гравецька (leave/info), bind/unbind — адмінські (перевірка права в коді).
 
 ## Maintaining docs & rules
 
