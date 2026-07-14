@@ -26,13 +26,17 @@ paths:
 3. Зареєструвати зілля в `PotionManager.initializePotions()` (колір, `IItemResolver` → `customItemService`, рецепти з `potion-recipes.yml`).
 4. Рецепти інгредієнтів — секція у `potion-recipes.yml` (читає `PotionRecipeConfigLoader`, матчить `domain.brewing.BrewMatcher`).
 
-Наразі зареєстровано 22 pathways: 6 повних (Error, Visionary, Door, Justiciar, WhiteTower,
-Fool — реалізовані здібності й рецепти варіння) + 16 stub (Sun, Tyrant, HangedMan, Hermit,
-Paragon, BlackEmperor, Darkness, Death, TwilightGiant, Mother, Moon, RedPriest, Demoness,
-Abyss, Chained, WheelOfFortune) через один спільний `me.vangoo.pathways.stub.StubPathway`/
-`StubPotions`. Stub-шляхи мають зілля й Характеристики (колір — з
-`me.vangoo.domain.PathwayBranding`, див. `.claude/rules/pathway-branding.md`), але БЕЗ
-рецептів варіння і БЕЗ здібностей — це заготовки під майбутню реалізацію.
+Наразі зареєстровано 22 pathways: 6 повних (Error, Visionary, Door, Justiciar,
+WhiteTower, Fool — реалізовані здібності й рецепти варіння) + 16 заготовок (Sun,
+Tyrant, HangedMan, Hermit, Paragon, BlackEmperor, Darkness, Death, TwilightGiant,
+Mother, Moon, RedPriest, Demoness, Abyss, Chained, WheelOfFortune). Кожна заготовка
+має ВЛАСНИЙ пакет `me.vangoo.pathways.<name>` (клас `<Name> extends Pathway` з
+порожнім `initializeAbilities()`, клас `<Name>Potions extends PathwayPotions`,
+порожній пакет `abilities` з `package-info.java`) — ідентично реальним шляхам, під
+майбутню реалізацію. Заготовки дають зілля й Характеристики (колір — з
+`me.vangoo.domain.PathwayBranding`), але БЕЗ рецептів варіння й БЕЗ здібностей.
+«Не реалізований» визначається методом `Pathway.hasAnyAbility()` (false, поки немає
+жодної здібності), а не окремим класом-стубом.
 
 ## Нова істота (полювання)
 
