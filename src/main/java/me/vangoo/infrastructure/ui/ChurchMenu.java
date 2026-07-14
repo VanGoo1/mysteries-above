@@ -105,12 +105,12 @@ public class ChurchMenu {
         JoinResult result = churchService.join(player, institutionId);
         switch (result) {
             case OK -> {
-                player.sendMessage(PREFIX + ChatColor.GREEN + "Вас прийнято до лав.");
+                player.sendMessage(PREFIX + ChatColor.GREEN + "Вас прийнято вірянином цієї церкви.");
                 openMain(player, institutionId);
             }
             case WRONG_PATHWAY -> player.sendMessage(PREFIX + ChatColor.RED + "Ваш шлях чужий цій церкві.");
             case COOLDOWN -> player.sendMessage(PREFIX + ChatColor.RED
-                    + "Ви нещодавно покинули інституцію — поверніться пізніше.");
+                    + "Ви нещодавно покинули іншу церкву — поверніться пізніше.");
             case ALREADY_MEMBER -> player.sendMessage(PREFIX + ChatColor.RED + "Ви вже служите іншій церкві.");
             case UNKNOWN_CHURCH -> player.sendMessage(PREFIX + ChatColor.RED + "Ця церква недоступна.");
         }
