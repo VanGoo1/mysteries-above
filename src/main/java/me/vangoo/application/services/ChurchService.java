@@ -26,6 +26,7 @@ import me.vangoo.infrastructure.organizations.JSONMembershipRepository.Membershi
 import me.vangoo.infrastructure.organizations.JSONMembershipRepository.OrderRecord;
 import me.vangoo.infrastructure.organizations.JSONMembershipRepository.PlayerChurchData;
 import me.vangoo.infrastructure.organizations.JSONMembershipRepository.TaskRecord;
+import me.vangoo.pathways.stub.StubPathway;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -523,7 +524,8 @@ public class ChurchService {
         }
         return pathwayNameOf(player) == null
                 && !initiationUsed.contains(id)
-                && !trialPassed.contains(id);
+                && !trialPassed.contains(id)
+                && !initiationPathwayChoices(player).isEmpty();
     }
 
     public boolean hasPassedTrial(UUID playerId) {
@@ -549,7 +551,10 @@ public class ChurchService {
         }
         return church.accesses().stream()
                 .map(PathwayAccess::pathwayName)
-                .filter(name -> pathwayManager.getPathway(name) != null)
+                .filter(name -> {
+                    Pathway pathway = pathwayManager.getPathway(name);
+                    return pathway != null && !(pathway instanceof StubPathway);
+                })
                 .toList();
     }
 

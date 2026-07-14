@@ -1,7 +1,6 @@
 package me.vangoo.presentation.listeners;
 
 import me.vangoo.application.services.ChurchDuelService;
-import me.vangoo.infrastructure.mythic.MythicCreatureGateway;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -19,11 +18,9 @@ import org.bukkit.event.player.PlayerQuitEvent;
 public class DuelListener implements Listener {
 
     private final ChurchDuelService duelService;
-    private final MythicCreatureGateway creatures;
 
-    public DuelListener(ChurchDuelService duelService, MythicCreatureGateway creatures) {
+    public DuelListener(ChurchDuelService duelService) {
         this.duelService = duelService;
-        this.creatures = creatures;
     }
 
     @EventHandler(ignoreCancelled = true)

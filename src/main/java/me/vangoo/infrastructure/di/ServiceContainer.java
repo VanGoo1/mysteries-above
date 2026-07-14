@@ -329,7 +329,7 @@ public class ServiceContainer {
         this.churchMenu.setDuelService(churchDuelService);
         this.churchDuelService.setTrialChoiceOpener(churchMenu::openTrialPathwayChoice);
         this.duelListener = new me.vangoo.presentation.listeners.DuelListener(
-                churchDuelService, mythicCreatureGateway);
+                churchDuelService);
     }
 
     private void initializeSchedulers() {
