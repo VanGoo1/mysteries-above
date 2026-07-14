@@ -1,5 +1,6 @@
 package me.vangoo.infrastructure.items;
 
+import me.vangoo.domain.PathwayBranding;
 import me.vangoo.domain.brewing.Characteristic;
 import me.vangoo.infrastructure.ui.NBTBuilder;
 import org.bukkit.ChatColor;
@@ -24,16 +25,20 @@ public final class CharacteristicCodec {
     public static final String NBT_SEQUENCE = "characteristic_sequence";
 
     /**
-     * Ключ custom-model-data для ресурс-паку (як в інгредієнтів). Один ключ → одна (анімована)
-     * текстура на всі Характеристики. За потреби можна зробити по-шляхово, додавши шлях/seq у ключ.
+     * Префікс ключа custom-model-data для ресурс-паку. Тепер ПЕР-ШЛЯХОВИЙ
+     * ({@code characteristic_<pathway>}) — кожен шлях можна тонувати окремо.
      */
-    public static final String MODEL_KEY = "characteristic";
+    public static final String MODEL_KEY_PREFIX = "characteristic_";
+
+    public static String modelKeyFor(String pathwayName) {
+        return (MODEL_KEY_PREFIX + pathwayName).toLowerCase(java.util.Locale.ROOT);
+    }
 
     /** Будує стак Характеристики для (шлях, seq). */
     public ItemStack create(String pathwayName, int sequence, int amount) {
         ItemStack item = new ItemStack(Material.MUSIC_DISC_CHIRP, amount);
         ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Характеристика: " + pathwayName
+        meta.setDisplayName(PathwayBranding.textOf(pathwayName) + "Характеристика: " + pathwayName
                 + ChatColor.GRAY + " [Seq " + sequence + "]");
         meta.setLore(List.of(
                 "",
@@ -55,7 +60,7 @@ public final class CharacteristicCodec {
         // Підготовка під текстуру ресурс-паку (рядковий custom-model-data, як у CustomItemFactory).
         try {
             CustomModelDataComponent cmd = meta.getCustomModelDataComponent();
-            cmd.setStrings(List.of(MODEL_KEY));
+            cmd.setStrings(List.of(modelKeyFor(pathwayName)));
             meta.setCustomModelDataComponent(cmd);
         } catch (Throwable ignored) {
             // Старіше API без CustomModelDataComponent — пропускаємо, предмет лишається валідним.
