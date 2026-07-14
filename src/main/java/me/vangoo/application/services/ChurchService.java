@@ -38,6 +38,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
@@ -314,7 +315,13 @@ public class ChurchService {
         for (String name : pathwayManager.getAllPathwayNames()) {
             Pathway pathway = pathwayManager.getPathway(name);
             if (pathway != null) {
-                pathwayToGroup.put(name, pathway.getGroup().name());
+                String group = pathway.getGroup().name();
+                // Церкви посилаються на шлях у CamelCase ("Darkness"), а
+                // CreatureDefinition.pathway() приходить у нижньому регістрі
+                // ("darkness" — CreatureConfigLoader лоуеркейсить). Кладемо
+                // обидві форми, щоб HUNT-кандидати резолвились у групу.
+                pathwayToGroup.put(name, group);
+                pathwayToGroup.put(name.toLowerCase(Locale.ROOT), group);
             }
         }
         List<ChurchTaskGenerator.CreatureCandidate> creatures = creatureRegistry.values().stream()
