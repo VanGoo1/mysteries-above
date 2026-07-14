@@ -61,7 +61,7 @@ class InstitutionRegistryTest {
     @Test
     void stubOnlyChurchesAreTheKnownSet() {
         // Ініціація духа (дуель, ChurchService.initiationPathwayChoices) обирає ЛИШЕ
-        // серед РЕАЛІЗОВАНИХ шляхів (шлях без зареєстрованих здібностей — ChurchService.hasAnyAbility) — інакше
+        // серед РЕАЛІЗОВАНИХ шляхів (шлях без зареєстрованих здібностей — Pathway.hasAnyAbility) — інакше
         // гравець отримав би безвихідний, назавжди непрогресуючий шлях (без здібностей
         // і без рецептів варіння). Церкви нижче присвячені канонічним шляхам, які поки
         // що є лише стабами (Sun, Darkness, Death, Tyrant, Paragon, Hermit, RedPriest,
