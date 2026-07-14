@@ -1,11 +1,9 @@
 package me.vangoo.domain.organizations;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 
@@ -53,13 +51,5 @@ public final class ChurchTaskGenerator {
             huntTurn = !huntTurn;
         }
         return tasks;
-    }
-
-    /** Ініціація: найслабша (max sequence) істота з кандидатів; порожньо, якщо кандидатів нема. */
-    public Optional<ChurchTask> generateInitiation(List<CreatureCandidate> creatures,
-                                                   Random random) {
-        return creatures.stream()
-                .max(Comparator.comparingInt(CreatureCandidate::sequence))
-                .map(c -> ChurchTask.initiationHunt(c.creatureId(), c.creatureId()));
     }
 }

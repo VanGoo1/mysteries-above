@@ -68,13 +68,4 @@ class ChurchTaskGeneratorTest {
         ChurchTask done = t.withProgress(t.required());
         assertTrue(done.isComplete());
     }
-
-    @Test
-    void initiationPicksWeakestCreatureWithSmallDemand() {
-        ChurchTask init = generator.generateInitiation(creatures, new Random(7)).orElseThrow();
-        assertEquals(ChurchTask.Type.HUNT, init.type());
-        assertEquals(2, init.required());
-        assertTrue(init.targetKey().endsWith("_9")); // найслабша (max sequence)
-        assertTrue(generator.generateInitiation(List.of(), new Random(7)).isEmpty());
-    }
 }

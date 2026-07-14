@@ -18,11 +18,6 @@ public record ChurchTask(Type type, String targetKey, String targetName,
                 (10 - sequence) * 4 * required);
     }
 
-    /** Полегшене завдання ініціації: слабка ціль, символічна нагорода. */
-    public static ChurchTask initiationHunt(String creatureId, String displayName) {
-        return new ChurchTask(Type.HUNT, creatureId, displayName, 2, 0, 5);
-    }
-
     public ChurchTask withProgress(int newProgress) {
         return new ChurchTask(type, targetKey, targetName, required,
                 Math.min(newProgress, required), rewardPoints);
