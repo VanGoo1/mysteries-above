@@ -66,4 +66,25 @@ class ChurchRepositoriesTest {
         Files.writeString(file, "{broken json");
         assertTrue(new JSONMembershipRepository(file.toString()).load().isEmpty());
     }
+
+    @Test
+    void ukrainianTaskNamePersistsAsUtf8() throws IOException {
+        Path file = dir.resolve("memberships.json");
+        var repo = new JSONMembershipRepository(file.toString());
+        var task = new JSONMembershipRepository.TaskRecord(
+                "DELIVER", "custom:night_vanilla", "Нічна ваніль", 6, 0, 8);
+        var member = new JSONMembershipRepository.MembershipRecord(
+                "church-evernight", 0, 0, 0L, List.of(task), null, null, null);
+        repo.save(new JSONMembershipRepository.Model(Map.of(
+                "11111111-1111-1111-1111-111111111111",
+                new JSONMembershipRepository.PlayerChurchData(member, 0L, false))));
+
+        // round-trip preserves the Cyrillic display name
+        var loaded = repo.load().orElseThrow();
+        assertEquals("Нічна ваніль", loaded.players()
+                .get("11111111-1111-1111-1111-111111111111").membership().tasks().get(0).targetName());
+        // and the file is written as UTF-8 regardless of the JVM default charset
+        String utf8 = new String(Files.readAllBytes(file), java.nio.charset.StandardCharsets.UTF_8);
+        assertTrue(utf8.contains("Нічна ваніль"), "targetName must be persisted as UTF-8");
+    }
 }

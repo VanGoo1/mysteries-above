@@ -5,9 +5,13 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,7 +50,8 @@ public class JSONMembershipRepository {
         if (!file.exists() || file.length() == 0) {
             return Optional.empty();
         }
-        try (FileReader reader = new FileReader(file)) {
+        try (Reader reader = new InputStreamReader(
+                Files.newInputStream(file.toPath()), StandardCharsets.UTF_8)) {
             return Optional.ofNullable(gson.fromJson(reader, Model.class));
         } catch (IOException | JsonSyntaxException e) {
             LOGGER.warning("Failed to load memberships: " + e.getMessage());
@@ -55,7 +60,8 @@ public class JSONMembershipRepository {
     }
 
     public void save(Model model) {
-        try (FileWriter writer = new FileWriter(file)) {
+        try (Writer writer = new OutputStreamWriter(
+                Files.newOutputStream(file.toPath()), StandardCharsets.UTF_8)) {
             gson.toJson(model, writer);
         } catch (IOException e) {
             LOGGER.warning("Failed to save memberships: " + e.getMessage());
