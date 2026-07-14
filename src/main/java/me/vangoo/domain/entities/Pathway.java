@@ -43,6 +43,11 @@ public abstract class Pathway {
         return sequenceAbilities.getOrDefault(sequence, new ArrayList<>());
     }
 
+    /** true, якщо бодай одна послідовність має зареєстровану здібність. */
+    public boolean hasAnyAbility() {
+        return sequenceAbilities.values().stream().anyMatch(list -> !list.isEmpty());
+    }
+
     public PathwayGroup getGroup() {
         return group;
     }
