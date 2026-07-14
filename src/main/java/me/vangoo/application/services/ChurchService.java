@@ -26,7 +26,6 @@ import me.vangoo.infrastructure.organizations.JSONMembershipRepository.Membershi
 import me.vangoo.infrastructure.organizations.JSONMembershipRepository.OrderRecord;
 import me.vangoo.infrastructure.organizations.JSONMembershipRepository.PlayerChurchData;
 import me.vangoo.infrastructure.organizations.JSONMembershipRepository.TaskRecord;
-import me.vangoo.pathways.stub.StubPathway;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -560,7 +559,7 @@ public class ChurchService {
                 .map(PathwayAccess::pathwayName)
                 .filter(name -> {
                     Pathway pathway = pathwayManager.getPathway(name);
-                    return pathway != null && !(pathway instanceof StubPathway);
+                    return pathway != null && pathway.hasAnyAbility();
                 })
                 .toList();
     }
