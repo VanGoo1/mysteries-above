@@ -127,9 +127,7 @@ public class ChurchMenu {
         gui.setItem(2, 6, new GuiItem(button(Material.GOLD_INGOT, ChatColor.GOLD + "Пожертви",
                         "Пожертвувати предмет або монети"),
                 e -> runSynced(player, () -> openDonations(player, institutionId))));
-        gui.setItem(2, 8, new GuiItem(button(Material.NAME_TAG, ChatColor.YELLOW + "Мій ранг",
-                        "Ранг, вклад і баланс"),
-                e -> runSynced(player, () -> openRank(player, institutionId))));
+        gui.setItem(2, 8, new GuiItem(rankTile(player), e -> e.setCancelled(true)));
         gui.setItem(3, 5, new GuiItem(button(Material.BARRIER, ChatColor.RED + "Покинути церкву"),
                 e -> runSynced(player, () -> confirmLeave(player))));
         gui.open(player);
@@ -143,6 +141,29 @@ public class ChurchMenu {
                 player.sendMessage(PREFIX + ChatColor.YELLOW + "Ви покинули церкву.");
             }
         });
+    }
+
+    /** Плитка рангу з усією інформацією в lore (некликабельна, все видно на наведенні). */
+    private ItemStack rankTile(Player player) {
+        Membership membership = churchService.membershipOf(player.getUniqueId()).orElse(null);
+        if (membership == null) {
+            return button(Material.NAME_TAG, ChatColor.YELLOW + "Мій ранг", "Ви не член церкви");
+        }
+        int[] thresholds = churchService.rankThresholds();
+        ChurchRank rank = membership.rank(thresholds);
+        ChurchRank[] ranks = ChurchRank.values();
+        int nextIndex = rank.ordinal() + 1;
+        String nextLine;
+        if (nextIndex < ranks.length) {
+            int needed = Math.max(0, thresholds[nextIndex] - membership.lifetimeContribution());
+            nextLine = "До " + ranks[nextIndex].displayName() + ": ще " + needed + " очок вкладу";
+        } else {
+            nextLine = "Це найвищий ранг.";
+        }
+        return button(Material.NAME_TAG, ChatColor.YELLOW + "Ранг: " + rank.displayName(),
+                "Вклад за весь час: " + membership.lifetimeContribution() + " очок",
+                "Баланс: " + membership.balance() + " очок",
+                nextLine);
     }
 
     // ── 3. Завдання ──────────────────────────────────────────────────────────
@@ -306,7 +327,7 @@ public class ChurchMenu {
                 .rows(3)
                 .disableAllInteractions()
                 .create();
-        gui.setItem(2, 3, new GuiItem(button(Material.CHEST, ChatColor.GREEN + "Пожертвувати предмет у руці",
+        gui.setItem(2, 4, new GuiItem(button(Material.CHEST, ChatColor.GREEN + "Пожертвувати предмет у руці",
                         "Інгредієнт, книга рецептів чи Характеристика"),
                 e -> runSynced(player, () -> {
                     int points = churchService.donateFromHand(player);
@@ -330,38 +351,6 @@ public class ChurchMenu {
                             openMain(player, institutionId);
                         },
                         () -> openDonations(player, institutionId)))));
-        gui.setItem(3, 5, new GuiItem(button(Material.BARRIER, ChatColor.GRAY + "◄ Назад"),
-                e -> runSynced(player, () -> openMain(player, institutionId))));
-        gui.open(player);
-    }
-
-    // ── 6. Мій ранг ──────────────────────────────────────────────────────────
-
-    private void openRank(Player player, String institutionId) {
-        Gui gui = Gui.gui()
-                .title(Component.text("⛪ Мій ранг").color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD))
-                .rows(3)
-                .disableAllInteractions()
-                .create();
-        Membership membership = churchService.membershipOf(player.getUniqueId()).orElse(null);
-        if (membership != null) {
-            int[] thresholds = churchService.rankThresholds();
-            ChurchRank rank = membership.rank(thresholds);
-            ChurchRank[] ranks = ChurchRank.values();
-            int nextIndex = rank.ordinal() + 1;
-            String nextLine;
-            if (nextIndex < ranks.length) {
-                int needed = Math.max(0, thresholds[nextIndex] - membership.lifetimeContribution());
-                nextLine = ChatColor.GRAY + "До " + ranks[nextIndex].displayName() + ": ще " + needed + " очок вкладу";
-            } else {
-                nextLine = ChatColor.GRAY + "Це найвищий ранг.";
-            }
-            ItemStack display = button(Material.NAME_TAG, ChatColor.YELLOW + "Ранг: " + rank.displayName(),
-                    ChatColor.GOLD + "Вклад за весь час: " + membership.lifetimeContribution() + " очок",
-                    ChatColor.AQUA + "Баланс: " + membership.balance() + " очок",
-                    nextLine);
-            gui.setItem(2, 5, new GuiItem(display, e -> e.setCancelled(true)));
-        }
         gui.setItem(3, 5, new GuiItem(button(Material.BARRIER, ChatColor.GRAY + "◄ Назад"),
                 e -> runSynced(player, () -> openMain(player, institutionId))));
         gui.open(player);
