@@ -182,6 +182,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
         // Despawn church priest NPCs (not persisted by Citizens; respawned from church-sites.json on next enable)
         if (services != null) {
+            services.getChurchDuelService().endAll();
             services.getChurchPriestService().despawnAll();
         }
 
@@ -279,6 +280,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 services.getChurchSiteService(), services.getChurchConfig().spawnVillageOffset());
         getServer().getPluginManager().registerEvents(churchListener, this);
         getServer().getPluginManager().registerEvents(churchSpawnListener, this);
+        getServer().getPluginManager().registerEvents(services.getDuelListener(), this);
     }
 
     private void registerCommands() {

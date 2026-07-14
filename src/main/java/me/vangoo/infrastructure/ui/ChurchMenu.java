@@ -3,6 +3,7 @@ package me.vangoo.infrastructure.ui;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
 import dev.triumphteam.gui.guis.PaginatedGui;
+import me.vangoo.application.services.ChurchDuelService;
 import me.vangoo.application.services.ChurchService;
 import me.vangoo.application.services.ChurchService.JoinResult;
 import me.vangoo.application.services.ChurchService.OrderQuote;
@@ -44,6 +45,7 @@ public class ChurchMenu {
     private final MarketItemNamer namer;
     private final ConfirmationMenu confirm;
     private final MoneyPicker moneyPicker;
+    private ChurchDuelService duelService;
 
     public ChurchMenu(Plugin plugin, ChurchService churchService, MarketItemNamer namer, ConfirmationMenu confirm) {
         this.plugin = plugin;
@@ -51,6 +53,10 @@ public class ChurchMenu {
         this.namer = namer;
         this.confirm = confirm;
         this.moneyPicker = new MoneyPicker(plugin);
+    }
+
+    public void setDuelService(ChurchDuelService duelService) {
+        this.duelService = duelService;
     }
 
     // ── Роутер ───────────────────────────────────────────────────────────────
@@ -200,44 +206,44 @@ public class ChurchMenu {
             }
         }
 
-        if (churchService.canStartInitiation(player)) {
-            gui.setItem(6, 9, new GuiItem(button(Material.NETHER_STAR, ChatColor.LIGHT_PURPLE + "[Ініціація]",
-                            "Обрати шлях і почати випробування"),
-                    e -> runSynced(player, () -> openInitiationPathwayChoice(player, institutionId))));
-        } else {
-            Membership membership = churchService.membershipOf(player.getUniqueId()).orElse(null);
-            ChurchTask initTask = membership == null ? null : membership.initiationTask();
-            if (initTask != null && initTask.isComplete()) {
-                gui.setItem(6, 9, new GuiItem(button(Material.POTION, ChatColor.GREEN + "[Отримати зілля]",
-                                "Забрати зілля ініціації"),
-                        e -> runSynced(player, () -> {
-                            if (!churchService.claimInitiation(player)) {
-                                player.sendMessage(PREFIX + ChatColor.RED + "Зілля ще недоступне.");
-                            }
-                            openTasks(player, institutionId);
-                        })));
-            }
+        if (churchService.canStartTrial(player)) {
+            gui.setItem(6, 9, new GuiItem(button(Material.NETHER_STAR, ChatColor.LIGHT_PURPLE + "[Випробування шляху]",
+                            "Дуель зі створінням 9 послідовності.",
+                            ChatColor.RED + "Смертельно небезпечно — добре підготуйтесь!",
+                            "Перемога відкриє вибір шляху домену."),
+                    e -> runSynced(player, () -> confirmTrial(player, institutionId))));
+        } else if (churchService.hasPassedTrial(player.getUniqueId())) {
+            gui.setItem(6, 9, new GuiItem(button(Material.NETHER_STAR, ChatColor.GREEN + "[Обрати шлях]",
+                            "Ви здолали випробування — оберіть свій шлях"),
+                    e -> runSynced(player, () -> openTrialPathwayChoice(player, institutionId))));
         }
         gui.open(player);
     }
 
-    private void openInitiationPathwayChoice(Player player, String institutionId) {
-        List<String> choices = churchService.initiationPathwayChoices(player);
-        if (choices.isEmpty()) {
-            player.sendMessage(PREFIX + ChatColor.RED + "Церква не пропонує ініціацію без шляху.");
-            runSynced(player, () -> openTasks(player, institutionId));
+    private void confirmTrial(Player player, String institutionId) {
+        if (duelService == null) {
             return;
         }
-        openPathwayPicker(player, "⛪ Оберіть шлях ініціації", choices,
-                () -> openTasks(player, institutionId),
+        ItemStack give = button(Material.IRON_SWORD, ChatColor.RED + "Ви ризикуєте життям");
+        ItemStack get = button(Material.NETHER_STAR, ChatColor.GREEN + "Право обрати шлях домену");
+        confirm.open(player, give, get, "⛪ Випробування шляху",
+                () -> duelService.startTrial(player, institutionId));
+    }
+
+    /** Пікер шляху домену після перемоги в дуелі. */
+    public void openTrialPathwayChoice(Player player, String institutionId) {
+        List<String> choices = churchService.initiationPathwayChoices(player);
+        if (choices.isEmpty()) {
+            player.sendMessage(PREFIX + ChatColor.RED + "Церква не пропонує шляхів для вибору.");
+            return;
+        }
+        openPathwayPicker(player, "⛪ Оберіть свій шлях", choices,
+                () -> openMain(player, institutionId),
                 pathwayName -> {
-                    if (!churchService.startInitiation(player, pathwayName)) {
-                        player.sendMessage(PREFIX + ChatColor.RED + "Не вдалося почати ініціацію.");
-                    } else {
-                        player.sendMessage(PREFIX + ChatColor.GREEN
-                                + "Випробування розпочато. Полюйте на вказану ціль.");
+                    if (!churchService.completeTrialInitiation(player, pathwayName)) {
+                        player.sendMessage(PREFIX + ChatColor.RED + "Не вдалося завершити ініціацію.");
                     }
-                    openTasks(player, institutionId);
+                    openMain(player, institutionId);
                 });
     }
 
@@ -251,17 +257,11 @@ public class ChurchMenu {
         }
         if (churchService.pathwayNameOf(player) != null) {
             showOrderQuote(player, institutionId, null);
-            return;
-        }
-        List<String> choices = churchService.initiationPathwayChoices(player);
-        if (choices.isEmpty()) {
-            player.sendMessage(PREFIX + ChatColor.RED + "Церква не пропонує зілля без шляху.");
+        } else {
+            player.sendMessage(PREFIX + ChatColor.RED
+                    + "Спершу оберіть шлях через Випробування шляху.");
             runSynced(player, () -> openMain(player, institutionId));
-            return;
         }
-        openPathwayPicker(player, "⛪ Оберіть шлях зілля", choices,
-                () -> openMain(player, institutionId),
-                pathwayName -> showOrderQuote(player, institutionId, pathwayName));
     }
 
     private void openOrderStatus(Player player, String institutionId, PotionOrder order) {

@@ -92,6 +92,9 @@ public class ServiceContainer {
     private me.vangoo.infrastructure.citizens.ChurchPriestService churchPriestService;
     private me.vangoo.infrastructure.organizations.ChurchStructurePlacer churchStructurePlacer;
     private me.vangoo.infrastructure.organizations.ChurchSiteService churchSiteService;
+    private me.vangoo.infrastructure.organizations.DuelArenaProvider duelArenaProvider;
+    private ChurchDuelService churchDuelService;
+    private me.vangoo.presentation.listeners.DuelListener duelListener;
 
     // Schedulers
     private PassiveAbilityScheduler passiveAbilityScheduler;
@@ -319,6 +322,14 @@ public class ServiceContainer {
                 plugin, gatheringService, walletService, marketItemNamer, confirmationMenu);
         this.churchMenu = new me.vangoo.infrastructure.ui.ChurchMenu(
                 plugin, churchService, marketItemNamer, confirmationMenu);
+
+        this.duelArenaProvider = new me.vangoo.infrastructure.organizations.DuelArenaProvider();
+        this.churchDuelService = new ChurchDuelService(plugin, churchService, pathwayManager,
+                mythicCreatureGateway, duelArenaProvider, creatureRegistry);
+        this.churchMenu.setDuelService(churchDuelService);
+        this.churchDuelService.setTrialChoiceOpener(churchMenu::openTrialPathwayChoice);
+        this.duelListener = new me.vangoo.presentation.listeners.DuelListener(
+                churchDuelService, mythicCreatureGateway);
     }
 
     private void initializeSchedulers() {
@@ -441,6 +452,8 @@ public class ServiceContainer {
     public ChurchService getChurchService() { return churchService; }
     public me.vangoo.infrastructure.citizens.ChurchPriestService getChurchPriestService() { return churchPriestService; }
     public me.vangoo.infrastructure.organizations.ChurchSiteService getChurchSiteService() { return churchSiteService; }
+    public ChurchDuelService getChurchDuelService() { return churchDuelService; }
+    public me.vangoo.presentation.listeners.DuelListener getDuelListener() { return duelListener; }
 
     public PassiveAbilityScheduler getPassiveAbilityScheduler() { return passiveAbilityScheduler; }
     public MasteryRegenerationScheduler getMasteryRegenerationScheduler() { return masteryRegenerationScheduler; }
