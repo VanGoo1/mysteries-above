@@ -17,11 +17,16 @@ public abstract class Pathway {
     private final String name;
 
     public Pathway(PathwayGroup group, List<String> sequenceNames) {
-        name = this.getClass().getSimpleName();
+        this(group, null, sequenceNames);
+    }
+
+    public Pathway(PathwayGroup group, String explicitName, List<String> sequenceNames) {
+        String resolved = explicitName != null ? explicitName : this.getClass().getSimpleName();
         if (sequenceNames.size() != SEQUENCE_COUNT) {
-            throw new IllegalArgumentException("Pathway " + name + " must declare " + SEQUENCE_COUNT
+            throw new IllegalArgumentException("Pathway " + resolved + " must declare " + SEQUENCE_COUNT
                     + " sequence names (0-9), got " + sequenceNames.size());
         }
+        this.name = resolved;
         this.group = group;
         this.sequenceNames = sequenceNames;
         sequenceAbilities = new HashMap<>();
