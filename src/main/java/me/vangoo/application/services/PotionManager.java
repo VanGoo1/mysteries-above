@@ -1,10 +1,12 @@
 package me.vangoo.application.services;
 
+import me.vangoo.domain.PathwayBranding;
 import me.vangoo.domain.PathwayPotions;
 import me.vangoo.pathways.door.DoorPotions;
 import me.vangoo.pathways.error.ErrorPotions;
 import me.vangoo.pathways.fool.FoolPotions;
 import me.vangoo.pathways.justiciar.JusticiarPotions;
+import me.vangoo.pathways.stub.StubPotions;
 import me.vangoo.pathways.visionary.VisionaryPotions;
 import me.vangoo.pathways.whitetower.WhiteTowerPotions;
 import me.vangoo.domain.valueobjects.Sequence;
@@ -17,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Application Service: Manages pathway potions
@@ -42,45 +45,57 @@ public class PotionManager {
                                    Map<String, Map<Integer, RecipeDefinition>> recipeConfig) {
         potions.add(new ErrorPotions(
                 pathwayManager.getPathway("Error"),
-                Color.fromRGB(26, 0, 181),
+                PathwayBranding.liquidOf("Error"),
                 customItemService,
                 recipeConfig.getOrDefault("Error", Map.of())
         ));
 
         potions.add(new VisionaryPotions(
                 pathwayManager.getPathway("Visionary"),
-                Color.fromRGB(128, 128, 128),
+                PathwayBranding.liquidOf("Visionary"),
                 customItemService,
                 recipeConfig.getOrDefault("Visionary", Map.of())
         ));
 
         potions.add(new DoorPotions(
                 pathwayManager.getPathway("Door"),
-                Color.fromRGB(0, 0, 115),
+                PathwayBranding.liquidOf("Door"),
                 customItemService,
                 recipeConfig.getOrDefault("Door", Map.of())
         ));
 
         potions.add(new JusticiarPotions(
                 pathwayManager.getPathway("Justiciar"),
-                Color.fromRGB(255, 255, 0),
+                PathwayBranding.liquidOf("Justiciar"),
                 customItemService,
                 recipeConfig.getOrDefault("Justiciar", Map.of())
         ));
 
         potions.add(new WhiteTowerPotions(
                 pathwayManager.getPathway("WhiteTower"),
-                Color.fromRGB(255, 0, 50),
+                PathwayBranding.liquidOf("WhiteTower"),
                 customItemService,
                 recipeConfig.getOrDefault("WhiteTower", Map.of())
         ));
 
         potions.add(new FoolPotions(
                 pathwayManager.getPathway("Fool"),
-                Color.fromRGB(128, 0, 128),
+                PathwayBranding.liquidOf("Fool"),
                 customItemService,
                 recipeConfig.getOrDefault("Fool", Map.of())
         ));
+
+        Set<String> stubs = Set.of(
+                "Sun", "Tyrant", "HangedMan", "Hermit", "Paragon", "BlackEmperor",
+                "Darkness", "Death", "TwilightGiant", "Mother", "Moon",
+                "RedPriest", "Demoness", "Abyss", "Chained", "WheelOfFortune");
+        for (String name : stubs) {
+            potions.add(new StubPotions(
+                    pathwayManager.getPathway(name),
+                    PathwayBranding.liquidOf(name),
+                    PathwayBranding.textOf(name),
+                    customItemService));
+        }
     }
 
     public Optional<PathwayPotions> getPotionsPathway(String pathwayName) {
