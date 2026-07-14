@@ -26,7 +26,13 @@ paths:
 3. Зареєструвати зілля в `PotionManager.initializePotions()` (колір, `IItemResolver` → `customItemService`, рецепти з `potion-recipes.yml`).
 4. Рецепти інгредієнтів — секція у `potion-recipes.yml` (читає `PotionRecipeConfigLoader`, матчить `domain.brewing.BrewMatcher`).
 
-Наразі зареєстровано 6 pathways: Error, Visionary, Door, Justiciar, WhiteTower, Fool.
+Наразі зареєстровано 22 pathways: 6 повних (Error, Visionary, Door, Justiciar, WhiteTower,
+Fool — реалізовані здібності й рецепти варіння) + 16 stub (Sun, Tyrant, HangedMan, Hermit,
+Paragon, BlackEmperor, Darkness, Death, TwilightGiant, Mother, Moon, RedPriest, Demoness,
+Abyss, Chained, WheelOfFortune) через один спільний `me.vangoo.pathways.stub.StubPathway`/
+`StubPotions`. Stub-шляхи мають зілля й Характеристики (колір — з
+`me.vangoo.domain.PathwayBranding`, див. `.claude/rules/pathway-branding.md`), але БЕЗ
+рецептів варіння і БЕЗ здібностей — це заготовки під майбутню реалізацію.
 
 ## Нова істота (полювання)
 

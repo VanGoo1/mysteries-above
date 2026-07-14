@@ -19,13 +19,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Layered / hexagonal design under `me.vangoo`. Dependencies point inward toward `domain`:
 
 - **`domain`** — pure business logic, no Bukkit scheduling/DI. Key pieces:
-  - `entities`: `Beyonder` (the player aggregate), `Pathway` (abstract — concrete pathways live in the behavior layer below), `PathwayGroup`.
+  - `entities`: `Beyonder` (the player aggregate), `Pathway` (abstract — concrete pathways live in the behavior layer below; also has a 3-arg explicit-name constructor for stubs), `PathwayGroup` (9 constants: `LordOfMysteries`, `DemonOfKnowledge`, `GodAlmighty`, `TheAnarchy`, `EternalDarkness`, `GoddessOfOrigin`, `CalamityOfDestruction`, `FatherOfDevils`, `KeyOfLight`).
+  - `PathwayBranding` (`me.vangoo.domain`): the color registry for all 22 pathways — `of`/`liquidOf`/`textOf`/`NAMES` map each pathway name to a `Color`+`ChatColor` pair (gray fallback for unknown/null). See `.claude/rules/pathway-branding.md`.
   - `abilities.core`: `Ability` base class + `ActiveAbility` / `PermanentPassiveAbility` / `ToggleablePassiveAbility`, `AbilityType`, `AbilityResult`, and the `IAbilityContext` interface.
   - `abilities.context`: fine-grained context interfaces (`ICooldownContext`, `IMessagingContext`, `ITargetContext`, `IGlowingContext`, `IRampageContext`, `ISchedulingContext`, `IUIContext`, etc.) — abilities depend on these, not on concrete Bukkit services.
   - `spells`: pure spell data/rules (`SpellRecipe`, `SpellBlueprint`, `SpellCodec`) — no Bukkit; the reference example of the rules-vs-effects seam.
   - `valueobjects`: immutables like `Sequence`, `Spirituality`, `Mastery`, `SanityLoss`, `AbilityResult`, `SequenceBasedSuccessChance`.
 - **`me.vangoo.pathways`** — the **ability behavior / effect layer** (its own layer, **not** part of `domain`). Bukkit is allowed here; it depends inward on `domain` and is orchestrated by `application` (`PathwayManager` wires it). This is the home of the **effect** half of the rules-vs-effects seam. Contents:
-  - one package per pathway (`error`, `door`, `justiciar`, `visionary`, `whitetower`, `fool`), each with an `abilities` subpackage, a concrete `Pathway` subclass that builds its per-sequence ability lists in `initializeAbilities()`, and a `*Potions` class.
+  - one package per pathway (`error`, `door`, `justiciar`, `visionary`, `whitetower`, `fool`), each with an `abilities` subpackage, a concrete `Pathway` subclass that builds its per-sequence ability lists in `initializeAbilities()`, and a `*Potions` class. These 6 are the only pathways with real abilities and brew recipes; the other 16 registered pathways are no-op stubs sharing one `me.vangoo.pathways.stub.StubPathway`/`StubPotions` pair (potions/Characteristics exist and are colored via `PathwayBranding`, but no abilities and no brew recipes) — `PathwayManager.initializePathways()` wires all 22 (6 real + 16 via a `registerStub(name, group, sequenceNames)` helper).
   - **thin abilities** — `Ability` subclasses holding only glue (name/cost/cooldown + delegation); balance math is pulled out to `domain` VOs.
   - **runners** — stateless Bukkit choreography for one-shot effects (e.g. `SpellEffectRunner`).
   - **sessions** — live, self-ticking objects for stateful effects (e.g. `JurisdictionSession`, `DiviningRodSession`, `DreamVisionSession`).
@@ -78,12 +79,16 @@ The pure core of `domain` (`entities`, `services`, `spells`, `brewing`, `creatur
 - Підпільний ринок: стан зборів персиститься в `gathering-state.json`
   (`GatheringSnapshotRepository`; час наступного збору + ескроу + черга повернень);
   світ-заглушка `mysteries_gathering` створюється ідемпотентно. Див. `.claude/rules/market-gathering.md`.
-- Церкви (Економіка 6b): `memberships.json` (членства/кулдаун/флаг ініціації),
-  `church-sites.json` (сайти храмів + оброблені села), `churches-state.json` (сховища церков) —
-  усі пишуться після кожної мутації (`ChurchService`, каркас `GatheringSnapshotRepository`).
-  Секція `church.*` у `config.yml` (ранги/завдання/замовлення/пожертви/сід сховищ) читає
-  `ChurchConfig` з дефолтами в коді. Реєстр інституцій — код (`InstitutionRegistry`), не конфіг.
-  Див. `.claude/rules/church-organizations.md`.
+- Церкви (Економіка 6b): `memberships.json` (членства/кулдаун/флаг пройденої дуелі-без-шляху
+  `trialPassed` [тимчасовий] + флаг «вже колись ініційований» `initiationUsed` [постійний]),
+  `church-sites.json` (сайти храмів + оброблені села), `churches-state.json`
+  (сховища церков) — усі пишуться після кожної мутації (`ChurchService`, каркас
+  `GatheringSnapshotRepository`). Секція `church.*` у `config.yml` (ранги/завдання/замовлення/
+  пожертви/сід сховищ) читає `ChurchConfig` з дефолтами в коді. Реєстр інституцій — код
+  (`InstitutionRegistry`), не конфіг. Ініціація — дуель проти Seq-9 істоти чужого домену
+  в окремому void-світі `mysteries_duel` (`ChurchDuelService`/`DuelSession`/
+  `DuelArenaProvider`/`DuelBriefing`/`DuelListener`), а не сховищний обряд. Див.
+  `.claude/rules/church-organizations.md`.
 - Admin commands (all require `mysteriesabove.admin`): `/pathway`, `/mastery`, `/rampager`, `/potion`, `/custom-items`, `/recipe`, `/structure`, `/characteristic`, `/coins`. Creature testing goes through MythicMobs' own command: `/mm mobs spawn <id>`. `/gathering` — гравецька команда (join/menu), її start/stop — адмінські (перевірка права в коді). `/church` — гравецька (leave/info), bind/unbind — адмінські (перевірка права в коді).
 
 ## Maintaining docs & rules
