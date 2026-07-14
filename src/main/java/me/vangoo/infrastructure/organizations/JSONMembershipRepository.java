@@ -35,7 +35,8 @@ public class JSONMembershipRepository {
 
     public record PlayerChurchData(MembershipRecord membership,
                                    long rejoinCooldownUntilEpochMillis,
-                                   boolean initiationUsed) {}
+                                   boolean initiationUsed,
+                                   boolean trialPassed) {}
 
     public record Model(Map<String, PlayerChurchData> players) {}
 

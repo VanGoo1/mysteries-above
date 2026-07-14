@@ -83,6 +83,7 @@ public class ChurchService {
     private final Map<UUID, Membership> memberships = new HashMap<>();
     private final Map<UUID, Long> rejoinCooldownUntil = new HashMap<>();
     private final Set<UUID> initiationUsed = new HashSet<>();
+    private final Set<UUID> trialPassed = new HashSet<>();
     private final Map<String, ChurchVault> vaults = new HashMap<>();
     private final Set<UUID> notifiedReadyOrders = new HashSet<>();
 
@@ -128,6 +129,9 @@ public class ChurchService {
                 rejoinCooldownUntil.put(playerId, data.rejoinCooldownUntilEpochMillis());
                 if (data.initiationUsed()) {
                     initiationUsed.add(playerId);
+                }
+                if (data.trialPassed()) {
+                    trialPassed.add(playerId);
                 }
                 MembershipRecord mr = data.membership();
                 if (mr == null) {
@@ -180,6 +184,7 @@ public class ChurchService {
         allIds.addAll(memberships.keySet());
         allIds.addAll(rejoinCooldownUntil.keySet());
         allIds.addAll(initiationUsed);
+        allIds.addAll(trialPassed);
         Map<String, PlayerChurchData> players = new HashMap<>();
         for (UUID id : allIds) {
             Membership membership = memberships.get(id);
@@ -190,7 +195,8 @@ public class ChurchService {
                     toRecord(membership.initiationTask()), membership.initiationPathway(),
                     toRecord(membership.activeOrder()));
             players.put(id.toString(), new PlayerChurchData(mr,
-                    rejoinCooldownUntil.getOrDefault(id, 0L), initiationUsed.contains(id)));
+                    rejoinCooldownUntil.getOrDefault(id, 0L), initiationUsed.contains(id),
+                    trialPassed.contains(id)));
         }
         membershipRepository.save(new JSONMembershipRepository.Model(players));
     }
@@ -430,18 +436,6 @@ public class ChurchService {
             membership.setTasks(updatedTasks);
         }
 
-        ChurchTask initTask = membership.initiationTask();
-        if (initTask != null && initTask.type() == ChurchTask.Type.HUNT
-                && initTask.targetKey().equals(creatureId)) {
-            ChurchTask updated = initTask.withProgress(initTask.progress() + 1);
-            membership.setInitiation(updated, membership.initiationPathway());
-            changed = true;
-            if (updated.isComplete()) {
-                killer.sendMessage(PREFIX + ChatColor.GREEN
-                        + "Випробування ініціації виконано! Зверніться до священика по зілля.");
-            }
-        }
-
         if (changed) {
             persist();
         }
@@ -519,9 +513,9 @@ public class ChurchService {
         return points;
     }
 
-    // ── Ініціація без шляху (правило 9) ──────────────────────────────────────
+    // ── Випробування шляху (дуель) ───────────────────────────────────────────
 
-    public boolean canStartInitiation(Player player) {
+    public boolean canStartTrial(Player player) {
         UUID id = player.getUniqueId();
         Membership membership = memberships.get(id);
         if (membership == null) {
@@ -529,7 +523,19 @@ public class ChurchService {
         }
         return pathwayNameOf(player) == null
                 && !initiationUsed.contains(id)
-                && membership.initiationTask() == null;
+                && !trialPassed.contains(id);
+    }
+
+    public boolean hasPassedTrial(UUID playerId) {
+        return trialPassed.contains(playerId);
+    }
+
+    /** Позначає, що гравець здолав дуель і може обрати шлях домену. */
+    public void markTrialPassed(UUID playerId) {
+        if (memberships.containsKey(playerId)) {
+            trialPassed.add(playerId);
+            persist();
+        }
     }
 
     public List<String> initiationPathwayChoices(Player player) {
@@ -547,58 +553,25 @@ public class ChurchService {
                 .toList();
     }
 
-    public boolean startInitiation(Player player, String pathwayName) {
-        if (!canStartInitiation(player) || !initiationPathwayChoices(player).contains(pathwayName)) {
-            return false;
-        }
-        List<ChurchTaskGenerator.CreatureCandidate> allCreatures = creatureRegistry.values().stream()
-                .map(c -> new ChurchTaskGenerator.CreatureCandidate(c.id(), c.pathway(), c.sequence()))
-                .toList();
-        Optional<ChurchTask> task = taskGenerator.generateInitiation(allCreatures, random);
-        if (task.isEmpty()) {
-            return false;
-        }
-        Membership membership = memberships.get(player.getUniqueId());
-        membership.setInitiation(task.get(), pathwayName);
-        persist();
-        return true;
-    }
-
-    public boolean claimInitiation(Player player) {
+    /** Після перемоги в дуелі: видає Seq-9 зілля обраного шляху + знання рецепту. */
+    public boolean completeTrialInitiation(Player player, String pathwayName) {
         UUID id = player.getUniqueId();
         Membership membership = memberships.get(id);
-        if (membership == null) {
+        if (membership == null || !trialPassed.contains(id)) {
             return false;
         }
-        ChurchTask task = membership.initiationTask();
-        if (task == null || !task.isComplete()) {
+        if (pathwayNameOf(player) != null || initiationUsed.contains(id)) {
             return false;
         }
-        String pathwayName = membership.initiationPathway();
-        ChurchVault vault = vaultOf(membership.institutionId());
-        if (!vault.hasRecipeKnowledge(pathwayName, 9)) {
-            player.sendMessage(PREFIX + ChatColor.RED + "У сховищі церкви бракує знання рецепту.");
+        if (!initiationPathwayChoices(player).contains(pathwayName)) {
             return false;
         }
-        BrewRecipe recipe = brewRecipeFor(pathwayName, 9);
-        if (recipe == null) {
-            player.sendMessage(PREFIX + ChatColor.RED + "Рецепт для цього шляху недоступний.");
-            return false;
-        }
-        Map<String, Integer> missing = vault.missingFor(recipe);
-        if (!missing.isEmpty()) {
-            player.sendMessage(PREFIX + ChatColor.RED + "У сховищі церкви бракує: " + describeMissing(missing));
-            return false;
-        }
-        vault.consumeFor(recipe);
-
         giveItem(player, potionManager.createPotionItem(pathwayName, Sequence.of(9)));
         recipeUnlockService.unlockRecipe(id, pathwayName, 9);
         initiationUsed.add(id);
-        membership.clearInitiation();
+        trialPassed.remove(id);
         persist();
-        persistState();
-        player.sendMessage(PREFIX + ChatColor.GREEN + "Вітаємо з ініціацією! Ви ступили на шлях " + pathwayName + ".");
+        player.sendMessage(PREFIX + ChatColor.GREEN + "Вітаємо! Ви ступили на шлях " + pathwayName + ".");
         return true;
     }
 
@@ -628,12 +601,7 @@ public class ChurchService {
             }
             effectivePathway = pathwayName;
         } else {
-            if (pathwayNameForPathless == null
-                    || !initiationPathwayChoices(player).contains(pathwayNameForPathless)) {
-                return Optional.empty();
-            }
-            effectivePathway = pathwayNameForPathless;
-            targetSeq = 9;
+            return Optional.empty();
         }
         Optional<PathwayAccess> accessOpt = church.accessFor(effectivePathway);
         if (accessOpt.isEmpty()) {

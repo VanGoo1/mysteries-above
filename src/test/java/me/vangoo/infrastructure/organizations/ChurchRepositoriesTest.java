@@ -28,9 +28,9 @@ class ChurchRepositoriesTest {
                 new JSONMembershipRepository.OrderRecord("Door", 9, 999L, 60));
         var model = new JSONMembershipRepository.Model(Map.of(
                 "11111111-1111-1111-1111-111111111111",
-                new JSONMembershipRepository.PlayerChurchData(member, 0L, true),
+                new JSONMembershipRepository.PlayerChurchData(member, 0L, true, false),
                 "22222222-2222-2222-2222-222222222222",
-                new JSONMembershipRepository.PlayerChurchData(null, 777L, false)));
+                new JSONMembershipRepository.PlayerChurchData(null, 777L, false, false)));
         repo.save(model);
 
         var loaded = repo.load().orElseThrow();
@@ -77,7 +77,7 @@ class ChurchRepositoriesTest {
                 "church-evernight", 0, 0, 0L, List.of(task), null, null, null);
         repo.save(new JSONMembershipRepository.Model(Map.of(
                 "11111111-1111-1111-1111-111111111111",
-                new JSONMembershipRepository.PlayerChurchData(member, 0L, false))));
+                new JSONMembershipRepository.PlayerChurchData(member, 0L, false, false))));
 
         // round-trip preserves the Cyrillic display name
         var loaded = repo.load().orElseThrow();
