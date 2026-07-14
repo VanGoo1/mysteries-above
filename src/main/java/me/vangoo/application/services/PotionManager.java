@@ -5,9 +5,24 @@ import me.vangoo.pathways.door.DoorPotions;
 import me.vangoo.pathways.error.ErrorPotions;
 import me.vangoo.pathways.fool.FoolPotions;
 import me.vangoo.pathways.justiciar.JusticiarPotions;
-import me.vangoo.pathways.stub.StubPotions;
 import me.vangoo.pathways.visionary.VisionaryPotions;
 import me.vangoo.pathways.whitetower.WhiteTowerPotions;
+import me.vangoo.pathways.sun.SunPotions;
+import me.vangoo.pathways.tyrant.TyrantPotions;
+import me.vangoo.pathways.hangedman.HangedManPotions;
+import me.vangoo.pathways.hermit.HermitPotions;
+import me.vangoo.pathways.paragon.ParagonPotions;
+import me.vangoo.pathways.blackemperor.BlackEmperorPotions;
+import me.vangoo.pathways.darkness.DarknessPotions;
+import me.vangoo.pathways.death.DeathPotions;
+import me.vangoo.pathways.twilightgiant.TwilightGiantPotions;
+import me.vangoo.pathways.mother.MotherPotions;
+import me.vangoo.pathways.moon.MoonPotions;
+import me.vangoo.pathways.redpriest.RedPriestPotions;
+import me.vangoo.pathways.demoness.DemonessPotions;
+import me.vangoo.pathways.abyss.AbyssPotions;
+import me.vangoo.pathways.chained.ChainedPotions;
+import me.vangoo.pathways.wheeloffortune.WheelOfFortunePotions;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.infrastructure.items.PotionItemFactory;
 import org.bukkit.inventory.ItemStack;
@@ -17,7 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Application Service: Manages pathway potions
@@ -77,15 +91,85 @@ public class PotionManager {
                 recipeConfig.getOrDefault("Fool", Map.of())
         ));
 
-        Set<String> stubs = Set.of(
-                "Sun", "Tyrant", "HangedMan", "Hermit", "Paragon", "BlackEmperor",
-                "Darkness", "Death", "TwilightGiant", "Mother", "Moon",
-                "RedPriest", "Demoness", "Abyss", "Chained", "WheelOfFortune");
-        for (String name : stubs) {
-            potions.add(new StubPotions(
-                    pathwayManager.getPathway(name),
-                    customItemService));
-        }
+        potions.add(new SunPotions(
+                pathwayManager.getPathway("Sun"),
+                customItemService,
+                recipeConfig.getOrDefault("Sun", Map.of())));
+
+        potions.add(new TyrantPotions(
+                pathwayManager.getPathway("Tyrant"),
+                customItemService,
+                recipeConfig.getOrDefault("Tyrant", Map.of())));
+
+        potions.add(new HangedManPotions(
+                pathwayManager.getPathway("HangedMan"),
+                customItemService,
+                recipeConfig.getOrDefault("HangedMan", Map.of())));
+
+        potions.add(new HermitPotions(
+                pathwayManager.getPathway("Hermit"),
+                customItemService,
+                recipeConfig.getOrDefault("Hermit", Map.of())));
+
+        potions.add(new ParagonPotions(
+                pathwayManager.getPathway("Paragon"),
+                customItemService,
+                recipeConfig.getOrDefault("Paragon", Map.of())));
+
+        potions.add(new BlackEmperorPotions(
+                pathwayManager.getPathway("BlackEmperor"),
+                customItemService,
+                recipeConfig.getOrDefault("BlackEmperor", Map.of())));
+
+        potions.add(new DarknessPotions(
+                pathwayManager.getPathway("Darkness"),
+                customItemService,
+                recipeConfig.getOrDefault("Darkness", Map.of())));
+
+        potions.add(new DeathPotions(
+                pathwayManager.getPathway("Death"),
+                customItemService,
+                recipeConfig.getOrDefault("Death", Map.of())));
+
+        potions.add(new TwilightGiantPotions(
+                pathwayManager.getPathway("TwilightGiant"),
+                customItemService,
+                recipeConfig.getOrDefault("TwilightGiant", Map.of())));
+
+        potions.add(new MotherPotions(
+                pathwayManager.getPathway("Mother"),
+                customItemService,
+                recipeConfig.getOrDefault("Mother", Map.of())));
+
+        potions.add(new MoonPotions(
+                pathwayManager.getPathway("Moon"),
+                customItemService,
+                recipeConfig.getOrDefault("Moon", Map.of())));
+
+        potions.add(new RedPriestPotions(
+                pathwayManager.getPathway("RedPriest"),
+                customItemService,
+                recipeConfig.getOrDefault("RedPriest", Map.of())));
+
+        potions.add(new DemonessPotions(
+                pathwayManager.getPathway("Demoness"),
+                customItemService,
+                recipeConfig.getOrDefault("Demoness", Map.of())));
+
+        potions.add(new AbyssPotions(
+                pathwayManager.getPathway("Abyss"),
+                customItemService,
+                recipeConfig.getOrDefault("Abyss", Map.of())));
+
+        potions.add(new ChainedPotions(
+                pathwayManager.getPathway("Chained"),
+                customItemService,
+                recipeConfig.getOrDefault("Chained", Map.of())));
+
+        potions.add(new WheelOfFortunePotions(
+                pathwayManager.getPathway("WheelOfFortune"),
+                customItemService,
+                recipeConfig.getOrDefault("WheelOfFortune", Map.of())));
     }
 
     public Optional<PathwayPotions> getPotionsPathway(String pathwayName) {
