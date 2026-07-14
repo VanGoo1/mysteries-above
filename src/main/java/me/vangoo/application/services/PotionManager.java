@@ -1,6 +1,5 @@
 package me.vangoo.application.services;
 
-import me.vangoo.domain.PathwayBranding;
 import me.vangoo.domain.PathwayPotions;
 import me.vangoo.pathways.door.DoorPotions;
 import me.vangoo.pathways.error.ErrorPotions;
@@ -11,7 +10,6 @@ import me.vangoo.pathways.visionary.VisionaryPotions;
 import me.vangoo.pathways.whitetower.WhiteTowerPotions;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.infrastructure.items.PotionItemFactory;
-import org.bukkit.*;
 import org.bukkit.inventory.ItemStack;
 
 import me.vangoo.domain.brewing.RecipeDefinition;
@@ -45,42 +43,36 @@ public class PotionManager {
                                    Map<String, Map<Integer, RecipeDefinition>> recipeConfig) {
         potions.add(new ErrorPotions(
                 pathwayManager.getPathway("Error"),
-                PathwayBranding.liquidOf("Error"),
                 customItemService,
                 recipeConfig.getOrDefault("Error", Map.of())
         ));
 
         potions.add(new VisionaryPotions(
                 pathwayManager.getPathway("Visionary"),
-                PathwayBranding.liquidOf("Visionary"),
                 customItemService,
                 recipeConfig.getOrDefault("Visionary", Map.of())
         ));
 
         potions.add(new DoorPotions(
                 pathwayManager.getPathway("Door"),
-                PathwayBranding.liquidOf("Door"),
                 customItemService,
                 recipeConfig.getOrDefault("Door", Map.of())
         ));
 
         potions.add(new JusticiarPotions(
                 pathwayManager.getPathway("Justiciar"),
-                PathwayBranding.liquidOf("Justiciar"),
                 customItemService,
                 recipeConfig.getOrDefault("Justiciar", Map.of())
         ));
 
         potions.add(new WhiteTowerPotions(
                 pathwayManager.getPathway("WhiteTower"),
-                PathwayBranding.liquidOf("WhiteTower"),
                 customItemService,
                 recipeConfig.getOrDefault("WhiteTower", Map.of())
         ));
 
         potions.add(new FoolPotions(
                 pathwayManager.getPathway("Fool"),
-                PathwayBranding.liquidOf("Fool"),
                 customItemService,
                 recipeConfig.getOrDefault("Fool", Map.of())
         ));
@@ -92,8 +84,6 @@ public class PotionManager {
         for (String name : stubs) {
             potions.add(new StubPotions(
                     pathwayManager.getPathway(name),
-                    PathwayBranding.liquidOf(name),
-                    PathwayBranding.textOf(name),
                     customItemService));
         }
     }

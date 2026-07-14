@@ -24,10 +24,11 @@ public abstract class PathwayPotions {
     private final List<String> description;
     protected final IItemResolver itemResolver;
 
-    public PathwayPotions(Pathway pathway, Color potionColor, ChatColor nameColor, List<String> description, IItemResolver itemResolver) {
-        this.potionColor = potionColor;
+    public PathwayPotions(Pathway pathway, List<String> description, IItemResolver itemResolver) {
+        PathwayBranding.Branding branding = PathwayBranding.of(pathway.getName());
         this.pathway = pathway;
-        this.nameColor = nameColor;
+        this.potionColor = branding.liquid();
+        this.nameColor = branding.text();
         this.description = description;
         this.itemResolver = itemResolver;
         this.ingredientsPerSequence = new HashMap<>();
