@@ -35,10 +35,13 @@
   `canConsumePotion`/`advance()`: НЕ заводь окрему константу чи ключ конфігу для «100%».
   `placeOrder` ходить через `quoteOrder`, тож гейти захищають і його.
 - **Історія замовлень** — `Membership.orderedPotionKeys` (ключ `"<шлях>:<посл.>"`,
-  `hasOrdered`/`markOrdered`). Пишеться в `placeOrder` (не в `claimOrder`: скасувати
-  замовлення не можна, тож ранній запис не лишає дірки). Живе на `Membership`, тому
-  `leave()` стирає її разом із членством — пам'ять свідомо В МЕЖАХ ЧЛЕНСТВА, а не
-  постійна per-гравець, як `initiationUsed`.
+  `hasOrdered`/`markOrdered`). Пише її САМ `setActiveOrder` — інваріант «активне замовлення
+  завжди означає, що зілля вже замовляли» структурний, а не обов'язок викликача, тож
+  `placeOrder` не кличе `markOrdered` окремо (і новий викликач не зможе про це забути).
+  Запис на момент замовлення, а не видачі: скасувати замовлення не можна, тож ранній запис
+  не лишає дірки. Живе на `Membership`, тому `leave()` стирає її разом із членством —
+  пам'ять свідомо В МЕЖАХ ЧЛЕНСТВА, а не постійна per-гравець, як `initiationUsed`.
+  Пінить `MembershipTest.activeOrderAlwaysLandsInOrderHistory`.
 - **Сховище** — `domain.organizations.ChurchVault` (itemKey → кількість). Книги рецептів
   (`recipe:<p>:<seq>`) — знання-ГЕЙТ, НЕ споживаються. Варіння списує класичні інгредієнти,
   інакше Характеристику-заміну (`consumeFor` атомарний; юніт-тест `ChurchVaultTest`).
@@ -96,6 +99,10 @@
   — історія замовлень; у файлах, записаних до появи поля, це `null`, і
   `Membership.restoreOrderedPotionKeys(null)` читає його як порожню історію (пінить
   `ChurchRepositoriesTest.membershipWithoutOrderedPotionsFieldLoadsAsEmptyHistory`).
+  Порожня історія + активне замовлення в такому файлі НЕ дають фори: інваріант
+  `setActiveOrder` досіває ключ, а `restoreOrderedPotionKeys` перезатверджує його після
+  свого `clear()`, тож гідрація не залежить від порядку двох викликів (пінить
+  `MembershipTest.legacyHydrationSeedsHistoryFromActiveOrderInEitherOrder`).
   `church-sites.json` (`ChurchSiteRepository`) — сайти + оброблені села.
   `churches-state.json` (`ChurchStateRepository`) — сховища (institutionId → itemKey → кількість).
   Усі — Gson-каркас `GatheringSnapshotRepository` (corrupt/missing → `Optional.empty()`).

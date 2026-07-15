@@ -709,11 +709,9 @@ public class ChurchService {
         if (recipe == null || !vault.consumeFor(recipe)) {
             return false;
         }
+        // setActiveOrder сам вписує зілля в історію замовлень (інваріант Membership).
         membership.setActiveOrder(new PotionOrder(quote.pathwayName(), quote.sequence(),
                 System.currentTimeMillis() + config.orderBrewHours() * 3_600_000L, quote.price()));
-        // Пишемо на момент замовлення, а не видачі: скасувати замовлення не можна,
-        // тож ранній запис не лишає дірки для повторного замовлення.
-        membership.markOrdered(quote.pathwayName(), quote.sequence());
         persist();
         persistState();
         return true;

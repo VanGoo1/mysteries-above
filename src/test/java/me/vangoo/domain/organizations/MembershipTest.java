@@ -55,6 +55,34 @@ class MembershipTest {
     }
 
     @Test
+    void activeOrderAlwaysLandsInOrderHistory() {
+        Membership m = new Membership(UUID.randomUUID(), "church-evernight");
+        m.setActiveOrder(new PotionOrder("Door", 8, 999L, 60));
+        assertTrue(m.hasOrdered("Door", 8)); // викликач не мусить пам'ятати про markOrdered
+
+        m.clearActiveOrder(); // забрав зілля — історія лишається
+        assertTrue(m.hasOrdered("Door", 8));
+    }
+
+    /**
+     * memberships.json до появи історії: поле null, але зілля вже вариться. Гідрація не
+     * сміє дати фору — незабране зілля не дає права замовити те саме вдруге. Порядок
+     * двох викликів гідрації не має значення.
+     */
+    @Test
+    void legacyHydrationSeedsHistoryFromActiveOrderInEitherOrder() {
+        Membership restoreLast = new Membership(UUID.randomUUID(), "church-evernight");
+        restoreLast.setActiveOrder(new PotionOrder("Door", 8, 999L, 60));
+        restoreLast.restoreOrderedPotionKeys(null);
+        assertTrue(restoreLast.hasOrdered("Door", 8));
+
+        Membership restoreFirst = new Membership(UUID.randomUUID(), "church-evernight");
+        restoreFirst.restoreOrderedPotionKeys(null);
+        restoreFirst.setActiveOrder(new PotionOrder("Door", 8, 999L, 60));
+        assertTrue(restoreFirst.hasOrdered("Door", 8));
+    }
+
+    @Test
     void orderedPotionKeysAreNotMutableFromOutside() {
         Membership m = new Membership(UUID.randomUUID(), "church-evernight");
         m.markOrdered("Door", 8);

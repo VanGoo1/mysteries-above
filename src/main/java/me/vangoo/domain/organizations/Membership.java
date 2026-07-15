@@ -90,7 +90,19 @@ public class Membership {
 
     public PotionOrder activeOrder() { return activeOrder; }
 
-    public void setActiveOrder(PotionOrder order) { this.activeOrder = order; }
+    /**
+     * Активне замовлення завжди означає, що це зілля вже замовляли, тож воно ЗАВЖДИ
+     * потрапляє в історію — інваріант структурний, а не обов'язок викликача. Пишемо на
+     * момент замовлення, а не видачі: скасувати замовлення не можна, тож ранній запис не
+     * лишає дірки. Побічно це лікує memberships.json, записаний до появи історії: у ньому
+     * незабране зілля не дає права замовити те саме вдруге.
+     */
+    public void setActiveOrder(PotionOrder order) {
+        this.activeOrder = order;
+        if (order != null) {
+            markOrdered(order.pathwayName(), order.sequence());
+        }
+    }
 
     public void clearActiveOrder() { this.activeOrder = null; }
 
@@ -116,6 +128,11 @@ public class Membership {
         orderedPotionKeys.clear();
         if (keys != null) {
             orderedPotionKeys.addAll(keys);
+        }
+        // Перезатверджуємо інваріант після clear(), щоб гідрація не залежала від того,
+        // чи setActiveOrder викликали до, чи після цього методу.
+        if (activeOrder != null) {
+            markOrdered(activeOrder.pathwayName(), activeOrder.sequence());
         }
     }
 
