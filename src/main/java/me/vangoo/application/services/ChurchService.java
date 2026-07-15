@@ -835,6 +835,10 @@ public class ChurchService {
         return config.rankThresholds();
     }
 
+    public int rejoinCooldownDays() {
+        return config.rejoinCooldownDays();
+    }
+
     public InstitutionRegistry registry() {
         return registry;
     }

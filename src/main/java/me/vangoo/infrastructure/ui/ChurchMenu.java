@@ -103,9 +103,37 @@ public class ChurchMenu {
         } else {
             gui.setItem(2, 6, new GuiItem(button(Material.EMERALD, ChatColor.GREEN + "[Вступити]",
                             "Приєднатися до церкви"),
-                    e -> runSynced(player, () -> attemptJoin(player, institutionId))));
+                    e -> runSynced(player, () -> confirmJoin(player, church))));
         }
         gui.open(player);
+    }
+
+    /**
+     * Вступ теж вимагає свідомої згоди: обітниця однобічна (вийти можна тільки назавжди),
+     * тож гравець мусить побачити ціну ДО кліку, а не дізнатись про неї на виході.
+     */
+    private void confirmJoin(Player player, Institution church) {
+        boolean pathless = churchService.pathwayNameOf(player) == null;
+        ItemStack give = button(Material.PAPER, ChatColor.RED + "Вірність " + church.displayName(),
+                ChatColor.RED + "Служити двом церквам не можна",
+                ChatColor.DARK_RED + "" + ChatColor.BOLD + "Вийти можна лише НАЗАВЖДИ:",
+                ChatColor.RED + "назад ця церква вас не прийме ніколи",
+                ChatColor.RED + "вклад і ранг згорять при виході",
+                ChatColor.GRAY + "а вступ в іншу церкву відкриється лише через "
+                        + churchService.rejoinCooldownDays() + " дн.");
+        List<String> gains = new ArrayList<>(List.of(
+                ChatColor.GREEN + "Завдання: полювання й доставки → очки вкладу",
+                ChatColor.GREEN + "Ранги від вкладу: Вірянин → Кардинал",
+                ChatColor.GREEN + "Замовлення зілля наступної послідовності",
+                ChatColor.GRAY + "потрібні 100% засвоєння та очки вкладу",
+                ChatColor.GRAY + "кожне зілля — лише один раз"));
+        if (pathless) {
+            gains.add(ChatColor.AQUA + "Випробування шляху: дуель за право обрати шлях");
+        }
+        ItemStack get = button(Material.BOOK, ChatColor.GREEN + "Служіння",
+                gains.toArray(String[]::new));
+        confirm.open(player, give, get, "⛪ Прийняти обітницю?",
+                () -> attemptJoin(player, church.id()));
     }
 
     private void attemptJoin(Player player, String institutionId) {
