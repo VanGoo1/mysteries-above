@@ -29,9 +29,10 @@ class ChurchRepositoriesTest {
                 List.of("Door:9", "Door:8"));
         var model = new JSONMembershipRepository.Model(Map.of(
                 "11111111-1111-1111-1111-111111111111",
-                new JSONMembershipRepository.PlayerChurchData(member, 0L, true, false),
+                new JSONMembershipRepository.PlayerChurchData(member, 0L, true, false, List.of()),
                 "22222222-2222-2222-2222-222222222222",
-                new JSONMembershipRepository.PlayerChurchData(null, 777L, false, false)));
+                new JSONMembershipRepository.PlayerChurchData(null, 777L, false, false,
+                        List.of("church-fool"))));
         repo.save(model);
 
         var loaded = repo.load().orElseThrow();
@@ -42,12 +43,15 @@ class ChurchRepositoriesTest {
         assertEquals(9, p1.membership().activeOrder().sequence());
         assertEquals(List.of("Door:9", "Door:8"), p1.membership().orderedPotions());
         assertTrue(p1.initiationUsed());
-        assertNull(loaded.players().get("22222222-2222-2222-2222-222222222222").membership());
+        var p2 = loaded.players().get("22222222-2222-2222-2222-222222222222");
+        assertNull(p2.membership());
+        // зречення переживає відсутність членства — гравець без Membership, але з закритими дверима
+        assertEquals(List.of("church-fool"), p2.abandonedChurches());
     }
 
-    /** memberships.json, записаний до появи orderedPotions, мусить читатись як порожня історія. */
+    /** Живий memberships.json, записаний до появи orderedPotions/abandonedChurches. */
     @Test
-    void membershipWithoutOrderedPotionsFieldLoadsAsEmptyHistory() throws IOException {
+    void membershipFromBeforeNewFieldsLoadsWithThemAbsent() throws IOException {
         Path file = dir.resolve("memberships.json");
         Files.writeString(file, """
                 {"players":{"11111111-1111-1111-1111-111111111111":{
@@ -56,8 +60,10 @@ class ChurchRepositoriesTest {
                   "rejoinCooldownUntilEpochMillis":0,"initiationUsed":false,"trialPassed":false}}}
                 """);
         var loaded = new JSONMembershipRepository(file.toString()).load().orElseThrow();
-        var membership = loaded.players().get("11111111-1111-1111-1111-111111111111").membership();
+        var player = loaded.players().get("11111111-1111-1111-1111-111111111111");
+        var membership = player.membership();
         assertNull(membership.orderedPotions());
+        assertNull(player.abandonedChurches()); // так само нове поле — старий файл його не має
 
         // а Membership.restoreOrderedPotionKeys(null) перетворює цей null на порожню історію
         var restored = new me.vangoo.domain.organizations.Membership(
@@ -100,7 +106,7 @@ class ChurchRepositoriesTest {
                 "church-evernight", 0, 0, 0L, List.of(task), null, null, null, List.of());
         repo.save(new JSONMembershipRepository.Model(Map.of(
                 "11111111-1111-1111-1111-111111111111",
-                new JSONMembershipRepository.PlayerChurchData(member, 0L, false, false))));
+                new JSONMembershipRepository.PlayerChurchData(member, 0L, false, false, List.of()))));
 
         // round-trip preserves the Cyrillic display name
         var loaded = repo.load().orElseThrow();

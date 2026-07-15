@@ -81,7 +81,8 @@ The pure core of `domain` (`entities`, `services`, `spells`, `brewing`, `creatur
   світ-заглушка `mysteries_gathering` створюється ідемпотентно. Див. `.claude/rules/market-gathering.md`.
 - Церкви (Економіка 6b): `memberships.json` (членства/кулдаун/флаг пройденої дуелі-без-шляху
   `trialPassed` [тимчасовий] + флаг «вже колись ініційований» `initiationUsed` [постійний]
-  + історія замовлених зілль `orderedPotions` [в межах членства]),
+  + історія замовлених зілль `orderedPotions` [в межах членства] + назавжди зречені церкви
+  `abandonedChurches` [вихід із церкви необоротний]),
   `church-sites.json` (сайти храмів + оброблені села), `churches-state.json`
   (сховища церков) — усі пишуться після кожної мутації (`ChurchService`, каркас
   `GatheringSnapshotRepository`). Секція `church.*` у `config.yml` (ранги/завдання/замовлення/
@@ -90,7 +91,8 @@ The pure core of `domain` (`entities`, `services`, `spells`, `brewing`, `creatur
   в окремому void-світі `mysteries_duel` (`ChurchDuelService`/`DuelSession`/
   `DuelArenaProvider`/`DuelBriefing`/`DuelListener`), а не сховищний обряд. Див.
   `.claude/rules/church-organizations.md`.
-- Admin commands (all require `mysteriesabove.admin`): `/pathway`, `/mastery`, `/rampager`, `/potion`, `/custom-items`, `/recipe`, `/structure`, `/characteristic`, `/coins`. Creature testing goes through MythicMobs' own command: `/mm mobs spawn <id>`. `/gathering` — гравецька команда (join/menu), її start/stop — адмінські (перевірка права в коді). `/church` — гравецька (leave/info), bind/unbind — адмінські (перевірка права в коді).
+- Admin commands (all require `mysteriesabove.admin`): `/pathway`, `/mastery`, `/rampager`, `/potion`, `/custom-items`, `/recipe`, `/structure`, `/characteristic`, `/coins`. Creature testing goes through MythicMobs' own command: `/mm mobs spawn <id>`. `/gathering` — гравецька команда (join/menu), її start/stop — адмінські (перевірка права в коді). `/church` — гравецька (leave/info; `leave` двокрокова — діє лише `/church leave confirm`, бо
+вихід із церкви необоротний), bind/unbind — адмінські (перевірка права в коді).
 
 ## Maintaining docs & rules
 

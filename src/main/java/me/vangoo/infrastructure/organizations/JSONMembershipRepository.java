@@ -34,10 +34,12 @@ public class JSONMembershipRepository {
                                    TaskRecord initiationTask, String initiationPathway,
                                    OrderRecord activeOrder, List<String> orderedPotions) {}
 
+    /** abandonedChurches — id церков, які гравець покинув назавжди; null у старих файлах. */
     public record PlayerChurchData(MembershipRecord membership,
                                    long rejoinCooldownUntilEpochMillis,
                                    boolean initiationUsed,
-                                   boolean trialPassed) {}
+                                   boolean trialPassed,
+                                   List<String> abandonedChurches) {}
 
     public record Model(Map<String, PlayerChurchData> players) {}
 

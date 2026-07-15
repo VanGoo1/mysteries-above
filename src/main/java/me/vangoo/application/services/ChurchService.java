@@ -58,7 +58,7 @@ public class ChurchService {
 
     public static final int RAMPAGER_REWARD_POINTS = 150;
 
-    public enum JoinResult { OK, ALREADY_MEMBER, WRONG_PATHWAY, COOLDOWN, UNKNOWN_CHURCH }
+    public enum JoinResult { OK, ALREADY_MEMBER, WRONG_PATHWAY, COOLDOWN, UNKNOWN_CHURCH, ABANDONED }
 
     public record OrderQuote(String pathwayName, int sequence, int price, Map<String, Integer> missing) {}
 
@@ -116,6 +116,9 @@ public class ChurchService {
     private final Map<UUID, Long> rejoinCooldownUntil = new HashMap<>();
     private final Set<UUID> initiationUsed = new HashSet<>();
     private final Set<UUID> trialPassed = new HashSet<>();
+    // Зречені церкви: гравець → id церков, які він покинув. Назавжди — двері зачиняються
+    // за спиною, тож стерта разом із членством історія замовлень не стає лазівкою.
+    private final Map<UUID, Set<String>> abandonedChurches = new HashMap<>();
     private final Map<String, ChurchVault> vaults = new HashMap<>();
     private final Set<UUID> notifiedReadyOrders = new HashSet<>();
 
@@ -165,6 +168,10 @@ public class ChurchService {
                 if (data.trialPassed()) {
                     trialPassed.add(playerId);
                 }
+                // null у файлах, записаних до появи поля → гравець нічого не зрікався.
+                if (data.abandonedChurches() != null && !data.abandonedChurches().isEmpty()) {
+                    abandonedChurches.put(playerId, new HashSet<>(data.abandonedChurches()));
+                }
                 MembershipRecord mr = data.membership();
                 if (mr == null) {
                     return;
@@ -212,13 +219,14 @@ public class ChurchService {
         }
     }
 
-    /** Записує усі членства (+ кулдаун вступу + флаг ініціації) у memberships.json. */
+    /** Записує усі членства (+ кулдаун вступу + флаг ініціації + зречення) у memberships.json. */
     private void persist() {
         Set<UUID> allIds = new HashSet<>();
         allIds.addAll(memberships.keySet());
         allIds.addAll(rejoinCooldownUntil.keySet());
         allIds.addAll(initiationUsed);
         allIds.addAll(trialPassed);
+        allIds.addAll(abandonedChurches.keySet());
         Map<String, PlayerChurchData> players = new HashMap<>();
         for (UUID id : allIds) {
             Membership membership = memberships.get(id);
@@ -230,7 +238,8 @@ public class ChurchService {
                     toRecord(membership.activeOrder()), List.copyOf(membership.orderedPotionKeys()));
             players.put(id.toString(), new PlayerChurchData(mr,
                     rejoinCooldownUntil.getOrDefault(id, 0L), initiationUsed.contains(id),
-                    trialPassed.contains(id)));
+                    trialPassed.contains(id),
+                    List.copyOf(abandonedChurches.getOrDefault(id, Set.of()))));
         }
         membershipRepository.save(new JSONMembershipRepository.Model(players));
     }
@@ -279,6 +288,9 @@ public class ChurchService {
         if (memberships.containsKey(id)) {
             return JoinResult.ALREADY_MEMBER;
         }
+        if (hasAbandoned(id, institutionId)) {
+            return JoinResult.ABANDONED;
+        }
         Long cooldownUntil = rejoinCooldownUntil.get(id);
         if (cooldownUntil != null && System.currentTimeMillis() < cooldownUntil) {
             return JoinResult.COOLDOWN;
@@ -303,10 +315,18 @@ public class ChurchService {
         if (removed == null) {
             return false;
         }
+        // Двері зачиняються назавжди: у цю церкву гравець більше не вступить. Саме тому
+        // стерта разом із членством історія замовлень не є лазівкою — повернутись нікуди.
+        abandonedChurches.computeIfAbsent(id, k -> new HashSet<>()).add(removed.institutionId());
         rejoinCooldownUntil.put(id, System.currentTimeMillis() + config.rejoinCooldownDays() * 86_400_000L);
         notifiedReadyOrders.remove(id);
         persist();
         return true;
+    }
+
+    /** Чи зрікся гравець цієї церкви (вступ у неї закритий назавжди). */
+    public boolean hasAbandoned(UUID playerId, String institutionId) {
+        return abandonedChurches.getOrDefault(playerId, Set.of()).contains(institutionId);
     }
 
     public Optional<Membership> membershipOf(UUID playerId) {

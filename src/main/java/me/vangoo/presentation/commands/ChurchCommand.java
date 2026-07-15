@@ -43,7 +43,7 @@ public class ChurchCommand implements CommandExecutor, TabCompleter {
         switch (args[0].toLowerCase()) {
             case "bind" -> handleBind(sender, args);
             case "unbind" -> handleUnbind(sender);
-            case "leave" -> handleLeave(sender);
+            case "leave" -> handleLeave(sender, args);
             case "info" -> handleInfo(sender);
             default -> sender.sendMessage(PREFIX + ChatColor.GRAY
                     + "Використання: /church <bind|unbind|leave|info>");
@@ -91,15 +91,29 @@ public class ChurchCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    private void handleLeave(CommandSender sender) {
+    /** Вихід необоротний, тож команда двокрокова: перший виклик лише попереджає. */
+    private void handleLeave(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(PREFIX + ChatColor.RED + "Ця команда доступна лише гравцям.");
             return;
         }
-        if (churchService.leave(player)) {
-            player.sendMessage(PREFIX + ChatColor.YELLOW + "Ви покинули церкву. Вклад згорів.");
-        } else {
+        Optional<Institution> churchOpt = churchService.churchOf(player.getUniqueId());
+        if (churchOpt.isEmpty()) {
             player.sendMessage(PREFIX + ChatColor.RED + "Ви не член церкви.");
+            return;
+        }
+        String churchName = churchOpt.get().displayName();
+        if (args.length < 2 || !args[1].equalsIgnoreCase("confirm")) {
+            player.sendMessage(PREFIX + ChatColor.RED + "" + ChatColor.BOLD + "Покинути "
+                    + churchName + " — це НАЗАВЖДИ.");
+            player.sendMessage(PREFIX + ChatColor.RED + "Вклад і ранг згорять, історія замовлень зникне,");
+            player.sendMessage(PREFIX + ChatColor.RED + "і назад вас більше ніколи не приймуть.");
+            player.sendMessage(PREFIX + ChatColor.GRAY + "Певні? Тоді: /church leave confirm");
+            return;
+        }
+        if (churchService.leave(player)) {
+            player.sendMessage(PREFIX + ChatColor.YELLOW + "Ви покинули " + churchName
+                    + ". Ці двері зачинені для вас назавжди.");
         }
     }
 
@@ -158,6 +172,9 @@ public class ChurchCommand implements CommandExecutor, TabCompleter {
             }
             String lower = args[0].toLowerCase();
             return options.stream().filter(o -> o.startsWith(lower)).toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("leave")) {
+            return "confirm".startsWith(args[1].toLowerCase()) ? List.of("confirm") : List.of();
         }
         if (args.length == 2 && admin && args[0].equalsIgnoreCase("bind")) {
             String lower = args[1].toLowerCase();

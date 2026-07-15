@@ -96,9 +96,15 @@ public class ChurchMenu {
                 .create();
         gui.setItem(2, 4, new GuiItem(button(Material.PAPER, ChatColor.GOLD + church.displayName(),
                 church.lore()), e -> e.setCancelled(true)));
-        gui.setItem(2, 6, new GuiItem(button(Material.EMERALD, ChatColor.GREEN + "[Вступити]",
-                        "Приєднатися до церкви"),
-                e -> runSynced(player, () -> attemptJoin(player, institutionId))));
+        if (churchService.hasAbandoned(player.getUniqueId(), institutionId)) {
+            // Зречену церкву не пропонуємо вступити взагалі — кнопка все одно відмовила б.
+            gui.setItem(2, 6, new GuiItem(button(Material.BARRIER, ChatColor.RED + "Двері зачинено",
+                    ChatColor.GRAY + "Ви колись зреклися цієї церкви"), e -> e.setCancelled(true)));
+        } else {
+            gui.setItem(2, 6, new GuiItem(button(Material.EMERALD, ChatColor.GREEN + "[Вступити]",
+                            "Приєднатися до церкви"),
+                    e -> runSynced(player, () -> attemptJoin(player, institutionId))));
+        }
         gui.open(player);
     }
 
@@ -114,6 +120,8 @@ public class ChurchMenu {
                     + "Ви нещодавно покинули іншу церкву — поверніться пізніше.");
             case ALREADY_MEMBER -> player.sendMessage(PREFIX + ChatColor.RED + "Ви вже служите іншій церкві.");
             case UNKNOWN_CHURCH -> player.sendMessage(PREFIX + ChatColor.RED + "Ця церква недоступна.");
+            case ABANDONED -> player.sendMessage(PREFIX + ChatColor.RED
+                    + "Ви колись зреклися цієї церкви — тут вас більше не приймуть.");
         }
     }
 
@@ -141,11 +149,19 @@ public class ChurchMenu {
     }
 
     private void confirmLeave(Player player) {
-        ItemStack give = button(Material.PAPER, ChatColor.RED + "Ваш вклад згорить");
-        ItemStack get = button(Material.PAPER, ChatColor.GREEN + "Свобода");
-        confirm.open(player, give, get, "⛪ Покинути церкву", () -> {
+        String churchName = churchService.churchOf(player.getUniqueId())
+                .map(Institution::displayName).orElse("цю церкву");
+        ItemStack give = button(Material.PAPER, ChatColor.RED + "Ваш вклад і ранг згорять",
+                ChatColor.DARK_RED + "" + ChatColor.BOLD + "НАЗАВЖДИ: назад вас не приймуть",
+                ChatColor.RED + churchName + " більше ніколи не відчинить вам двері",
+                ChatColor.GRAY + "Історія замовлень зілля згорить разом із членством");
+        ItemStack get = button(Material.PAPER, ChatColor.GREEN + "Свобода",
+                ChatColor.GRAY + "Ви зможете вступити в ІНШУ церкву,",
+                ChatColor.GRAY + "коли мине кулдаун");
+        confirm.open(player, give, get, "⛪ Покинути назавжди?", () -> {
             if (churchService.leave(player)) {
-                player.sendMessage(PREFIX + ChatColor.YELLOW + "Ви покинули церкву.");
+                player.sendMessage(PREFIX + ChatColor.YELLOW + "Ви покинули " + churchName
+                        + ". Ці двері зачинені для вас назавжди.");
             }
         });
     }
