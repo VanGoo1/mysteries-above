@@ -24,7 +24,7 @@ class ChurchRepositoriesTest {
         var task = new JSONMembershipRepository.TaskRecord(
                 "HUNT", "error_sphinx_9", "error_sphinx_9", 4, 1, 48);
         var member = new JSONMembershipRepository.MembershipRecord(
-                "church-evernight", 250, 100, 123L, List.of(task), null, null,
+                "church-evernight", 250, 100, 123L, 2, List.of(task), null, null,
                 new JSONMembershipRepository.OrderRecord("Door", 9, 999L, 60),
                 List.of("Door:9", "Door:8"));
         var model = new JSONMembershipRepository.Model(Map.of(
@@ -42,6 +42,7 @@ class ChurchRepositoriesTest {
         assertNull(p1.membership().initiationTask());
         assertEquals(9, p1.membership().activeOrder().sequence());
         assertEquals(List.of("Door:9", "Door:8"), p1.membership().orderedPotions());
+        assertEquals(2, p1.membership().taskSetsUsed());
         assertTrue(p1.initiationUsed());
         var p2 = loaded.players().get("22222222-2222-2222-2222-222222222222");
         assertNull(p2.membership());
@@ -64,6 +65,8 @@ class ChurchRepositoriesTest {
         var membership = player.membership();
         assertNull(membership.orderedPotions());
         assertNull(player.abandonedChurches()); // так само нове поле — старий файл його не має
+        // квота з'явилась пізніше: без поля гравець мусить заходити з цілим лімітом, а не з нулем наборів
+        assertEquals(0, membership.taskSetsUsed());
 
         // а Membership.restoreOrderedPotionKeys(null) перетворює цей null на порожню історію
         var restored = new me.vangoo.domain.organizations.Membership(
@@ -103,7 +106,7 @@ class ChurchRepositoriesTest {
         var task = new JSONMembershipRepository.TaskRecord(
                 "DELIVER", "custom:night_vanilla", "Нічна ваніль", 6, 0, 8);
         var member = new JSONMembershipRepository.MembershipRecord(
-                "church-evernight", 0, 0, 0L, List.of(task), null, null, null, List.of());
+                "church-evernight", 0, 0, 0L, 0, List.of(task), null, null, null, List.of());
         repo.save(new JSONMembershipRepository.Model(Map.of(
                 "11111111-1111-1111-1111-111111111111",
                 new JSONMembershipRepository.PlayerChurchData(member, 0L, false, false, List.of()))));

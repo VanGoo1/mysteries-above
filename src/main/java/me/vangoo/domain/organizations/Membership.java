@@ -13,7 +13,11 @@ public class Membership {
     private int lifetimeContribution;
     private int balance;
     private java.util.List<ChurchTask> tasks = new java.util.ArrayList<>();
+    // Початок поточного вікна квоти завдань. Історична назва поля (і ключ JSON) —
+    // «останнє оновлення»: для старих memberships.json це те саме значення, тож
+    // перейменування не варте міграції живих даних.
     private long lastTaskRefreshEpochMillis;
+    private int taskSetsUsed;
     private ChurchTask initiationTask;      // null = не активна
     private String initiationPathway;       // шлях зілля, обраний при ініціації
     private PotionOrder activeOrder;        // null = нема замовлення
@@ -72,6 +76,27 @@ public class Membership {
 
     public void setLastTaskRefreshEpochMillis(long millis) {
         this.lastTaskRefreshEpochMillis = millis;
+    }
+
+    public int taskSetsUsed() { return taskSetsUsed; }
+
+    /** Новий набір видано: витрачаємо одиницю квоти поточного вікна. */
+    public void consumeTaskSet() {
+        taskSetsUsed++;
+    }
+
+    /**
+     * Нове вікно квоти: набори знову доступні. Незрушені завдання відкидає викликач —
+     * тут лише лічильник, щоб правило лишалось в одному місці ({@link TaskQuota}).
+     */
+    public void startTaskWindow(long now) {
+        this.lastTaskRefreshEpochMillis = now;
+        this.taskSetsUsed = 0;
+    }
+
+    /** Гідрація з persisted-стану (у файлах до появи поля — 0, тобто квота ціла). */
+    public void restoreTaskSetsUsed(int used) {
+        this.taskSetsUsed = Math.max(0, used);
     }
 
     public ChurchTask initiationTask() { return initiationTask; }

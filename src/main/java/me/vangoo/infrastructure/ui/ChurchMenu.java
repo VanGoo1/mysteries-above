@@ -251,6 +251,9 @@ public class ChurchMenu {
             }
         }
 
+        churchService.taskPoolStatus(player).ifPresent(status ->
+                gui.setItem(6, 5, new GuiItem(quotaTile(status), e -> e.setCancelled(true))));
+
         if (churchService.canStartTrial(player)) {
             gui.setItem(6, 9, new GuiItem(button(Material.NETHER_STAR, ChatColor.LIGHT_PURPLE + "[Випробування шляху]",
                             "Дуель зі створінням 9 послідовності.",
@@ -263,6 +266,25 @@ public class ChurchMenu {
                     e -> runSynced(player, () -> openTrialPathwayChoice(player, institutionId))));
         }
         gui.open(player);
+    }
+
+    /**
+     * Годинник квоти: скільки наборів лишилось і коли скидання. Гравець мусить бачити
+     * і те, що набір поповнюється одразу після закриття, і те, коли впреться в стелю.
+     */
+    private ItemStack quotaTile(ChurchService.TaskPoolStatus status) {
+        String countdown = "Скидання квоти через " + formatDuration(status.millisUntilReset());
+        if (status.quotaExhausted()) {
+            return button(Material.CLOCK,
+                    ChatColor.RED + "Набори вичерпано: " + status.setsUsed() + "/" + status.setsPerDay(),
+                    "Нові завдання — лише після скидання",
+                    countdown);
+        }
+        return button(Material.CLOCK,
+                ChatColor.GREEN + "Наборів сьогодні: " + status.setsUsed() + "/" + status.setsPerDay(),
+                "Закрийте набір — новий видамо одразу",
+                countdown,
+                ChatColor.DARK_GRAY + "Незрушені завдання оновляться зі скиданням");
     }
 
     private void confirmTrial(Player player, String institutionId) {
@@ -325,10 +347,8 @@ public class ChurchMenu {
                     })));
         } else {
             long remainingMillis = order.readyAtEpochMillis() - System.currentTimeMillis();
-            long hours = Math.max(0, remainingMillis / 3_600_000L);
-            long minutes = Math.max(0, (remainingMillis % 3_600_000L) / 60_000L);
             gui.setItem(2, 5, new GuiItem(button(Material.BREWING_STAND,
-                    ChatColor.YELLOW + "Вариться, лишилось " + hours + " год " + minutes + " хв"),
+                    ChatColor.YELLOW + "Вариться, лишилось " + formatDuration(remainingMillis)),
                     e -> e.setCancelled(true)));
         }
         gui.setItem(3, 5, new GuiItem(button(Material.BARRIER, ChatColor.GRAY + "◄ Назад"),
@@ -472,6 +492,14 @@ public class ChurchMenu {
             return raw;
         }
         return Character.toUpperCase(spaced.charAt(0)) + spaced.substring(1);
+    }
+
+    /** «X год Y хв» / «X хв» — спільний формат для всіх відліків церкви. */
+    private String formatDuration(long millis) {
+        long safe = Math.max(0, millis);
+        long hours = safe / 3_600_000L;
+        long minutes = (safe % 3_600_000L) / 60_000L;
+        return hours > 0 ? hours + " год " + minutes + " хв" : minutes + " хв";
     }
 
     private ItemStack button(Material material, String name, String... loreLines) {

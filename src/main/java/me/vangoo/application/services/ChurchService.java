@@ -18,6 +18,7 @@ import me.vangoo.domain.organizations.InstitutionType;
 import me.vangoo.domain.organizations.Membership;
 import me.vangoo.domain.organizations.PathwayAccess;
 import me.vangoo.domain.organizations.PotionOrder;
+import me.vangoo.domain.organizations.TaskQuota;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.infrastructure.organizations.ChurchConfig;
 import me.vangoo.infrastructure.organizations.ChurchStateRepository;
@@ -185,6 +186,8 @@ public class ChurchService {
                     }
                 }
                 membership.setLastTaskRefreshEpochMillis(mr.lastTaskRefreshEpochMillis());
+                // Відсутнє поле у старих файлах → 0: гравець заходить із цілою квотою.
+                membership.restoreTaskSetsUsed(mr.taskSetsUsed());
                 if (mr.tasks() != null) {
                     membership.setTasks(mr.tasks().stream().map(ChurchService::toTask).toList());
                 }
@@ -232,7 +235,7 @@ public class ChurchService {
             Membership membership = memberships.get(id);
             MembershipRecord mr = membership == null ? null : new MembershipRecord(
                     membership.institutionId(), membership.lifetimeContribution(), membership.balance(),
-                    membership.lastTaskRefreshEpochMillis(),
+                    membership.lastTaskRefreshEpochMillis(), membership.taskSetsUsed(),
                     membership.tasks().stream().map(ChurchService::toRecord).toList(),
                     toRecord(membership.initiationTask()), membership.initiationPathway(),
                     toRecord(membership.activeOrder()), List.copyOf(membership.orderedPotionKeys()));
@@ -349,6 +352,20 @@ public class ChurchService {
 
     // ── Завдання (правила 4, 5, 6) ───────────────────────────────────────────
 
+    /** Правило вікна й квоти наборів; довжина вікна — church.tasks.refresh-hours. */
+    public TaskQuota taskQuota() {
+        return new TaskQuota(config.tasksRefreshHours() * 3_600_000L, config.tasksSetsPerDay());
+    }
+
+    /**
+     * Приводить пул завдань до правил вікна/квоти. Викликається при вступі та щоразу,
+     * коли гравець відкриває меню завдань.
+     *
+     * <p>Нове вікно скидає квоту й відкидає НЕЗРУШЕНІ завдання (гравця не тримає
+     * набір, який він не хоче), але лишає ті, де вже є прогрес — інакше 24-та година
+     * стирала б half-виконане полювання без попередження. Новий набір видається лише
+     * цілим і лише в порожній пул, поки в вікні лишається квота.
+     */
     public void ensureFreshTasks(Player player) {
         UUID id = player.getUniqueId();
         Membership membership = memberships.get(id);
@@ -356,12 +373,37 @@ public class ChurchService {
             return;
         }
         long now = System.currentTimeMillis();
-        if (now - membership.lastTaskRefreshEpochMillis() < config.tasksRefreshHours() * 3_600_000L) {
-            return;
+        TaskQuota quota = taskQuota();
+        boolean changed = false;
+
+        if (quota.windowExpired(membership.lastTaskRefreshEpochMillis(), now)) {
+            membership.startTaskWindow(now);
+            List<ChurchTask> started = membership.tasks().stream()
+                    .filter(t -> t.progress() > 0)
+                    .toList();
+            if (started.size() != membership.tasks().size()) {
+                membership.setTasks(started);
+            }
+            changed = true;
         }
+
+        if (membership.tasks().isEmpty() && quota.canGenerate(membership.taskSetsUsed())) {
+            if (generateTaskSet(membership)) {
+                membership.consumeTaskSet();
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            persist();
+        }
+    }
+
+    /** @return true, якщо набір справді згенеровано (інакше квота не витрачається). */
+    private boolean generateTaskSet(Membership membership) {
         Institution church = registry.byId(membership.institutionId()).orElse(null);
         if (church == null) {
-            return;
+            return false;
         }
         Map<String, String> pathwayToGroup = new HashMap<>();
         for (String name : pathwayManager.getAllPathwayNames()) {
@@ -404,14 +446,35 @@ public class ChurchService {
         }
         List<ChurchTask> tasks = taskGenerator.generate(config.tasksMaxActive(), church, pathwayToGroup,
                 creatures, ingredients, random);
+        if (tasks.isEmpty()) {
+            return false;
+        }
         membership.setTasks(tasks);
-        membership.setLastTaskRefreshEpochMillis(now);
-        persist();
+        return true;
     }
 
     public List<ChurchTask> tasksOf(Player player) {
         Membership membership = memberships.get(player.getUniqueId());
         return membership == null ? List.of() : membership.tasks();
+    }
+
+    /** Стан квоти для UI: скільки наборів витрачено і скільки чекати до скидання. */
+    public record TaskPoolStatus(int setsUsed, int setsPerDay, long millisUntilReset) {
+
+        public boolean quotaExhausted() {
+            return setsUsed >= setsPerDay;
+        }
+    }
+
+    public Optional<TaskPoolStatus> taskPoolStatus(Player player) {
+        Membership membership = memberships.get(player.getUniqueId());
+        if (membership == null) {
+            return Optional.empty();
+        }
+        TaskQuota quota = taskQuota();
+        return Optional.of(new TaskPoolStatus(membership.taskSetsUsed(), quota.setsPerDay(),
+                quota.millisUntilReset(membership.lastTaskRefreshEpochMillis(),
+                        System.currentTimeMillis())));
     }
 
     public int deliverTask(Player player, int taskIndex) {

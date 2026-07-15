@@ -28,9 +28,16 @@ public class JSONMembershipRepository {
     public record OrderRecord(String pathwayName, int sequence,
                               long readyAtEpochMillis, int pointsPaid) {}
 
-    /** orderedPotions — ключі "<шлях>:<посл.>"; null у файлах до появи поля = порожня історія. */
+    /**
+     * orderedPotions — ключі "<шлях>:<посл.>"; null у файлах до появи поля = порожня історія.
+     * lastTaskRefreshEpochMillis — початок вікна квоти завдань (стара назва ключа: для файлів
+     * до появи квоти останнє оновлення І є стартом вікна, тож міграція не потрібна).
+     * taskSetsUsed — витрачені набори у вікні; відсутній у старих файлах → Gson дає 0,
+     * тобто гравець заходить у вікно з цілою квотою.
+     */
     public record MembershipRecord(String institutionId, int lifetimeContribution, int balance,
-                                   long lastTaskRefreshEpochMillis, List<TaskRecord> tasks,
+                                   long lastTaskRefreshEpochMillis, int taskSetsUsed,
+                                   List<TaskRecord> tasks,
                                    TaskRecord initiationTask, String initiationPathway,
                                    OrderRecord activeOrder, List<String> orderedPotions) {}
 
