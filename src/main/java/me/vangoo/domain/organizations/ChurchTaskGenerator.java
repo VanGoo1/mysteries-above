@@ -26,11 +26,17 @@ public final class ChurchTaskGenerator {
                 churchGroups.add(group);
             }
         }
-        List<CreatureCandidate> hostile = new ArrayList<>(creatures.stream()
-                .filter(c -> {
-                    String group = pathwayToGroup.get(c.pathway());
-                    return group != null && !churchGroups.contains(group);
-                }).toList());
+        // Істота з нерозпізнаним шляхом — завжди поза грою (дірка в даних, не ціль).
+        List<CreatureCandidate> known = creatures.stream()
+                .filter(c -> pathwayToGroup.get(c.pathway()) != null)
+                .toList();
+        List<CreatureCandidate> foreign = known.stream()
+                .filter(c -> !churchGroups.contains(pathwayToGroup.get(c.pathway())))
+                .toList();
+        // Домен церкви може покривати всі групи, що мають істот (Церква Блазня — саме
+        // такий випадок), і тоді чужих не лишається. Без фолбеку пул HUNT порожній
+        // назавжди й гравець бачить самі доставки. Дзеркалить ChurchDuelService.pickOpponent.
+        List<CreatureCandidate> hostile = new ArrayList<>(foreign.isEmpty() ? known : foreign);
         List<IngredientCandidate> pool = new ArrayList<>(ingredients);
 
         List<ChurchTask> tasks = new ArrayList<>();

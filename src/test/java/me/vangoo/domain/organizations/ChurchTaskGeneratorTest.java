@@ -43,6 +43,24 @@ class ChurchTaskGeneratorTest {
         }
     }
 
+    /**
+     * Церква Блазня через підгрупи покриває всі групи, що мають істот, тож фільтр
+     * «чужа група» лишав порожній пул і гравець бачив самі доставки. Фолбек дзеркалить
+     * {@code ChurchDuelService.pickOpponent}: нема чужих — полюємо на будь-яких.
+     */
+    @Test
+    void fallsBackToAnyCreatureWhenChurchDomainCoversEveryCreatureGroup() {
+        Institution wideChurch = new Institution("church-fool",
+                InstitutionType.CHURCH, "Церква Блазня", "лор",
+                List.of(PathwayAccess.full("Error"), PathwayAccess.full("WhiteTower")));
+
+        List<ChurchTask> tasks = generator.generate(2, wideChurch, groups, creatures,
+                ingredients, new Random(7));
+
+        assertTrue(tasks.stream().anyMatch(t -> t.type() == ChurchTask.Type.HUNT),
+                "церква без чужих груп мусить діставати HUNT із фолбеку, а не самі доставки");
+    }
+
     @Test
     void noDuplicateTargetsAndCountRespected() {
         List<ChurchTask> tasks = generator.generate(2, church, groups, creatures,
