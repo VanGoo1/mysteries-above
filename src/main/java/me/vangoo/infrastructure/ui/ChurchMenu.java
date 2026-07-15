@@ -257,7 +257,7 @@ public class ChurchMenu {
             return;
         }
         if (churchService.pathwayNameOf(player) != null) {
-            showOrderQuote(player, institutionId, null);
+            showOrderQuote(player, institutionId);
         } else {
             player.sendMessage(PREFIX + ChatColor.RED
                     + "Спершу оберіть шлях через Випробування шляху.");
@@ -292,8 +292,8 @@ public class ChurchMenu {
         gui.open(player);
     }
 
-    private void showOrderQuote(Player player, String institutionId, String pathwayNameForPathless) {
-        OrderOffer offer = churchService.quoteOrder(player, pathwayNameForPathless);
+    private void showOrderQuote(Player player, String institutionId) {
+        OrderOffer offer = churchService.quoteOrder(player);
         if (!offer.isAvailable()) {
             player.sendMessage(PREFIX + ChatColor.RED + denialText(player, offer));
             runSynced(player, () -> openMain(player, institutionId));
@@ -312,7 +312,7 @@ public class ChurchMenu {
         ItemStack get = button(Material.POTION, ChatColor.LIGHT_PURPLE
                 + "Зілля " + quote.pathwayName() + " Посл. " + quote.sequence());
         confirm.open(player, give, get, "⛪ Замовлення зілля", () -> {
-            if (churchService.placeOrder(player, pathwayNameForPathless)) {
+            if (churchService.placeOrder(player)) {
                 player.sendMessage(PREFIX + ChatColor.GREEN + "Замовлення прийнято — зілля вариться.");
             } else {
                 player.sendMessage(PREFIX + ChatColor.RED + "Не вдалося оформити замовлення.");

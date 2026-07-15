@@ -621,7 +621,7 @@ public class ChurchService {
 
     // ── Замовлення зілль (правило 10) ────────────────────────────────────────
 
-    public OrderOffer quoteOrder(Player player, String pathwayNameForPathless) {
+    public OrderOffer quoteOrder(Player player) {
         UUID id = player.getUniqueId();
         Membership membership = memberships.get(id);
         if (membership == null) {
@@ -687,13 +687,13 @@ public class ChurchService {
         return beyonder == null ? -1 : beyonder.getMasteryValue();
     }
 
-    public boolean placeOrder(Player player, String pathwayNameForPathless) {
+    public boolean placeOrder(Player player) {
         UUID id = player.getUniqueId();
         Membership membership = memberships.get(id);
         if (membership == null || membership.activeOrder() != null) {
             return false;
         }
-        OrderOffer offer = quoteOrder(player, pathwayNameForPathless);
+        OrderOffer offer = quoteOrder(player);
         if (!offer.isAvailable()) {
             return false;
         }
