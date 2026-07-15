@@ -7,9 +7,24 @@ import me.vangoo.pathways.fool.FoolPotions;
 import me.vangoo.pathways.justiciar.JusticiarPotions;
 import me.vangoo.pathways.visionary.VisionaryPotions;
 import me.vangoo.pathways.whitetower.WhiteTowerPotions;
+import me.vangoo.pathways.sun.SunPotions;
+import me.vangoo.pathways.tyrant.TyrantPotions;
+import me.vangoo.pathways.hangedman.HangedManPotions;
+import me.vangoo.pathways.hermit.HermitPotions;
+import me.vangoo.pathways.paragon.ParagonPotions;
+import me.vangoo.pathways.blackemperor.BlackEmperorPotions;
+import me.vangoo.pathways.darkness.DarknessPotions;
+import me.vangoo.pathways.death.DeathPotions;
+import me.vangoo.pathways.twilightgiant.TwilightGiantPotions;
+import me.vangoo.pathways.mother.MotherPotions;
+import me.vangoo.pathways.moon.MoonPotions;
+import me.vangoo.pathways.redpriest.RedPriestPotions;
+import me.vangoo.pathways.demoness.DemonessPotions;
+import me.vangoo.pathways.abyss.AbyssPotions;
+import me.vangoo.pathways.chained.ChainedPotions;
+import me.vangoo.pathways.wheeloffortune.WheelOfFortunePotions;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.infrastructure.items.PotionItemFactory;
-import org.bukkit.*;
 import org.bukkit.inventory.ItemStack;
 
 import me.vangoo.domain.brewing.RecipeDefinition;
@@ -42,45 +57,119 @@ public class PotionManager {
                                    Map<String, Map<Integer, RecipeDefinition>> recipeConfig) {
         potions.add(new ErrorPotions(
                 pathwayManager.getPathway("Error"),
-                Color.fromRGB(26, 0, 181),
                 customItemService,
                 recipeConfig.getOrDefault("Error", Map.of())
         ));
 
         potions.add(new VisionaryPotions(
                 pathwayManager.getPathway("Visionary"),
-                Color.fromRGB(128, 128, 128),
                 customItemService,
                 recipeConfig.getOrDefault("Visionary", Map.of())
         ));
 
         potions.add(new DoorPotions(
                 pathwayManager.getPathway("Door"),
-                Color.fromRGB(0, 0, 115),
                 customItemService,
                 recipeConfig.getOrDefault("Door", Map.of())
         ));
 
         potions.add(new JusticiarPotions(
                 pathwayManager.getPathway("Justiciar"),
-                Color.fromRGB(255, 255, 0),
                 customItemService,
                 recipeConfig.getOrDefault("Justiciar", Map.of())
         ));
 
         potions.add(new WhiteTowerPotions(
                 pathwayManager.getPathway("WhiteTower"),
-                Color.fromRGB(255, 0, 50),
                 customItemService,
                 recipeConfig.getOrDefault("WhiteTower", Map.of())
         ));
 
         potions.add(new FoolPotions(
                 pathwayManager.getPathway("Fool"),
-                Color.fromRGB(128, 0, 128),
                 customItemService,
                 recipeConfig.getOrDefault("Fool", Map.of())
         ));
+
+        potions.add(new SunPotions(
+                pathwayManager.getPathway("Sun"),
+                customItemService,
+                recipeConfig.getOrDefault("Sun", Map.of())));
+
+        potions.add(new TyrantPotions(
+                pathwayManager.getPathway("Tyrant"),
+                customItemService,
+                recipeConfig.getOrDefault("Tyrant", Map.of())));
+
+        potions.add(new HangedManPotions(
+                pathwayManager.getPathway("HangedMan"),
+                customItemService,
+                recipeConfig.getOrDefault("HangedMan", Map.of())));
+
+        potions.add(new HermitPotions(
+                pathwayManager.getPathway("Hermit"),
+                customItemService,
+                recipeConfig.getOrDefault("Hermit", Map.of())));
+
+        potions.add(new ParagonPotions(
+                pathwayManager.getPathway("Paragon"),
+                customItemService,
+                recipeConfig.getOrDefault("Paragon", Map.of())));
+
+        potions.add(new BlackEmperorPotions(
+                pathwayManager.getPathway("BlackEmperor"),
+                customItemService,
+                recipeConfig.getOrDefault("BlackEmperor", Map.of())));
+
+        potions.add(new DarknessPotions(
+                pathwayManager.getPathway("Darkness"),
+                customItemService,
+                recipeConfig.getOrDefault("Darkness", Map.of())));
+
+        potions.add(new DeathPotions(
+                pathwayManager.getPathway("Death"),
+                customItemService,
+                recipeConfig.getOrDefault("Death", Map.of())));
+
+        potions.add(new TwilightGiantPotions(
+                pathwayManager.getPathway("TwilightGiant"),
+                customItemService,
+                recipeConfig.getOrDefault("TwilightGiant", Map.of())));
+
+        potions.add(new MotherPotions(
+                pathwayManager.getPathway("Mother"),
+                customItemService,
+                recipeConfig.getOrDefault("Mother", Map.of())));
+
+        potions.add(new MoonPotions(
+                pathwayManager.getPathway("Moon"),
+                customItemService,
+                recipeConfig.getOrDefault("Moon", Map.of())));
+
+        potions.add(new RedPriestPotions(
+                pathwayManager.getPathway("RedPriest"),
+                customItemService,
+                recipeConfig.getOrDefault("RedPriest", Map.of())));
+
+        potions.add(new DemonessPotions(
+                pathwayManager.getPathway("Demoness"),
+                customItemService,
+                recipeConfig.getOrDefault("Demoness", Map.of())));
+
+        potions.add(new AbyssPotions(
+                pathwayManager.getPathway("Abyss"),
+                customItemService,
+                recipeConfig.getOrDefault("Abyss", Map.of())));
+
+        potions.add(new ChainedPotions(
+                pathwayManager.getPathway("Chained"),
+                customItemService,
+                recipeConfig.getOrDefault("Chained", Map.of())));
+
+        potions.add(new WheelOfFortunePotions(
+                pathwayManager.getPathway("WheelOfFortune"),
+                customItemService,
+                recipeConfig.getOrDefault("WheelOfFortune", Map.of())));
     }
 
     public Optional<PathwayPotions> getPotionsPathway(String pathwayName) {

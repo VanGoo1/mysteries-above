@@ -82,6 +82,10 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         registerEvents();
         registerCommands();
 
+        // Respawn church priests from persisted sites (Citizens already available via depend).
+        // Call exactly once — a double call would orphan duplicate NPCs.
+        services.getChurchSiteService().spawnAllNpcs();
+
         // Start schedulers
         services.startSchedulers();
 
@@ -176,6 +180,12 @@ public class MysteriesAbovePlugin extends JavaPlugin {
             services.getGatheringService().forceCloseIfActive();
         }
 
+        // Despawn church priest NPCs (not persisted by Citizens; respawned from church-sites.json on next enable)
+        if (services != null) {
+            services.getChurchDuelService().endAll();
+            services.getChurchPriestService().despawnAll();
+        }
+
         // Save all data and cleanup
         if (services != null) {
             services.saveAll();
@@ -262,6 +272,15 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(services.getGatheringListener(), this);
         getServer().getPluginManager().registerEvents(services.getOrganizerClickListener(), this);
         getServer().getPluginManager().registerEvents(services.getCurrencyExchangeListener(), this);
+
+        ChurchListener churchListener = new ChurchListener(
+                services.getChurchPriestService(), services.getChurchMenu(), services.getChurchService(),
+                services.getMythicCreatureGateway(), services.getRampageManager());
+        ChurchSpawnListener churchSpawnListener = new ChurchSpawnListener(
+                services.getChurchSiteService(), services.getChurchConfig().spawnVillageOffset());
+        getServer().getPluginManager().registerEvents(churchListener, this);
+        getServer().getPluginManager().registerEvents(churchSpawnListener, this);
+        getServer().getPluginManager().registerEvents(services.getDuelListener(), this);
     }
 
     private void registerCommands() {
@@ -300,5 +319,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 services.getGatheringService(), services.getMarketMenu());
         getCommand("gathering").setExecutor(gatheringCommand);
         getCommand("gathering").setTabCompleter(gatheringCommand);
+
+        ChurchCommand churchCommand = new ChurchCommand(services.getChurchService(), services.getChurchSiteService());
+        getCommand("church").setExecutor(churchCommand);
+        getCommand("church").setTabCompleter(churchCommand);
     }
 }

@@ -10,6 +10,15 @@
 `creatures.yml` id == internal name моба в паку (напр. `error_sphinx_9`). Перейменування — завжди в обох місцях.
 `base_entity` у `creatures.yml` дублює `Type` пака свідомо (потрібен чистому домену для aquatic ambient-спавну).
 
+**Укр-назва істоти для UI — тільки з пака** (`Display:`), через
+`MythicCreatureGateway.displayNameOf(id)` (знімає `&`-кольори; порожньо, якщо моба/Display нема).
+Обгортка для гравцевих текстів — `application.services.CreatureNamer` (`displayName` + `biomeNames`
++ `spawnsNearStructures`; дзеркалить `MarketItemNamer` для предметів); фолбек — читабельний id.
+`creatures.yml` назву НЕ дублює — інакше два джерела правди розійдуться. Біоми, навпаки, бере
+з `creatures.yml` (`SpawnRule.naturalBiomes`), бо правила спавну живуть у коді; укр-переклад біомів —
+мапа `CreatureNamer.BIOME_NAMES` (юніт-тест `CreatureNamerTest`, невідомий біом → humanize).
+Новий біом у `creatures.yml` → додай рядок у мапу, інакше гравець побачить «Cherry grove».
+
 ## Додати істоту
 
 1. Моб у `mythic-pack/Mobs/<pathway>.yml`: `Template: MA_<Pathway>_S<seq>` (шаблон = кіт

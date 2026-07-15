@@ -19,13 +19,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Layered / hexagonal design under `me.vangoo`. Dependencies point inward toward `domain`:
 
 - **`domain`** — pure business logic, no Bukkit scheduling/DI. Key pieces:
-  - `entities`: `Beyonder` (the player aggregate), `Pathway` (abstract — concrete pathways live in the behavior layer below), `PathwayGroup`.
+  - `entities`: `Beyonder` (the player aggregate), `Pathway` (abstract — concrete pathways live in the behavior layer below; also has a 3-arg explicit-name constructor, currently unused, available for a caller that needs to override the derived name), `PathwayGroup` (9 constants: `LordOfMysteries`, `DemonOfKnowledge`, `GodAlmighty`, `TheAnarchy`, `EternalDarkness`, `GoddessOfOrigin`, `CalamityOfDestruction`, `FatherOfDevils`, `KeyOfLight`).
+  - `PathwayBranding` (`me.vangoo.domain`): the color registry for all 22 pathways — `of`/`liquidOf`/`textOf`/`NAMES` map each pathway name to a `Color`+`ChatColor` pair (gray fallback for unknown/null). See `.claude/rules/pathway-branding.md`.
   - `abilities.core`: `Ability` base class + `ActiveAbility` / `PermanentPassiveAbility` / `ToggleablePassiveAbility`, `AbilityType`, `AbilityResult`, and the `IAbilityContext` interface.
   - `abilities.context`: fine-grained context interfaces (`ICooldownContext`, `IMessagingContext`, `ITargetContext`, `IGlowingContext`, `IRampageContext`, `ISchedulingContext`, `IUIContext`, etc.) — abilities depend on these, not on concrete Bukkit services.
   - `spells`: pure spell data/rules (`SpellRecipe`, `SpellBlueprint`, `SpellCodec`) — no Bukkit; the reference example of the rules-vs-effects seam.
   - `valueobjects`: immutables like `Sequence`, `Spirituality`, `Mastery`, `SanityLoss`, `AbilityResult`, `SequenceBasedSuccessChance`.
 - **`me.vangoo.pathways`** — the **ability behavior / effect layer** (its own layer, **not** part of `domain`). Bukkit is allowed here; it depends inward on `domain` and is orchestrated by `application` (`PathwayManager` wires it). This is the home of the **effect** half of the rules-vs-effects seam. Contents:
-  - one package per pathway (`error`, `door`, `justiciar`, `visionary`, `whitetower`, `fool`), each with an `abilities` subpackage, a concrete `Pathway` subclass that builds its per-sequence ability lists in `initializeAbilities()`, and a `*Potions` class.
+  - one package per pathway (`error`, `door`, `justiciar`, `visionary`, `whitetower`, `fool`), each with an `abilities` subpackage, a concrete `Pathway` subclass that builds its per-sequence ability lists in `initializeAbilities()`, and a `*Potions` class. These 6 are the only pathways with real abilities and brew recipes. The other 16 registered pathways are scaffolds: each has its own package `me.vangoo.pathways.<name>` (a `<Name> extends Pathway` with an empty `initializeAbilities()`, a `<Name>Potions`, and an empty `abilities` package via `package-info.java`) — identical in shape to the 6 real pathways, ready to be filled in. Scaffolds have potions/characteristics (colored via `PathwayBranding`) but no abilities and no brew recipes; "not yet implemented" is detected by `Pathway.hasAnyAbility()`. `PathwayManager.initializePathways()` wires all 22.
   - **thin abilities** — `Ability` subclasses holding only glue (name/cost/cooldown + delegation); balance math is pulled out to `domain` VOs.
   - **runners** — stateless Bukkit choreography for one-shot effects (e.g. `SpellEffectRunner`).
   - **sessions** — live, self-ticking objects for stateful effects (e.g. `JurisdictionSession`, `DiviningRodSession`, `DreamVisionSession`).
@@ -70,15 +71,28 @@ The pure core of `domain` (`entities`, `services`, `spells`, `brewing`, `creatur
 
 ## Config & persistence
 
-- `src/main/resources/`: `plugin.yml` (commands + `mysteriesabove.admin` permission), `config.yml` (секції `creatures.*`, `market.*`, `convergence.*`), `custom-items.yml`, `global_loot.yml`, `creatures.yml`, `potion-recipes.yml`, `forage.yml` (форедж: цілі/донори/біомні таблиці — див. `.claude/rules/forage.md`). `plugin.yml` and `*.yml` are Maven-filtered resources; `mythic-pack/**` (see below) is not.
-  `config.yml` містить секції `creatures.*` (спавн істот), `market.*` (підпільний ринок) і `convergence.*` (приховане тяжіння Закону Конвергенції); усі читає `ServiceContainer` через `plugin.getConfig()`.
+- `src/main/resources/`: `plugin.yml` (commands + `mysteriesabove.admin` permission), `config.yml` (секції `creatures.*`, `market.*`, `convergence.*`, `church.*`), `custom-items.yml`, `global_loot.yml`, `creatures.yml`, `potion-recipes.yml`, `forage.yml` (форедж: цілі/донори/біомні таблиці — див. `.claude/rules/forage.md`). `plugin.yml` and `*.yml` are Maven-filtered resources; `mythic-pack/**` (see below) is not.
+  `config.yml` містить секції `creatures.*` (спавн істот), `market.*` (підпільний ринок), `convergence.*` (приховане тяжіння Закону Конвергенції) і `church.*` (церкви: ранги/завдання/замовлення/пожертви/сід сховищ — див. `.claude/rules/church-organizations.md`); усі читає `ServiceContainer` через `plugin.getConfig()`.
 - Mob content (stats, appearance, skills, templates) lives in the MythicMobs pack `src/main/resources/mythic-pack/`, installed to the server by `MythicPackInstaller`; spawn/loot rules stay in code (`domain.creatures` + `creatures.yml`). See `.claude/rules/mythic-creatures.md` for the full mechanism.
 - Клієнтські ассети (текстури інгредієнтів, «зачаровані» блоки фореджу) — серверний ресурспак `mysteries-resourcepack/`; датапак структур — `mysteries-datapack/`. Обидва роздаються поза Maven-збіркою (див. README ресурспаку).
 - Player state persists to `beyonders.json` in the plugin data folder, written by `BatchedBeyonderRepository` (batched save every 5 minutes + save on disable). Recipe unlocks persist to `recipe_unlocks.json`.
 - Підпільний ринок: стан зборів персиститься в `gathering-state.json`
   (`GatheringSnapshotRepository`; час наступного збору + ескроу + черга повернень);
   світ-заглушка `mysteries_gathering` створюється ідемпотентно. Див. `.claude/rules/market-gathering.md`.
-- Admin commands (all require `mysteriesabove.admin`): `/pathway`, `/mastery`, `/rampager`, `/potion`, `/custom-items`, `/recipe`, `/structure`, `/characteristic`, `/coins`. Creature testing goes through MythicMobs' own command: `/mm mobs spawn <id>`. `/gathering` — гравецька команда (join/menu), її start/stop — адмінські (перевірка права в коді).
+- Церкви (Економіка 6b): `memberships.json` (членства/кулдаун/флаг пройденої дуелі-без-шляху
+  `trialPassed` [тимчасовий] + флаг «вже колись ініційований» `initiationUsed` [постійний]
+  + історія замовлених зілль `orderedPotions` [в межах членства] + назавжди зречені церкви
+  `abandonedChurches` [вихід із церкви необоротний]),
+  `church-sites.json` (сайти храмів + оброблені села), `churches-state.json`
+  (сховища церков) — усі пишуться після кожної мутації (`ChurchService`, каркас
+  `GatheringSnapshotRepository`). Секція `church.*` у `config.yml` (ранги/завдання/замовлення/
+  пожертви/сід сховищ) читає `ChurchConfig` з дефолтами в коді. Реєстр інституцій — код
+  (`InstitutionRegistry`), не конфіг. Ініціація — дуель проти Seq-9 істоти чужого домену
+  в окремому void-світі `mysteries_duel` (`ChurchDuelService`/`DuelSession`/
+  `DuelArenaProvider`/`DuelBriefing`/`DuelListener`), а не сховищний обряд. Див.
+  `.claude/rules/church-organizations.md`.
+- Admin commands (all require `mysteriesabove.admin`): `/pathway`, `/mastery`, `/rampager`, `/potion`, `/custom-items`, `/recipe`, `/structure`, `/characteristic`, `/coins`. Creature testing goes through MythicMobs' own command: `/mm mobs spawn <id>`. `/gathering` — гравецька команда (join/menu), її start/stop — адмінські (перевірка права в коді). `/church` — гравецька (leave/info; `leave` двокрокова — діє лише `/church leave confirm`, бо
+вихід із церкви необоротний), bind/unbind — адмінські (перевірка права в коді).
 
 ## Maintaining docs & rules
 

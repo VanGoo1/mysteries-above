@@ -26,7 +26,8 @@ class ArchitectureTest {
             "me.vangoo.domain.brewing",
             "me.vangoo.domain.creatures",
             "me.vangoo.domain.forage",
-            "me.vangoo.domain.market"
+            "me.vangoo.domain.market",
+            "me.vangoo.domain.organizations"
     };
 
     @Test

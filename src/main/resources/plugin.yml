@@ -53,6 +53,9 @@ commands:
   gathering:
     description: Secret Beyonder gathering (underground market)
     usage: /gathering <join|menu> | /gathering <start|stop> (admin)
+  church:
+    description: Церкви — членство, служба, замовлення зілля
+    usage: /church <bind|unbind|leave|info>
 permissions:
   mysteriesabove.admin:
     description: Gives access to all administrative commands

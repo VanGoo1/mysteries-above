@@ -43,6 +43,7 @@ public class ServiceContainer {
     private PassiveAbilityManager passiveAbilityManager;
     private DomainEventPublisher eventPublisher;
     private TemporaryEventManager temporaryEventManager;
+    private me.vangoo.domain.organizations.InstitutionRegistry institutionRegistry;
 
     // Infrastructure services
     private JSONBeyonderRepository jsonBeyonderRepository;
@@ -63,16 +64,22 @@ public class ServiceContainer {
     private WalletService walletService;
     private me.vangoo.infrastructure.market.MarketConfig marketConfig;
     private MarketItemClassifier marketItemClassifier;
+    private Map<String, Map<Integer, RecipeDefinition>> potionRecipeConfig;
     private GatheringSnapshotRepository gatheringSnapshotRepository;
     private me.vangoo.infrastructure.market.GatheringVenueProvider gatheringVenueProvider;
     private me.vangoo.infrastructure.market.GatheringAnonymizer gatheringAnonymizer;
     private OrganizerNpcService organizerNpcService;
+    private me.vangoo.infrastructure.organizations.ChurchConfig churchConfig;
+    private me.vangoo.infrastructure.organizations.JSONMembershipRepository membershipRepository;
+    private me.vangoo.infrastructure.organizations.ChurchSiteRepository churchSiteRepository;
+    private me.vangoo.infrastructure.organizations.ChurchStateRepository churchStateRepository;
 
     // UI and menus
     private AbilityMenu abilityMenu;
     private BossBarUtil bossBarUtil;
     private me.vangoo.infrastructure.ui.MarketMenu marketMenu;
     private me.vangoo.infrastructure.ui.ConfirmationMenu confirmationMenu;
+    private me.vangoo.infrastructure.ui.ChurchMenu churchMenu;
 
     // Application services
     private BeyonderService beyonderService;
@@ -81,6 +88,14 @@ public class ServiceContainer {
     private PotionManager potionManager;
     private GatheringService gatheringService;
     private MarketItemNamer marketItemNamer;
+    private me.vangoo.application.services.CreatureNamer creatureNamer;
+    private ChurchService churchService;
+    private me.vangoo.infrastructure.citizens.ChurchPriestService churchPriestService;
+    private me.vangoo.infrastructure.organizations.ChurchStructurePlacer churchStructurePlacer;
+    private me.vangoo.infrastructure.organizations.ChurchSiteService churchSiteService;
+    private me.vangoo.infrastructure.organizations.DuelArenaProvider duelArenaProvider;
+    private ChurchDuelService churchDuelService;
+    private me.vangoo.presentation.listeners.DuelListener duelListener;
 
     // Schedulers
     private PassiveAbilityScheduler passiveAbilityScheduler;
@@ -92,6 +107,7 @@ public class ServiceContainer {
     private me.vangoo.infrastructure.forage.ForageNodeCodec forageNodeCodec;
     private me.vangoo.infrastructure.schedulers.ForageNodeSpawner forageNodeSpawner;
     private GatheringScheduler gatheringScheduler;
+    private me.vangoo.infrastructure.schedulers.ChurchOrderScheduler churchOrderScheduler;
 
     // Event listeners
     private RampageEventListener rampageEventListener;
@@ -152,6 +168,7 @@ public class ServiceContainer {
         this.sanityPenaltyHandler = new SanityPenaltyHandler();
         this.passiveAbilityManager = new PassiveAbilityManager();
         this.temporaryEventManager = new TemporaryEventManager(plugin);
+        this.institutionRegistry = new me.vangoo.domain.organizations.InstitutionRegistry();
     }
 
     private void initializeInfrastructure() {
@@ -181,6 +198,7 @@ public class ServiceContainer {
         // Initialize potion manager first (needed for loot service)
         PotionRecipeConfigLoader recipeConfigLoader = new PotionRecipeConfigLoader(plugin);
         Map<String, Map<Integer, RecipeDefinition>> recipeConfig = recipeConfigLoader.load();
+        this.potionRecipeConfig = recipeConfig;
         this.characteristicCodec = new CharacteristicCodec();
         this.currencyCodec = new CurrencyCodec();
         this.walletService = new WalletService(currencyCodec);
@@ -206,6 +224,15 @@ public class ServiceContainer {
         lootTableConfigLoader.loadLootTable();
         this.lootGenerationService = new LootGenerationService(
                 plugin, customItemService, potionManager, recipeBookFactory, currencyCodec);
+
+        // --- Спек 6b: церкви ---
+        this.churchConfig = me.vangoo.infrastructure.organizations.ChurchConfig.load(plugin);
+        this.membershipRepository = new me.vangoo.infrastructure.organizations.JSONMembershipRepository(
+                plugin.getDataFolder() + File.separator + "memberships.json");
+        this.churchSiteRepository = new me.vangoo.infrastructure.organizations.ChurchSiteRepository(
+                plugin.getDataFolder() + File.separator + "church-sites.json");
+        this.churchStateRepository = new me.vangoo.infrastructure.organizations.ChurchStateRepository(
+                plugin.getDataFolder() + File.separator + "churches-state.json");
     }
 
     private void initializeApplicationServices(fr.skytasul.glowingentities.GlowingEntities glowingEntities,
@@ -263,11 +290,24 @@ public class ServiceContainer {
         );
 
         this.marketItemNamer = new MarketItemNamer(customItemService);
+        // Назви істот резолвить пак MythicMobs, біоми — creatureRegistry (обидва вже готові).
+        this.creatureNamer = new me.vangoo.application.services.CreatureNamer(
+                mythicCreatureGateway, creatureRegistry);
         this.gatheringService = new GatheringService(plugin, marketConfig, walletService,
                 marketItemClassifier, gatheringVenueProvider, gatheringAnonymizer,
                 gatheringSnapshotRepository, organizerNpcService, beyonderService,
                 recipeUnlockService, potionManager, marketItemNamer);
         this.abilityExecutor.setGatheringAbilityGuard(gatheringService);
+
+        // --- Спек 6b: церкви ---
+        this.churchService = new ChurchService(plugin, churchConfig, institutionRegistry,
+                beyonderService, pathwayManager, potionManager, potionRecipeConfig,
+                recipeUnlockService, marketItemClassifier, marketItemNamer, creatureNamer, walletService,
+                creatureRegistry, membershipRepository, churchStateRepository);
+        this.churchPriestService = new me.vangoo.infrastructure.citizens.ChurchPriestService(institutionRegistry);
+        this.churchStructurePlacer = new me.vangoo.infrastructure.organizations.ChurchStructurePlacer(plugin);
+        this.churchSiteService = new me.vangoo.infrastructure.organizations.ChurchSiteService(
+                churchSiteRepository, churchPriestService, churchStructurePlacer, churchService);
     }
 
     private void initializeUI() {
@@ -284,6 +324,16 @@ public class ServiceContainer {
         this.confirmationMenu = new me.vangoo.infrastructure.ui.ConfirmationMenu(plugin);
         this.marketMenu = new me.vangoo.infrastructure.ui.MarketMenu(
                 plugin, gatheringService, walletService, marketItemNamer, confirmationMenu);
+        this.churchMenu = new me.vangoo.infrastructure.ui.ChurchMenu(
+                plugin, churchService, marketItemNamer, creatureNamer, confirmationMenu);
+
+        this.duelArenaProvider = new me.vangoo.infrastructure.organizations.DuelArenaProvider();
+        this.churchDuelService = new ChurchDuelService(plugin, churchService, pathwayManager,
+                mythicCreatureGateway, duelArenaProvider, creatureRegistry);
+        this.churchMenu.setDuelService(churchDuelService);
+        this.churchDuelService.setTrialChoiceOpener(churchMenu::openTrialPathwayChoice);
+        this.duelListener = new me.vangoo.presentation.listeners.DuelListener(
+                churchDuelService);
     }
 
     private void initializeSchedulers() {
@@ -334,6 +384,7 @@ public class ServiceContainer {
         );
 
         this.gatheringScheduler = new GatheringScheduler(plugin, gatheringService);
+        this.churchOrderScheduler = new me.vangoo.infrastructure.schedulers.ChurchOrderScheduler(plugin, churchService);
     }
 
     private void initializeEventListeners() {
@@ -384,21 +435,29 @@ public class ServiceContainer {
     public WalletService getWalletService() { return walletService; }
     public me.vangoo.infrastructure.market.MarketConfig getMarketConfig() { return marketConfig; }
     public MarketItemClassifier getMarketItemClassifier() { return marketItemClassifier; }
+    public Map<String, Map<Integer, RecipeDefinition>> getPotionRecipeConfig() { return potionRecipeConfig; }
     public GatheringSnapshotRepository getGatheringSnapshotRepository() { return gatheringSnapshotRepository; }
     public me.vangoo.infrastructure.market.GatheringVenueProvider getGatheringVenueProvider() { return gatheringVenueProvider; }
     public me.vangoo.infrastructure.market.GatheringAnonymizer getGatheringAnonymizer() { return gatheringAnonymizer; }
     public OrganizerNpcService getOrganizerNpcService() { return organizerNpcService; }
+    public me.vangoo.infrastructure.organizations.ChurchConfig getChurchConfig() { return churchConfig; }
 
     public AbilityMenu getAbilityMenu() { return abilityMenu; }
     public BossBarUtil getBossBarUtil() { return bossBarUtil; }
     public me.vangoo.infrastructure.ui.MarketMenu getMarketMenu() { return marketMenu; }
     public me.vangoo.infrastructure.ui.ConfirmationMenu getConfirmationMenu() { return confirmationMenu; }
+    public me.vangoo.infrastructure.ui.ChurchMenu getChurchMenu() { return churchMenu; }
 
     public BeyonderService getBeyonderService() { return beyonderService; }
     public AbilityExecutor getAbilityExecutor() { return abilityExecutor; }
     public AbilityContextFactory getAbilityContextFactory() { return abilityContextFactory; }
     public PotionManager getPotionManager() { return potionManager; }
     public GatheringService getGatheringService() { return gatheringService; }
+    public ChurchService getChurchService() { return churchService; }
+    public me.vangoo.infrastructure.citizens.ChurchPriestService getChurchPriestService() { return churchPriestService; }
+    public me.vangoo.infrastructure.organizations.ChurchSiteService getChurchSiteService() { return churchSiteService; }
+    public ChurchDuelService getChurchDuelService() { return churchDuelService; }
+    public me.vangoo.presentation.listeners.DuelListener getDuelListener() { return duelListener; }
 
     public PassiveAbilityScheduler getPassiveAbilityScheduler() { return passiveAbilityScheduler; }
     public MasteryRegenerationScheduler getMasteryRegenerationScheduler() { return masteryRegenerationScheduler; }
@@ -409,6 +468,7 @@ public class ServiceContainer {
     public me.vangoo.infrastructure.forage.ForageNodeCodec getForageNodeCodec() { return forageNodeCodec; }
     public me.vangoo.infrastructure.schedulers.ForageNodeSpawner getForageNodeSpawner() { return forageNodeSpawner; }
     public GatheringScheduler getGatheringScheduler() { return gatheringScheduler; }
+    public me.vangoo.infrastructure.schedulers.ChurchOrderScheduler getChurchOrderScheduler() { return churchOrderScheduler; }
 
     public RampageEventListener getRampageEventListener() { return rampageEventListener; }
     public CharacteristicExtractor getCharacteristicExtractor() { return characteristicExtractor; }
@@ -443,6 +503,7 @@ public class ServiceContainer {
         convergenceDriftScheduler.start();
         forageNodeSpawner.start();
         gatheringScheduler.start();
+        churchOrderScheduler.start();
 
         // Start batched save scheduler (every 5 minutes)
         startBatchedSaveScheduler();
@@ -484,6 +545,9 @@ public class ServiceContainer {
         }
         if (gatheringScheduler != null) {
             gatheringScheduler.stop();
+        }
+        if (churchOrderScheduler != null) {
+            churchOrderScheduler.stop();
         }
     }
 
