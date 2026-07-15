@@ -15,8 +15,33 @@
   (5 значень, [0]=0). Стеля замовлення = `max(rank.minOrderSequence, access.minSequence())`.
 - **Завдання** — `ChurchTask` (HUNT/DELIVER) + чистий `ChurchTaskGenerator`. HUNT — істота
   чужої `PathwayGroup`; DELIVER — інгредієнт зі шляхів церкви. Формули нагород — фіксовані в
-  генераторі (юніт-тест `ChurchTaskGeneratorTest`). Пул оновлюється раз на
-  `church.tasks.refresh-hours`, `church.tasks.max-active` активних.
+  генераторі (юніт-тест `ChurchTaskGeneratorTest`). Розмір набору — `church.tasks.max-active`.
+  **HUNT має фолбек**: якщо чужих груп не лишилось, полюємо на БУДЬ-ЯКИХ істот. Без нього
+  Церква Блазня (її підгрупи покривають LordOfMysteries + GodAlmighty + TheAnarchy, тобто всі
+  групи, що мають істот у `creatures.yml`) не давала HUNT ніколи — самі доставки. Дзеркалить
+  `ChurchDuelService.pickOpponent`; пінить
+  `ChurchTaskGeneratorTest.fallsBackToAnyCreatureWhenChurchDomainCoversEveryCreatureGroup`.
+- **Вікно і квота наборів** — чистий `domain.organizations.TaskQuota` (юніт-тест `TaskQuotaTest`);
+  стан на `Membership` (`lastTaskRefreshEpochMillis` = початок вікна, `taskSetsUsed`), рішення
+  в `ChurchService.ensureFreshTasks` (кличеться при вступі й на кожному відкритті меню завдань;
+  фонового планувальника НЕМА). Три правила:
+  1. вікно (`church.tasks.refresh-hours`) вичерпалось → старт нового, `setsUsed = 0`, і
+     **незрушені** (`progress == 0`) завдання відкидаються, а завдання З ПРОГРЕСОМ доживають
+     (раніше 24-та година стирала half-виконане полювання без попередження);
+  2. пул порожній + квота є → генерується ЦІЛИЙ набір, `setsUsed++` («закрий набір —
+     отримаєш новий», без добового простою);
+  3. квоти нема → чекати скидання.
+  `church.tasks.sets-per-day` (дефолт 5) — це стеля фарму очок вкладу, а вклад визначає ранг
+  і оплачує замовлення зілль. Міняєш її — міняєш швидкість просування по рангах.
+  Набір, що не згенерувався (`generate` віддав порожньо), квоту НЕ витрачає.
+  UI-стан — `ChurchService.taskPoolStatus` (`TaskPoolStatus`), годинник — `ChurchMenu.quotaTile`
+  (слот 6,5 у меню завдань; формат відліку — спільний `ChurchMenu.formatDuration`).
+- **Назви цілей у меню резолвляться з `targetKey`, а не з persisted `targetName`** (HUNT —
+  `CreatureNamer.displayName`, DELIVER — `MarketItemNamer.displayName`): у завданнях, записаних
+  до появи укр-назв, у `targetName` лежить англійський id, і резолв із ключа лікує їх без
+  міграції `memberships.json`. Те саме в чат-повідомленні про виконане полювання
+  (`ChurchService.onCreatureKilled`). HUNT-плитка додає підказку де шукати —
+  `ChurchMenu.huntSpawnLore` (біоми + «біля структур» для apex).
 - **Замовлення зілля** — `PotionOrder` (VO). Гравець платить очками вкладу; зілля вариться зі
   сховища церкви `church.order.brew-hours` годин, потім `[Забрати]` у священика. Замовлення
   доступне лише гравцю З ВЖЕ ОБРАНИМ шляхом — гравець без шляху, що тицяє замовити, тепер
@@ -115,6 +140,12 @@
   «вже колись ініційований» (`initiationUsed`, постійний) та `PlayerChurchData.abandonedChurches`
   — назавжди зречені церкви (null у старих файлах = нічого не зрікався; персиститься навіть
   для гравця БЕЗ `Membership`, тож `persist()` збирає id і з `abandonedChurches.keySet()`).
+  `MembershipRecord.taskSetsUsed` — витрачені набори у вікні; поля нема в старих файлах →
+  Gson дає `0`, тобто гравець заходить із ЦІЛОЮ квотою (пінить
+  `ChurchRepositoriesTest.membershipFromBeforeNewFieldsLoadsWithThemAbsent`).
+  `MembershipRecord.lastTaskRefreshEpochMillis` тепер означає початок вікна квоти — ключ НЕ
+  перейменований свідомо: для старих файлів останнє оновлення і є стартом вікна, тож міграція
+  живих даних не потрібна.
   `MembershipRecord.orderedPotions`
   — історія замовлень; у файлах, записаних до появи поля, це `null`, і
   `Membership.restoreOrderedPotionKeys(null)` читає його як порожню історію (пінить
@@ -135,6 +166,13 @@
 2. Онови лічильники/пінінг у `InstitutionRegistryTest` (кількість церков/орденів, покриття шляхів).
 3. Церква → додай `.nbt` ключ у `mysteries-datapack/README-churches.md` (фолбек працює без нього).
 
+## Як міняти темп завдань
+
+- Довжина вікна — `church.tasks.refresh-hours`; розмір набору — `church.tasks.max-active`;
+  скільки наборів на вікно — `church.tasks.sets-per-day`. Усі три мають дефолт у `ChurchConfig`
+  (Bukkit не перезаписує наявний config.yml, без фолбеку сервер поїде на нулях).
+- Стеля завдань на вікно = `sets-per-day` × `max-active`. Це і є ліміт фарму очок вкладу.
+
 ## Як додати ранг / змінити пороги
 
 - Пороги вкладу — `config.yml church.rank-thresholds` (5 значень, [0]=0) + дефолт у
@@ -153,6 +191,9 @@
 - Покинута церква закрита для гравця назавжди — `abandonedChurches` НЕ чиститься ніколи
   (як `initiationUsed`). Саме це тримає інваріант вище: історію замовлень можна стерти
   виходом, але повернутись у ту саму церкву вже не можна.
+- Набір завдань видається лише ЦІЛИМ і лише в порожній пул; квота витрачається виключно за
+  реально згенерований набір (порожній `generate` її не палить).
+- Завдання з прогресом (`progress > 0`) не стирається скиданням вікна — згорає тільки незрушене.
 - Кожна церква має щонайбільше один сайт на світ (`unplacedChurchIds` мінус розміщені).
 - Стан пишеться після кожної мутації (краш між батчами не лишає сховище/членство неузгодженим).
 - `ChurchService` стан — лише instance-поля, ніколи `static`.

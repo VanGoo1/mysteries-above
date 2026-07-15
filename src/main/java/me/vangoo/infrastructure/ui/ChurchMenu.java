@@ -8,6 +8,7 @@ import me.vangoo.application.services.ChurchService;
 import me.vangoo.application.services.ChurchService.JoinResult;
 import me.vangoo.application.services.ChurchService.OrderOffer;
 import me.vangoo.application.services.ChurchService.OrderQuote;
+import me.vangoo.application.services.CreatureNamer;
 import me.vangoo.application.services.MarketItemNamer;
 import me.vangoo.domain.market.PoundMoney;
 import me.vangoo.domain.organizations.ChurchRank;
@@ -44,14 +45,17 @@ public class ChurchMenu {
     private final Plugin plugin;
     private final ChurchService churchService;
     private final MarketItemNamer namer;
+    private final CreatureNamer creatureNamer;
     private final ConfirmationMenu confirm;
     private final MoneyPicker moneyPicker;
     private ChurchDuelService duelService;
 
-    public ChurchMenu(Plugin plugin, ChurchService churchService, MarketItemNamer namer, ConfirmationMenu confirm) {
+    public ChurchMenu(Plugin plugin, ChurchService churchService, MarketItemNamer namer,
+                      CreatureNamer creatureNamer, ConfirmationMenu confirm) {
         this.plugin = plugin;
         this.churchService = churchService;
         this.namer = namer;
+        this.creatureNamer = creatureNamer;
         this.confirm = confirm;
         this.moneyPicker = new MoneyPicker(plugin);
     }
@@ -228,13 +232,18 @@ public class ChurchMenu {
             int index = i;
             boolean hunt = task.type() == ChurchTask.Type.HUNT;
             Material icon = hunt ? Material.IRON_SWORD : Material.CHEST;
-            String targetLabel = hunt ? humanize(task.targetName()) : namer.displayName(task.targetKey());
+            // Обидва типи резолвлять назву з КЛЮЧА, а не з persisted-назви: тоді завдання,
+            // записані до появи укр-назв, показуються правильно без міграції файлу.
+            String targetLabel = hunt
+                    ? creatureNamer.displayName(task.targetKey())
+                    : namer.displayName(task.targetKey());
             ItemStack display = button(icon,
                     (hunt ? ChatColor.RED + "Полювання: " : ChatColor.AQUA + "Доставка: ")
                             + ChatColor.WHITE + targetLabel,
                     ChatColor.GRAY + "Прогрес: " + task.progress() + "/" + task.required(),
                     ChatColor.GOLD + "Нагорода: " + task.rewardPoints() + " очок");
             if (hunt) {
+                appendLore(display, huntSpawnLore(task.targetKey()));
                 gui.addItem(new GuiItem(display, e -> e.setCancelled(true)));
             } else {
                 appendLore(display, List.of("", ChatColor.GREEN + "▸ Клацніть, щоб здати з інвентаря"));
@@ -266,6 +275,22 @@ public class ChurchMenu {
                     e -> runSynced(player, () -> openTrialPathwayChoice(player, institutionId))));
         }
         gui.open(player);
+    }
+
+    /** Де шукати ціль полювання: біоми природного спавну + підказка про структури. */
+    private List<String> huntSpawnLore(String creatureId) {
+        List<String> lore = new ArrayList<>();
+        List<String> biomes = creatureNamer.biomeNames(creatureId);
+        lore.add("");
+        if (biomes.isEmpty()) {
+            lore.add(ChatColor.DARK_GRAY + "У дикій природі не трапляється");
+        } else {
+            lore.add(ChatColor.YELLOW + "Біоми: " + ChatColor.GRAY + String.join(", ", biomes));
+        }
+        if (creatureNamer.spawnsNearStructures(creatureId)) {
+            lore.add(ChatColor.YELLOW + "Частіше: " + ChatColor.GRAY + "біля структур");
+        }
+        return lore;
     }
 
     /**
@@ -481,17 +506,6 @@ public class ChurchMenu {
     private void runSynced(Player player, Runnable action) {
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.1f);
         Bukkit.getScheduler().runTask(plugin, action);
-    }
-
-    private static String humanize(String raw) {
-        if (raw == null || raw.isEmpty()) {
-            return raw;
-        }
-        String spaced = raw.replace('_', ' ').trim();
-        if (spaced.isEmpty()) {
-            return raw;
-        }
-        return Character.toUpperCase(spaced.charAt(0)) + spaced.substring(1);
     }
 
     /** «X год Y хв» / «X хв» — спільний формат для всіх відліків церкви. */

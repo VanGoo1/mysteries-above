@@ -4,6 +4,7 @@ import io.lumine.mythic.api.mobs.MythicMob;
 import io.lumine.mythic.bukkit.BukkitAdapter;
 import io.lumine.mythic.bukkit.MythicBukkit;
 import io.lumine.mythic.core.mobs.ActiveMob;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -31,6 +32,23 @@ public final class MythicCreatureGateway {
         ActiveMob active = mob.spawn(BukkitAdapter.adapt(loc), 1);
         Entity bukkit = active.getEntity().getBukkitEntity();
         return bukkit instanceof LivingEntity living ? Optional.of(living) : Optional.empty();
+    }
+
+    /**
+     * Укр-назва істоти з пака ({@code Display:}), без кольорових кодів.
+     * Джерело правди для назви — пак, тож creatures.yml її не дублює.
+     * Порожньо, якщо моба нема або в нього нема Display.
+     */
+    public Optional<String> displayNameOf(String mobId) {
+        MythicMob mob = MythicBukkit.inst().getMobManager().getMythicMob(mobId).orElse(null);
+        if (mob == null || mob.getDisplayName() == null) {
+            return Optional.empty();
+        }
+        String raw = mob.getDisplayName().get();
+        if (raw == null || raw.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.of(ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', raw)));
     }
 
     public boolean isCreature(Entity e) {

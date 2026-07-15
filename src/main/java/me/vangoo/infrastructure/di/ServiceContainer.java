@@ -88,6 +88,7 @@ public class ServiceContainer {
     private PotionManager potionManager;
     private GatheringService gatheringService;
     private MarketItemNamer marketItemNamer;
+    private me.vangoo.application.services.CreatureNamer creatureNamer;
     private ChurchService churchService;
     private me.vangoo.infrastructure.citizens.ChurchPriestService churchPriestService;
     private me.vangoo.infrastructure.organizations.ChurchStructurePlacer churchStructurePlacer;
@@ -289,6 +290,9 @@ public class ServiceContainer {
         );
 
         this.marketItemNamer = new MarketItemNamer(customItemService);
+        // Назви істот резолвить пак MythicMobs, біоми — creatureRegistry (обидва вже готові).
+        this.creatureNamer = new me.vangoo.application.services.CreatureNamer(
+                mythicCreatureGateway, creatureRegistry);
         this.gatheringService = new GatheringService(plugin, marketConfig, walletService,
                 marketItemClassifier, gatheringVenueProvider, gatheringAnonymizer,
                 gatheringSnapshotRepository, organizerNpcService, beyonderService,
@@ -298,7 +302,7 @@ public class ServiceContainer {
         // --- Спек 6b: церкви ---
         this.churchService = new ChurchService(plugin, churchConfig, institutionRegistry,
                 beyonderService, pathwayManager, potionManager, potionRecipeConfig,
-                recipeUnlockService, marketItemClassifier, marketItemNamer, walletService,
+                recipeUnlockService, marketItemClassifier, marketItemNamer, creatureNamer, walletService,
                 creatureRegistry, membershipRepository, churchStateRepository);
         this.churchPriestService = new me.vangoo.infrastructure.citizens.ChurchPriestService(institutionRegistry);
         this.churchStructurePlacer = new me.vangoo.infrastructure.organizations.ChurchStructurePlacer(plugin);
@@ -321,7 +325,7 @@ public class ServiceContainer {
         this.marketMenu = new me.vangoo.infrastructure.ui.MarketMenu(
                 plugin, gatheringService, walletService, marketItemNamer, confirmationMenu);
         this.churchMenu = new me.vangoo.infrastructure.ui.ChurchMenu(
-                plugin, churchService, marketItemNamer, confirmationMenu);
+                plugin, churchService, marketItemNamer, creatureNamer, confirmationMenu);
 
         this.duelArenaProvider = new me.vangoo.infrastructure.organizations.DuelArenaProvider();
         this.churchDuelService = new ChurchDuelService(plugin, churchService, pathwayManager,

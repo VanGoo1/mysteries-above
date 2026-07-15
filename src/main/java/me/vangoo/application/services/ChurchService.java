@@ -104,6 +104,7 @@ public class ChurchService {
     private final RecipeUnlockService recipeUnlockService;
     private final MarketItemClassifier classifier;
     private final MarketItemNamer namer;
+    private final CreatureNamer creatureNamer;
     private final WalletService walletService;
     private final Map<String, CreatureDefinition> creatureRegistry;
     private final JSONMembershipRepository membershipRepository;
@@ -129,6 +130,7 @@ public class ChurchService {
                          Map<String, Map<Integer, RecipeDefinition>> potionRecipeConfig,
                          RecipeUnlockService recipeUnlockService,
                          MarketItemClassifier classifier, MarketItemNamer namer,
+                         CreatureNamer creatureNamer,
                          WalletService walletService,
                          Map<String, CreatureDefinition> creatureRegistry,
                          JSONMembershipRepository membershipRepository,
@@ -143,6 +145,7 @@ public class ChurchService {
         this.recipeUnlockService = recipeUnlockService;
         this.classifier = classifier;
         this.namer = namer;
+        this.creatureNamer = creatureNamer;
         this.walletService = walletService;
         this.creatureRegistry = creatureRegistry;
         this.membershipRepository = membershipRepository;
@@ -546,8 +549,11 @@ public class ChurchService {
                 changed = true;
                 if (updated.isComplete()) {
                     membership.addContribution(updated.rewardPoints());
+                    // Назву резолвимо з ключа, а не з persisted-targetName: у завданнях,
+                    // згенерованих до появи укр-назв, там лежить англійський id.
                     killer.sendMessage(PREFIX + ChatColor.GREEN + "Завдання полювання виконано: "
-                            + updated.targetName() + "! +" + updated.rewardPoints() + " очок.");
+                            + creatureNamer.displayName(updated.targetKey())
+                            + "! +" + updated.rewardPoints() + " очок.");
                 } else {
                     updatedTasks.add(updated);
                 }
