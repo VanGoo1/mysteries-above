@@ -17,6 +17,9 @@ public class Membership {
     private ChurchTask initiationTask;      // null = не активна
     private String initiationPathway;       // шлях зілля, обраний при ініціації
     private PotionOrder activeOrder;        // null = нема замовлення
+    // Ключі "<шлях>:<послідовність>" усіх колись замовлених зілль. Живе на членстві,
+    // тож вихід із церкви стирає історію разом із самим Membership.
+    private final java.util.Set<String> orderedPotionKeys = new java.util.HashSet<>();
 
     public Membership(UUID playerId, String institutionId) {
         this.playerId = playerId;
@@ -90,6 +93,31 @@ public class Membership {
     public void setActiveOrder(PotionOrder order) { this.activeOrder = order; }
 
     public void clearActiveOrder() { this.activeOrder = null; }
+
+    /** Ключ зілля в історії замовлень. */
+    public static String orderKey(String pathwayName, int sequence) {
+        return pathwayName + ":" + sequence;
+    }
+
+    public boolean hasOrdered(String pathwayName, int sequence) {
+        return orderedPotionKeys.contains(orderKey(pathwayName, sequence));
+    }
+
+    public void markOrdered(String pathwayName, int sequence) {
+        orderedPotionKeys.add(orderKey(pathwayName, sequence));
+    }
+
+    public java.util.Set<String> orderedPotionKeys() {
+        return java.util.Collections.unmodifiableSet(orderedPotionKeys);
+    }
+
+    /** Гідрація з persisted-стану; null (старий memberships.json) = порожня історія. */
+    public void restoreOrderedPotionKeys(java.util.Collection<String> keys) {
+        orderedPotionKeys.clear();
+        if (keys != null) {
+            orderedPotionKeys.addAll(keys);
+        }
+    }
 
     private static void requirePositive(int points) {
         if (points <= 0) {

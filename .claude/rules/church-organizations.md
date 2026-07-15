@@ -22,6 +22,23 @@
   доступне лише гравцю З ВЖЕ ОБРАНИМ шляхом — гравець без шляху, що тицяє замовити, тепер
   перенаправляється на «спершу пройдіть Випробування шляху» замість прямого пікера шляхів
   (цей обхід ініціації закрито).
+- **Гейти замовлення** — усі в `ChurchService.quoteOrder`, яка повертає `OrderOffer`
+  (`quote` + `OrderDenial`), а НЕ `Optional.empty()`: кожна відмова має власну причину й
+  укр-текст у `ChurchMenu.denialText`. Порядок: технічні випадки (не член / без шляху /
+  вже Посл. 0 / шлях поза доменом церкви / нема ціни чи рецепта) → `UNAVAILABLE`;
+  стеля рангу → `RANK_TOO_LOW`; **засвоєння < 100%** → `MASTERY_INCOMPLETE`;
+  **ключ уже в історії** → `ALREADY_ORDERED`; **баланс < ціни** → `NOT_ENOUGH_POINTS`
+  (єдина причина, що несе `quote` — щоб UI показав ціну поруч із балансом);
+  брак у сховищі лишається успішним `quote` з непорожнім `missing()`.
+  Замовити можна ЛИШЕ наступну послідовність (`targetSeq = getSequenceLevel() - 1`).
+  Гейт 100% — це `beyonder.getMastery().canAdvance()`, той самий предикат, що гейтить
+  `canConsumePotion`/`advance()`: НЕ заводь окрему константу чи ключ конфігу для «100%».
+  `placeOrder` ходить через `quoteOrder`, тож гейти захищають і його.
+- **Історія замовлень** — `Membership.orderedPotionKeys` (ключ `"<шлях>:<посл.>"`,
+  `hasOrdered`/`markOrdered`). Пишеться в `placeOrder` (не в `claimOrder`: скасувати
+  замовлення не можна, тож ранній запис не лишає дірки). Живе на `Membership`, тому
+  `leave()` стирає її разом із членством — пам'ять свідомо В МЕЖАХ ЧЛЕНСТВА, а не
+  постійна per-гравець, як `initiationUsed`.
 - **Сховище** — `domain.organizations.ChurchVault` (itemKey → кількість). Книги рецептів
   (`recipe:<p>:<seq>`) — знання-ГЕЙТ, НЕ споживаються. Варіння списує класичні інгредієнти,
   інакше Характеристику-заміну (`consumeFor` атомарний; юніт-тест `ChurchVaultTest`).
@@ -75,7 +92,11 @@
 
 - `memberships.json` (`JSONMembershipRepository`) — членства, кулдаун повторного вступу,
   прапор пройденої дуелі-без-обраного-шляху (`trialPassed`, тимчасовий) та прапор
-  «вже колись ініційований» (`initiationUsed`, постійний). `church-sites.json` (`ChurchSiteRepository`) — сайти + оброблені села.
+  «вже колись ініційований» (`initiationUsed`, постійний). `MembershipRecord.orderedPotions`
+  — історія замовлень; у файлах, записаних до появи поля, це `null`, і
+  `Membership.restoreOrderedPotionKeys(null)` читає його як порожню історію (пінить
+  `ChurchRepositoriesTest.membershipWithoutOrderedPotionsFieldLoadsAsEmptyHistory`).
+  `church-sites.json` (`ChurchSiteRepository`) — сайти + оброблені села.
   `churches-state.json` (`ChurchStateRepository`) — сховища (institutionId → itemKey → кількість).
   Усі — Gson-каркас `GatheringSnapshotRepository` (corrupt/missing → `Optional.empty()`).
   Схема record-ів = JSON-схема: змінюєш поле — думай про зворотну сумісність живих даних.
@@ -99,6 +120,9 @@
 - Ініціація (дуель) НЕ торкається `ChurchVault` — видача Seq-9 зілля й рецепта в
   `completeTrialInitiation` йде повз сховище церкви.
 - Книга рецепта у сховищі — знання-гейт, `consumeFor` її не споживає.
+- Одне зілля (`шлях:посл.`) — щонайбільше одне замовлення на членство; зілля з церкви не
+  накопичити «про запас»: гейт 100% засвоєння пускає замовлення лише тоді, коли гравець
+  уже готовий його випити.
 - Кожна церква має щонайбільше один сайт на світ (`unplacedChurchIds` мінус розміщені).
 - Стан пишеться після кожної мутації (краш між батчами не лишає сховище/членство неузгодженим).
 - `ChurchService` стан — лише instance-поля, ніколи `static`.

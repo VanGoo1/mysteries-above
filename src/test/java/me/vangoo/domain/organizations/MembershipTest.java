@@ -32,6 +32,36 @@ class MembershipTest {
     }
 
     @Test
+    void orderHistoryIsPerPathwayAndSequence() {
+        Membership m = new Membership(UUID.randomUUID(), "church-evernight");
+        assertFalse(m.hasOrdered("Door", 8));
+        m.markOrdered("Door", 8);
+        assertTrue(m.hasOrdered("Door", 8));
+        assertFalse(m.hasOrdered("Door", 7));      // інша послідовність — окремий запис
+        assertFalse(m.hasOrdered("Fool", 8));      // інший шлях — окремий запис
+        m.markOrdered("Door", 8);                  // повторна позначка не дублює
+        assertEquals(1, m.orderedPotionKeys().size());
+    }
+
+    @Test
+    void orderHistoryRestoresFromKeysAndTreatsNullAsEmpty() {
+        Membership m = new Membership(UUID.randomUUID(), "church-evernight");
+        m.restoreOrderedPotionKeys(java.util.List.of("Door:8", "Door:7"));
+        assertTrue(m.hasOrdered("Door", 8));
+        assertTrue(m.hasOrdered("Door", 7));
+
+        m.restoreOrderedPotionKeys(null); // старий memberships.json без поля
+        assertTrue(m.orderedPotionKeys().isEmpty());
+    }
+
+    @Test
+    void orderedPotionKeysAreNotMutableFromOutside() {
+        Membership m = new Membership(UUID.randomUUID(), "church-evernight");
+        m.markOrdered("Door", 8);
+        assertThrows(UnsupportedOperationException.class, () -> m.orderedPotionKeys().add("Fool:9"));
+    }
+
+    @Test
     void rejectsNonPositiveAmounts() {
         Membership m = new Membership(UUID.randomUUID(), "church-evernight");
         assertThrows(IllegalArgumentException.class, () -> m.addContribution(0));

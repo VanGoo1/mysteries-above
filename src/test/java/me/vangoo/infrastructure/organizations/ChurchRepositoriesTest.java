@@ -25,7 +25,8 @@ class ChurchRepositoriesTest {
                 "HUNT", "error_sphinx_9", "error_sphinx_9", 4, 1, 48);
         var member = new JSONMembershipRepository.MembershipRecord(
                 "church-evernight", 250, 100, 123L, List.of(task), null, null,
-                new JSONMembershipRepository.OrderRecord("Door", 9, 999L, 60));
+                new JSONMembershipRepository.OrderRecord("Door", 9, 999L, 60),
+                List.of("Door:9", "Door:8"));
         var model = new JSONMembershipRepository.Model(Map.of(
                 "11111111-1111-1111-1111-111111111111",
                 new JSONMembershipRepository.PlayerChurchData(member, 0L, true, false),
@@ -39,8 +40,30 @@ class ChurchRepositoriesTest {
         assertEquals(1, p1.membership().tasks().size());
         assertNull(p1.membership().initiationTask());
         assertEquals(9, p1.membership().activeOrder().sequence());
+        assertEquals(List.of("Door:9", "Door:8"), p1.membership().orderedPotions());
         assertTrue(p1.initiationUsed());
         assertNull(loaded.players().get("22222222-2222-2222-2222-222222222222").membership());
+    }
+
+    /** memberships.json, записаний до появи orderedPotions, мусить читатись як порожня історія. */
+    @Test
+    void membershipWithoutOrderedPotionsFieldLoadsAsEmptyHistory() throws IOException {
+        Path file = dir.resolve("memberships.json");
+        Files.writeString(file, """
+                {"players":{"11111111-1111-1111-1111-111111111111":{
+                  "membership":{"institutionId":"church-evernight","lifetimeContribution":250,
+                    "balance":100,"lastTaskRefreshEpochMillis":123,"tasks":[]},
+                  "rejoinCooldownUntilEpochMillis":0,"initiationUsed":false,"trialPassed":false}}}
+                """);
+        var loaded = new JSONMembershipRepository(file.toString()).load().orElseThrow();
+        var membership = loaded.players().get("11111111-1111-1111-1111-111111111111").membership();
+        assertNull(membership.orderedPotions());
+
+        // а Membership.restoreOrderedPotionKeys(null) перетворює цей null на порожню історію
+        var restored = new me.vangoo.domain.organizations.Membership(
+                java.util.UUID.randomUUID(), membership.institutionId());
+        restored.restoreOrderedPotionKeys(membership.orderedPotions());
+        assertTrue(restored.orderedPotionKeys().isEmpty());
     }
 
     @Test
@@ -74,7 +97,7 @@ class ChurchRepositoriesTest {
         var task = new JSONMembershipRepository.TaskRecord(
                 "DELIVER", "custom:night_vanilla", "Нічна ваніль", 6, 0, 8);
         var member = new JSONMembershipRepository.MembershipRecord(
-                "church-evernight", 0, 0, 0L, List.of(task), null, null, null);
+                "church-evernight", 0, 0, 0L, List.of(task), null, null, null, List.of());
         repo.save(new JSONMembershipRepository.Model(Map.of(
                 "11111111-1111-1111-1111-111111111111",
                 new JSONMembershipRepository.PlayerChurchData(member, 0L, false, false))));

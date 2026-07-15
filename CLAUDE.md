@@ -80,7 +80,8 @@ The pure core of `domain` (`entities`, `services`, `spells`, `brewing`, `creatur
   (`GatheringSnapshotRepository`; час наступного збору + ескроу + черга повернень);
   світ-заглушка `mysteries_gathering` створюється ідемпотентно. Див. `.claude/rules/market-gathering.md`.
 - Церкви (Економіка 6b): `memberships.json` (членства/кулдаун/флаг пройденої дуелі-без-шляху
-  `trialPassed` [тимчасовий] + флаг «вже колись ініційований» `initiationUsed` [постійний]),
+  `trialPassed` [тимчасовий] + флаг «вже колись ініційований» `initiationUsed` [постійний]
+  + історія замовлених зілль `orderedPotions` [в межах членства]),
   `church-sites.json` (сайти храмів + оброблені села), `churches-state.json`
   (сховища церков) — усі пишуться після кожної мутації (`ChurchService`, каркас
   `GatheringSnapshotRepository`). Секція `church.*` у `config.yml` (ранги/завдання/замовлення/

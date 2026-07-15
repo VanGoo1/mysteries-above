@@ -62,6 +62,37 @@ public class ChurchService {
 
     public record OrderQuote(String pathwayName, int sequence, int price, Map<String, Integer> missing) {}
 
+    /**
+     * Причина, чому замовлення недоступне. UNAVAILABLE — технічні випадки, недосяжні
+     * з меню або не залежні від дій гравця (не член, без шляху, вже Посл. 0, шлях поза
+     * доменом церкви, немає рецепта чи ціни).
+     */
+    public enum OrderDenial { RANK_TOO_LOW, MASTERY_INCOMPLETE, ALREADY_ORDERED, NOT_ENOUGH_POINTS, UNAVAILABLE }
+
+    /**
+     * Результат розрахунку замовлення: {@code denial == null} — можна замовляти.
+     * {@code quote} не null, коли замовлення доступне АБО коли причина — NOT_ENOUGH_POINTS
+     * (щоб UI показав ціну поруч із балансом); для решти причин quote може бути null.
+     */
+    public record OrderOffer(OrderQuote quote, OrderDenial denial) {
+
+        public static OrderOffer of(OrderQuote quote) {
+            return new OrderOffer(quote, null);
+        }
+
+        public static OrderOffer denied(OrderDenial denial) {
+            return new OrderOffer(null, denial);
+        }
+
+        public static OrderOffer denied(OrderDenial denial, OrderQuote quote) {
+            return new OrderOffer(quote, denial);
+        }
+
+        public boolean isAvailable() {
+            return denial == null;
+        }
+    }
+
     private final Plugin plugin;
     private final ChurchConfig config;
     private final InstitutionRegistry registry;
@@ -156,6 +187,8 @@ public class ChurchService {
                 if (mr.activeOrder() != null) {
                     membership.setActiveOrder(toOrder(mr.activeOrder()));
                 }
+                // null у файлах, записаних до появи поля → порожня історія замовлень.
+                membership.restoreOrderedPotionKeys(mr.orderedPotions());
                 memberships.put(playerId, membership);
             });
         });
@@ -194,7 +227,7 @@ public class ChurchService {
                     membership.lastTaskRefreshEpochMillis(),
                     membership.tasks().stream().map(ChurchService::toRecord).toList(),
                     toRecord(membership.initiationTask()), membership.initiationPathway(),
-                    toRecord(membership.activeOrder()));
+                    toRecord(membership.activeOrder()), List.copyOf(membership.orderedPotionKeys()));
             players.put(id.toString(), new PlayerChurchData(mr,
                     rejoinCooldownUntil.getOrDefault(id, 0L), initiationUsed.contains(id),
                     trialPassed.contains(id)));
@@ -588,55 +621,70 @@ public class ChurchService {
 
     // ── Замовлення зілль (правило 10) ────────────────────────────────────────
 
-    public Optional<OrderQuote> quoteOrder(Player player, String pathwayNameForPathless) {
+    public OrderOffer quoteOrder(Player player, String pathwayNameForPathless) {
         UUID id = player.getUniqueId();
         Membership membership = memberships.get(id);
         if (membership == null) {
-            return Optional.empty();
+            return OrderOffer.denied(OrderDenial.UNAVAILABLE);
         }
         Institution church = registry.byId(membership.institutionId()).orElse(null);
         if (church == null) {
-            return Optional.empty();
+            return OrderOffer.denied(OrderDenial.UNAVAILABLE);
         }
-        String pathwayName = pathwayNameOf(player);
-        String effectivePathway;
-        int targetSeq;
-        if (pathwayName != null) {
-            Beyonder beyonder = beyonderService.getBeyonder(id);
-            if (beyonder == null) {
-                return Optional.empty();
-            }
-            targetSeq = beyonder.getSequenceLevel() - 1;
-            if (targetSeq < 0) {
-                return Optional.empty();
-            }
-            effectivePathway = pathwayName;
-        } else {
-            return Optional.empty();
+        String effectivePathway = pathwayNameOf(player);
+        if (effectivePathway == null) {
+            return OrderOffer.denied(OrderDenial.UNAVAILABLE);
+        }
+        Beyonder beyonder = beyonderService.getBeyonder(id);
+        if (beyonder == null) {
+            return OrderOffer.denied(OrderDenial.UNAVAILABLE);
+        }
+        // Замовити можна ЛИШЕ наступну послідовність; Посл. 0 — стеля шляху.
+        int targetSeq = beyonder.getSequenceLevel() - 1;
+        if (targetSeq < 0) {
+            return OrderOffer.denied(OrderDenial.UNAVAILABLE);
         }
         Optional<PathwayAccess> accessOpt = church.accessFor(effectivePathway);
         if (accessOpt.isEmpty()) {
-            return Optional.empty();
+            return OrderOffer.denied(OrderDenial.UNAVAILABLE);
         }
         PathwayAccess access = accessOpt.get();
         ChurchRank rank = membership.rank(config.rankThresholds());
         if (targetSeq < rank.lowestOrderableSequence(access)) {
-            return Optional.empty();
+            return OrderOffer.denied(OrderDenial.RANK_TOO_LOW);
+        }
+        // Той самий предикат, що гейтить canConsumePotion/advance — єдине джерело правди
+        // про «100% засвоєння»: зілля не замовляють, поки його ще не можна випити.
+        if (!beyonder.getMastery().canAdvance()) {
+            return OrderOffer.denied(OrderDenial.MASTERY_INCOMPLETE);
+        }
+        if (membership.hasOrdered(effectivePathway, targetSeq)) {
+            return OrderOffer.denied(OrderDenial.ALREADY_ORDERED);
         }
         Integer price = config.orderPointsBySeq().get(targetSeq);
         if (price == null) {
-            return Optional.empty();
+            return OrderOffer.denied(OrderDenial.UNAVAILABLE);
         }
         BrewRecipe recipe = brewRecipeFor(effectivePathway, targetSeq);
         if (recipe == null) {
-            return Optional.empty();
+            return OrderOffer.denied(OrderDenial.UNAVAILABLE);
         }
         ChurchVault vault = vaultOf(membership.institutionId());
         Map<String, Integer> missing = new LinkedHashMap<>(vault.missingFor(recipe));
         if (!vault.hasRecipeKnowledge(effectivePathway, targetSeq)) {
             missing.put("recipe:" + effectivePathway + ":" + targetSeq, 1);
         }
-        return Optional.of(new OrderQuote(effectivePathway, targetSeq, price, missing));
+        OrderQuote quote = new OrderQuote(effectivePathway, targetSeq, price, missing);
+        if (membership.balance() < price) {
+            return OrderOffer.denied(OrderDenial.NOT_ENOUGH_POINTS, quote);
+        }
+        return OrderOffer.of(quote);
+    }
+
+    /** Поточне засвоєння гравця у відсотках; -1 = гравець без Beyonder-профілю. */
+    public double masteryPercentOf(UUID playerId) {
+        Beyonder beyonder = beyonderService.getBeyonder(playerId);
+        return beyonder == null ? -1 : beyonder.getMasteryValue();
     }
 
     public boolean placeOrder(Player player, String pathwayNameForPathless) {
@@ -645,11 +693,11 @@ public class ChurchService {
         if (membership == null || membership.activeOrder() != null) {
             return false;
         }
-        Optional<OrderQuote> quoteOpt = quoteOrder(player, pathwayNameForPathless);
-        if (quoteOpt.isEmpty()) {
+        OrderOffer offer = quoteOrder(player, pathwayNameForPathless);
+        if (!offer.isAvailable()) {
             return false;
         }
-        OrderQuote quote = quoteOpt.get();
+        OrderQuote quote = offer.quote();
         if (!quote.missing().isEmpty()) {
             return false;
         }
@@ -663,6 +711,9 @@ public class ChurchService {
         }
         membership.setActiveOrder(new PotionOrder(quote.pathwayName(), quote.sequence(),
                 System.currentTimeMillis() + config.orderBrewHours() * 3_600_000L, quote.price()));
+        // Пишемо на момент замовлення, а не видачі: скасувати замовлення не можна,
+        // тож ранній запис не лишає дірки для повторного замовлення.
+        membership.markOrdered(quote.pathwayName(), quote.sequence());
         persist();
         persistState();
         return true;

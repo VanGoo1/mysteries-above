@@ -6,6 +6,7 @@ import dev.triumphteam.gui.guis.PaginatedGui;
 import me.vangoo.application.services.ChurchDuelService;
 import me.vangoo.application.services.ChurchService;
 import me.vangoo.application.services.ChurchService.JoinResult;
+import me.vangoo.application.services.ChurchService.OrderOffer;
 import me.vangoo.application.services.ChurchService.OrderQuote;
 import me.vangoo.application.services.MarketItemNamer;
 import me.vangoo.domain.market.PoundMoney;
@@ -292,13 +293,13 @@ public class ChurchMenu {
     }
 
     private void showOrderQuote(Player player, String institutionId, String pathwayNameForPathless) {
-        Optional<OrderQuote> quoteOpt = churchService.quoteOrder(player, pathwayNameForPathless);
-        if (quoteOpt.isEmpty()) {
-            player.sendMessage(PREFIX + ChatColor.RED + "Замовлення зілля наразі недоступне.");
+        OrderOffer offer = churchService.quoteOrder(player, pathwayNameForPathless);
+        if (!offer.isAvailable()) {
+            player.sendMessage(PREFIX + ChatColor.RED + denialText(player, offer));
             runSynced(player, () -> openMain(player, institutionId));
             return;
         }
-        OrderQuote quote = quoteOpt.get();
+        OrderQuote quote = offer.quote();
         if (!quote.missing().isEmpty()) {
             String missingText = quote.missing().keySet().stream()
                     .map(namer::displayName)
@@ -317,6 +318,30 @@ public class ChurchMenu {
                 player.sendMessage(PREFIX + ChatColor.RED + "Не вдалося оформити замовлення.");
             }
         });
+    }
+
+    /** Пояснення відмови для гравця: числа беремо з членства й профілю, а не з тексту причини. */
+    private String denialText(Player player, OrderOffer offer) {
+        if (offer.denial() == null) {
+            return "Замовлення зілля наразі недоступне.";
+        }
+        return switch (offer.denial()) {
+            case RANK_TOO_LOW -> "Ваш ранг не дозволяє замовити зілля цієї послідовності.";
+            case MASTERY_INCOMPLETE -> {
+                double mastery = churchService.masteryPercentOf(player.getUniqueId());
+                yield mastery < 0
+                        ? "Спершу доведіть засвоєння до 100%."
+                        : String.format("Засвоєння неповне: %.2f%% зі 100%% — зілля вам не зварять.", mastery);
+            }
+            case ALREADY_ORDERED -> "Ви вже замовляли це зілля в цій церкві.";
+            case NOT_ENOUGH_POINTS -> {
+                int balance = churchService.membershipOf(player.getUniqueId())
+                        .map(Membership::balance).orElse(0);
+                int price = offer.quote() == null ? 0 : offer.quote().price();
+                yield "Недостатньо очок вкладу: " + balance + "/" + price + ".";
+            }
+            case UNAVAILABLE -> "Замовлення зілля наразі недоступне.";
+        };
     }
 
     // ── 5. Пожертви ──────────────────────────────────────────────────────────

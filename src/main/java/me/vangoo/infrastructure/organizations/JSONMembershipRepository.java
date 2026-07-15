@@ -28,10 +28,11 @@ public class JSONMembershipRepository {
     public record OrderRecord(String pathwayName, int sequence,
                               long readyAtEpochMillis, int pointsPaid) {}
 
+    /** orderedPotions — ключі "<шлях>:<посл.>"; null у файлах до появи поля = порожня історія. */
     public record MembershipRecord(String institutionId, int lifetimeContribution, int balance,
                                    long lastTaskRefreshEpochMillis, List<TaskRecord> tasks,
                                    TaskRecord initiationTask, String initiationPathway,
-                                   OrderRecord activeOrder) {}
+                                   OrderRecord activeOrder, List<String> orderedPotions) {}
 
     public record PlayerChurchData(MembershipRecord membership,
                                    long rejoinCooldownUntilEpochMillis,
