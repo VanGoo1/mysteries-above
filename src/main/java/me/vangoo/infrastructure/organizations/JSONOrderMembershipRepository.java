@@ -35,6 +35,8 @@ public class JSONOrderMembershipRepository {
 
     /**
      * pendingRaidLoot — тека від рейдів; null у старих файлах = порожня тека.
+     * pendingRaidChurch — id церкви, чия це здобич (зв'язує теку з RAID-задачею, щоб фавор
+     * не приписався іншому храму); null у старих файлах = нема прив'язки.
      * falsePapers — флаг дезертирства; у старих файлах = false.
      */
     public record PlayerOrderData(MembershipRecord membership,
@@ -44,7 +46,8 @@ public class JSONOrderMembershipRepository {
                                   int beyonderKills,
                                   long talismanReissueAfterEpochMillis,
                                   Map<String, Integer> pendingRaidLoot,
-                                  boolean falsePapers) {}
+                                  boolean falsePapers,
+                                  String pendingRaidChurch) {}
 
     public record Model(Map<String, PlayerOrderData> players) {}
 

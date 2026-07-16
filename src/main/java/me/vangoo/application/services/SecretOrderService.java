@@ -125,6 +125,9 @@ public class SecretOrderService {
     // Task 13), але переноситься 1:1 при (де)гідрації, щоб персист цього сервісу не стирав
     // дані, які запише майбутній RAID-функціонал.
     private final Map<UUID, Map<String, Integer>> pendingRaidLoot = new HashMap<>();
+    // Церква, з якої походить кожна тека рейдової здобичі — зв'язує здачу з правильною
+    // RAID-задачею, щоб фавор не приписався іншому храму й здобич не зникла без нагороди.
+    private final Map<UUID, String> pendingRaidChurch = new HashMap<>();
     private final Map<String, OrderStash> stashes = new HashMap<>();
     private final Map<String, IntelState> intel = new HashMap<>();
     private final Map<String, Long> templeCooldownUntil = new HashMap<>();
@@ -132,7 +135,10 @@ public class SecretOrderService {
     // Живий стан операцій (транзієнтний, як реєстр сесій дуелей): рейдові сесії й
     // охоронці замахів гинуть на рестарті разом зі спавненими мобами — не персиститься.
     private final Map<UUID, RaidSession> raids = new HashMap<>();
-    private final Map<UUID, UUID> assassinationGuards = new HashMap<>(); // guardUuid → assassin
+    private final Map<UUID, GuardMark> assassinationGuards = new HashMap<>(); // guardUuid → замовник+церква
+
+    /** Мітка охоронця замаху: хто замовив і на яку церкву — щоб зарахувати навіть якщо задачу вже стерто. */
+    private record GuardMark(UUID assassin, String churchId) {}
 
     public SecretOrderService(Plugin plugin, OrderConfig config, InstitutionRegistry registry,
                               BeyonderService beyonderService, PathwayManager pathwayManager,
@@ -203,6 +209,9 @@ public class SecretOrderService {
                 if (data.pendingRaidLoot() != null && !data.pendingRaidLoot().isEmpty()) {
                     pendingRaidLoot.put(playerId, new HashMap<>(data.pendingRaidLoot()));
                 }
+                if (data.pendingRaidChurch() != null) {
+                    pendingRaidChurch.put(playerId, data.pendingRaidChurch());
+                }
                 if (data.falsePapers()) {
                     falsePapers.add(playerId);
                 }
@@ -262,6 +271,7 @@ public class SecretOrderService {
         allIds.addAll(talismanReissueAfter.keySet());
         allIds.addAll(falsePapers);
         allIds.addAll(pendingRaidLoot.keySet());
+        allIds.addAll(pendingRaidChurch.keySet());
         Map<String, PlayerOrderData> players = new HashMap<>();
         for (UUID id : allIds) {
             OrderMembership membership = memberships.get(id);
@@ -279,7 +289,8 @@ public class SecretOrderService {
                     beyonderKills.getOrDefault(id, 0),
                     talismanReissueAfter.getOrDefault(id, 0L),
                     pendingRaidLoot.getOrDefault(id, Map.of()),
-                    falsePapers.contains(id)));
+                    falsePapers.contains(id),
+                    pendingRaidChurch.get(id)));
         }
         membershipRepository.save(new JSONOrderMembershipRepository.Model(players));
     }
@@ -1234,6 +1245,7 @@ public class SecretOrderService {
         if (player != null && !taken.isEmpty()) {
             giveRaidLoot(player, taken);
             pendingRaidLoot.put(playerId, new HashMap<>(taken));
+            pendingRaidChurch.put(playerId, churchId);
             player.sendMessage(PREFIX + ChatColor.GREEN + "Злом успішний! Здобич у вас — здайте її в "
                     + "схованку через меню завдань, щоб куратор зарахував рейд.");
         } else if (player != null) {
@@ -1300,8 +1312,14 @@ public class SecretOrderService {
             return 0;
         }
         Map<String, Integer> loot = pendingRaidLoot.get(id);
-        if (loot == null || loot.isEmpty()) {
+        String lootChurch = pendingRaidChurch.get(id);
+        if (loot == null || loot.isEmpty() || lootChurch == null) {
             player.sendMessage(PREFIX + ChatColor.GRAY + "У вас нема рейдової здобичі для здачі.");
+            return 0;
+        }
+        if (!task.targetKey().equals(lootChurch)) {
+            player.sendMessage(PREFIX + ChatColor.GRAY + "Ця здобич не з того храму — здайте її за "
+                    + "потрібним завданням.");
             return 0;
         }
         OrderStash stash = stashOf(membership.institutionId());
@@ -1329,7 +1347,8 @@ public class SecretOrderService {
         }
         if (remaining.isEmpty()) {
             pendingRaidLoot.remove(id);
-            int idx = indexOfTask(membership.tasks(), OrderTask.Type.RAID, task.targetKey());
+            pendingRaidChurch.remove(id);
+            int idx = indexOfTask(membership.tasks(), OrderTask.Type.RAID, lootChurch);
             if (idx >= 0) {
                 completeTaskAt(membership, idx, id);
             }
@@ -1363,8 +1382,8 @@ public class SecretOrderService {
         priestClosedUntil.put(priestInstitutionId, now + config.assassinationPriestRespawnHours() * 3_600_000L);
         CreatureDefinition guardDef = strongestDomainCreature(priestInstitutionId);
         if (guardDef != null) {
-            mythicGateway.spawn(guardDef.id(), player.getLocation())
-                    .ifPresent(guard -> assassinationGuards.put(guard.getUniqueId(), id));
+            mythicGateway.spawn(guardDef.id(), player.getLocation()).ifPresent(guard ->
+                    assassinationGuards.put(guard.getUniqueId(), new GuardMark(id, priestInstitutionId)));
         }
         churchService.broadcastToChurch(priestInstitutionId,
                 ChatColor.DARK_RED + "На священика скоєно замах!");
@@ -1376,21 +1395,24 @@ public class SecretOrderService {
 
     /** Смерть охоронця замаху = замах зараховано: фавор, храм зачинено, розголос членам церкви. */
     public void onGuardKilled(UUID guardUuid, Player killer) {
-        UUID assassin = assassinationGuards.remove(guardUuid);
-        if (assassin == null) {
+        GuardMark mark = assassinationGuards.remove(guardUuid);
+        if (mark == null) {
             return;
         }
-        OrderMembership membership = memberships.get(assassin);
+        OrderMembership membership = memberships.get(mark.assassin());
         if (membership == null) {
             return;
         }
-        int idx = indexOfTask(membership.tasks(), OrderTask.Type.ASSASSINATE, null);
-        if (idx < 0) {
-            return;
-        }
-        String churchId = membership.tasks().get(idx).targetKey();
+        String churchId = mark.churchId();
         long now = System.currentTimeMillis();
-        completeTaskAt(membership, idx, assassin);
+        int idx = indexOfTask(membership.tasks(), OrderTask.Type.ASSASSINATE, churchId);
+        if (idx >= 0) {
+            completeTaskAt(membership, idx, mark.assassin());
+        } else {
+            // Задачу стерло скидання вікна під час бою — вбивство реальне, тож фавор не губимо.
+            creditCompletion(membership, OrderTask.assassinate(churchId, churchNameOf(churchId)),
+                    mark.assassin());
+        }
         priestClosedUntil.put(churchId, now + config.assassinationPriestRespawnHours() * 3_600_000L);
         churchService.broadcastToChurch(churchId, ChatColor.DARK_RED + "Священика вбито! Храм зачинено.");
         persist();
