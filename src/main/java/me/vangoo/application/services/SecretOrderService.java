@@ -1000,8 +1000,7 @@ public class SecretOrderService {
      * {@link Institution#acceptsAnyPathway()}) — по 1x інгредієнти Seq-9 КОЖНОГО реалізованого шляху.
      */
     public void seedStashIfAbsent(String orderId) {
-        OrderStash existing = stashes.get(orderId);
-        if (existing != null && !existing.snapshot().isEmpty()) {
+        if (stashes.containsKey(orderId)) {
             return;
         }
         Optional<Institution> opt = registry.byId(orderId);
@@ -1009,7 +1008,7 @@ public class SecretOrderService {
             return;
         }
         Institution order = opt.get();
-        OrderStash stash = existing != null ? existing : new OrderStash();
+        OrderStash stash = new OrderStash();
         if (order.acceptsAnyPathway()) {
             for (String pathwayName : pathwayManager.getAllPathwayNames()) {
                 Pathway pathway = pathwayManager.getPathway(pathwayName);
@@ -1077,15 +1076,21 @@ public class SecretOrderService {
                 .map(Map.Entry::getKey)
                 .toList();
         for (String churchId : toRespawn) {
-            churchSiteService.siteOf(churchId).ifPresent(site -> {
+            boolean respawned = false;
+            Optional<ChurchSiteRepository.Site> siteOpt = churchSiteService.siteOf(churchId);
+            if (siteOpt.isPresent()) {
+                ChurchSiteRepository.Site site = siteOpt.get();
                 World world = Bukkit.getWorld(site.world());
                 if (world != null) {
                     priestService.spawn(churchId, new Location(world, site.x(), site.y(), site.z(),
                             site.yaw(), site.pitch()));
+                    respawned = true;
                 }
-            });
-            priestClosedUntil.remove(churchId);
-            changed = true;
+            }
+            if (respawned) {
+                priestClosedUntil.remove(churchId);
+                changed = true;
+            }
         }
         if (intel.entrySet().removeIf(e -> e.getValue().expiresAt() <= now)) {
             changed = true;
