@@ -19,6 +19,7 @@ public class ChurchSiteService {
     private final ChurchService churchService;
     private List<ChurchSiteRepository.Site> sites = new ArrayList<>();
     private List<String> processedVillages = new ArrayList<>();
+    private java.util.function.Predicate<String> priestClosurePredicate = id -> false;
 
     public ChurchSiteService(ChurchSiteRepository repository, ChurchPriestService priests,
                              ChurchStructurePlacer placer, ChurchService churchService) {
@@ -84,12 +85,29 @@ public class ChurchSiteService {
 
     public void spawnAllNpcs() {
         for (ChurchSiteRepository.Site s : sites) {
+            if (priestClosurePredicate.test(s.institutionId())) {
+                continue; // храм закритий після замаху — священика відродить SecretOrderService
+            }
             World w = Bukkit.getWorld(s.world());
             if (w != null) {
                 priests.spawn(s.institutionId(),
                         new Location(w, s.x(), s.y(), s.z(), s.yaw(), s.pitch()));
             }
         }
+    }
+
+    public void setPriestClosurePredicate(java.util.function.Predicate<String> predicate) {
+        this.priestClosurePredicate = predicate;
+    }
+
+    public List<ChurchSiteRepository.Site> sites() {
+        return List.copyOf(sites);
+    }
+
+    public java.util.Optional<ChurchSiteRepository.Site> siteOf(String institutionId) {
+        return sites.stream()
+                .filter(s -> s.institutionId().equals(institutionId))
+                .findFirst();
     }
 
     private static ChurchSiteRepository.Site toSite(String institutionId, Location l) {

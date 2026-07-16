@@ -33,6 +33,9 @@ public class ChurchListener implements Listener {
 
     @EventHandler
     public void onPriestClick(NPCRightClickEvent event) {
+        if (event.getClicker().isSneaking()) {
+            return; // sneak-клік зарезервовано під шпигунські дії ордену (OrderListener)
+        }
         priests.institutionOf(event.getNPC())
                 .ifPresent(id -> menu.openFor(event.getClicker(), id));
     }

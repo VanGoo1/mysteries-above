@@ -75,6 +75,16 @@ class ChurchVaultTest {
     }
 
     @Test
+    void takeIsAtomicSecondVaultExit() {
+        ChurchVault vault = new ChurchVault();
+        vault.add("custom:herb", 3);
+        assertFalse(vault.take("custom:herb", 4));
+        assertEquals(3, vault.amountOf("custom:herb"));
+        assertTrue(vault.take("custom:herb", 3));
+        assertEquals(0, vault.amountOf("custom:herb"));
+    }
+
+    @Test
     void orderReadiness() {
         PotionOrder order = new PotionOrder("Door", 9, 1_000L, 60);
         assertFalse(order.isReady(999L));
