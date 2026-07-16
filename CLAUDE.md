@@ -72,7 +72,7 @@ The pure core of `domain` (`entities`, `services`, `spells`, `brewing`, `creatur
 ## Config & persistence
 
 - `src/main/resources/`: `plugin.yml` (commands + `mysteriesabove.admin` permission), `config.yml` (секції `creatures.*`, `market.*`, `convergence.*`, `church.*`), `custom-items.yml`, `global_loot.yml`, `creatures.yml`, `potion-recipes.yml`, `forage.yml` (форедж: цілі/донори/біомні таблиці — див. `.claude/rules/forage.md`). `plugin.yml` and `*.yml` are Maven-filtered resources; `mythic-pack/**` (see below) is not.
-  `config.yml` містить секції `creatures.*` (спавн істот), `market.*` (підпільний ринок), `convergence.*` (приховане тяжіння Закону Конвергенції) і `church.*` (церкви: ранги/завдання/замовлення/пожертви/сід сховищ — див. `.claude/rules/church-organizations.md`); усі читає `ServiceContainer` через `plugin.getConfig()`.
+  `config.yml` містить секції `creatures.*` (спавн істот), `market.*` (підпільний ринок), `convergence.*` (приховане тяжіння Закону Конвергенції), `church.*` (церкви: ранги/завдання/замовлення/пожертви/сід сховищ — див. `.claude/rules/church-organizations.md`) і `orders.*` (таємні організації: запрошення/завдання/рейд/замах/шпигунство/схованка/фавори — див. `.claude/rules/secret-orders.md`); усі читає `ServiceContainer` через `plugin.getConfig()`.
 - Mob content (stats, appearance, skills, templates) lives in the MythicMobs pack `src/main/resources/mythic-pack/`, installed to the server by `MythicPackInstaller`; spawn/loot rules stay in code (`domain.creatures` + `creatures.yml`). See `.claude/rules/mythic-creatures.md` for the full mechanism.
 - Клієнтські ассети (текстури інгредієнтів, «зачаровані» блоки фореджу) — серверний ресурспак `mysteries-resourcepack/`; датапак структур — `mysteries-datapack/`. Обидва роздаються поза Maven-збіркою (див. README ресурспаку).
 - Player state persists to `beyonders.json` in the plugin data folder, written by `BatchedBeyonderRepository` (batched save every 5 minutes + save on disable). Recipe unlocks persist to `recipe_unlocks.json`.
@@ -91,8 +91,21 @@ The pure core of `domain` (`entities`, `services`, `spells`, `brewing`, `creatur
   в окремому void-світі `mysteries_duel` (`ChurchDuelService`/`DuelSession`/
   `DuelArenaProvider`/`DuelBriefing`/`DuelListener`), а не сховищний обряд. Див.
   `.claude/rules/church-organizations.md`.
+- Таємні організації (Економіка 6c): `order-memberships.json` (`JSONOrderMembershipRepository`
+  — членства/ранг=послідовність/фавори/задачі/запрошення/кулдауни вступу й перевидачі
+  талісмана/`abandonedOrders` [вихід із ордену необоротний]/`pendingRaidLoot`+
+  `pendingRaidChurch` [незданий рейд-лут і церква, з якої він]/`falsePapers`) і
+  `orders-state.json` (`OrderStateRepository` — схованки орденів, розвіддані з TTL,
+  кулдауни храмів і закриті-замахом священики) — обидва пишуться після кожної мутації,
+  Gson-каркас `GatheringSnapshotRepository` (corrupt/missing → порожньо). Секція `orders.*`
+  у `config.yml` читає `OrderConfig` з дефолтами в коді; реєстр 25 орденів — той самий код
+  `InstitutionRegistry`, що й церков. Рейд на сховище храму й замах на священика — прямі
+  точки дотику з `ChurchVault`/`ChurchService` (другий вихід сховища, sneak-клік по
+  священику зарезервовано під шпигунство). Див. `.claude/rules/secret-orders.md`.
 - Admin commands (all require `mysteriesabove.admin`): `/pathway`, `/mastery`, `/rampager`, `/potion`, `/custom-items`, `/recipe`, `/structure`, `/characteristic`, `/coins`. Creature testing goes through MythicMobs' own command: `/mm mobs spawn <id>`. `/gathering` — гравецька команда (join/menu), її start/stop — адмінські (перевірка права в коді). `/church` — гравецька (leave/info; `leave` двокрокова — діє лише `/church leave confirm`, бо
-вихід із церкви необоротний), bind/unbind — адмінські (перевірка права в коді).
+вихід із церкви необоротний), bind/unbind — адмінські (перевірка права в коді). `/order` — гравецька команда (invites/accept/talisman/leave/info; `leave` теж двокрокова —
+`/order leave confirm`, вихід із ордену необоротний); сам вступ за шифрованим посланням
+йде через предмет-меню (`OrderMenu`), не команду.
 
 ## Maintaining docs & rules
 
