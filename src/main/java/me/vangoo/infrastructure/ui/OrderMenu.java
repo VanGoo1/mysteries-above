@@ -102,12 +102,16 @@ public class OrderMenu {
             player.sendMessage(PREFIX + ChatColor.RED + "У вас нема шифрованого послання в руці.");
             return;
         }
-        if (inHand.getAmount() <= 1) {
-            player.getInventory().setItemInMainHand(null);
-        } else {
-            inHand.setAmount(inHand.getAmount() - 1);
-        }
+        // Послання витрачається ЛИШЕ на успішному вступі — невдалий клік (уже член / кулдаун /
+        // без шляху) не має з'їдати рідкісний предмет-луту.
         JoinResult result = secretOrderService.join(player, order.id());
+        if (result == JoinResult.OK) {
+            if (inHand.getAmount() <= 1) {
+                player.getInventory().setItemInMainHand(null);
+            } else {
+                inHand.setAmount(inHand.getAmount() - 1);
+            }
+        }
         switch (result) {
             case OK -> {
                 player.sendMessage(PREFIX + ChatColor.GREEN + "Вас прийнято. Талісман ордену вже у вас.");
