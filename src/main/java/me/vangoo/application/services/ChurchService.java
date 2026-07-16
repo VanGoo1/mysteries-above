@@ -113,6 +113,23 @@ public class ChurchService {
     private final ChurchTaskGenerator taskGenerator = new ChurchTaskGenerator();
     private final Random random = new Random();
 
+    /**
+     * Гейт "фальшивих документів" ордену (Спек 6c, FavorOptions.Option.FALSE_PAPERS):
+     * якщо активний, дозволяє вступ у церкву поза доменом шляху гравця. Дефолт — завжди
+     * false (без орденів вступ лишається чистим WRONG_PATHWAY). Провід — SecretOrderService
+     * через сеттер (конструкторної залежності бути не може: church-сервіс будується раніше).
+     */
+    @FunctionalInterface
+    public interface FalsePapersCheck {
+        boolean consume(UUID playerId);
+    }
+
+    private FalsePapersCheck falsePapersCheck = playerId -> false;
+
+    public void setFalsePapersCheck(FalsePapersCheck check) {
+        this.falsePapersCheck = check != null ? check : playerId -> false;
+    }
+
     // ── Стан (instance-поля; гідруються в конструкторі) ────────────────────
     private final Map<UUID, Membership> memberships = new HashMap<>();
     private final Map<UUID, Long> rejoinCooldownUntil = new HashMap<>();
@@ -306,7 +323,7 @@ public class ChurchService {
             return JoinResult.UNKNOWN_CHURCH;
         }
         Institution institution = institutionOpt.get();
-        if (!institution.acceptsPathway(pathwayNameOf(player))) {
+        if (!institution.acceptsPathway(pathwayNameOf(player)) && !falsePapersCheck.consume(id)) {
             return JoinResult.WRONG_PATHWAY;
         }
         memberships.put(id, new Membership(id, institutionId));
@@ -328,6 +345,13 @@ public class ChurchService {
         notifiedReadyOrders.remove(id);
         persist();
         return true;
+    }
+
+    /** Дотик для SecretOrderService.claimClearCooldown: знімає кулдаун повторного вступу. */
+    public void clearRejoinCooldown(UUID playerId) {
+        if (rejoinCooldownUntil.remove(playerId) != null) {
+            persist();
+        }
     }
 
     /** Чи зрікся гравець цієї церкви (вступ у неї закритий назавжди). */
