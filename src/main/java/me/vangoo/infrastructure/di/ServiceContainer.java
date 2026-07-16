@@ -73,6 +73,10 @@ public class ServiceContainer {
     private me.vangoo.infrastructure.organizations.JSONMembershipRepository membershipRepository;
     private me.vangoo.infrastructure.organizations.ChurchSiteRepository churchSiteRepository;
     private me.vangoo.infrastructure.organizations.ChurchStateRepository churchStateRepository;
+    private me.vangoo.infrastructure.organizations.OrderConfig orderConfig;
+    private me.vangoo.infrastructure.organizations.JSONOrderMembershipRepository orderMembershipRepository;
+    private me.vangoo.infrastructure.organizations.OrderStateRepository orderStateRepository;
+    private me.vangoo.infrastructure.items.OrderItems orderItems;
 
     // UI and menus
     private AbilityMenu abilityMenu;
@@ -80,6 +84,7 @@ public class ServiceContainer {
     private me.vangoo.infrastructure.ui.MarketMenu marketMenu;
     private me.vangoo.infrastructure.ui.ConfirmationMenu confirmationMenu;
     private me.vangoo.infrastructure.ui.ChurchMenu churchMenu;
+    private me.vangoo.infrastructure.ui.OrderMenu orderMenu;
 
     // Application services
     private BeyonderService beyonderService;
@@ -96,6 +101,7 @@ public class ServiceContainer {
     private me.vangoo.infrastructure.organizations.DuelArenaProvider duelArenaProvider;
     private ChurchDuelService churchDuelService;
     private me.vangoo.presentation.listeners.DuelListener duelListener;
+    private SecretOrderService secretOrderService;
 
     // Schedulers
     private PassiveAbilityScheduler passiveAbilityScheduler;
@@ -108,6 +114,7 @@ public class ServiceContainer {
     private me.vangoo.infrastructure.schedulers.ForageNodeSpawner forageNodeSpawner;
     private GatheringScheduler gatheringScheduler;
     private me.vangoo.infrastructure.schedulers.ChurchOrderScheduler churchOrderScheduler;
+    private me.vangoo.infrastructure.schedulers.OrderScheduler orderScheduler;
 
     // Event listeners
     private RampageEventListener rampageEventListener;
@@ -233,6 +240,14 @@ public class ServiceContainer {
                 plugin.getDataFolder() + File.separator + "church-sites.json");
         this.churchStateRepository = new me.vangoo.infrastructure.organizations.ChurchStateRepository(
                 plugin.getDataFolder() + File.separator + "churches-state.json");
+
+        // --- Спек 6c: таємні організації ---
+        this.orderConfig = me.vangoo.infrastructure.organizations.OrderConfig.load(plugin);
+        this.orderMembershipRepository = new me.vangoo.infrastructure.organizations.JSONOrderMembershipRepository(
+                plugin.getDataFolder() + File.separator + "order-memberships.json");
+        this.orderStateRepository = new me.vangoo.infrastructure.organizations.OrderStateRepository(
+                plugin.getDataFolder() + File.separator + "orders-state.json");
+        this.orderItems = new me.vangoo.infrastructure.items.OrderItems(customItemService);
     }
 
     private void initializeApplicationServices(fr.skytasul.glowingentities.GlowingEntities glowingEntities,
@@ -308,6 +323,16 @@ public class ServiceContainer {
         this.churchStructurePlacer = new me.vangoo.infrastructure.organizations.ChurchStructurePlacer(plugin);
         this.churchSiteService = new me.vangoo.infrastructure.organizations.ChurchSiteService(
                 churchSiteRepository, churchPriestService, churchStructurePlacer, churchService);
+
+        // --- Спек 6c: таємні організації ---
+        this.secretOrderService = new SecretOrderService(plugin, orderConfig, institutionRegistry,
+                beyonderService, pathwayManager, recipeUnlockService, customItemService,
+                characteristicCodec, marketItemClassifier, marketItemNamer, creatureNamer,
+                creatureRegistry, potionRecipeConfig, churchService, churchSiteService,
+                mythicCreatureGateway, potionManager, recipeBookFactory,
+                orderItems, orderMembershipRepository, orderStateRepository, churchPriestService);
+        churchSiteService.setPriestClosurePredicate(secretOrderService::isTempleClosed);
+        churchService.setFalsePapersCheck(secretOrderService::consumeFalsePapersIfActive);
     }
 
     private void initializeUI() {
@@ -334,6 +359,10 @@ public class ServiceContainer {
         this.churchDuelService.setTrialChoiceOpener(churchMenu::openTrialPathwayChoice);
         this.duelListener = new me.vangoo.presentation.listeners.DuelListener(
                 churchDuelService);
+
+        // --- Спек 6c: таємні організації ---
+        this.orderMenu = new me.vangoo.infrastructure.ui.OrderMenu(
+                plugin, secretOrderService, marketItemNamer, creatureNamer, confirmationMenu, orderItems);
     }
 
     private void initializeSchedulers() {
@@ -385,6 +414,7 @@ public class ServiceContainer {
 
         this.gatheringScheduler = new GatheringScheduler(plugin, gatheringService);
         this.churchOrderScheduler = new me.vangoo.infrastructure.schedulers.ChurchOrderScheduler(plugin, churchService);
+        this.orderScheduler = new me.vangoo.infrastructure.schedulers.OrderScheduler(plugin, secretOrderService);
     }
 
     private void initializeEventListeners() {
@@ -458,6 +488,9 @@ public class ServiceContainer {
     public me.vangoo.infrastructure.organizations.ChurchSiteService getChurchSiteService() { return churchSiteService; }
     public ChurchDuelService getChurchDuelService() { return churchDuelService; }
     public me.vangoo.presentation.listeners.DuelListener getDuelListener() { return duelListener; }
+    public SecretOrderService getSecretOrderService() { return secretOrderService; }
+    public me.vangoo.infrastructure.ui.OrderMenu getOrderMenu() { return orderMenu; }
+    public me.vangoo.infrastructure.items.OrderItems getOrderItems() { return orderItems; }
 
     public PassiveAbilityScheduler getPassiveAbilityScheduler() { return passiveAbilityScheduler; }
     public MasteryRegenerationScheduler getMasteryRegenerationScheduler() { return masteryRegenerationScheduler; }
@@ -469,12 +502,14 @@ public class ServiceContainer {
     public me.vangoo.infrastructure.schedulers.ForageNodeSpawner getForageNodeSpawner() { return forageNodeSpawner; }
     public GatheringScheduler getGatheringScheduler() { return gatheringScheduler; }
     public me.vangoo.infrastructure.schedulers.ChurchOrderScheduler getChurchOrderScheduler() { return churchOrderScheduler; }
+    public me.vangoo.infrastructure.schedulers.OrderScheduler getOrderScheduler() { return orderScheduler; }
 
     public RampageEventListener getRampageEventListener() { return rampageEventListener; }
     public CharacteristicExtractor getCharacteristicExtractor() { return characteristicExtractor; }
     public WardenRemnantCodec getWardenRemnantCodec() { return wardenRemnantCodec; }
     public RampageRemnantDeathListener getRampageRemnantDeathListener() { return rampageRemnantDeathListener; }
     public me.vangoo.infrastructure.mythic.MythicCreatureGateway getMythicCreatureGateway() { return mythicCreatureGateway; }
+    public java.util.Map<String, me.vangoo.domain.creatures.CreatureDefinition> getCreatureRegistry() { return creatureRegistry; }
     public me.vangoo.presentation.listeners.CreatureDeathListener getCreatureDeathListener() { return creatureDeathListener; }
     public me.vangoo.presentation.listeners.NaturalCreatureSpawnListener getNaturalCreatureSpawnListener() { return naturalCreatureSpawnListener; }
     public me.vangoo.presentation.listeners.StructureCreatureSpawnListener getStructureCreatureSpawnListener() { return structureCreatureSpawnListener; }
@@ -504,6 +539,7 @@ public class ServiceContainer {
         forageNodeSpawner.start();
         gatheringScheduler.start();
         churchOrderScheduler.start();
+        orderScheduler.start();
 
         // Start batched save scheduler (every 5 minutes)
         startBatchedSaveScheduler();
@@ -548,6 +584,9 @@ public class ServiceContainer {
         }
         if (churchOrderScheduler != null) {
             churchOrderScheduler.stop();
+        }
+        if (orderScheduler != null) {
+            orderScheduler.stop();
         }
     }
 

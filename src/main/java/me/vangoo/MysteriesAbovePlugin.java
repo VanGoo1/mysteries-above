@@ -186,6 +186,11 @@ public class MysteriesAbovePlugin extends JavaPlugin {
             services.getChurchPriestService().despawnAll();
         }
 
+        // Таємні організації: закрити активні рейдові сесії ДО збереження
+        if (services != null) {
+            services.getSecretOrderService().endAllRaids();
+        }
+
         // Save all data and cleanup
         if (services != null) {
             services.saveAll();
@@ -281,6 +286,12 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(churchListener, this);
         getServer().getPluginManager().registerEvents(churchSpawnListener, this);
         getServer().getPluginManager().registerEvents(services.getDuelListener(), this);
+
+        OrderListener orderListener = new OrderListener(
+                services.getSecretOrderService(), services.getOrderMenu(), services.getOrderItems(),
+                services.getMythicCreatureGateway(), services.getChurchPriestService(),
+                services.getBeyonderService(), services.getRampageManager(), services.getCreatureRegistry());
+        getServer().getPluginManager().registerEvents(orderListener, this);
     }
 
     private void registerCommands() {
@@ -323,5 +334,9 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         ChurchCommand churchCommand = new ChurchCommand(services.getChurchService(), services.getChurchSiteService());
         getCommand("church").setExecutor(churchCommand);
         getCommand("church").setTabCompleter(churchCommand);
+
+        OrderCommand orderCommand = new OrderCommand(services.getSecretOrderService(), services.getBeyonderService());
+        getCommand("order").setExecutor(orderCommand);
+        getCommand("order").setTabCompleter(orderCommand);
     }
 }
