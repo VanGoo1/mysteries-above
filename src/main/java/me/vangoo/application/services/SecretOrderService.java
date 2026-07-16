@@ -18,11 +18,13 @@ import me.vangoo.domain.organizations.OrderStash;
 import me.vangoo.domain.organizations.OrderTask;
 import me.vangoo.domain.organizations.OrderTaskGenerator;
 import me.vangoo.domain.organizations.PathwayAccess;
+import me.vangoo.domain.organizations.RaidPlanner;
 import me.vangoo.domain.organizations.TaskQuota;
 import me.vangoo.domain.organizations.TaskWeight;
 import me.vangoo.infrastructure.citizens.ChurchPriestService;
 import me.vangoo.infrastructure.items.CharacteristicCodec;
 import me.vangoo.infrastructure.items.OrderItems;
+import me.vangoo.infrastructure.items.RecipeBookFactory;
 import me.vangoo.infrastructure.mythic.MythicCreatureGateway;
 import me.vangoo.infrastructure.organizations.ChurchSiteRepository;
 import me.vangoo.infrastructure.organizations.ChurchSiteService;
@@ -44,11 +46,13 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -93,6 +97,8 @@ public class SecretOrderService {
     private final ChurchService churchService;
     private final ChurchSiteService churchSiteService;
     private final MythicCreatureGateway mythicGateway;
+    private final PotionManager potionManager;
+    private final RecipeBookFactory recipeBookFactory;
     private final OrderItems orderItems;
     private final JSONOrderMembershipRepository membershipRepository;
     private final OrderStateRepository stateRepository;
@@ -123,6 +129,10 @@ public class SecretOrderService {
     private final Map<String, IntelState> intel = new HashMap<>();
     private final Map<String, Long> templeCooldownUntil = new HashMap<>();
     private final Map<String, Long> priestClosedUntil = new HashMap<>();
+    // Живий стан операцій (транзієнтний, як реєстр сесій дуелей): рейдові сесії й
+    // охоронці замахів гинуть на рестарті разом зі спавненими мобами — не персиститься.
+    private final Map<UUID, RaidSession> raids = new HashMap<>();
+    private final Map<UUID, UUID> assassinationGuards = new HashMap<>(); // guardUuid → assassin
 
     public SecretOrderService(Plugin plugin, OrderConfig config, InstitutionRegistry registry,
                               BeyonderService beyonderService, PathwayManager pathwayManager,
@@ -132,7 +142,8 @@ public class SecretOrderService {
                               Map<String, CreatureDefinition> creatureRegistry,
                               Map<String, Map<Integer, RecipeDefinition>> potionRecipeConfig,
                               ChurchService churchService, ChurchSiteService churchSiteService,
-                              MythicCreatureGateway mythicGateway, OrderItems orderItems,
+                              MythicCreatureGateway mythicGateway, PotionManager potionManager,
+                              RecipeBookFactory recipeBookFactory, OrderItems orderItems,
                               JSONOrderMembershipRepository membershipRepository,
                               OrderStateRepository stateRepository, ChurchPriestService priestService) {
         this.plugin = plugin;
@@ -151,6 +162,8 @@ public class SecretOrderService {
         this.churchService = churchService;
         this.churchSiteService = churchSiteService;
         this.mythicGateway = mythicGateway;
+        this.potionManager = potionManager;
+        this.recipeBookFactory = recipeBookFactory;
         this.orderItems = orderItems;
         this.membershipRepository = membershipRepository;
         this.stateRepository = stateRepository;
@@ -700,12 +713,35 @@ public class SecretOrderService {
      * у валюту прохань. Рандом сервіса, юніт-тестом не пінитьcя (див. task-12-brief).
      */
     private void completeTask(Player player, OrderMembership membership, OrderTask task) {
+        creditCompletion(membership, task, player.getUniqueId());
+    }
+
+    /**
+     * Нараховує фавор за завершене завдання й повідомляє гравця, якщо він онлайн
+     * (замах/шпигунство можуть завершитись, коли виконавець уже вийшов). LIGHT має
+     * 0.35 шанс піти без фавора — див. {@link #completeTask}.
+     */
+    private void creditCompletion(OrderMembership membership, OrderTask task, UUID playerId) {
+        Player online = Bukkit.getPlayer(playerId);
         if (task.weight() == TaskWeight.LIGHT && random.nextDouble() < 0.35) {
-            player.sendMessage(PREFIX + ChatColor.GRAY + "Куратор лише кивнув.");
+            if (online != null) {
+                online.sendMessage(PREFIX + ChatColor.GRAY + "Куратор лише кивнув.");
+            }
             return;
         }
         membership.addFavor(new Favor(task.weight(), System.currentTimeMillis()));
-        player.sendMessage(PREFIX + ChatColor.GREEN + "Куратор запам'ятав це.");
+        if (online != null) {
+            online.sendMessage(PREFIX + ChatColor.GREEN + "Куратор запам'ятав це.");
+        }
+    }
+
+    /** Позначає завдання за індексом виконаним, прибирає його зі списку й нараховує фавор. */
+    private void completeTaskAt(OrderMembership membership, int index, UUID playerId) {
+        List<OrderTask> tasks = new ArrayList<>(membership.tasks());
+        OrderTask done = tasks.get(index).withProgress(tasks.get(index).required());
+        tasks.remove(index);
+        membership.setTasks(tasks);
+        creditCompletion(membership, done, playerId);
     }
 
     // ── Фавори: прохання до куратора ─────────────────────────────────────────
@@ -1108,6 +1144,412 @@ public class SecretOrderService {
     public boolean isTempleOnCooldown(String churchId) {
         Long until = templeCooldownUntil.get(churchId);
         return until != null && until > System.currentTimeMillis();
+    }
+
+    // ── Рейд на сховище храму ────────────────────────────────────────────────
+
+    /**
+     * Старт злому сховища храму-цілі. Гейти: активна RAID-задача; ніч
+     * ({@code world.getTime()} в [13000,23000]); гравець у радіусі сайту цілі; храм не
+     * закритий і не на кулдауні; нема активної рейд-сесії. Фавор за RAID НЕ дається тут —
+     * лише після здачі здобичі в схованку ({@link #depositRaidLoot}).
+     */
+    public boolean startRaid(Player player) {
+        UUID id = player.getUniqueId();
+        OrderMembership membership = memberships.get(id);
+        if (membership == null || raids.containsKey(id)) {
+            return false;
+        }
+        int raidIdx = indexOfTask(membership.tasks(), OrderTask.Type.RAID, null);
+        if (raidIdx < 0) {
+            return false;
+        }
+        String churchId = membership.tasks().get(raidIdx).targetKey();
+        long time = player.getWorld().getTime();
+        if (time < 13000 || time > 23000) {
+            player.sendMessage(PREFIX + ChatColor.GRAY + "Рейдувати храм можна лише глупої ночі.");
+            return false;
+        }
+        if (isTempleClosed(churchId) || isTempleOnCooldown(churchId)) {
+            player.sendMessage(PREFIX + ChatColor.GRAY + "Храм цілі зараз не рейдувати.");
+            return false;
+        }
+        Optional<ChurchSiteRepository.Site> siteOpt = churchSiteService.siteOf(churchId);
+        if (siteOpt.isEmpty()) {
+            return false;
+        }
+        ChurchSiteRepository.Site site = siteOpt.get();
+        World siteWorld = Bukkit.getWorld(site.world());
+        if (siteWorld == null) {
+            return false;
+        }
+        Location center = new Location(siteWorld, site.x(), site.y(), site.z());
+        if (!siteWorld.equals(player.getWorld())
+                || player.getLocation().distance(center) > config.raidZoneRadius()) {
+            player.sendMessage(PREFIX + ChatColor.GRAY + "Ви надто далеко від храму цілі.");
+            return false;
+        }
+        boolean hasIntel = intelManifest(membership.institutionId(), churchId).isPresent();
+        double alarmChance = RaidPlanner.alarmChancePerSecond(config.raidAlarmChance(), hasIntel,
+                config.raidAlarmIntelFactor());
+        RaidSession session = new RaidSession(id, churchId, center, config.raidChannelSeconds(),
+                alarmChance, config.raidZoneRadius(),
+                () -> raidAlarm(id, churchId),
+                () -> raidSucceeded(id, churchId, hasIntel),
+                () -> raidFailed(id));
+        raids.put(id, session);
+        session.start(plugin, random);
+        player.sendMessage(PREFIX + ChatColor.DARK_RED + "Ви почали злом сховища. Лишайтесь у зоні храму.");
+        return true;
+    }
+
+    /** Тривога: спавн варти домену церкви біля рейдера + сповіщення онлайн-членам церкви. */
+    private void raidAlarm(UUID playerId, String churchId) {
+        Player player = Bukkit.getPlayer(playerId);
+        int x = 0;
+        int z = 0;
+        if (player != null) {
+            Location at = player.getLocation();
+            x = at.getBlockX();
+            z = at.getBlockZ();
+            List<CreatureDefinition> pool = domainCreaturePool(churchId, 7);
+            for (int i = 0; i < config.raidGuards() && !pool.isEmpty(); i++) {
+                CreatureDefinition guard = pool.get(random.nextInt(pool.size()));
+                mythicGateway.spawn(guard.id(), at);
+            }
+        }
+        churchService.broadcastToChurch(churchId, ChatColor.RED + "На храм " + churchNameOf(churchId)
+                + " напад! (" + x + ", " + z + ")");
+    }
+
+    /** Успіх злому: здобич зі сховища церкви гравцю в руки + запис у {@code pendingRaidLoot}. */
+    private void raidSucceeded(UUID playerId, String churchId, boolean hasIntel) {
+        raids.remove(playerId);
+        long now = System.currentTimeMillis();
+        int picks = hasIntel ? config.raidLootIntelPicks() : config.raidLootPicks();
+        Map<String, Integer> rolled = RaidPlanner.rollLoot(churchService.vaultSnapshot(churchId),
+                picks, hasIntel, random);
+        Map<String, Integer> taken = churchService.stealFromVault(churchId, rolled);
+        Player player = Bukkit.getPlayer(playerId);
+        if (player != null && !taken.isEmpty()) {
+            giveRaidLoot(player, taken);
+            pendingRaidLoot.put(playerId, new HashMap<>(taken));
+            player.sendMessage(PREFIX + ChatColor.GREEN + "Злом успішний! Здобич у вас — здайте її в "
+                    + "схованку через меню завдань, щоб куратор зарахував рейд.");
+        } else if (player != null) {
+            player.sendMessage(PREFIX + ChatColor.GRAY + "Сховище храму виявилось порожнім.");
+        }
+        templeCooldownUntil.put(churchId, now + config.raidTempleCooldownHours() * 3_600_000L);
+        persist();
+        persistState();
+    }
+
+    /** Провал злому (вихід із зони / смерть / таймаут): кулдаун храму, ризик викриття, RAID-задача згорає. */
+    private void raidFailed(UUID playerId) {
+        RaidSession session = raids.remove(playerId);
+        if (session == null) {
+            return; // вже оброблено (напр. onRaiderDied уже викликав)
+        }
+        String churchId = session.churchId();
+        long now = System.currentTimeMillis();
+        templeCooldownUntil.put(churchId, now + config.raidTempleCooldownHours() * 3_600_000L);
+        OrderMembership membership = memberships.get(playerId);
+        if (membership != null) {
+            List<OrderTask> tasks = new ArrayList<>(membership.tasks());
+            tasks.removeIf(t -> t.type() == OrderTask.Type.RAID && t.targetKey().equals(churchId));
+            membership.setTasks(tasks);
+        }
+        Player player = Bukkit.getPlayer(playerId);
+        boolean ownChurch = churchService.churchOf(playerId).map(c -> c.id().equals(churchId)).orElse(false);
+        if (ownChurch && player != null && random.nextDouble() < config.exposureFailedRaidChance()) {
+            churchService.expelExposedSpy(player);
+        } else if (player != null) {
+            player.sendMessage(PREFIX + ChatColor.RED + "Рейд провалено.");
+        }
+        persist();
+        persistState();
+    }
+
+    /** Смерть рейдера: провал сесії; якщо вбивця — член церкви-цілі, це захист храму. */
+    public void onRaiderDied(Player raider, Player killerOrNull) {
+        RaidSession session = raids.get(raider.getUniqueId());
+        if (session == null) {
+            return;
+        }
+        String churchId = session.churchId();
+        session.cancel();
+        raidFailed(raider.getUniqueId());
+        if (killerOrNull != null) {
+            churchService.onTempleDefended(killerOrNull, churchId);
+        }
+    }
+
+    /** Здача рейдової здобичі в схованку ордену — саме тут зараховується RAID-задача (фавор). */
+    public int depositRaidLoot(Player player, int taskIndex) {
+        UUID id = player.getUniqueId();
+        OrderMembership membership = memberships.get(id);
+        if (membership == null) {
+            return 0;
+        }
+        List<OrderTask> tasks = membership.tasks();
+        if (taskIndex < 0 || taskIndex >= tasks.size()) {
+            return 0;
+        }
+        OrderTask task = tasks.get(taskIndex);
+        if (task.type() != OrderTask.Type.RAID) {
+            return 0;
+        }
+        Map<String, Integer> loot = pendingRaidLoot.get(id);
+        if (loot == null || loot.isEmpty()) {
+            player.sendMessage(PREFIX + ChatColor.GRAY + "У вас нема рейдової здобичі для здачі.");
+            return 0;
+        }
+        OrderStash stash = stashOf(membership.institutionId());
+        int deposited = 0;
+        Map<String, Integer> remaining = new HashMap<>(loot);
+        for (Map.Entry<String, Integer> entry : loot.entrySet()) {
+            String key = entry.getKey();
+            int want = entry.getValue();
+            List<ItemStack> removed = removeMatching(player, key, want);
+            int got = removed.stream().mapToInt(ItemStack::getAmount).sum();
+            if (got > 0) {
+                stash.add(key, got);
+                deposited += got;
+            }
+            int left = want - got;
+            if (left <= 0) {
+                remaining.remove(key);
+            } else {
+                remaining.put(key, left);
+            }
+        }
+        if (deposited <= 0) {
+            player.sendMessage(PREFIX + ChatColor.GRAY + "Здобичі рейду нема у ваших руках.");
+            return 0;
+        }
+        if (remaining.isEmpty()) {
+            pendingRaidLoot.remove(id);
+            int idx = indexOfTask(membership.tasks(), OrderTask.Type.RAID, task.targetKey());
+            if (idx >= 0) {
+                completeTaskAt(membership, idx, id);
+            }
+        } else {
+            pendingRaidLoot.put(id, remaining);
+        }
+        persist();
+        persistState();
+        return deposited;
+    }
+
+    // ── Замах на священика ────────────────────────────────────────────────────
+
+    /**
+     * Старт замаху: гравець має ASSASSINATE-задачу на цю церкву. Священик деспавниться, храм
+     * закривається до респавну ({@code priest-respawn-hours}) навіть якщо охоронця не здолано
+     * (священик фізично зник — {@code isTempleClosed} має це відображати), спавниться охоронець
+     * найсильнішої доступної послідовності домену церкви.
+     */
+    public boolean startAssassination(Player player, String priestInstitutionId) {
+        UUID id = player.getUniqueId();
+        OrderMembership membership = memberships.get(id);
+        if (membership == null) {
+            return false;
+        }
+        if (indexOfTask(membership.tasks(), OrderTask.Type.ASSASSINATE, priestInstitutionId) < 0) {
+            return false;
+        }
+        priestService.despawnAt(priestInstitutionId, player.getLocation());
+        long now = System.currentTimeMillis();
+        priestClosedUntil.put(priestInstitutionId, now + config.assassinationPriestRespawnHours() * 3_600_000L);
+        CreatureDefinition guardDef = strongestDomainCreature(priestInstitutionId);
+        if (guardDef != null) {
+            mythicGateway.spawn(guardDef.id(), player.getLocation())
+                    .ifPresent(guard -> assassinationGuards.put(guard.getUniqueId(), id));
+        }
+        churchService.broadcastToChurch(priestInstitutionId,
+                ChatColor.DARK_RED + "На священика скоєно замах!");
+        player.sendMessage(PREFIX + ChatColor.DARK_RED + "Ви напали на священика. Здолайте охоронця, "
+                + "щоб завершити замах.");
+        persistState();
+        return true;
+    }
+
+    /** Смерть охоронця замаху = замах зараховано: фавор, храм зачинено, розголос членам церкви. */
+    public void onGuardKilled(UUID guardUuid, Player killer) {
+        UUID assassin = assassinationGuards.remove(guardUuid);
+        if (assassin == null) {
+            return;
+        }
+        OrderMembership membership = memberships.get(assassin);
+        if (membership == null) {
+            return;
+        }
+        int idx = indexOfTask(membership.tasks(), OrderTask.Type.ASSASSINATE, null);
+        if (idx < 0) {
+            return;
+        }
+        String churchId = membership.tasks().get(idx).targetKey();
+        long now = System.currentTimeMillis();
+        completeTaskAt(membership, idx, assassin);
+        priestClosedUntil.put(churchId, now + config.assassinationPriestRespawnHours() * 3_600_000L);
+        churchService.broadcastToChurch(churchId, ChatColor.DARK_RED + "Священика вбито! Храм зачинено.");
+        persist();
+        persistState();
+    }
+
+    // ── Шпигунство подвійного агента ─────────────────────────────────────────
+
+    /**
+     * Sneak-клік по священику ВЛАСНОЇ церкви. Активна RECON → знімок сховища церкви в
+     * розвіддані ордену; активна SABOTAGE → затримка чужого замовлення. Кожна дія: прогрес
+     * задачі → фавор + ролл викриття (викриття = необоротне вигнання з церкви).
+     *
+     * @return true, якщо шпигунська дія відбулась (лістенер тоді НЕ відкриває меню священика).
+     */
+    public boolean performSpyAction(Player player, String priestInstitutionId) {
+        UUID id = player.getUniqueId();
+        OrderMembership membership = memberships.get(id);
+        if (membership == null) {
+            return false;
+        }
+        boolean ownChurch = churchService.churchOf(id)
+                .map(c -> c.id().equals(priestInstitutionId)).orElse(false);
+        if (!ownChurch) {
+            return false;
+        }
+        int reconIdx = indexOfTask(membership.tasks(), OrderTask.Type.RECON, priestInstitutionId);
+        if (reconIdx >= 0) {
+            long now = System.currentTimeMillis();
+            Map<String, Integer> snapshot = churchService.vaultSnapshot(priestInstitutionId);
+            intel.put(membership.institutionId() + "|" + priestInstitutionId,
+                    new IntelState(snapshot, now + config.reconTtlHours() * 3_600_000L));
+            completeTaskAt(membership, reconIdx, id);
+            player.sendMessage(PREFIX + ChatColor.GREEN + "Ви зняли розвіддані сховища церкви.");
+            persist();
+            persistState();
+            rollExposure(player, config.exposureReconChance());
+            return true;
+        }
+        int sabotageIdx = indexOfTask(membership.tasks(), OrderTask.Type.SABOTAGE, priestInstitutionId);
+        if (sabotageIdx >= 0) {
+            churchService.delayRandomBrewingOrder(priestInstitutionId,
+                    config.sabotageDelayHours() * 3_600_000L, id);
+            completeTaskAt(membership, sabotageIdx, id);
+            player.sendMessage(PREFIX + ChatColor.GREEN + "Ви підклали свиню варильні церкви.");
+            persist();
+            rollExposure(player, config.exposureSabotageChance());
+            return true;
+        }
+        return false;
+    }
+
+    private void rollExposure(Player player, double chance) {
+        if (random.nextDouble() < chance) {
+            churchService.expelExposedSpy(player);
+        }
+    }
+
+    public void endAllRaids() {
+        for (RaidSession session : raids.values()) {
+            session.cancel();
+        }
+        raids.clear();
+        assassinationGuards.clear();
+    }
+
+    // ── Хелпери операцій ──────────────────────────────────────────────────────
+
+    /** Перший незавершений індекс завдання типу {@code type}; {@code targetKey==null} — будь-яка ціль. */
+    private int indexOfTask(List<OrderTask> tasks, OrderTask.Type type, String targetKey) {
+        for (int i = 0; i < tasks.size(); i++) {
+            OrderTask t = tasks.get(i);
+            if (t.type() == type && !t.isComplete()
+                    && (targetKey == null || t.targetKey().equals(targetKey))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /** Групи {@link me.vangoo.domain.entities.PathwayGroup} доменів церкви (за доступами інституції). */
+    private Set<String> churchGroups(String churchId) {
+        Map<String, String> pathwayToGroup = pathwayToGroupMap();
+        return registry.byId(churchId)
+                .map(inst -> inst.accesses().stream()
+                        .map(a -> pathwayToGroup.get(a.pathwayName()))
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet()))
+                .orElse(Set.of());
+    }
+
+    /** Варта тривоги: істоти домену церкви з {@code sequence <= maxSeq}; фолбек — будь-які. */
+    private List<CreatureDefinition> domainCreaturePool(String churchId, int maxSeqInclusive) {
+        Set<String> groups = churchGroups(churchId);
+        Map<String, String> pathwayToGroup = pathwayToGroupMap();
+        List<CreatureDefinition> capped = creatureRegistry.values().stream()
+                .filter(c -> c.sequence() <= maxSeqInclusive)
+                .toList();
+        List<CreatureDefinition> domain = capped.stream()
+                .filter(c -> groups.contains(pathwayToGroup.get(c.pathway())))
+                .toList();
+        if (!domain.isEmpty()) {
+            return domain;
+        }
+        if (!capped.isEmpty()) {
+            return capped;
+        }
+        return new ArrayList<>(creatureRegistry.values());
+    }
+
+    /** Охоронець замаху: найсильніша (мінімальна {@code sequence}) істота домену; фолбек — будь-яка. */
+    private CreatureDefinition strongestDomainCreature(String churchId) {
+        Set<String> groups = churchGroups(churchId);
+        Map<String, String> pathwayToGroup = pathwayToGroupMap();
+        return creatureRegistry.values().stream()
+                .filter(c -> groups.contains(pathwayToGroup.get(c.pathway())))
+                .min(Comparator.comparingInt(CreatureDefinition::sequence))
+                .or(() -> creatureRegistry.values().stream()
+                        .min(Comparator.comparingInt(CreatureDefinition::sequence)))
+                .orElse(null);
+    }
+
+    private void giveRaidLoot(Player player, Map<String, Integer> loot) {
+        loot.forEach((key, amount) -> {
+            if (key.startsWith("custom:")) {
+                customItemService.createItemStack(key.substring("custom:".length())).ifPresent(item -> {
+                    item.setAmount(Math.max(1, Math.min(amount, item.getMaxStackSize())));
+                    giveItem(player, item);
+                });
+            } else if (key.startsWith("recipe:")) {
+                String[] parts = key.split(":");
+                if (parts.length == 3) {
+                    int seq = parseSeq(parts[2]);
+                    if (seq >= 0) {
+                        potionManager.getPotionsPathway(parts[1]).ifPresent(pp -> {
+                            for (int i = 0; i < amount; i++) {
+                                giveItem(player, recipeBookFactory.createRecipeBook(pp, seq));
+                            }
+                        });
+                    }
+                }
+            } else if (key.startsWith("characteristic:")) {
+                String[] parts = key.split(":");
+                if (parts.length == 3) {
+                    int seq = parseSeq(parts[2]);
+                    if (seq >= 0) {
+                        giveItem(player, characteristicCodec.create(parts[1], seq, amount));
+                    }
+                }
+            }
+        });
+    }
+
+    private static int parseSeq(String raw) {
+        try {
+            return Integer.parseInt(raw);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     // ── Приватні хелпери (скопійовано з ChurchService — вони там приватні) ────
