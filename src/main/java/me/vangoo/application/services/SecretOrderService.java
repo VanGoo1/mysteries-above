@@ -401,6 +401,11 @@ public class SecretOrderService {
         return membership == null ? Optional.empty() : registry.byId(membership.institutionId());
     }
 
+    /** Реєстр інституцій — для UI/команд, що резолвлять displayName поза членством (мовляв, запрошення). */
+    public InstitutionRegistry registry() {
+        return registry;
+    }
+
     public List<Institution> joinableOrders(Player player) {
         UUID id = player.getUniqueId();
         String pathway = pathwayNameOf(player);
