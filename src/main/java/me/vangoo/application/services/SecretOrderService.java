@@ -74,7 +74,7 @@ public class SecretOrderService {
     private static final String PREFIX = ChatColor.DARK_PURPLE + "[Куратор] " + ChatColor.RESET;
 
     private static final List<String> CURATOR_NAMES = List.of(
-            "Пан у сірому", "Тінь за свічкою", "Безіменний брат", "Сестра Шепіт", "Речник Мовчання");
+            "Незнайомець у Сірому", "Таємний Силует", "Безіменний Брат", "Сестра Шепоту", "Посланець Спокою");
 
     public enum JoinResult { OK, ALREADY_MEMBER, NO_PATHWAY, WRONG_PATHWAY, COOLDOWN, ABANDONED, UNKNOWN_ORDER }
 
@@ -1183,11 +1183,11 @@ public class SecretOrderService {
         String churchId = membership.tasks().get(raidIdx).targetKey();
         long time = player.getWorld().getTime();
         if (time < 13000 || time > 23000) {
-            player.sendMessage(PREFIX + ChatColor.GRAY + "Рейдувати храм можна лише глупої ночі.");
+            player.sendMessage(PREFIX + ChatColor.GRAY + "Напасти на храм можна лише вночі.");
             return false;
         }
         if (isTempleClosed(churchId) || isTempleOnCooldown(churchId)) {
-            player.sendMessage(PREFIX + ChatColor.GRAY + "Храм цілі зараз не рейдувати.");
+            player.sendMessage(PREFIX + ChatColor.GRAY + "Цей храм недавно було пограбовано.");
             return false;
         }
         Optional<ChurchSiteRepository.Site> siteOpt = churchSiteService.siteOf(churchId);

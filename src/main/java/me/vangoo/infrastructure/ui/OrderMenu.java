@@ -91,7 +91,7 @@ public class OrderMenu {
                 ChatColor.GRAY + "а вступ в інший орден відкриється лише через якийсь час");
         ItemStack get = button(Material.ENDER_EYE, ChatColor.GREEN + "Талісман " + order.displayName(),
                 ChatColor.GREEN + "Завдання: доставки, полювання, храмові й шпигунські операції",
-                ChatColor.GREEN + "Фавори куратора за виконані завдання",
+                ChatColor.GREEN + "Підвищуйте вислугу перед орденом за виконані завдання",
                 ChatColor.GRAY + "Прохання до куратора: розвіддані, рецепти, Характеристики...");
         confirm.open(player, give, get, "🗝 Прийняти запрошення?", () -> attemptJoin(player, order));
     }
@@ -148,7 +148,7 @@ public class OrderMenu {
                         "Доставки, полювання, операції"),
                 e -> runSynced(player, () -> openTasks(player))));
         gui.setItem(2, 5, new GuiItem(button(Material.ENDER_EYE, ChatColor.LIGHT_PURPLE + "Куратор",
-                        "Прохання за фавори"),
+                        "Обміняйте свої заслуги на речі "),
                 e -> runSynced(player, () -> openCurator(player))));
         gui.setItem(2, 8, new GuiItem(myOrderTile(player, order), e -> e.setCancelled(true)));
         gui.open(player);
@@ -166,7 +166,7 @@ public class OrderMenu {
         long major = favors.stream().filter(f -> f.weight() == TaskWeight.MAJOR).count();
         return button(Material.NAME_TAG, ChatColor.YELLOW + "Мій орден: " + order.displayName(),
                 "Куратор: " + membership.curatorName(),
-                "Фаворів: " + favors.size() + " (легких: " + light + ", стандартних: " + standard
+                "Заслуги: " + favors.size() + " (легких: " + light + ", стандартних: " + standard
                         + ", важливих: " + major + ")");
     }
 
@@ -271,7 +271,7 @@ public class OrderMenu {
             case STANDARD -> "стандартна";
             case MAJOR -> "важлива";
         };
-        return ChatColor.GOLD + "Нагорода: фавор куратора (" + label + ")";
+        return ChatColor.GOLD + "Нагорода: заслуга перед куратором (" + label + ")";
     }
 
     /** Де шукати ціль полювання: біоми природного спавну + підказка про структури. */
@@ -296,12 +296,12 @@ public class OrderMenu {
         if (status.quotaExhausted()) {
             return button(Material.CLOCK,
                     ChatColor.RED + "Набори вичерпано: " + status.setsUsed() + "/" + status.setsPerDay(),
-                    "Нові завдання — лише після скидання",
+                    "Нові завдання лише після скидання",
                     countdown);
         }
         return button(Material.CLOCK,
                 ChatColor.GREEN + "Наборів сьогодні: " + status.setsUsed() + "/" + status.setsPerDay(),
-                "Закрийте набір — новий видамо одразу",
+                "Закрийте набір - новий видамо одразу",
                 countdown,
                 ChatColor.DARK_GRAY + "Незрушені завдання оновляться зі скиданням");
     }
@@ -341,9 +341,9 @@ public class OrderMenu {
         long light = favors.stream().filter(f -> f.weight() == TaskWeight.LIGHT).count();
         long standard = favors.stream().filter(f -> f.weight() == TaskWeight.STANDARD).count();
         long major = favors.stream().filter(f -> f.weight() == TaskWeight.MAJOR).count();
-        return button(Material.WRITTEN_BOOK, ChatColor.YELLOW + "Ваші фавори: " + favors.size(),
+        return button(Material.WRITTEN_BOOK, ChatColor.YELLOW + "Ваші заслуги: " + favors.size(),
                 "Легких: " + light, "Стандартних: " + standard, "Важливих: " + major,
-                "", ChatColor.DARK_GRAY + "Прохання списує НАЙДЕШЕВШИЙ фавор, що покриває вагу");
+                "", ChatColor.DARK_GRAY + "Прохання списує НАЙДЕШЕВШУ заслугу, що покриває вагу");
     }
 
     private ItemStack favorButton(FavorOptions.Option option) {
@@ -380,7 +380,7 @@ public class OrderMenu {
 
     /** Важливий фавор — остання картка гравця в цьому ордені на певний час; ціна мусить бути видна ДО кліку. */
     private void confirmMajorFavor(Player player, FavorOptions.Option option) {
-        ItemStack give = button(Material.WRITTEN_BOOK, ChatColor.RED + "Важливий фавор куратора");
+        ItemStack give = button(Material.WRITTEN_BOOK, ChatColor.RED + "Важлива заслуга перед куратором");
         ItemStack get = favorButton(option).clone();
         confirm.open(player, give, get, "🗝 Звернутись до куратора?", () -> {
             boolean claimed = claim(player, option);
