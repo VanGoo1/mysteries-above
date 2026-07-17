@@ -113,6 +113,23 @@ public class ChurchService {
     private final ChurchTaskGenerator taskGenerator = new ChurchTaskGenerator();
     private final Random random = new Random();
 
+    /**
+     * Гейт "фальшивих документів" ордену (Спек 6c, FavorOptions.Option.FALSE_PAPERS):
+     * якщо активний, дозволяє вступ у церкву поза доменом шляху гравця. Дефолт — завжди
+     * false (без орденів вступ лишається чистим WRONG_PATHWAY). Провід — SecretOrderService
+     * через сеттер (конструкторної залежності бути не може: church-сервіс будується раніше).
+     */
+    @FunctionalInterface
+    public interface FalsePapersCheck {
+        boolean consume(UUID playerId);
+    }
+
+    private FalsePapersCheck falsePapersCheck = playerId -> false;
+
+    public void setFalsePapersCheck(FalsePapersCheck check) {
+        this.falsePapersCheck = check != null ? check : playerId -> false;
+    }
+
     // ── Стан (instance-поля; гідруються в конструкторі) ────────────────────
     private final Map<UUID, Membership> memberships = new HashMap<>();
     private final Map<UUID, Long> rejoinCooldownUntil = new HashMap<>();
@@ -306,7 +323,7 @@ public class ChurchService {
             return JoinResult.UNKNOWN_CHURCH;
         }
         Institution institution = institutionOpt.get();
-        if (!institution.acceptsPathway(pathwayNameOf(player))) {
+        if (!institution.acceptsPathway(pathwayNameOf(player)) && !falsePapersCheck.consume(id)) {
             return JoinResult.WRONG_PATHWAY;
         }
         memberships.put(id, new Membership(id, institutionId));
@@ -328,6 +345,13 @@ public class ChurchService {
         notifiedReadyOrders.remove(id);
         persist();
         return true;
+    }
+
+    /** Дотик для SecretOrderService.claimClearCooldown: знімає кулдаун повторного вступу. */
+    public void clearRejoinCooldown(UUID playerId) {
+        if (rejoinCooldownUntil.remove(playerId) != null) {
+            persist();
+        }
     }
 
     /** Чи зрікся гравець цієї церкви (вступ у неї закритий назавжди). */
@@ -874,6 +898,102 @@ public class ChurchService {
 
     public ChurchVault vaultOf(String institutionId) {
         return vaults.computeIfAbsent(institutionId, k -> new ChurchVault());
+    }
+
+    // ── Точки дотику з таємними організаціями (Спек 6c) ─────────────────────
+
+    public static final int DEFEND_REWARD_POINTS = 250;
+
+    /** Знімок сховища для розвідданих RECON. */
+    public Map<String, Integer> vaultSnapshot(String institutionId) {
+        return vaultOf(institutionId).snapshot();
+    }
+
+    /**
+     * Крадіжка рейду: списує зі сховища не більше наявного, повертає реально взяте.
+     * Другий легальний вихід одиниці сховища (поруч зі списанням у варіння).
+     */
+    public Map<String, Integer> stealFromVault(String institutionId, Map<String, Integer> requested) {
+        ChurchVault vault = vaultOf(institutionId);
+        Map<String, Integer> taken = new LinkedHashMap<>();
+        requested.forEach((key, amount) -> {
+            int available = vault.amountOf(key);
+            int take = Math.min(available, amount);
+            if (take > 0) {
+                if (vault.take(key, take)) {
+                    taken.put(key, take);
+                }
+            }
+        });
+        if (!taken.isEmpty()) {
+            persistState();
+        }
+        return taken;
+    }
+
+    /** Саботаж: пересуває замовлення випадкового члена церкви (не самого агента). */
+    public Optional<UUID> delayRandomBrewingOrder(String churchId, long delayMillis, UUID exceptPlayer) {
+        List<Membership> victims = memberships.values().stream()
+                .filter(m -> m.institutionId().equals(churchId))
+                .filter(m -> !m.playerId().equals(exceptPlayer))
+                .filter(m -> m.activeOrder() != null
+                        && !m.activeOrder().isReady(System.currentTimeMillis()))
+                .toList();
+        if (victims.isEmpty()) {
+            return Optional.empty();
+        }
+        Membership victim = victims.get(random.nextInt(victims.size()));
+        PotionOrder old = victim.activeOrder();
+        victim.setActiveOrder(new PotionOrder(old.pathwayName(), old.sequence(),
+                old.readyAtEpochMillis() + delayMillis, old.pointsPaid()));
+        persist();
+        Player online = Bukkit.getPlayer(victim.playerId());
+        if (online != null && online.isOnline()) {
+            online.sendMessage(PREFIX + ChatColor.RED + "У варильні щось пішло не так — "
+                    + "ваше зілля затримається.");
+        }
+        return Optional.of(victim.playerId());
+    }
+
+    /** Викриття подвійного агента: вигнання = той самий необоротний leave + розголос. */
+    public boolean expelExposedSpy(Player player) {
+        Optional<Institution> church = churchOf(player.getUniqueId());
+        if (church.isEmpty()) {
+            return false;
+        }
+        String churchId = church.get().id();
+        boolean left = leave(player);
+        if (left) {
+            player.sendMessage(PREFIX + ChatColor.DARK_RED + "" + ChatColor.BOLD
+                    + "Вас викрито! Церква вигнала вас назавжди.");
+            broadcastToChurch(churchId, ChatColor.DARK_RED + "Викрито зрадника: "
+                    + ChatColor.RED + player.getName() + ChatColor.DARK_RED + "!");
+        }
+        return left;
+    }
+
+    public void broadcastToChurch(String churchId, String message) {
+        for (Membership m : memberships.values()) {
+            if (!m.institutionId().equals(churchId)) {
+                continue;
+            }
+            Player online = Bukkit.getPlayer(m.playerId());
+            if (online != null && online.isOnline()) {
+                online.sendMessage(PREFIX + message);
+            }
+        }
+    }
+
+    /** Вбивство рейдера під тривогою членом церкви-цілі. */
+    public void onTempleDefended(Player killer, String churchId) {
+        Membership membership = memberships.get(killer.getUniqueId());
+        if (membership == null || !membership.institutionId().equals(churchId)) {
+            return;
+        }
+        membership.addContribution(DEFEND_REWARD_POINTS);
+        killer.sendMessage(PREFIX + ChatColor.GREEN + "Ви захистили храм: +"
+                + DEFEND_REWARD_POINTS + " очок.");
+        persist();
     }
 
     // ── Тик (правило 12) ──────────────────────────────────────────────────────

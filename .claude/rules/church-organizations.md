@@ -87,6 +87,10 @@
 - **Сховище** — `domain.organizations.ChurchVault` (itemKey → кількість). Книги рецептів
   (`recipe:<p>:<seq>`) — знання-ГЕЙТ, НЕ споживаються. Варіння списує класичні інгредієнти,
   інакше Характеристику-заміну (`consumeFor` атомарний; юніт-тест `ChurchVaultTest`).
+  **Другий легальний вихід (Спек 6c)** — `ChurchVault.take`/`ChurchService.stealFromVault`:
+  атомарне списання «не більше наявного» для крадіжки рейдом таємного ордену
+  (`SecretOrderService.raidSucceeded`), повертає фактично взяте. Сховище лишається
+  єдиним ДЖЕРЕЛОМ обох виходів — жодного нового каналу емісії Характеристик не додано.
 - **Оркестратор** — `application.services.ChurchService`: увесь стан у instance-полях,
   гідрується з репозиторіїв у конструкторі, `persist()`/`persistState()` після КОЖНОЇ мутації.
   Провід — `ServiceContainer` (реєстр у core, конфіг+репо в infrastructure, сервіс+сайти в
@@ -95,12 +99,36 @@
   `ChurchStructurePlacer` (датапак `mysteries:church_<shortId>`; нема NBT → warn+фолбек без
   будівлі) + `infrastructure.citizens.ChurchPriestService` (NPC, SHOULD_SAVE=false — респавн
   зі `church-sites.json` в `onEnable().spawnAllNpcs()`, despawn в `onDisable`).
+  `spawnAllNpcs()` пропускає (не спавнить) священика церкви, чий храм закритий замахом
+  ордену (`ChurchSiteService.priestClosurePredicate`, інжектиться сеттером із
+  `SecretOrderService.isTempleClosed` через `ServiceContainer`) — інакше рестарт сервера
+  повертав би священика під час дії `priestClosedUntil`; респавн після закриття робить
+  `SecretOrderService.tick()`, не `spawnAllNpcs()`.
 - **Автоспавн** — `presentation.listeners.ChurchSpawnListener` (`ChunkLoadEvent`): біля кожного
   нового села — випадкова ще не розміщена церква (кожна — щонайбільше раз на світ; оброблені
   села персистяться). Ключ села — min-кут bbox структури.
 - **UI/вхід** — `infrastructure.ui.ChurchMenu` (клік по священику через `ChurchListener`),
   команда `/church bind|unbind|leave|info`. Kill-прогрес завдань і «зупинити рампейджера» —
   `ChurchListener` (`EntityDeathEvent`/`PlayerDeathEvent`).
+- **Точки дотику з таємними організаціями (Спек 6c)** — усі методи в `ChurchService` під
+  коментарем `// ── Точки дотику з таємними організаціями (Спек 6c) ──`, детальний механізм
+  описано в `.claude/rules/secret-orders.md`. `ChurchService` не знає про `SecretOrderService`
+  напряму (лише сеттер `FalsePapersCheck`) — order-сервіс кличе ці методи як публічний API:
+  `vaultSnapshot`/`stealFromVault` (розвідка/рейд), `delayRandomBrewingOrder` (саботаж —
+  зсуває `readyAt` активного замовлення випадкового ІНШОГО члена), `expelExposedSpy`
+  (викриття подвійного агента = той самий необоротний `leave()` + `broadcastToChurch`),
+  `onTempleDefended`/`DEFEND_REWARD_POINTS` (+250 очок вкладу тому, хто вбив рейдера-члена
+  чужого ордену під тривогою — заохочення «Захисти храм»), `broadcastToChurch` (розсилка
+  онлайн-членам церкви, той самий `PREFIX`, що інші повідомлення). **Sneak-клік по
+  священику зарезервовано під шпигунські дії ордену**: `ChurchListener.onPriestClick`
+  явно ігнорує sneak-клік (коментар «sneak-клік зарезервовано під шпигунські дії ордену
+  (OrderListener)») — звичайний ПКМ і далі відкриває `ChurchMenu`. **`FalsePapersCheck`**
+  (`ChurchService.setFalsePapersCheck`, інжектиться `SecretOrderService` через
+  `ServiceContainer` — конструкторної залежності бути не може, `ChurchService` будується
+  раніше) — гейт `WRONG_PATHWAY` у `join()` пропускає гравця, якщо
+  `falsePapersCheck.consume(id)` повернув `true` (MAJOR-фавор ордену `FALSE_PAPERS`,
+  одноразовий, спалюється саме тут); дефолт — завжди `false`, тож без орденів вступ
+  лишається чистим `WRONG_PATHWAY`, як і раніше.
 - **Ініціація — дуель** (замінила стару сховищну ініціацію повністю, не депрекейт:
   `canStartInitiation`/`startInitiation`/`claimInitiation` ВИДАЛЕНІ з `ChurchService`).
   Член церкви БЕЗ шляху, для якого `canStartTrial(player)` — true, бачить кнопку

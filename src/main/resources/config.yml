@@ -97,3 +97,38 @@ church:
       characteristics-per-seq: 1
   spawn:
     village-offset: 24
+
+# Таємні організації (Спек 6c)
+orders:
+  invites:
+    beyonder-kills: 3
+  tasks:
+    refresh-hours: 24
+    max-active: 2
+    sets-per-window: 5
+  raid:
+    channel-seconds: 45
+    alarm-chance: 0.04
+    alarm-intel-factor: 0.5
+    loot-picks: 3
+    loot-intel-picks: 4
+    temple-cooldown-hours: 24
+    zone-radius: 24
+    guards: 2
+  assassination:
+    priest-respawn-hours: 12
+  sabotage:
+    delay-hours: 6
+  recon:
+    ttl-hours: 48
+  exposure:
+    recon-chance: 0.15
+    sabotage-chance: 0.35
+    failed-raid-chance: 0.5
+  stash:
+    seed-ingredients-per-recipe: 2
+  favor:
+    ingredients-per-claim: 2
+  rejoin-cooldown-days: 3
+  talisman:
+    reissue-cooldown-minutes: 30

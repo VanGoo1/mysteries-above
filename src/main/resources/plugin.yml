@@ -56,6 +56,9 @@ commands:
   church:
     description: Церкви — членство, служба, замовлення зілля
     usage: /church <bind|unbind|leave|info>
+  order:
+    description: Таємні організації — членство, завдання, фавори
+    usage: /order <invites|accept|talisman|leave|info>
 permissions:
   mysteriesabove.admin:
     description: Gives access to all administrative commands

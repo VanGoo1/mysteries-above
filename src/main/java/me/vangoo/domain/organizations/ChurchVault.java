@@ -86,6 +86,20 @@ public class ChurchVault {
         return required;
     }
 
+    /** Атомарне зняття (крадіжка рейду 6c); false — бракує, нічого не змінюється. */
+    public boolean take(String itemKey, int amount) {
+        int have = amountOf(itemKey);
+        if (have < amount) {
+            return false;
+        }
+        if (have == amount) {
+            items.remove(itemKey);
+        } else {
+            items.put(itemKey, have - amount);
+        }
+        return true;
+    }
+
     private Map<String, Integer> shortfall(Map<String, Integer> requirement) {
         Map<String, Integer> missing = new LinkedHashMap<>();
         requirement.forEach((key, amount) -> {

@@ -637,3 +637,10 @@ global_loot:
       weight: 25
       amount_min: 2
       amount_max: 8
+
+    # --- Secret orders (6c) ---
+    order_cipher_message:
+      item_id: "order_cipher_message"
+      weight: 8
+      amount_min: 1
+      amount_max: 1

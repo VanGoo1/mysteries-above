@@ -635,8 +635,33 @@ custom-items:
     glow: false
     custom-model-data: "pure_spirituality_tear"
 
+  # ============================================
+  # SECRET ORDERS (6c)
+  # ============================================
+  order_cipher_message:
+    display-name: "§8Шифроване послання"
+    material: PAPER
+    lore:
+      - ""
+      - "§7Рядки, що складаються в сенс лише"
+      - "§7для того, хто готовий їх прочитати."
+      - ""
+      - "§eПКМ — розшифрувати"
+      - ""
+    glow: true
+    custom-model-data: "order_cipher_message"
 
-
-
+  order_talisman:
+    display-name: "§8Талісман зв'язку"
+    material: PAPER
+    lore:
+      - ""
+      - "§7Холодний на дотик. Хтось завжди"
+      - "§7слухає з того боку."
+      - ""
+      - "§eПКМ — вийти на зв'язок"
+      - ""
+    glow: true
+    custom-model-data: "order_talisman"
 
 
