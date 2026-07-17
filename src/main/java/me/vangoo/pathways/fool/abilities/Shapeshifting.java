@@ -5,6 +5,7 @@ import com.destroystokyo.paper.profile.ProfileProperty;
 import me.vangoo.domain.abilities.core.AbilityResourceConsumer;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
+import me.vangoo.domain.abilities.context.IBeyonderContext;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.services.MasteryProgressionCalculator;
 import me.vangoo.domain.valueobjects.Sequence;
@@ -160,8 +161,9 @@ public class Shapeshifting extends ActiveAbility {
         caster.spigot().sendMessage(ChatMessageType.ACTION_BAR,
                 new TextComponent(ChatColor.GOLD + "🎭 Ви — " + disguiseName));
 
-        // Дрейн 20/с. Захоплений context несе ідентичність ЦЬОГО кастера — допустимо
-        // (той самий патерн, що PsychologicalInvisibility).
+        // Дрейн 20/с. У лямбду захоплюється лише non-caster-bound IBeyonderContext
+        // (генеричний lookup за UUID, як у CrystalBall) — не сам IAbilityContext кастера.
+        IBeyonderContext beyonderContext = context.beyonder();
         BukkitTask task = context.scheduling().scheduleRepeating(() -> {
             Player p = Bukkit.getPlayer(casterId);
             if (p == null || !p.isOnline()) {
@@ -170,7 +172,7 @@ public class Shapeshifting extends ActiveAbility {
                 if (s != null) s.task().cancel();
                 return;
             }
-            var beyonder = context.getCasterBeyonder();
+            var beyonder = beyonderContext.getBeyonder(casterId);
             Spirituality sp = beyonder.getSpirituality();
             if (sp.current() < COST_PER_SECOND) {
                 unmask(p, casterId, "виснаження духовності");
