@@ -9,7 +9,7 @@ class RitualEffectMathTest {
     @Test
     void baseConstantsHaveExpectedValues() {
         assertEquals(6000, RitualEffectMath.LUCK_BASE_TICKS);
-        assertEquals(250, RitualEffectMath.SANCTIFY_BASE_DURABILITY);
+        assertEquals(50, RitualEffectMath.SANCTIFY_BASE_DURABILITY);
         assertEquals(1800, RitualEffectMath.EVENTS_BASE_WINDOW_SECONDS);
         assertEquals(600, RitualEffectMath.WALL_BASE_TICKS);
     }

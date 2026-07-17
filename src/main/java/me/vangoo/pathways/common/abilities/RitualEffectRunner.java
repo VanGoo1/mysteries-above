@@ -72,10 +72,11 @@ public class RitualEffectRunner {
             return;
         }
         int repair = scale(RitualEffectMath.SANCTIFY_BASE_DURABILITY, context.getCasterBeyonder().getSequence());
+        int actual = Math.min(repair, meta.getDamage());
         meta.setDamage(Math.max(0, meta.getDamage() - repair));
         hand.setItemMeta(meta);
         context.messaging().sendMessage(context.getCasterId(),
-                ChatColor.GREEN + "✦ Предмет освячено: відновлено до " + repair + " міцності.");
+                ChatColor.GREEN + "✦ Предмет освячено: відновлено " + actual + " одиниць міцності.");
     }
 
     private void runSacrifice(IAbilityContext context, ItemStack sacrificed) {

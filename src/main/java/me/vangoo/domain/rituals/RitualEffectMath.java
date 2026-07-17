@@ -8,7 +8,7 @@ package me.vangoo.domain.rituals;
 public final class RitualEffectMath {
 
     public static final int LUCK_BASE_TICKS = 6000;             // 5 хв
-    public static final int SANCTIFY_BASE_DURABILITY = 250;
+    public static final int SANCTIFY_BASE_DURABILITY = 50;      // символічний ремонт, не повне відновлення
     public static final int EVENTS_BASE_WINDOW_SECONDS = 1800;  // 30 хв
     public static final int WALL_BASE_TICKS = 600;               // 30 с
 
