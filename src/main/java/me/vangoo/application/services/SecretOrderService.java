@@ -1248,11 +1248,18 @@ public class SecretOrderService {
         Map<String, Integer> taken = churchService.stealFromVault(churchId, rolled);
         Player player = Bukkit.getPlayer(playerId);
         if (player != null && !taken.isEmpty()) {
-            giveRaidLoot(player, taken);
-            pendingRaidLoot.put(playerId, new HashMap<>(taken));
-            pendingRaidChurch.put(playerId, churchId);
-            player.sendMessage(PREFIX + ChatColor.GREEN + "Злом успішний! Здобич у вас — здайте її в "
-                    + "схованку через меню завдань, щоб куратор зарахував рейд.");
+            // Боргуємо гравцю рівно те, що він СПРАВДІ отримав у руки, а не те, що списалось зі
+            // сховища: ключ, який не вдалось матеріалізувати (зниклий custom-item, побитий
+            // recipe/characteristic-ключ), інакше навіки висів би в pendingRaidLoot і блокував здачу.
+            Map<String, Integer> delivered = giveRaidLoot(player, taken);
+            if (!delivered.isEmpty()) {
+                pendingRaidLoot.put(playerId, new HashMap<>(delivered));
+                pendingRaidChurch.put(playerId, churchId);
+                player.sendMessage(PREFIX + ChatColor.GREEN + "Злом успішний! Здобич у вас — здайте її в "
+                        + "схованку через меню завдань, щоб куратор зарахував рейд.");
+            } else {
+                player.sendMessage(PREFIX + ChatColor.GRAY + "Здобич розсипалась у руках — нічого не винесли.");
+            }
         } else if (player != null) {
             player.sendMessage(PREFIX + ChatColor.GRAY + "Сховище храму виявилось порожнім.");
         }
@@ -1540,12 +1547,22 @@ public class SecretOrderService {
                 .orElse(null);
     }
 
-    private void giveRaidLoot(Player player, Map<String, Integer> loot) {
+    /**
+     * Видає здобич рейду гравцю.
+     *
+     * @return лише те, що СПРАВДІ потрапило гравцю в руки (ключ → кількість). Ключ, який не
+     *         вдалось матеріалізувати, у результат не входить — інакше він завис би в
+     *         {@code pendingRaidLoot} як неможливий до здачі борг.
+     */
+    private Map<String, Integer> giveRaidLoot(Player player, Map<String, Integer> loot) {
+        Map<String, Integer> delivered = new HashMap<>();
         loot.forEach((key, amount) -> {
             if (key.startsWith("custom:")) {
                 customItemService.createItemStack(key.substring("custom:".length())).ifPresent(item -> {
-                    item.setAmount(Math.max(1, Math.min(amount, item.getMaxStackSize())));
+                    int give = Math.max(1, Math.min(amount, item.getMaxStackSize()));
+                    item.setAmount(give);
                     giveItem(player, item);
+                    delivered.put(key, give);
                 });
             } else if (key.startsWith("recipe:")) {
                 String[] parts = key.split(":");
@@ -1556,6 +1573,7 @@ public class SecretOrderService {
                             for (int i = 0; i < amount; i++) {
                                 giveItem(player, recipeBookFactory.createRecipeBook(pp, seq));
                             }
+                            delivered.put(key, amount);
                         });
                     }
                 }
@@ -1565,10 +1583,12 @@ public class SecretOrderService {
                     int seq = parseSeq(parts[2]);
                     if (seq >= 0) {
                         giveItem(player, characteristicCodec.create(parts[1], seq, amount));
+                        delivered.put(key, amount);
                     }
                 }
             }
         });
+        return delivered;
     }
 
     private static int parseSeq(String raw) {
