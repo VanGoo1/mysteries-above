@@ -29,7 +29,7 @@ paths:
 
 **One-shot (без стану)** — вистрілив і забув. Форма: чистий VO-рецепт у `domain` → runner тут → тонкий `Ability`-адаптер. Еталон: `SpellRecipe`/`SpellCodec` (domain) → `SpellEffectRunner` → `GeneratedSpell` (`pathways.whitetower.abilities.custom`).
 
-**Stateful (сесія)** — живе в часі (`start → tick → cancel`): зони, клони, підміни тіла. Еталон: `AreaOfJurisdiction` + `JurisdictionSession`; також `DiviningRodSession`, `DreamVisionSession` (door). Правила сесій:
+**Stateful (сесія)** — живе в часі (`start → tick → cancel`): зони, клони, підміни тіла. Еталон: `AreaOfJurisdiction` + `JurisdictionSession`; також `DiviningRodSession`, `DreamVisionSession` (fool) і `RitualSession` (common). Правила сесій:
 1. Реєстр — **інстанс-поле** `Map<UUID, Session>` (`ConcurrentHashMap`), **ніколи не static**: екземпляр здібності і так спільний для pathway.
 2. Повторний каст **замінює** сесію власника: `remove` + `cancel()` старої перед створенням нової.
 3. Сесія володіє власним `BukkitTask` (`context.scheduling().scheduleRepeating(session::tick, ...)` + `session.bindTask(task)`), а всередині `tick()` ходить у **Bukkit напряму**. Не захоплюй `IAbilityContext` кастера у сесію — це чужий стан. Виняток: глобальний, не прив'язаний до кастера сервіс (`IEventContext` у `DreamVisionSession`) тримати можна; тест — «чи несе це посилання ідентичність одного кастера?».
