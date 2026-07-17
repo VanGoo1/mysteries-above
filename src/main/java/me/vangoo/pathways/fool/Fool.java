@@ -32,7 +32,7 @@ public class Fool extends Pathway {
     protected void initializeAbilities() {
         // Sequence 9: Seer (Провидець)
         sequenceAbilities.put(9, List.of(
-                new Divination(),
+                new DivinationArts(),
                 new SeerSpiritVision(),
                 new DangerIntuition(),
                 new RitualMagic()

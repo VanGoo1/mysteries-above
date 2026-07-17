@@ -19,7 +19,7 @@ public class Door extends Pathway {
     protected void initializeAbilities() {
         sequenceAbilities.put(9, List.of(new DoorOpening(), new RitualMagic()));
         sequenceAbilities.put(8, List.of(new Flash(), new EscapeTrick(), new Burning(), new ElectricShock()));
-        sequenceAbilities.put(7, List.of(new DivinationArts(), new SpiritualVision(), new SpiritualIntuition(), new AntiDivination()));
+        sequenceAbilities.put(7, List.of(new CrystalBall(), new SpiritualVision(), new SpiritualIntuition(), new AntiDivination()));
         sequenceAbilities.put(6, List.of(new Record(), new DecryptPatterns(), new PhysicalEnhancement(
                 "Фізичні посилення",
                 "Ви отримуєте сильне тіло та надзвичайну швидкість.",

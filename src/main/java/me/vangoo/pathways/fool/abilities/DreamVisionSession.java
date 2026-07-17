@@ -1,4 +1,4 @@
-package me.vangoo.pathways.door.abilities;
+package me.vangoo.pathways.fool.abilities;
 
 import me.vangoo.MysteriesAbovePlugin;
 import me.vangoo.domain.abilities.context.IEventContext;
