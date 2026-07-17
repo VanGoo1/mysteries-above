@@ -62,7 +62,10 @@ public class Shapeshifting extends ActiveAbility {
 
     @Override
     public int getSpiritualityCost() {
-        return COST_PER_SECOND;
+        // Ціна повністю періодична (getPeriodicCost()): 0 тут — щоб пайплайн
+        // Beyonder.useAbility ні гейтив активацію/деактивацію по духовності, ні
+        // списував разовий кошт понад дрейн — вимкнення маски завжди безкоштовне.
+        return 0;
     }
 
     @Override
