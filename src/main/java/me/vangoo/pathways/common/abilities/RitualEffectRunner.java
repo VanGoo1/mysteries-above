@@ -2,6 +2,7 @@ package me.vangoo.pathways.common.abilities;
 
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.domain.rituals.RitualEffectMath;
 import me.vangoo.domain.rituals.RitualRecipe;
 import me.vangoo.domain.rituals.SacrificeAppraiser;
 import me.vangoo.domain.rituals.SacrificeKind;
@@ -33,14 +34,11 @@ import java.util.UUID;
 
 /**
  * Stateless-хореографія ефектів ритуалів (запускається після успішного заклинання).
- * Балансові базові числа тут — константи ефектів; скейл — SequenceScaler.
+ * Балансові базові числа — у {@link RitualEffectMath} (domain); тут лише скейл через
+ * SequenceScaler і Bukkit-ефекти.
  */
 public class RitualEffectRunner {
 
-    private static final int LUCK_BASE_TICKS = 6000;        // 5 хв
-    private static final int SANCTIFY_BASE_DURABILITY = 250;
-    private static final int EVENTS_BASE_WINDOW_SECONDS = 1800; // 30 хв
-    private static final int WALL_BASE_TICKS = 600;         // 30 с
     private static final double WALL_RADIUS = 6.0;
 
     private final Random rng = new Random();
@@ -59,7 +57,7 @@ public class RitualEffectRunner {
 
     private void runLuck(IAbilityContext context) {
         Beyonder b = context.getCasterBeyonder();
-        int duration = scale(LUCK_BASE_TICKS, b.getSequence());
+        int duration = scale(RitualEffectMath.LUCK_BASE_TICKS, b.getSequence());
         context.entity().applyPotionEffect(context.getCasterId(), PotionEffectType.LUCK, duration, 0);
         context.messaging().sendMessage(context.getCasterId(),
                 ChatColor.GREEN + "✦ Сутності почули вас: удача на " + (duration / 1200) + " хв.");
@@ -73,7 +71,7 @@ public class RitualEffectRunner {
                     ChatColor.YELLOW + "✦ Предмет у руці не потребує освячення.");
             return;
         }
-        int repair = scale(SANCTIFY_BASE_DURABILITY, context.getCasterBeyonder().getSequence());
+        int repair = scale(RitualEffectMath.SANCTIFY_BASE_DURABILITY, context.getCasterBeyonder().getSequence());
         meta.setDamage(Math.max(0, meta.getDamage() - repair));
         hand.setItemMeta(meta);
         context.messaging().sendMessage(context.getCasterId(),
@@ -130,7 +128,7 @@ public class RitualEffectRunner {
             context.messaging().sendMessage(casterId, ChatColor.YELLOW + "✦ Сутності мовчать — дарунку немає.");
             return;
         }
-        double chance = Math.min(0.9, 0.5 + 0.06 * (9 - level));
+        double chance = RitualEffectMath.bestowmentChance(level);
         if (rng.nextDouble() >= chance) {
             context.messaging().sendMessage(casterId, ChatColor.YELLOW + "✦ Сутності прийняли дар, але не відповіли.");
             return;
@@ -153,7 +151,7 @@ public class RitualEffectRunner {
 
     private void printEvents(IAbilityContext context, Location altar, int radius, int limit, String header) {
         UUID casterId = context.getCasterId();
-        int window = scale(EVENTS_BASE_WINDOW_SECONDS, context.getCasterBeyonder().getSequence());
+        int window = scale(RitualEffectMath.EVENTS_BASE_WINDOW_SECONDS, context.getCasterBeyonder().getSequence());
         List<RecordedEvent> events = new ArrayList<>(context.events().getPastEvents(altar, radius, window));
         events.sort(Comparator.comparingLong(RecordedEvent::getTimestamp).reversed());
 
@@ -173,7 +171,7 @@ public class RitualEffectRunner {
 
     private void runSpiritWall(IAbilityContext context, Location altar) {
         UUID casterId = context.getCasterId();
-        int duration = scale(WALL_BASE_TICKS, context.getCasterBeyonder().getSequence());
+        int duration = scale(RitualEffectMath.WALL_BASE_TICKS, context.getCasterBeyonder().getSequence());
         context.messaging().sendMessage(casterId,
                 ChatColor.AQUA + "✦ Стіна духовності постала на " + (duration / 20) + " с.");
 
