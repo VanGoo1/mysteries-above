@@ -3,6 +3,7 @@ package me.vangoo.pathways.fool;
 import me.vangoo.pathways.fool.abilities.*;
 import me.vangoo.domain.entities.Pathway;
 import me.vangoo.domain.entities.PathwayGroup;
+import me.vangoo.pathways.common.abilities.RitualMagic;
 
 import java.util.List;
 
@@ -33,7 +34,8 @@ public class Fool extends Pathway {
         sequenceAbilities.put(9, List.of(
                 new Divination(),
                 new SeerSpiritVision(),
-                new DangerIntuition()
+                new DangerIntuition(),
+                new RitualMagic()
         ));
 
         // Sequence 8: Clown (Клоун)
