@@ -163,7 +163,11 @@ public class RitualMagic extends ActiveAbility {
         }
         if (recipe.requiresHandSacrifice()) {
             ItemStack hand = player.getInventory().getItemInMainHand();
-            hand.setAmount(hand.getAmount() - 1);
+            if (hand.getAmount() <= 1) {
+                player.getInventory().setItemInMainHand(null);
+            } else {
+                hand.setAmount(hand.getAmount() - 1);
+            }
         }
 
         // Повторний каст замінює сесію власника.
