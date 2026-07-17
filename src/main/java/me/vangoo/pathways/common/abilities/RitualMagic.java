@@ -107,9 +107,26 @@ public class RitualMagic extends ActiveAbility {
         StringBuilder sb = new StringBuilder();
         recipe.ingredients().forEach((mat, count) -> {
             if (sb.length() > 0) sb.append(", ");
-            sb.append(count).append("x ").append(mat.toLowerCase().replace('_', ' '));
+            sb.append(count).append("x ").append(ukName(mat));
         });
         return sb.toString();
+    }
+
+    // Українські назви інгредієнтів ритуалів (для меню й повідомлень).
+    private static final Map<String, String> INGREDIENT_NAMES_UK = Map.of(
+            "GOLD_INGOT", "золотий зливок",
+            "GOLD_NUGGET", "золотий самородок",
+            "IRON_INGOT", "залізний зливок",
+            "NETHERITE_SCRAP", "незеритовий уламок",
+            "DIAMOND", "алмаз",
+            "BONE", "кістка",
+            "AMETHYST_SHARD", "уламок аметисту",
+            "LAPIS_LAZULI", "ляпіс-лазур"
+    );
+
+    private static String ukName(String materialName) {
+        return INGREDIENT_NAMES_UK.getOrDefault(materialName,
+                materialName.toLowerCase().replace('_', ' '));
     }
 
     private Material iconFor(RitualType type) {
@@ -117,7 +134,7 @@ public class RitualMagic extends ActiveAbility {
             case LUCK_PRAYER -> Material.RABBIT_FOOT;
             case SANCTIFICATION -> Material.ANVIL;
             case SACRIFICE -> Material.FLINT_AND_STEEL;
-            case BESTOWMENT -> Material.DIAMOND;
+            case BESTOWMENT -> Material.NETHERITE_SCRAP;
             case MEDIUMSHIP -> Material.BONE;
             case MIRROR_DIVINATION -> Material.AMETHYST_SHARD;
             case SPIRIT_WALL -> Material.LAPIS_LAZULI;
@@ -131,33 +148,81 @@ public class RitualMagic extends ActiveAbility {
         if (player == null) return;
         player.closeInventory();
 
-        // Перевірка інгредієнтів ДО списання духовності.
+        // М'яка перевірка інгредієнтів ДО списання духовності (щоб не витрачати її дарма).
         for (Map.Entry<String, Integer> entry : recipe.ingredients().entrySet()) {
             Material mat = Material.valueOf(entry.getKey());
             if (!player.getInventory().containsAtLeast(new ItemStack(mat), entry.getValue())) {
                 context.messaging().sendMessage(casterId, ChatColor.RED + "Бракує інгредієнтів: "
-                        + entry.getValue() + "x " + mat.name().toLowerCase().replace('_', ' '));
+                        + entry.getValue() + "x " + ukName(entry.getKey()));
                 return;
             }
-        }
-        ItemStack sacrificed = null;
-        if (recipe.requiresHandSacrifice()) {
-            ItemStack hand = player.getInventory().getItemInMainHand();
-            if (hand.getType() == Material.AIR) {
-                context.messaging().sendMessage(casterId, ChatColor.RED + "Візьміть жертву в головну руку.");
-                return;
-            }
-            sacrificed = hand.clone();
-            sacrificed.setAmount(1);
         }
 
+        // Духовність — плата за сам обряд (списується на старті разом із кулдауном).
+        // Інгредієнти й жертву НЕ чіпаємо тут: їх спишемо лише по завершенні заклинання,
+        // щоб гравець устиг узяти потрібне в головну руку під час читання.
         if (!AbilityResourceConsumer.consumeResources(this, beyonder, context)) {
             context.messaging().sendMessage(casterId, ChatColor.RED + "Недостатньо духовності!");
             return;
         }
         context.events().publishAbilityUsedEvent(this, beyonder);
 
-        // Списуємо інгредієнти / жертву.
+        if (recipe.requiresHandSacrifice()) {
+            context.messaging().sendMessage(casterId, ChatColor.GRAY
+                    + "Візьміть жертву в головну руку до кінця заклинання.");
+        }
+
+        // Повторний каст замінює сесію власника.
+        RitualSession previous = activeSessions.remove(casterId);
+        if (previous != null) previous.cancel();
+
+        RitualSession session = new RitualSession(casterId, altar,
+                RitualIncantations.linesFor(recipe.type()),
+                () -> {
+                    activeSessions.remove(casterId);
+                    completeRitual(context, altar, recipe);
+                },
+                reason -> {
+                    activeSessions.remove(casterId);
+                    applyBacklash(context, recipe, reason);
+                });
+        BukkitTask task = context.scheduling().scheduleRepeating(session::tick, 0L, 1L);
+        session.bindTask(task);
+        activeSessions.put(casterId, session);
+    }
+
+    /**
+     * Списання інгредієнтів / жертви й запуск ефекту — ЛИШЕ по завершенні заклинання.
+     * Так предмет із головної руки не «згорає» в мить кліку по меню.
+     */
+    private void completeRitual(IAbilityContext context, Location altar, RitualRecipe recipe) {
+        UUID casterId = context.getCasterId();
+        Player player = context.getCasterPlayer();
+        if (player == null) return;
+
+        // Інгредієнти могли зникнути під час заклинання — перевіряємо ще раз.
+        for (Map.Entry<String, Integer> entry : recipe.ingredients().entrySet()) {
+            Material mat = Material.valueOf(entry.getKey());
+            if (!player.getInventory().containsAtLeast(new ItemStack(mat), entry.getValue())) {
+                context.messaging().sendMessage(casterId, ChatColor.RED + "Обряд згас: бракувало інгредієнтів ("
+                        + entry.getValue() + "x " + ukName(entry.getKey()) + ").");
+                return;
+            }
+        }
+
+        ItemStack sacrificed = null;
+        if (recipe.requiresHandSacrifice()) {
+            ItemStack hand = player.getInventory().getItemInMainHand();
+            if (hand.getType() == Material.AIR) {
+                context.messaging().sendMessage(casterId, ChatColor.RED
+                        + "Обряд згас: у головній руці не було жертви.");
+                return;
+            }
+            sacrificed = hand.clone();
+            sacrificed.setAmount(1);
+        }
+
+        // Списуємо інгредієнти / жертву САМЕ зараз.
         for (Map.Entry<String, Integer> entry : recipe.ingredients().entrySet()) {
             player.getInventory().removeItem(new ItemStack(Material.valueOf(entry.getKey()), entry.getValue()));
         }
@@ -170,24 +235,7 @@ public class RitualMagic extends ActiveAbility {
             }
         }
 
-        // Повторний каст замінює сесію власника.
-        RitualSession previous = activeSessions.remove(casterId);
-        if (previous != null) previous.cancel();
-
-        ItemStack sacrificedFinal = sacrificed;
-        RitualSession session = new RitualSession(casterId, altar,
-                RitualIncantations.linesFor(recipe.type()),
-                () -> {
-                    activeSessions.remove(casterId);
-                    runner.run(recipe, context, altar, sacrificedFinal);
-                },
-                reason -> {
-                    activeSessions.remove(casterId);
-                    applyBacklash(context, recipe, reason);
-                });
-        BukkitTask task = context.scheduling().scheduleRepeating(session::tick, 0L, 1L);
-        session.bindTask(task);
-        activeSessions.put(casterId, session);
+        runner.run(recipe, context, altar, sacrificed);
     }
 
     private void applyBacklash(IAbilityContext context, RitualRecipe recipe, String reason) {
