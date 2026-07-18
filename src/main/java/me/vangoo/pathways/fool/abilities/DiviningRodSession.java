@@ -1,4 +1,4 @@
-package me.vangoo.pathways.door.abilities;
+package me.vangoo.pathways.fool.abilities;
 
 import me.vangoo.MysteriesAbovePlugin;
 import net.md_5.bungee.api.ChatMessageType;

@@ -1,4 +1,4 @@
-package me.vangoo.pathways.door.abilities;
+package me.vangoo.pathways.fool.abilities;
 
 import me.vangoo.domain.abilities.core.AbilityResourceConsumer;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
@@ -41,12 +41,6 @@ public class DivinationArts extends ActiveAbility {
     public DivinationArts() {
         initPendulumQuestions();
         initDiviningRodTargets();
-    }
-
-    public DivinationArts(int spiritualityCost) {
-        initPendulumQuestions();
-        initDiviningRodTargets();
-        BASE_COST = spiritualityCost;
     }
 
     // ========== ІНІЦІАЛІЗАЦІЯ ==========
@@ -224,8 +218,8 @@ public class DivinationArts extends ActiveAbility {
 
     @Override
     public String getDescription(Sequence userSequence) {
-        return "Володіння мистецтвом гадання. Відкриває доступ до різних методів " +
-                "передбачення: кристальний шар, астрологія, маятник, лозошукання та сонне провидіння." +
+        return "Володіння мистецтвом гадання. Відкриває доступ до різних методів передбачення: " +
+                "астрологія, маятник, лозошукання та сонне провидіння." +
                 "\n§7§oЛозошукання покращується з просуванням послідовності.";
     }
 
@@ -278,7 +272,6 @@ public class DivinationArts extends ActiveAbility {
 
     private void handleDivinationChoice(IAbilityContext ctx, DivinationType type) {
         switch (type) {
-            case CRYSTAL_BALL -> performCrystalBallDivination(ctx);
             case ASTROLOGY -> performAstrologyDivination(ctx);
             case PENDULUM -> openPendulumMenu(ctx);
             case DIVINING_ROD -> openDiviningRodMenu(ctx);
@@ -342,90 +335,6 @@ public class DivinationArts extends ActiveAbility {
         return defaultLevel;
     }
 
-
-    // ========== 1. КРИШТАЛЕВА КУЛЯ ==========
-
-    private void performCrystalBallDivination(IAbilityContext ctx) {
-        Beyonder casterBeyonder = ctx.getCasterBeyonder();
-        UUID casterId = ctx.getCasterId();
-        if (!AbilityResourceConsumer.consumeResources(this, casterBeyonder, ctx)) {
-            tellActionBar(casterId, ChatColor.RED + "Недостатньо духовності!");
-            return;
-        }
-        ctx.events().publishAbilityUsedEvent(this, casterBeyonder);
-
-        Player caster = ctx.getCasterPlayer();
-        playSound(casterId, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1f, 0.8f);
-        spawnParticle(ctx.getCasterLocation().add(0, 1.5, 0), Particle.END_ROD, 30, 0.5, 0.5, 0.5);
-
-        List<Player> onlinePlayers = new ArrayList<>(ctx.targeting().getNearbyPlayers(10000));
-        onlinePlayers.removeIf(p -> p.equals(caster));
-
-        if (onlinePlayers.isEmpty()) {
-            revealWeatherPrediction(ctx);
-            return;
-        }
-
-        Player target = onlinePlayers.get(rng.nextInt(onlinePlayers.size()));
-        boolean success = rollDivinationAgainstTarget(ctx, target.getUniqueId());
-
-        if (success) {
-            revealPlayerInfo(ctx, target);
-        } else {
-            revealWeatherPrediction(ctx);
-        }
-    }
-
-    private void revealPlayerInfo(IAbilityContext ctx, Player target) {
-        UUID casterId = ctx.getCasterId();
-        for (int i = 0; i < 3; i++) {
-            final int tick = i;
-            ctx.scheduling().scheduleDelayed(() -> {
-                playSound(casterId, Sound.BLOCK_BEACON_AMBIENT, 0.5f, 1.5f + (tick * 0.2f));
-                spawnParticle(ctx.getCasterLocation().add(0, 2, 0), Particle.ENCHANT, 20, 0.3, 0.3, 0.3);
-            }, i * 10L);
-        }
-
-        ctx.scheduling().scheduleDelayed(() -> {
-            Map<String, String> analysis = ctx.playerData().getTargetAnalysis(target.getUniqueId());
-
-            tell(casterId, ChatColor.LIGHT_PURPLE + "═══════════════════════════════");
-            tell(casterId, ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "🔮 БАЧЕННЯ КРИСТАЛЬНОГО ШАРУ");
-            tell(casterId, ChatColor.GRAY + "Ціль: " + ChatColor.WHITE + target.getName());
-            tell(casterId, "");
-
-            analysis.forEach((key, value) -> tell(casterId, ChatColor.GRAY + "  " + key + ": " + ChatColor.AQUA + value));
-
-            tell(casterId, ChatColor.LIGHT_PURPLE + "═══════════════════════════════");
-            playSound(casterId, Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1f, 1.8f);
-        }, 30L);
-    }
-
-    private void revealWeatherPrediction(IAbilityContext ctx) {
-        UUID casterId = ctx.getCasterId();
-        World world = ctx.getCasterPlayer().getWorld();
-        long timeUntilClear = world.getClearWeatherDuration();
-        long timeUntilRain = world.getWeatherDuration();
-        boolean isRaining = world.hasStorm();
-
-        ctx.scheduling().scheduleDelayed(() -> {
-            tell(casterId, ChatColor.LIGHT_PURPLE + "═══════════════════════════════");
-            tell(casterId, ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "🔮 МЕТЕОРОЛОГІЧНЕ ПРОРОЦТВО");
-            tell(casterId, "");
-
-            if (isRaining) {
-                int minutesLeft = (int) (timeUntilClear / 20 / 60);
-                tell(casterId, ChatColor.GRAY + "Зараз: " + ChatColor.BLUE + "Дощ");
-                tell(casterId, ChatColor.GRAY + "Тривалість: " + ChatColor.AQUA + minutesLeft + " хв");
-            } else {
-                int minutesUntil = (int) (timeUntilRain / 20 / 60);
-                tell(casterId, ChatColor.GRAY + "Наступний дощ через: " + ChatColor.YELLOW + minutesUntil + " хв");
-            }
-
-            tell(casterId, ChatColor.LIGHT_PURPLE + "═══════════════════════════════");
-            playSound(casterId, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.5f, 1.5f);
-        }, 30L);
-    }
 
     // ========== 2. АСТРОЛОГІЯ ==========
 
@@ -778,7 +687,6 @@ public class DivinationArts extends ActiveAbility {
     // ========== INNER RECORDS ==========
 
     private enum DivinationType {
-        CRYSTAL_BALL("Кришталева куля", Material.AMETHYST_CLUSTER, ChatColor.LIGHT_PURPLE, "Розкриває інформацію про гравців"),
         ASTROLOGY("Астрологія", Material.SPYGLASS, ChatColor.BLUE, "Передбачає удачу або невдачу"),
         PENDULUM("Духовний маятник", Material.IRON_CHAIN, ChatColor.GOLD, "Відповідає на питання 'Так' чи 'Ні'"),
         DIVINING_ROD("Лозошукання", Material.STICK, ChatColor.GREEN, "Пошук ресурсів та об'єктів"),

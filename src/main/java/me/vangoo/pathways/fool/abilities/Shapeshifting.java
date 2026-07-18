@@ -1,36 +1,53 @@
 package me.vangoo.pathways.fool.abilities;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
+import com.destroystokyo.paper.profile.ProfileProperty;
+import me.vangoo.domain.abilities.core.AbilityResourceConsumer;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
+import me.vangoo.domain.abilities.context.IBeyonderContext;
 import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.services.MasteryProgressionCalculator;
 import me.vangoo.domain.valueobjects.Sequence;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.*;
+import me.vangoo.domain.valueobjects.Spirituality;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Sequence 6: Faceless — Shapeshifting (Перевтілення)
- *
- * The Faceless can alter their appearance to mimic another player.
- * Implemented via invisibility + hologram with target's name.
- * Breaks on attack or damage taken.
+ * Посл. 6: Безликий — Перевтілення (реворк).
+ * Справжнє маскування: скін (Paper profile), нік у табі й чаті БУДЬ-ЯКОГО гравця,
+ * що колись був на сервері. Без ліміту часу; шкода НЕ знімає маскування.
+ * Підтримка коштує 20 духовності/с — вичерпалась → маскування спадає.
+ * Профіль не персистентний (як у GatheringAnonymizer): релогін повертає справжній вигляд.
  */
 public class Shapeshifting extends ActiveAbility {
 
-    private static final int BASE_COST = 150;
-    private static final int BASE_COOLDOWN = 120;
-    private static final int DURATION_TICKS = 1200; // 60 seconds
-    private static final double TARGET_RANGE = 5.0;
+    private static final int COST_PER_SECOND = 20;
+    private static final int BASE_COOLDOWN = 10;
+    private static final int MENU_LIMIT = 53;
+    private static final String TEXTURES_PROPERTY = "textures";
 
-    private static final Map<UUID, ShapeshiftData> activeShapeshifts = new ConcurrentHashMap<>();
+    // Інстанс-реєстр живих маскувань (НЕ static — правило сесій).
+    private final Map<UUID, MaskSession> activeMasks = new ConcurrentHashMap<>();
 
     @Override
     public String getName() {
@@ -39,13 +56,22 @@ public class Shapeshifting extends ActiveAbility {
 
     @Override
     public String getDescription(Sequence userSequence) {
-        return "Приймаєте вигляд іншого гравця на " + (DURATION_TICKS / 20) + "с. " +
-                "Агресія або отримання шкоди знімає маскування.";
+        return "Скопіюйте скін та ім'я будь-якого гравця, що колись був на сервері. " +
+                "Без ліміту часу; шкода не знімає маскування. Підтримка: " +
+                COST_PER_SECOND + " духовності/с. Повторний каст знімає личину.";
     }
 
     @Override
     public int getSpiritualityCost() {
-        return BASE_COST;
+        // Ціна повністю періодична (getPeriodicCost()): 0 тут — щоб пайплайн
+        // Beyonder.useAbility ні гейтив активацію/деактивацію по духовності, ні
+        // списував разовий кошт понад дрейн — вимкнення маски завжди безкоштовне.
+        return 0;
+    }
+
+    @Override
+    public int getPeriodicCost() {
+        return COST_PER_SECOND;
     }
 
     @Override
@@ -53,166 +79,143 @@ public class Shapeshifting extends ActiveAbility {
         return BASE_COOLDOWN;
     }
 
-    /**
-     * Check if a player is currently shapeshifted.
-     */
-    public static boolean isShapeshifted(UUID playerId) {
-        return activeShapeshifts.containsKey(playerId);
-    }
-
     @Override
     protected AbilityResult performExecution(IAbilityContext context) {
         UUID casterId = context.getCasterId();
 
-        // If already shapeshifted, cancel
-        if (activeShapeshifts.containsKey(casterId)) {
-            cancelShapeshift(context, casterId, "свідоме скасування");
+        if (activeMasks.containsKey(casterId)) {
+            Player player = context.getCasterPlayer();
+            unmask(player, casterId, "свідоме зняття");
+            context.cooldown().setCooldown(this, casterId);
             return AbilityResult.success();
         }
 
-        Optional<Player> targetOpt = context.targeting().getTargetedPlayer(TARGET_RANGE);
-        if (targetOpt.isEmpty()) {
-            return AbilityResult.failure("Потрібно дивитися на гравця (макс " + (int) TARGET_RANGE + " блоків)");
+        List<OfflinePlayer> candidates = Arrays.stream(Bukkit.getOfflinePlayers())
+                .filter(p -> p.getName() != null && !p.getUniqueId().equals(casterId))
+                .sorted(Comparator.comparingLong(OfflinePlayer::getLastPlayed).reversed())
+                .limit(MENU_LIMIT)
+                .toList();
+
+        if (candidates.isEmpty()) {
+            return AbilityResult.failure("Немає личин: на сервері ще ніхто не бував");
         }
 
-        Player target = targetOpt.get();
-        String targetName = target.getName();
-
-        activateShapeshift(context, casterId, targetName);
-        return AbilityResult.success();
+        context.ui().openChoiceMenu("Перевтілення: оберіть личину", candidates,
+                this::createHeadItem,
+                target -> activateMask(context, target));
+        return AbilityResult.deferred();
     }
 
-    private void activateShapeshift(IAbilityContext context, UUID casterId, String disguiseName) {
-        // Transformation animation
-        Location loc = context.playerData().getCurrentLocation(casterId);
-        if (loc != null) {
-            context.effects().spawnParticle(Particle.SMOKE, loc.clone().add(0, 1, 0), 30, 0.4, 0.8, 0.4);
-            context.effects().spawnParticle(Particle.ENCHANT, loc.clone().add(0, 1, 0), 20, 0.3, 0.5, 0.3);
-            context.effects().playSound(loc, Sound.ENTITY_ILLUSIONER_PREPARE_MIRROR, 1f, 1.0f);
+    private ItemStack createHeadItem(OfflinePlayer target) {
+        ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+        SkullMeta meta = (SkullMeta) head.getItemMeta();
+        if (meta != null) {
+            meta.setOwningPlayer(target);
+            meta.setDisplayName(ChatColor.GOLD + target.getName());
+            meta.setLore(List.of(ChatColor.GRAY + (target.isOnline() ? "Зараз онлайн" : "Був на сервері")));
+            head.setItemMeta(meta);
         }
+        return head;
+    }
 
-        // Hide player from everyone
-        for (Player other : Bukkit.getOnlinePlayers()) {
-            if (!other.getUniqueId().equals(casterId)) {
-                context.entity().hidePlayerFromTarget(other.getUniqueId(), casterId);
-            }
+    private void activateMask(IAbilityContext context, OfflinePlayer target) {
+        UUID casterId = context.getCasterId();
+        Player caster = context.getCasterPlayer();
+        if (caster == null) return;
+        caster.closeInventory();
+
+        if (!AbilityResourceConsumer.consumeResources(this, context.getCasterBeyonder(), context)) {
+            context.messaging().sendMessage(casterId, ChatColor.RED + "Недостатньо духовності!");
+            return;
         }
+        context.events().publishAbilityUsedEvent(this, context.getCasterBeyonder());
 
-        // Apply invisibility
-        context.entity().applyPotionEffect(casterId, org.bukkit.potion.PotionEffectType.INVISIBILITY,
-                DURATION_TICKS + 20, 0);
+        String disguiseName = target.getName();
+        PlayerProfile originalProfile = caster.getPlayerProfile();
 
-        context.messaging().sendMessageToActionBar(casterId,
-                Component.text("🎭 Ви маскуєтесь під " + disguiseName, NamedTextColor.GOLD));
+        // Скін: копіюємо textures цілі, якщо кешовані; інакше — лише ім'я (фолбек зі спеки).
+        PlayerProfile masked = caster.getPlayerProfile();
+        masked.setName(disguiseName);
+        PlayerProfile targetProfile = target.getPlayerProfile();
+        // Синхронне заповнення з локального кешу Paper (без блокуючого запиту в Mojang) —
+        // офлайн-гравці не мають "живого" GameProfile, тож без цього textures частіше порожні,
+        // навіть якщо гравець колись реально заходив і скін уже закешовано сервером.
+        targetProfile.completeFromCache();
+        Optional<ProfileProperty> textures = targetProfile.getProperties().stream()
+                .filter(p -> p.getName().equals(TEXTURES_PROPERTY))
+                .findFirst();
+        if (textures.isPresent()) {
+            masked.setProperty(textures.get());
+        } else {
+            masked.removeProperty(TEXTURES_PROPERTY);
+            context.messaging().sendMessage(casterId, ChatColor.YELLOW
+                    + "⚠ Скін цієї личини не збережено на сервері — скопійовано лише ім'я.");
+        }
+        caster.setPlayerProfile(masked);
+        caster.setDisplayName(disguiseName);
+        caster.setPlayerListName(disguiseName);
 
-        final int[] ticks = {0};
-        final boolean[] broken = {false};
+        Location loc = caster.getLocation();
+        caster.getWorld().spawnParticle(Particle.SMOKE, loc.clone().add(0, 1, 0), 30, 0.4, 0.8, 0.4);
+        caster.playSound(loc, Sound.ENTITY_ILLUSIONER_PREPARE_MIRROR, 1f, 1.0f);
+        caster.spigot().sendMessage(ChatMessageType.ACTION_BAR,
+                new TextComponent(ChatColor.GOLD + "🎭 Ви — " + disguiseName));
 
-        // Subscribe to aggression events (breaks disguise)
-        context.events().subscribeToTemporaryEvent(casterId,
-                EntityDamageByEntityEvent.class,
-                e -> e.getDamager().getUniqueId().equals(casterId)
-                        || e.getEntity().getUniqueId().equals(casterId),
-                e -> {
-                    if (!broken[0]) {
-                        broken[0] = true;
-                        cancelShapeshift(context, casterId, "бойова дія");
-                    }
-                },
-                DURATION_TICKS
-        );
-
-        // Main loop
+        // Дрейн 20/с. У лямбду захоплюється лише non-caster-bound IBeyonderContext
+        // (генеричний lookup за UUID, як у CrystalBall) — не сам IAbilityContext кастера.
+        IBeyonderContext beyonderContext = context.beyonder();
         BukkitTask task = context.scheduling().scheduleRepeating(() -> {
-            ticks[0]++;
-
-            if (!context.playerData().isOnline(casterId) || broken[0]) {
-                cancelShapeshift(context, casterId, "вихід");
+            Player p = Bukkit.getPlayer(casterId);
+            if (p == null || !p.isOnline()) {
+                // Профіль скинеться сам при релогіні — просто чистимо сесію.
+                MaskSession s = activeMasks.remove(casterId);
+                if (s != null) s.task().cancel();
                 return;
             }
-
-            if (ticks[0] >= DURATION_TICKS) {
-                cancelShapeshift(context, casterId, "час вийшов");
+            var beyonder = beyonderContext.getBeyonder(casterId);
+            Spirituality sp = beyonder.getSpirituality();
+            if (sp.current() < COST_PER_SECOND) {
+                unmask(p, casterId, "виснаження духовності");
                 return;
             }
-
-            // Refresh hologram every 3 seconds
-            if (ticks[0] % 60 == 0) {
-                Location currentLoc = context.playerData().getCurrentLocation(casterId);
-                if (currentLoc != null) {
-                    context.messaging().spawnTemporaryHologram(
-                            currentLoc.clone().add(0, 2.3, 0),
-                            Component.text(disguiseName, NamedTextColor.WHITE),
-                            60L
-                    );
-                }
+            beyonder.setSpirituality(sp.decrement(COST_PER_SECOND));
+            double masteryGain = MasteryProgressionCalculator.calculateMasteryGain(
+                    COST_PER_SECOND, beyonder.getSequence());
+            if (masteryGain > 0) {
+                beyonder.setMastery(beyonder.getMastery().add(masteryGain));
             }
+            p.spigot().sendMessage(ChatMessageType.ACTION_BAR,
+                    new TextComponent(ChatColor.GOLD + "🎭 " + disguiseName));
+        }, 20L, 20L);
 
-            // Refresh hide from new players every 2 seconds
-            if (ticks[0] % 40 == 0) {
-                for (Player other : Bukkit.getOnlinePlayers()) {
-                    if (!other.getUniqueId().equals(casterId)) {
-                        context.entity().hidePlayerFromTarget(other.getUniqueId(), casterId);
-                    }
-                }
-            }
-
-            // Action bar update every 4 seconds
-            if (ticks[0] % 80 == 0) {
-                int remaining = (DURATION_TICKS - ticks[0]) / 20;
-                context.messaging().sendMessageToActionBar(casterId,
-                        Component.text("🎭 " + disguiseName + " (" + remaining + "с)", NamedTextColor.GOLD));
-            }
-        }, 0L, 1L);
-
-        activeShapeshifts.put(casterId, new ShapeshiftData(task, disguiseName));
+        activeMasks.put(casterId, new MaskSession(task, originalProfile, disguiseName));
     }
 
-    private void cancelShapeshift(IAbilityContext context, UUID casterId, String reason) {
-        ShapeshiftData data = activeShapeshifts.remove(casterId);
-        if (data == null) return;
+    private void unmask(Player player, UUID casterId, String reason) {
+        MaskSession session = activeMasks.remove(casterId);
+        if (session == null) return;
+        session.task().cancel();
 
-        data.task.cancel();
-        context.events().unsubscribeAll(casterId);
-
-        // Show player to everyone
-        for (Player other : Bukkit.getOnlinePlayers()) {
-            if (!other.getUniqueId().equals(casterId)) {
-                context.entity().showPlayerToTarget(other.getUniqueId(), casterId);
-            }
-        }
-
-        // Remove invisibility
-        context.entity().removePotionEffect(casterId, org.bukkit.potion.PotionEffectType.INVISIBILITY);
-
-        // Reversal animation
-        Location loc = context.playerData().getCurrentLocation(casterId);
-        if (loc != null) {
-            context.effects().spawnParticle(Particle.SMOKE, loc.clone().add(0, 1, 0), 20, 0.3, 0.5, 0.3);
-            context.effects().playSound(loc, Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1f, 0.8f);
-        }
-
-        context.messaging().sendMessageToActionBar(casterId,
-                Component.text("🎭 Перевтілення знято • " + reason, NamedTextColor.GRAY));
-
-        context.cooldown().setCooldown(this, casterId);
-    }
-
-    private static class ShapeshiftData {
-        final BukkitTask task;
-        final String disguiseName;
-
-        ShapeshiftData(BukkitTask task, String disguiseName) {
-            this.task = task;
-            this.disguiseName = disguiseName;
+        if (player != null && player.isOnline()) {
+            player.setPlayerProfile(session.originalProfile());
+            player.setDisplayName(null);
+            player.setPlayerListName(null);
+            Location loc = player.getLocation();
+            player.getWorld().spawnParticle(Particle.SMOKE, loc.clone().add(0, 1, 0), 20, 0.3, 0.5, 0.3);
+            player.playSound(loc, Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1f, 0.8f);
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR,
+                    new TextComponent(ChatColor.GRAY + "🎭 Личину знято • " + reason));
         }
     }
 
     @Override
     public void cleanUp() {
-        for (ShapeshiftData data : activeShapeshifts.values()) {
-            data.task.cancel();
+        for (UUID casterId : activeMasks.keySet()) {
+            unmask(Bukkit.getPlayer(casterId), casterId, "вимкнення");
         }
-        activeShapeshifts.clear();
+        activeMasks.clear();
+    }
+
+    private record MaskSession(BukkitTask task, PlayerProfile originalProfile, String disguiseName) {
     }
 }
