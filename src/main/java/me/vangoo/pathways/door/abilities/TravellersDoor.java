@@ -11,7 +11,10 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.player.*;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import org.bukkit.Particle.DustOptions;
 import org.bukkit.scheduler.BukkitTask;
@@ -46,7 +49,7 @@ public class TravellersDoor extends ActiveAbility {
 
     @Override
     public String getDescription(Sequence userSequence) {
-        return "ПКМ: створити двері в режим спостереження (exit в чат для виходу). " +
+        return "ПКМ: створити двері в простір спостереження (ПКМ ще раз — вийти). " +
                 "Shift+ПКМ: створити двері телепортації (макс. " + MAX_TELEPORT_DISTANCE + " блоків).";
     }
 
@@ -86,17 +89,24 @@ public class TravellersDoor extends ActiveAbility {
                 Integer.MAX_VALUE
         );
 
-        // 2. Підписка на exit для виходу з режиму спостереження
+        // 2. Вихід із простору — ПКМ (раніше треба було писати "exit" у чат).
+        //
+        // Саме тому режим простору — ADVENTURE, а НЕ GameMode.SPECTATOR: у спектаторі
+        // ванільний клієнт узагалі не шле на сервер use-item пакет (MultiPlayerGameMode
+        // .useItem/.useItemOn виходять раніше), тож PlayerInteractEvent там не спрацював би
+        // НІКОЛИ і гравець лишався б замкненим у просторі до таймауту.
+        //
+        // Подія обробляється підпискою, а не в performExecution, бо кулдаун здібності (50с)
+        // коротший за час у просторі (60с) — пайплайн Ability.execute відсік би ПКМ
+        // кулдаун-перевіркою ще до performExecution.
         context.events().subscribeToTemporaryEvent(context.getCasterId(),
-                AsyncPlayerChatEvent.class,
-                e -> activeSpectators.contains(e.getPlayer().getUniqueId()) &&
-                        e.getMessage().equalsIgnoreCase("exit"),
+                PlayerInteractEvent.class,
+                e -> activeSpectators.contains(e.getPlayer().getUniqueId())
+                        && (e.getAction() == Action.RIGHT_CLICK_AIR
+                            || e.getAction() == Action.RIGHT_CLICK_BLOCK),
                 e -> {
                     e.setCancelled(true);
-                    Bukkit.getScheduler().runTask(
-                            Bukkit.getPluginManager().getPlugin("Mysteries-Above"),
-                            () -> exitSpectatorMode(context, e.getPlayer().getUniqueId())
-                    );
+                    exitSpectatorMode(context, e.getPlayer().getUniqueId());
                 },
                 Integer.MAX_VALUE
         );
@@ -111,13 +121,48 @@ public class TravellersDoor extends ActiveAbility {
         if (activeSpectators.contains(playerId)) {
             activeSpectators.remove(playerId);
 
-            // Для показу гравців назад потрібен повний контекст, але тут його немає
-            // Тому просто міняємо GameMode - при наступному логіні гравці будуть видимі
-            entityContext.setGameMode(playerId, GameMode.SURVIVAL);
+            // Знімаємо стан простору повністю, інакше гравець залогінився б невидимим,
+            // невразливим і з дозволеним польотом.
+            leavePhantomMode(playerId);
 
             // Очистка сесії, якщо вийшов кастер
             sessionPassengers.remove(playerId);
         }
+    }
+
+    /**
+     * Вхід у «простір» Дверей: ADVENTURE + невидимість + політ + невразливість.
+     *
+     * <p>НЕ {@link GameMode#SPECTATOR} свідомо — у спектаторі клієнт не шле use-item пакет,
+     * тож вийти по ПКМ звідти неможливо в принципі. Плата за це: крізь блоки більше не
+     * пролетиш, простір тепер «фантомний політ», а не безтілесність.
+     */
+    private void enterPhantomMode(UUID playerId) {
+        Player player = Bukkit.getPlayer(playerId);
+        if (player == null || !player.isOnline()) return;
+
+        player.setGameMode(GameMode.ADVENTURE);
+        player.setAllowFlight(true);
+        player.setFlying(true);
+        player.setInvulnerable(true);
+        player.setCollidable(false);
+        player.addPotionEffect(new PotionEffect(
+                PotionEffectType.INVISIBILITY, SPECTATOR_DURATION + 100, 0, false, false));
+    }
+
+    /** Повне зняття стану простору. Ідемпотентне — безпечно кликати двічі. */
+    private void leavePhantomMode(UUID playerId) {
+        Player player = Bukkit.getPlayer(playerId);
+        if (player == null || !player.isOnline()) return;
+
+        player.setFlying(false);
+        player.setAllowFlight(false);
+        player.setInvulnerable(false);
+        player.setCollidable(true);
+        player.removePotionEffect(PotionEffectType.INVISIBILITY);
+        // Скидаємо падіння: гравець виходить у повітрі, а в SURVIVAL це вже летальний рахунок.
+        player.setFallDistance(0f);
+        player.setGameMode(GameMode.SURVIVAL);
     }
 
     private AbilityResult handleSpectatorMode(IAbilityContext context) {
@@ -307,7 +352,7 @@ public class TravellersDoor extends ActiveAbility {
     }
 
     private void handleSpectatorEntry(IAbilityContext context, DoorData door, UUID playerId, boolean isCaster) {
-        context.entity().setGameMode(playerId, GameMode.SPECTATOR);
+        enterPhantomMode(playerId);
         activeSpectators.add(playerId);
 
         // КРИТИЧНО: Заборонити телепортацію через меню спектатора
@@ -338,7 +383,7 @@ public class TravellersDoor extends ActiveAbility {
             context.messaging().sendMessageToActionBar(context.getCasterId(),
                     Component.text("Подорожування активовано на 60 секунд").color(NamedTextColor.AQUA));
             context.messaging().sendMessageToActionBar(context.getCasterId(),
-                    Component.text("Напишіть в чат exit, щоб завершити.").color(NamedTextColor.GREEN));
+                    Component.text("ПКМ, щоб завершити.").color(NamedTextColor.GREEN));
 
             startTetheringTask(context, playerId);
 
@@ -413,11 +458,8 @@ public class TravellersDoor extends ActiveAbility {
             for (Player onlinePlayer : onlinePlayers) {
                 context.entity().showPlayerToTarget(playerId, onlinePlayer.getUniqueId());
             }
-
-            context.entity().setGameMode(playerId, GameMode.SURVIVAL);
-        } else {
-            context.entity().setGameMode(playerId, GameMode.SURVIVAL);
         }
+        leavePhantomMode(playerId);
 
         if (context.playerData().getEyeLocation(playerId) != null &&
                 context.playerData().getEyeLocation(playerId).getBlock().getType().isSolid()) {
@@ -440,7 +482,7 @@ public class TravellersDoor extends ActiveAbility {
                             }
                         }
 
-                        context.entity().setGameMode(passengerId, GameMode.SURVIVAL);
+                        leavePhantomMode(passengerId);
                         context.entity().teleport(passengerId, context.playerData().getCurrentLocation(playerId));
 
                         context.messaging().sendMessageToActionBar(passengerId,
@@ -583,10 +625,7 @@ public class TravellersDoor extends ActiveAbility {
         spectatorTimeouts.clear();
 
         for (UUID playerId : activeSpectators) {
-            Player player = Bukkit.getPlayer(playerId);
-            if (player != null && player.isOnline()) {
-                player.setGameMode(GameMode.SURVIVAL);
-            }
+            leavePhantomMode(playerId);
         }
 
         activeDoors.clear();
