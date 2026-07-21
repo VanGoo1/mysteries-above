@@ -93,8 +93,8 @@ The pure core of `domain` (`entities`, `services`, `spells`, `brewing`, `creatur
   `DuelArenaProvider`/`DuelBriefing`/`DuelListener`), а не сховищний обряд. Див.
   `.claude/rules/church-organizations.md`.
 - Таємні організації (Економіка 6c): `order-memberships.json` (`JSONOrderMembershipRepository`
-  — членства/ранг=послідовність/фавори/задачі/запрошення/кулдауни вступу й перевидачі
-  талісмана/`abandonedOrders` [вихід із ордену необоротний]/`pendingRaidLoot`+
+  — членства/ранг=послідовність/фавори/задачі/запрошення/кулдаун вступу/
+  `abandonedOrders` [вихід із ордену необоротний]/`pendingRaidLoot`+
   `pendingRaidChurch` [незданий рейд-лут і церква, з якої він]/`falsePapers`) і
   `orders-state.json` (`OrderStateRepository` — схованки орденів, розвіддані з TTL,
   кулдауни храмів і закриті-замахом священики) — обидва пишуться після кожної мутації,
@@ -104,9 +104,10 @@ The pure core of `domain` (`entities`, `services`, `spells`, `brewing`, `creatur
   точки дотику з `ChurchVault`/`ChurchService` (другий вихід сховища, sneak-клік по
   священику зарезервовано під шпигунство). Див. `.claude/rules/secret-orders.md`.
 - Admin commands (all require `mysteriesabove.admin`): `/pathway`, `/mastery`, `/rampager`, `/potion`, `/custom-items`, `/recipe`, `/structure`, `/characteristic`, `/coins`. Creature testing goes through MythicMobs' own command: `/mm mobs spawn <id>`. `/gathering` — гравецька команда (join/menu), її start/stop — адмінські (перевірка права в коді). `/church` — гравецька (leave/info; `leave` двокрокова — діє лише `/church leave confirm`, бо
-вихід із церкви необоротний), bind/unbind — адмінські (перевірка права в коді). `/order` — гравецька команда (invites/accept/talisman/leave/info; `leave` теж двокрокова —
+вихід із церкви необоротний), bind/unbind — адмінські (перевірка права в коді). `/order` — гравецька команда (invites/accept/raid/leave/info; `leave` теж двокрокова —
 `/order leave confirm`, вихід із ордену необоротний); сам вступ за шифрованим посланням
-йде через предмет-меню (`OrderMenu`), не команду.
+йде через предмет-меню (`OrderMenu`), не команду, а головне меню ордену — вкладка в меню
+Містичних Здібностей (`AbilityMenu`, слот 6,5, лише члену), не предмет.
 
 ## Maintaining docs & rules
 

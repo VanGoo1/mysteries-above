@@ -37,6 +37,10 @@ import me.vangoo.infrastructure.organizations.JSONOrderMembershipRepository.Task
 import me.vangoo.infrastructure.organizations.OrderConfig;
 import me.vangoo.infrastructure.organizations.OrderStateRepository;
 import me.vangoo.infrastructure.organizations.OrderStateRepository.IntelRecord;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -119,7 +123,6 @@ public class SecretOrderService {
     private final Map<UUID, Set<String>> abandonedOrders = new HashMap<>();
     private final Map<UUID, List<Invitation>> invitations = new HashMap<>();
     private final Map<UUID, Integer> beyonderKills = new HashMap<>();
-    private final Map<UUID, Long> talismanReissueAfter = new HashMap<>();
     private final Set<UUID> falsePapers = new HashSet<>();
     // Тека рейдової здобичі — не читається/не пишеться логікою Task 12 (то приналежність
     // Task 13), але переноситься 1:1 при (де)гідрації, щоб персист цього сервісу не стирав
@@ -136,6 +139,10 @@ public class SecretOrderService {
     // охоронці замахів гинуть на рестарті разом зі спавненими мобами — не персиститься.
     private final Map<UUID, RaidSession> raids = new HashMap<>();
     private final Map<UUID, GuardMark> assassinationGuards = new HashMap<>(); // guardUuid → замовник+церква
+    // Кому вже запропоновано злом цього заходу (гравець → churchId). Знімається, щойно умови
+    // перестали виконуватись (вийшов із зони / настав день) — тоді наступний захід дасть нову
+    // пропозицію. Транзієнтний, як і решта живого стану операцій.
+    private final Map<UUID, String> raidOffered = new HashMap<>();
 
     /** Мітка охоронця замаху: хто замовив і на яку церкву — щоб зарахувати навіть якщо задачу вже стерто. */
     private record GuardMark(UUID assassin, String churchId) {}
@@ -203,9 +210,6 @@ public class SecretOrderService {
                 if (data.beyonderKills() != 0) {
                     beyonderKills.put(playerId, data.beyonderKills());
                 }
-                if (data.talismanReissueAfterEpochMillis() != 0) {
-                    talismanReissueAfter.put(playerId, data.talismanReissueAfterEpochMillis());
-                }
                 if (data.pendingRaidLoot() != null && !data.pendingRaidLoot().isEmpty()) {
                     pendingRaidLoot.put(playerId, new HashMap<>(data.pendingRaidLoot()));
                 }
@@ -268,7 +272,6 @@ public class SecretOrderService {
         allIds.addAll(abandonedOrders.keySet());
         allIds.addAll(invitations.keySet());
         allIds.addAll(beyonderKills.keySet());
-        allIds.addAll(talismanReissueAfter.keySet());
         allIds.addAll(falsePapers);
         allIds.addAll(pendingRaidLoot.keySet());
         allIds.addAll(pendingRaidChurch.keySet());
@@ -287,7 +290,6 @@ public class SecretOrderService {
                     List.copyOf(abandonedOrders.getOrDefault(id, Set.of())),
                     invRecords,
                     beyonderKills.getOrDefault(id, 0),
-                    talismanReissueAfter.getOrDefault(id, 0L),
                     pendingRaidLoot.getOrDefault(id, Map.of()),
                     falsePapers.contains(id),
                     pendingRaidChurch.get(id)));
@@ -363,7 +365,10 @@ public class SecretOrderService {
         OrderMembership membership = new OrderMembership(id, institutionId, randomCurator());
         memberships.put(id, membership);
         seedStashIfAbsent(institutionId);
-        orderItems.createTalisman().ifPresent(item -> giveItem(player, item));
+        // Предмета-підтвердження більше нема, тож момент вступу мусить сказати про себе сам —
+        // інакше нова вкладка з'явиться в меню непоміченою.
+        player.sendMessage(PREFIX + ChatColor.LIGHT_PURPLE
+                + "Зв'язок встановлено. Шукайте нас у меню Містичних Здібностей.");
         List<Invitation> pending = invitations.get(id);
         if (pending != null) {
             pending.removeIf(inv -> inv.institutionId().equals(institutionId));
@@ -500,29 +505,6 @@ public class SecretOrderService {
             }
         }
         return map;
-    }
-
-    // ── Талісман ──────────────────────────────────────────────────────────
-
-    public boolean reissueTalisman(Player player) {
-        UUID id = player.getUniqueId();
-        OrderMembership membership = memberships.get(id);
-        if (membership == null) {
-            return false;
-        }
-        long now = System.currentTimeMillis();
-        Long after = talismanReissueAfter.get(id);
-        if (after != null && now < after) {
-            return false;
-        }
-        Optional<ItemStack> item = orderItems.createTalisman();
-        if (item.isEmpty()) {
-            return false;
-        }
-        giveItem(player, item.get());
-        talismanReissueAfter.put(id, now + config.talismanReissueCooldownMinutes() * 60_000L);
-        persist();
-        return true;
     }
 
     // ── Завдання (калька ChurchService.ensureFreshTasks/deliverTask/onCreatureKilled) ──
@@ -1119,10 +1101,14 @@ public class SecretOrderService {
 
     // ── Тик ───────────────────────────────────────────────────────────────
 
-    /** Хвилинний тик: респавн священиків із минулим priestClosedUntil, чистка простроченого intel. */
+    /**
+     * Хвилинний тик: респавн священиків із минулим priestClosedUntil, чистка простроченого
+     * intel, автопропозиція злому тим, хто вже стоїть під храмом-ціллю глупої ночі.
+     */
     public void tick() {
         long now = System.currentTimeMillis();
         boolean changed = false;
+        offerRaids();
         List<String> toRespawn = priestClosedUntil.entrySet().stream()
                 .filter(e -> e.getValue() <= now)
                 .map(Map.Entry::getKey)
@@ -1165,10 +1151,101 @@ public class SecretOrderService {
     // ── Рейд на сховище храму ────────────────────────────────────────────────
 
     /**
+     * Проходить по членах із активною RAID-задачею й пропонує злом тим, хто ЗАРАЗ виконує
+     * всі умови старту. Живе в хвилинному тику свідомо: {@link org.bukkit.event.player.PlayerMoveEvent}
+     * коштував би обходу сайтів на кожен крок кожного гравця, а хвилина очікування під стіною
+     * храму — прийнятна ціна (про неї попереджає лор RAID-плитки в меню завдань).
+     *
+     * <p>Одна пропозиція на один захід: мітка в {@code raidOffered} знімається, щойно умови
+     * перестали виконуватись, тож прохід повз храм не спамить, а повернення — пропонує знову.</p>
+     */
+    private void offerRaids() {
+        for (Map.Entry<UUID, OrderMembership> entry : memberships.entrySet()) {
+            UUID id = entry.getKey();
+            Player player = Bukkit.getPlayer(id);
+            if (player == null) {
+                raidOffered.remove(id);
+                continue;
+            }
+            if (raids.containsKey(id)) {
+                continue; // уже ламає — пропозиція ні до чого
+            }
+            Optional<String> target = raidTargetOf(entry.getValue());
+            if (target.isEmpty() || !raidConditionsMet(player, target.get())) {
+                raidOffered.remove(id);
+                continue;
+            }
+            String churchId = target.get();
+            if (churchId.equals(raidOffered.get(id))) {
+                continue; // цього заходу вже пропонували
+            }
+            raidOffered.put(id, churchId);
+            sendRaidOffer(player, churchId);
+        }
+    }
+
+    /**
+     * Клікабельна пропозиція злому. Ціна названа прямо в тексті: провал палить храм так само,
+     * як успіх, — гравець мусить бачити це ДО кліку (той самий принцип, що в
+     * {@code ConfirmationMenu} для необоротних дій, але без GUI, щоб не засліпити того,
+     * хто підкрадається до храму).
+     */
+    private void sendRaidOffer(Player player, String churchId) {
+        String churchName = registry.byId(churchId).map(Institution::displayName).orElse(churchId);
+        player.sendMessage(PREFIX + ChatColor.DARK_RED + "Сховище " + churchName + " поруч, і ніч глибока.");
+        TextComponent message = new TextComponent(PREFIX + ChatColor.GRAY
+                + "Провал зачинить храм на " + config.raidTempleCooldownHours()
+                + " год так само, як успіх. ");
+        TextComponent button = new TextComponent(ChatColor.DARK_RED + "" + ChatColor.BOLD + "[Почати злом]");
+        button.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/order raid"));
+        button.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                new ComponentBuilder(ChatColor.GRAY + "Лишайтесь у зоні храму, поки триває канал").create()));
+        message.addExtra(button);
+        player.spigot().sendMessage(message);
+    }
+
+    /** Ціль активної RAID-задачі членства, якщо така є. */
+    private Optional<String> raidTargetOf(OrderMembership membership) {
+        int idx = indexOfTask(membership.tasks(), OrderTask.Type.RAID, null);
+        return idx < 0 ? Optional.empty() : Optional.of(membership.tasks().get(idx).targetKey());
+    }
+
+    /** Центр зони храму (сайт церкви), якщо світ завантажено. */
+    private Optional<Location> raidZoneCenter(String churchId) {
+        Optional<ChurchSiteRepository.Site> siteOpt = churchSiteService.siteOf(churchId);
+        if (siteOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        ChurchSiteRepository.Site site = siteOpt.get();
+        World world = Bukkit.getWorld(site.world());
+        return world == null ? Optional.empty()
+                : Optional.of(new Location(world, site.x(), site.y(), site.z()));
+    }
+
+    /** Ті самі гейти, що в {@link #startRaid}, але МОВЧКИ — для сканування в тику. */
+    private boolean raidConditionsMet(Player player, String churchId) {
+        long time = player.getWorld().getTime();
+        if (time < 13000 || time > 23000) {
+            return false;
+        }
+        if (isTempleClosed(churchId) || isTempleOnCooldown(churchId)) {
+            return false;
+        }
+        Optional<Location> center = raidZoneCenter(churchId);
+        return center.isPresent()
+                && center.get().getWorld().equals(player.getWorld())
+                && player.getLocation().distance(center.get()) <= config.raidZoneRadius();
+    }
+
+    /**
      * Старт злому сховища храму-цілі. Гейти: активна RAID-задача; ніч
      * ({@code world.getTime()} в [13000,23000]); гравець у радіусі сайту цілі; храм не
      * закритий і не на кулдауні; нема активної рейд-сесії. Фавор за RAID НЕ дається тут —
      * лише після здачі здобичі в схованку ({@link #depositRaidLoot}).
+     *
+     * <p>Вхід — команда {@code /order raid}: або набрана вручну, або з кнопки в
+     * автопропозиції ({@link #offerRaids}). Гейти перевіряються тут щоразу, тож протухла
+     * кнопка чи набрана не в тому місці команда безпечні — вони лише пояснять причину.</p>
      */
     public boolean startRaid(Player player) {
         UUID id = player.getUniqueId();
@@ -1190,17 +1267,12 @@ public class SecretOrderService {
             player.sendMessage(PREFIX + ChatColor.GRAY + "Цей храм недавно було пограбовано.");
             return false;
         }
-        Optional<ChurchSiteRepository.Site> siteOpt = churchSiteService.siteOf(churchId);
-        if (siteOpt.isEmpty()) {
+        Optional<Location> centerOpt = raidZoneCenter(churchId);
+        if (centerOpt.isEmpty()) {
             return false;
         }
-        ChurchSiteRepository.Site site = siteOpt.get();
-        World siteWorld = Bukkit.getWorld(site.world());
-        if (siteWorld == null) {
-            return false;
-        }
-        Location center = new Location(siteWorld, site.x(), site.y(), site.z());
-        if (!siteWorld.equals(player.getWorld())
+        Location center = centerOpt.get();
+        if (!center.getWorld().equals(player.getWorld())
                 || player.getLocation().distance(center) > config.raidZoneRadius()) {
             player.sendMessage(PREFIX + ChatColor.GRAY + "Ви надто далеко від храму цілі.");
             return false;

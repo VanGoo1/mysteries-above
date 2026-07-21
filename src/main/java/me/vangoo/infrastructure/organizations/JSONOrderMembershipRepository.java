@@ -44,7 +44,6 @@ public class JSONOrderMembershipRepository {
                                   List<String> abandonedOrders,
                                   List<InvitationRecord> invitations,
                                   int beyonderKills,
-                                  long talismanReissueAfterEpochMillis,
                                   Map<String, Integer> pendingRaidLoot,
                                   boolean falsePapers,
                                   String pendingRaidChurch) {}

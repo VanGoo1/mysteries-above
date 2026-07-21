@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Bukkit-глюй таємних організацій: талісман/шифроване послання в руці, sneak-клік і удар
+ * Bukkit-глюй таємних організацій: шифроване послання в руці, sneak-клік і удар
  * по священику (шпигунство/замах), kill-прогрес завдань (полювання/апекс/охоронець замаху),
  * провал/успіх рейдера й нагадування про вчинкові запрошення. Патерн — {@link ChurchListener}.
  */
@@ -67,9 +67,10 @@ public class OrderListener implements Listener {
     }
 
     /**
-     * Талісман: sneak-клік стартує злом сховища храму-цілі, звичайний — відкриває головне
-     * меню. Шифроване послання: члену — підказка, іншим — пікер вступу. Подія скасовується
-     * для обох предметів (не даємо ПКМ провалитись у блок/повітря під ними).
+     * Шифроване послання: члену — підказка, іншим — пікер вступу. Подія скасовується
+     * (не даємо ПКМ провалитись у блок/повітря під предметом). Талісмана тут більше нема —
+     * головне меню ордену відкривається вкладкою в меню Містичних Здібностей, а злом
+     * стартує {@code /order raid} (вручну або з кнопки автопропозиції).
      */
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
@@ -83,15 +84,6 @@ public class OrderListener implements Listener {
         Player player = event.getPlayer();
         ItemStack hand = player.getInventory().getItemInMainHand();
 
-        if (orderItems.isTalisman(hand)) {
-            event.setCancelled(true);
-            if (player.isSneaking()) {
-                secretOrderService.startRaid(player);
-            } else {
-                orderMenu.openMain(player);
-            }
-            return;
-        }
         if (orderItems.isCipherMessage(hand)) {
             event.setCancelled(true);
             if (secretOrderService.membershipOf(player.getUniqueId()).isPresent()) {
