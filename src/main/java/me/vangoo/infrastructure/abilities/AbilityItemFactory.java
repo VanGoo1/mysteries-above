@@ -4,6 +4,7 @@ import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.AbilityType;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.Sequence;
+import me.vangoo.infrastructure.items.DiscItems;
 import me.vangoo.infrastructure.ui.NBTBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -21,8 +22,15 @@ public class AbilityItemFactory {
     /** Статична NBT-мітка предмета здібності — дозволяє розпізнати його без контексту Beyonder. */
     public static final String ABILITY_ITEM_NBT = "ability_item";
 
+    /**
+     * Матеріал предмета здібності. Власна пластинка на категорію: не сплутати з ванільним папером,
+     * який шлях Блазня споживає як ресурс, і видно категорію навіть без ресурс-паку.
+     * Обробку пластинки (стак, jukebox) робить {@link DiscItems}.
+     */
+    public static final Material ABILITY_ITEM_MATERIAL = Material.MUSIC_DISC_WARD;
+
     public ItemStack getItemFromAbility(Ability ability, Sequence userSequence) {
-        ItemStack item = new ItemStack(Material.PAPER);
+        ItemStack item = new ItemStack(ABILITY_ITEM_MATERIAL);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(ChatColor.GOLD + ability.getName());
@@ -63,6 +71,7 @@ public class AbilityItemFactory {
             } catch (Throwable ignored) {
             }
 
+            DiscItems.applyStackSize(meta);
             meta.setLore(lore);
             item.setItemMeta(meta);
         }
@@ -71,6 +80,7 @@ public class AbilityItemFactory {
         if (item.hasItemMeta()) {
             item = new NBTBuilder(item).setBoolean(ABILITY_ITEM_NBT, true).build();
         }
+        DiscItems.stripJukeboxPlayable(item);
         return item;
     }
 

@@ -1,0 +1,33 @@
+{
+  "model": {
+    "type": "select",
+    "property": "custom_model_data",
+    "fallback": {
+      "type": "model",
+      "model": "item/music_disc_ward"
+    },
+    "cases": [
+      {
+        "when": "active",
+        "model": {
+          "type": "model",
+          "model": "item/active"
+        }
+      },
+      {
+        "when": "passive",
+        "model": {
+          "type": "model",
+          "model": "item/passive"
+        }
+      },
+      {
+        "when": "permanent_passive",
+        "model": {
+          "type": "model",
+          "model": "item/permanent_passive"
+        }
+      }
+    ]
+  }
+}

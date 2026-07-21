@@ -5,15 +5,30 @@
 
 ## Кастомні предмети (інгредієнти)
 
-Кожен інгредієнт = base material `PAPER` + рядковий `custom_model_data` (= id інгредієнта
-з `src/main/resources/custom-items.yml`). Плагін виставляє компонент у `CustomItemFactory`;
-пак ловить рядок у `assets/minecraft/items/paper.json` і підставляє модель.
+Кожен предмет плагіну = **музична пластинка** + рядковий `custom_model_data` (= id предмета
+з `src/main/resources/custom-items.yml`). Пластинка, а не `PAPER`, бо ванільний папір шлях
+Блазня споживає як справжній ресурс — див. `.claude/rules/item-materials.md`, там же таблиця
+«категорія → матеріал». Плагін виставляє компонент у `CustomItemFactory`; пак ловить рядок у
+`assets/minecraft/items/<material>.json` і підставляє модель.
+
+| Файл визначення | Категорія |
+|---|---|
+| `items/music_disc_far.json`  | інгредієнти (69 кейсів) |
+| `items/music_disc_ward.json` | предмети здібностей (`active` / `passive` / `permanent_passive`) |
 
 Додати новий інгредієнт:
 1. Спрайт → `assets/minecraft/textures/item/<id>.png` (16×16 або 32×32).
 2. Модель → `assets/minecraft/models/item/<id>.json` (скопіюй сусідню, заміни id).
-3. Прив'язка → новий `case` в `assets/minecraft/items/paper.json`:
+3. Прив'язка → новий `case` в `assets/minecraft/items/music_disc_far.json`:
    `{ "when": "<id>", "model": { "type": "minecraft:model", "model": "minecraft:item/<id>" } }`
+
+Пропустиш крок 2 або 3 — предмет тихо стане звичайною пластинкою. Це ловить
+`ResourcePackItemModelTest` (`mvn test`), а не очі на сервері.
+
+**Ще без текстур** (законно падають на ванільний вигляд, файлів `items/*.json` не мають):
+Характеристики (`MUSIC_DISC_CHIRP`, ключі `characteristic_<шлях>`), монети
+(`MUSIC_DISC_MELLOHI` / `MUSIC_DISC_STAL`), предмети орденів (`MUSIC_DISC_11`),
+книга рецептів (`ENCHANTED_BOOK`).
 
 ## «Зачаровані» блоки фореджу (донори)
 

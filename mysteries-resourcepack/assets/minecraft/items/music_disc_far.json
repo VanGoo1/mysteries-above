@@ -4,30 +4,9 @@
     "property": "custom_model_data",
     "fallback": {
       "type": "model",
-      "model": "item/paper"
+      "model": "item/music_disc_far"
     },
     "cases": [
-      {
-        "when": "permanent_passive",
-        "model": {
-          "type": "model",
-          "model": "item/permanent_passive"
-        }
-      },
-      {
-        "when": "active",
-        "model": {
-          "type": "model",
-          "model": "item/active"
-        }
-      },
-      {
-        "when": "passive",
-        "model": {
-          "type": "model",
-          "model": "item/passive"
-        }
-      },
       {
         "when": "lavos_squid_blood",
         "model": {
@@ -250,13 +229,6 @@
         "model": {
           "type": "model",
           "model": "item/wayfinder_tree_root"
-        }
-      },
-      {
-        "when": "glowing_starfaced",
-        "model": {
-          "type": "model",
-          "model": "item/glowing_starfaced"
         }
       },
       {
