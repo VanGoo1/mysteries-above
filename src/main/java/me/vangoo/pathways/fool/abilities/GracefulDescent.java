@@ -31,7 +31,7 @@ public class GracefulDescent extends PermanentPassiveAbility {
     @Override
     public String getDescription(Sequence userSequence) {
         return "Повний контроль над тілом. Імунітет до шкоди від падіння. " +
-                "Швидкість +2, Стрибок +2. Еволюція Спритності Клоуна.";
+                "Швидкість +2. Еволюція Спритності Клоуна.";
     }
 
     @Override
@@ -76,7 +76,6 @@ public class GracefulDescent extends PermanentPassiveAbility {
         context.events().unsubscribeAll(casterId);
 
         context.entity().removePotionEffect(casterId, PotionEffectType.SPEED);
-        context.entity().removePotionEffect(casterId, PotionEffectType.JUMP_BOOST);
     }
 
     @Override
@@ -85,10 +84,9 @@ public class GracefulDescent extends PermanentPassiveAbility {
         int counter = tickCounters.getOrDefault(casterId, 0) + 1;
         tickCounters.put(casterId, counter);
 
-        // Refresh enhanced buffs every 2 seconds
+        // Refresh enhanced buffs every 2 seconds (Стрибок прибрано — як і в ClownAgility).
         if (counter % 40 == 0) {
             context.entity().applyPotionEffect(casterId, PotionEffectType.SPEED, 60, 1);       // Speed II
-            context.entity().applyPotionEffect(casterId, PotionEffectType.JUMP_BOOST, 60, 1);  // Jump II
         }
     }
 
