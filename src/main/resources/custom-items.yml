@@ -18,7 +18,7 @@ custom-items:
   # ============================================
   manhal_fish_eyeball:
     display-name: "§7Око риби Манхал"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: true
@@ -26,7 +26,7 @@ custom-items:
 
   goat_horned_blackfish_blood:
     display-name: "§7Кров чорної риби з козлячим рогом"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -34,7 +34,7 @@ custom-items:
 
   autumn_crocus_essence:
     display-name: "§7Осіння есенція крокуса"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -42,7 +42,7 @@ custom-items:
 
   elf_flower_petals:
     display-name: "§7Пелюстки квітів ельфів"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -53,7 +53,7 @@ custom-items:
   # ============================================
   crystalline_moon_orchid:
     display-name: "§7Кришталева Місячна Орхідея"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -61,7 +61,7 @@ custom-items:
 
   thought_essence:
     display-name: "§7Есенція Думки"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -69,7 +69,7 @@ custom-items:
 
   iridescent_pearl_dust:
     display-name: "§7Райдужний Перлинний Пил"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -80,7 +80,7 @@ custom-items:
   # ============================================
   tree_of_elders_fruit:
     display-name: "§bПлоди Дерева Бузини"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -88,7 +88,7 @@ custom-items:
 
   mirror_dragon_eyes:
     display-name: "§bОчі Дзеркального Дракона"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -96,7 +96,7 @@ custom-items:
 
   mirror_dragon_blood:
     display-name: "§bКров Дзеркального Дракона"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -107,7 +107,7 @@ custom-items:
   # ============================================
   black_hunting_lizard_spinal_fluid:
     display-name: "§bСпинномозкова Рідина Чорної Ящірки"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -115,7 +115,7 @@ custom-items:
 
   illusory_chime_tree_fruit:
     display-name: "§bПлоди Ілюзорного Дерева Дзвіночків"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -123,7 +123,7 @@ custom-items:
 
   mind_crystal_powder:
     display-name: "§bКристалічний Порошок Розуму"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -131,7 +131,7 @@ custom-items:
 
   split_personality_essence:
     display-name: "§bЕсенція Роздвоєння Особистості"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -142,7 +142,7 @@ custom-items:
   # ============================================
   dream_catcher_heart:
     display-name: "§6Серце Ловця Снів"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -150,7 +150,7 @@ custom-items:
 
   mind_illusion_crystal:
     display-name: "§6Кристал Ілюзії Розуму"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -158,7 +158,7 @@ custom-items:
 
   adult_mind_dragon_blood:
     display-name: "§6Кров Дорослого Розумового Дракона"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -169,7 +169,7 @@ custom-items:
   # ============================================
   dimensional_wanderer_eye:
     display-name: "§7Око Вимірного Мандрівника"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -177,7 +177,7 @@ custom-items:
 
   ever_shifting_lotus:
     display-name: "§7Вічно Мінливий Лотос"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -188,7 +188,7 @@ custom-items:
   # ============================================
   spirit_eater_pouch:
     display-name: "§7Шлунок Пожирача Духів"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -196,7 +196,7 @@ custom-items:
 
   deep_sea_marlin_blood:
     display-name: "§7Кров Глибоководного Марліна"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -204,7 +204,7 @@ custom-items:
 
   string_grass_powder:
     display-name: "§7Порошок Трави Стручкової"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -212,7 +212,7 @@ custom-items:
 
   red_chestnut_flower:
     display-name: "§7Квітка Червоного Каштана"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -223,7 +223,7 @@ custom-items:
   # ============================================
   meteorite_crystal:
     display-name: "§bМетеоритний Кристал"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -231,7 +231,7 @@ custom-items:
 
   lavos_squid_blood:
     display-name: "§bКров Кальмара Лавос"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -239,7 +239,7 @@ custom-items:
 
   starfaced_stone:
     display-name: "§bКамінь Зірки"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -250,7 +250,7 @@ custom-items:
   # ============================================
   asmann_complete_brain:
     display-name: "§bЦілий Мозок Асманна"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -258,7 +258,7 @@ custom-items:
 
   cursed_wraith_artifact:
     display-name: "§bАртефакт Проклятого Привида"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -266,7 +266,7 @@ custom-items:
 
   imbued_ink_sac:
     display-name: "§bНаповнений Чорнильний Мішок"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -277,7 +277,7 @@ custom-items:
   # ============================================
   void_drifter_heart:
     display-name: "§aСерце Мандрівника Порожнечі"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -285,7 +285,7 @@ custom-items:
 
   astral_mist_essence:
     display-name: "§aЕсенція Астрального Туману"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -293,7 +293,7 @@ custom-items:
 
   wayfinder_tree_root:
     display-name: "§eКорінь Дерева-Знахідника"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -305,7 +305,7 @@ custom-items:
 
   heart_of_unquestioned_command:
     display-name: "§6Серце Беззаперечного Наказу"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -313,7 +313,7 @@ custom-items:
 
   bone_of_the_unyielding_frame:
     display-name: "§6Кістка Незламного Каркасу"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -321,7 +321,7 @@ custom-items:
 
   eye_of_judicial_insight:
     display-name: "§6Око Суддівського Погляду"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -333,7 +333,7 @@ custom-items:
 
   pair_of_terror_demon_worms_eyes:
     display-name: "§6Пара Очей Черв'яків-Демонів Жаху"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -341,7 +341,7 @@ custom-items:
 
   silver_war_bears_right_palm:
     display-name: "§6Права Долоня Срібного Бойового Ведмедя"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -349,7 +349,7 @@ custom-items:
 
   eye_of_perfect_recognition:
     display-name: "§6Око Абсолютної Ідентифікації"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -357,7 +357,7 @@ custom-items:
 
   thread_of_supernatural_intuition:
     display-name: "§6Нитка Надприродної Інтуїції"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -369,7 +369,7 @@ custom-items:
 
   horn_of_a_flash_patterned_black_snake:
     display-name: "§6Ріг чорної змії з Блискавичним Візерунком"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -377,7 +377,7 @@ custom-items:
 
   dust_of_lake_spirit:
     display-name: "§6Пил Озерного Духу"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -385,7 +385,7 @@ custom-items:
 
   ashes_of_a_broken_oath_seal:
     display-name: "§6Попіл зламаної клятви"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -397,7 +397,7 @@ custom-items:
 
   heart_of_the_silent_verdict:
     display-name: "§6Серце Безмовного Вироку"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -405,7 +405,7 @@ custom-items:
 
   fragment_of_a_sealed_domain:
     display-name: "§6Фрагмент Запечатаного Домена"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -413,7 +413,7 @@ custom-items:
 
   ashes_of_a_forbidden_decree:
     display-name: "§6Попіл Забороненого Указу"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -421,7 +421,7 @@ custom-items:
 
   chains_of_collective_fear:
     display-name: "§6Подрібнені Ланцюги Колективного Страху"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -433,7 +433,7 @@ custom-items:
 
   core_of_retributive_authority:
     display-name: "§6Ядро Караючої Влади"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -441,7 +441,7 @@ custom-items:
 
   brand_of_the_unforgiving_oath:
     display-name: "§3Клеймо Невблаганної Присяги"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -449,7 +449,7 @@ custom-items:
 
   ashes_of_a_public_execution:
     display-name: "§1Попіл Публічної Кари"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -457,7 +457,7 @@ custom-items:
 
   shackles_of_the_guilty:
     display-name: "§2Кайдани Винного"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -469,7 +469,7 @@ custom-items:
 
   manticore_bird_pituitary_gland:
     display-name: "§6Гіпофіз Птаха-Мантика"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -477,7 +477,7 @@ custom-items:
 
   light_antelope_blood:
     display-name: "§6Кров Світлої Антилопи"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -485,7 +485,7 @@ custom-items:
 
   rock_crystal_powder:
     display-name: "§6Порошок Гірського Кришталю"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -493,7 +493,7 @@ custom-items:
 
   peppermint_extract:
     display-name: "§6Екстракт Перцевої М'яти"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -505,7 +505,7 @@ custom-items:
 
   crystallized_cave_monkey_brain:
     display-name: "§6Кристалізований Мозок Печерної Мавпи"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -513,7 +513,7 @@ custom-items:
 
   memory_flower_petals:
     display-name: "§6Пелюстки Квітки Пам'яті"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -521,7 +521,7 @@ custom-items:
 
   tree_of_wisdom_sap:
     display-name: "§6Сік Дерева Мудрості"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -529,7 +529,7 @@ custom-items:
 
   yellow_amber_powder:
     display-name: "§6Порошок Жовтого Бурштину"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -541,7 +541,7 @@ custom-items:
 
   phantom_python_vertical_eye:
     display-name: "§6Вертикальне око Примарного Пітона"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -549,7 +549,7 @@ custom-items:
 
   steel_toothed_wolf_heart:
     display-name: "§6Серце Сталезубого Вовка"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -557,7 +557,7 @@ custom-items:
 
   mica_powder:
     display-name: "§6Порошок Слюди"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -569,7 +569,7 @@ custom-items:
 
   prismatic_chameleon_heart:
     display-name: "§6Серце Призматичного Хамелеона"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -577,7 +577,7 @@ custom-items:
 
   liquid_silver_phantom_residue:
     display-name: "§6Залишок Рідкого Срібного Привида"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -585,7 +585,7 @@ custom-items:
 
   mimicry_moss_spores:
     display-name: "§6Спори Моху-Міміка"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -593,7 +593,7 @@ custom-items:
 
   devastated_blank_mask:
     display-name: "§6Cпустошена Порожня Маска"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -605,7 +605,7 @@ custom-items:
 
   void_beholder_petrified_eye:
     display-name: "§6Скам'яніле Око Споглядача Безодні"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -613,7 +613,7 @@ custom-items:
 
   condensed_astral_nebula:
     display-name: "§3Сконцентрована Астральна Туманність"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -621,7 +621,7 @@ custom-items:
 
   ancient_rune_powder:
     display-name: "§1Порошок Стародавніх Рун"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -629,7 +629,7 @@ custom-items:
 
   pure_spirituality_tear:
     display-name: "§2Сльоза Чистої Духовності"
-    material: PAPER
+    material: MUSIC_DISC_FAR
     lore:
       - ""
     glow: false
@@ -640,7 +640,7 @@ custom-items:
   # ============================================
   order_cipher_message:
     display-name: "§8Шифроване послання"
-    material: PAPER
+    material: MUSIC_DISC_11
     lore:
       - ""
       - "§7Рядки, що складаються в сенс лише"
@@ -653,7 +653,7 @@ custom-items:
 
   order_talisman:
     display-name: "§8Талісман зв'язку"
-    material: PAPER
+    material: MUSIC_DISC_11
     lore:
       - ""
       - "§7Холодний на дотик. Хтось завжди"

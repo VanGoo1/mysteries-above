@@ -4,13 +4,13 @@ import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.valueobjects.Sequence;
+import me.vangoo.infrastructure.abilities.AbilityItemFactory;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
@@ -165,25 +165,11 @@ public class ShadowTheft extends ActiveAbility {
             return true;
         }
 
-        // Захист здібностей на папері
-        if (type == Material.PAPER) {
-            // Перевіряємо lore предмета
-            if (item.hasItemMeta()) {
-                ItemMeta meta = item.getItemMeta();
-                if (meta.hasLore()) {
-                    List<String> lore = meta.getLore();
-                    // Якщо в lore є підказка про здібність - захищаємо
-                    for (String line : lore) {
-                        String stripped = ChatColor.stripColor(line).toLowerCase();
-                        if (stripped.contains("кулдаун") ||
-                                stripped.contains("cooldown") ||
-                                stripped.contains("вартість") ||
-                                stripped.contains("cost")) {
-                            return true;
-                        }
-                    }
-                }
-            }
+        // Захист предметів здібностей — за статичною NBT-міткою, а не за матеріалом чи текстом lore.
+        // Раніше тут була евристика «PAPER + слово "кулдаун"/"вартість" у lore»: вона ламалась при
+        // зміні матеріалу предмета, від перекладу опису й від будь-якого паперу зі схожим lore.
+        if (AbilityItemFactory.isAbilityItem(item)) {
+            return true;
         }
 
         return false;

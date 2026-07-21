@@ -70,6 +70,12 @@ public class CustomItemFactory {
                 ItemFlag.HIDE_ADDITIONAL_TOOLTIP
         );
 
+        // Предмети на музичній пластинці стакаються до 1 у ванілі — вирівнюємо до 64, як було на
+        // папері. Гейт на матеріал: книга рецептів (ENCHANTED_BOOK) мусить лишитись нестакованою.
+        if (DiscItems.isDisc(item.material())) {
+            DiscItems.applyStackSize(meta);
+        }
+
         itemStack.setItemMeta(meta);
 
         // Add NBT tag with custom item ID
@@ -77,6 +83,9 @@ public class CustomItemFactory {
         itemStack = nbtBuilder
                 .setString(NBT_CUSTOM_ITEM_KEY, item.id())
                 .build();
+
+        // Пластинку не можна вставляти в програвач (інакше інгредієнт зник би в jukebox).
+        DiscItems.stripJukeboxPlayable(itemStack);
 
         return itemStack;
     }

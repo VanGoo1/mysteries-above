@@ -46,7 +46,7 @@ public final class CurrencyCodec {
         meta.setDisplayName(displayName);
         meta.setLore(List.of("", loreLine1, loreLine2));
         // Диск у ванілі стакається до 1 — піднімаємо ліміт стака (гаманець стакає монети до 64).
-        meta.setMaxStackSize(64);
+        DiscItems.applyStackSize(meta);
         // Незнищенний: диск не має міцності, це підстраховка від будь-якого зношення.
         meta.setUnbreakable(true);
         meta.addEnchant(Enchantment.UNBREAKING, 1, true); // лише для світіння
@@ -67,26 +67,8 @@ public final class CurrencyCodec {
         }
         item.setItemMeta(meta);
         ItemStack built = new NBTBuilder(item).setString(NBT_COIN, coinType).build();
-        tryStripJukeboxPlayable(built);
+        DiscItems.stripJukeboxPlayable(built);
         return built;
-    }
-
-    /**
-     * Best-effort: прибирає компонент {@code jukebox_playable}, щоб монету-диск не можна було
-     * вставити в jukebox (і програти музику). Реалізовано через Paper DataComponent API
-     * ({@code ItemStack.unsetData(DataComponentTypes.JUKEBOX_PLAYABLE)}) РЕФЛЕКСІЄЮ — бо
-     * компілюємось проти spigot-api без цього API. На Paper спрацьовує; на чистому Spigot мовчки
-     * нічого не робить. Той самий захист, що в {@code CharacteristicCodec}.
-     */
-    private void tryStripJukeboxPlayable(ItemStack item) {
-        try {
-            Class<?> typesClass = Class.forName("io.papermc.paper.datacomponent.DataComponentTypes");
-            Class<?> typeClass = Class.forName("io.papermc.paper.datacomponent.DataComponentType");
-            Object jukeboxType = typesClass.getField("JUKEBOX_PLAYABLE").get(null);
-            item.getClass().getMethod("unsetData", typeClass).invoke(item, jukeboxType);
-        } catch (Throwable ignored) {
-            // Spigot/стара версія без DataComponent API — лишаємо предмет як є.
-        }
     }
 
     public boolean isPound(ItemStack item) {
