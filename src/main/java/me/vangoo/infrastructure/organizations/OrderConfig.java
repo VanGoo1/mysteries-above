@@ -13,7 +13,7 @@ public record OrderConfig(int invitesBeyonderKills,
                           double exposureReconChance, double exposureSabotageChance,
                           double exposureFailedRaidChance,
                           int stashSeedIngredientsPerRecipe, int favorIngredientsPerClaim,
-                          int rejoinCooldownDays, int talismanReissueCooldownMinutes) {
+                          int rejoinCooldownDays) {
 
     public static OrderConfig load(Plugin plugin) {
         var cfg = plugin.getConfig();
@@ -38,7 +38,6 @@ public record OrderConfig(int invitesBeyonderKills,
                 cfg.getDouble("orders.exposure.failed-raid-chance", 0.5),
                 cfg.getInt("orders.stash.seed-ingredients-per-recipe", 2),
                 cfg.getInt("orders.favor.ingredients-per-claim", 2),
-                cfg.getInt("orders.rejoin-cooldown-days", 3),
-                cfg.getInt("orders.talisman.reissue-cooldown-minutes", 30));
+                cfg.getInt("orders.rejoin-cooldown-days", 3));
     }
 }

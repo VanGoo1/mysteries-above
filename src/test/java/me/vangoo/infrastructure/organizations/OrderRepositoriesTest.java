@@ -19,7 +19,7 @@ class OrderRepositoriesTest {
     @Test
     void membershipFileWithoutNewFieldsLoadsWithThemAbsent() throws IOException {
         Path file = dir.resolve("order-memberships.json");
-        // Файл «з майбутнього минулого»: без invitations/beyonderKills/talisman-поля.
+        // Файл «з майбутнього минулого»: без invitations/beyonderKills/pendingRaidLoot.
         Files.writeString(file, """
                 {"players":{"11111111-1111-1111-1111-111111111111":
                   {"membership":{"institutionId":"order-aurora","curatorName":"Тінь",
@@ -36,7 +36,7 @@ class OrderRepositoriesTest {
         assertNull(data.pendingRaidLoot());
         assertFalse(data.falsePapers());
         assertEquals(0, data.beyonderKills());
-        assertEquals(0L, data.talismanReissueAfterEpochMillis());
+        assertNull(data.pendingRaidChurch());
     }
 
     @Test

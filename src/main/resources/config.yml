@@ -130,5 +130,3 @@ orders:
   favor:
     ingredients-per-claim: 2
   rejoin-cooldown-days: 3
-  talisman:
-    reissue-cooldown-minutes: 30

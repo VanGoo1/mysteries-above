@@ -8,6 +8,7 @@ import me.vangoo.application.services.AbilityExecutor;
 import me.vangoo.application.services.PathwayManager;
 import me.vangoo.application.services.PotionManager;
 import me.vangoo.application.services.RecipeUnlockService;
+import me.vangoo.application.services.SecretOrderService;
 import me.vangoo.domain.abilities.core.Ability;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.AbilityType;
@@ -41,12 +42,15 @@ public class AbilityMenu {
     private final AbilityExecutor abilityExecutor;
     private final PathwayManager pathwayManager;
     private final AbilityContextFactory abilityContextFactory;
+    private final SecretOrderService secretOrderService;
+    private final OrderMenu orderMenu;
 
     // Чи відкрита вкладка маріонетки (тільки під час контролю маріонетки)
     private final Map<UUID, Boolean> marionetteTabOpen = new HashMap<>();
 
     private static final Material BORDER_MATERIAL = Material.GRAY_STAINED_GLASS_PANE;
     private static final Material RECIPE_BUTTON_MATERIAL = Material.ENCHANTED_BOOK;
+    private static final Material ORDER_BUTTON_MATERIAL = Material.SCULK_SENSOR;
     private static final Material FILTER_BUTTON_MATERIAL = Material.HOPPER;
 
     // Зберігаємо поточний фільтр для кожного гравця
@@ -89,7 +93,9 @@ public class AbilityMenu {
                        PotionManager potionManager,
                        AbilityExecutor abilityExecutor,
                        PathwayManager pathwayManager,
-                       AbilityContextFactory abilityContextFactory) {
+                       AbilityContextFactory abilityContextFactory,
+                       SecretOrderService secretOrderService,
+                       OrderMenu orderMenu) {
         this.plugin = plugin;
         this.abilityItemFactory = itemFactory;
         this.recipeUnlockService = recipeUnlockService;
@@ -97,6 +103,8 @@ public class AbilityMenu {
         this.abilityExecutor = abilityExecutor;
         this.pathwayManager = pathwayManager;
         this.abilityContextFactory = abilityContextFactory;
+        this.secretOrderService = secretOrderService;
+        this.orderMenu = orderMenu;
     }
 
     /** Знаходить спільний інстанс MarionettistControl (стан володіння маріонетками). */
@@ -217,6 +225,11 @@ public class AbilityMenu {
         // Кнопка фільтру — лише у звичайному вигляді
         if (!tabOpen) {
             addFilterButton(gui, player, beyonder, currentFilter);
+        }
+
+        // Вкладка ордену — лише члену й лише у власному тілі (слот 6,5 віддано маріонетці)
+        if (!possessing) {
+            addOrderButton(gui, player);
         }
 
         // Перемикач вкладки маріонетки + кнопки керування (лише під час контролю)
@@ -515,6 +528,44 @@ public class AbilityMenu {
         });
 
         gui.setItem(6, 7, guiItem);
+    }
+
+    /**
+     * Вкладка таємного ордену (row 6, col 5) — замінила предмет-талісман. Показується лише
+     * члену ордену: не-члену кнопки нема взагалі, бо таємні ордени себе не рекламують — вхід
+     * у систему дає шифроване послання з лута або вчинкове запрошення.
+     *
+     * <p>Слот 6,5 не конфліктує з перемикачем маріонетки, який стоїть там само: той є лише
+     * під час контролю, а ця кнопка — лише поза ним.</p>
+     */
+    private void addOrderButton(Gui gui, Player player) {
+        if (secretOrderService.membershipOf(player.getUniqueId()).isEmpty()) {
+            return;
+        }
+        String orderName = secretOrderService.orderOf(player.getUniqueId())
+                .map(me.vangoo.domain.organizations.Institution::displayName)
+                .orElse("Таємний орден");
+
+        ItemStack btn = new ItemStack(ORDER_BUTTON_MATERIAL);
+        ItemMeta meta = btn.getItemMeta();
+        meta.setDisplayName(ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "🗝 " + orderName);
+        meta.addEnchant(Enchantment.UNBREAKING, 1, true);
+        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_ATTRIBUTES);
+
+        List<String> lore = new ArrayList<>();
+        lore.add("");
+        lore.add(ChatColor.GRAY + "Холодний на дотик. Хтось завжди");
+        lore.add(ChatColor.GRAY + "слухає з того боку.");
+        lore.add("");
+        lore.add(ChatColor.GREEN + "▸ Клацніть, щоб вийти на зв'язок");
+        meta.setLore(lore);
+        btn.setItemMeta(meta);
+
+        gui.setItem(6, 5, new GuiItem(btn, event -> {
+            event.setCancelled(true);
+            player.closeInventory();
+            orderMenu.openMain(player);
+        }));
     }
 
     // ════════════════════════════════════════════════════════════════════════

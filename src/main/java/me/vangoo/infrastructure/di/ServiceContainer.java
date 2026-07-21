@@ -338,6 +338,13 @@ public class ServiceContainer {
     }
 
     private void initializeUI() {
+        this.confirmationMenu = new me.vangoo.infrastructure.ui.ConfirmationMenu(plugin);
+
+        // OrderMenu будується ПЕРЕД AbilityMenu: вкладка ордену в меню здібностей відкриває
+        // його напряму, тож він мусить існувати на момент конструювання AbilityMenu.
+        this.orderMenu = new me.vangoo.infrastructure.ui.OrderMenu(
+                plugin, secretOrderService, marketItemNamer, creatureNamer, confirmationMenu, orderItems);
+
         this.abilityMenu = new AbilityMenu(
                 (MysteriesAbovePlugin) plugin,
                 abilityItemFactory,
@@ -345,10 +352,11 @@ public class ServiceContainer {
                 potionManager,
                 abilityExecutor,
                 pathwayManager,
-                abilityContextFactory
+                abilityContextFactory,
+                secretOrderService,
+                orderMenu
         );
 
-        this.confirmationMenu = new me.vangoo.infrastructure.ui.ConfirmationMenu(plugin);
         this.marketMenu = new me.vangoo.infrastructure.ui.MarketMenu(
                 plugin, gatheringService, walletService, marketItemNamer, confirmationMenu);
         this.churchMenu = new me.vangoo.infrastructure.ui.ChurchMenu(
@@ -361,10 +369,6 @@ public class ServiceContainer {
         this.churchDuelService.setTrialChoiceOpener(churchMenu::openTrialPathwayChoice);
         this.duelListener = new me.vangoo.presentation.listeners.DuelListener(
                 churchDuelService);
-
-        // --- Спек 6c: таємні організації ---
-        this.orderMenu = new me.vangoo.infrastructure.ui.OrderMenu(
-                plugin, secretOrderService, marketItemNamer, creatureNamer, confirmationMenu, orderItems);
     }
 
     private void initializeSchedulers() {

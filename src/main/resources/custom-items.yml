@@ -651,17 +651,4 @@ custom-items:
     glow: true
     custom-model-data: "order_cipher_message"
 
-  order_talisman:
-    display-name: "§8Талісман зв'язку"
-    material: MUSIC_DISC_11
-    lore:
-      - ""
-      - "§7Холодний на дотик. Хтось завжди"
-      - "§7слухає з того боку."
-      - ""
-      - "§eПКМ — вийти на зв'язок"
-      - ""
-    glow: true
-    custom-model-data: "order_talisman"
-
 

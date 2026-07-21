@@ -27,8 +27,8 @@ import java.util.UUID;
 
 /**
  * /order — гравецька команда таємної організації (патерн {@link ChurchCommand}).
- * Вступ за шифрованим посланням лишається в {@code OrderMenu} (талісман/пікер); тут —
- * прийняття вчинкового запрошення, перевидача талісмана, вихід і зведена довідка.
+ * Вступ за шифрованим посланням лишається в {@code OrderMenu} (пікер орденів); тут —
+ * прийняття вчинкового запрошення, старт злому, вихід і зведена довідка.
  *
  * <p>Конструктор бере {@link BeyonderService} на додачу до брифу задачі 15 (літерально —
  * {@code OrderCommand(SecretOrderService)}): {@code /order info} мусить показувати ранг
@@ -59,17 +59,17 @@ public class OrderCommand implements CommandExecutor, TabCompleter {
         }
         if (args.length == 0) {
             player.sendMessage(PREFIX + ChatColor.GRAY
-                    + "Використання: /order <invites|accept|talisman|leave|info>");
+                    + "Використання: /order <invites|accept|raid|leave|info>");
             return true;
         }
         switch (args[0].toLowerCase()) {
             case "invites" -> handleInvites(player);
             case "accept" -> handleAccept(player, args);
-            case "talisman" -> handleTalisman(player);
+            case "raid" -> handleRaid(player);
             case "leave" -> handleLeave(player, args);
             case "info" -> handleInfo(player);
             default -> player.sendMessage(PREFIX + ChatColor.GRAY
-                    + "Використання: /order <invites|accept|talisman|leave|info>");
+                    + "Використання: /order <invites|accept|raid|leave|info>");
         }
         return true;
     }
@@ -106,8 +106,7 @@ public class OrderCommand implements CommandExecutor, TabCompleter {
         }
         JoinResult result = secretOrderService.join(player, matched.get().institutionId());
         switch (result) {
-            case OK -> player.sendMessage(PREFIX + ChatColor.GREEN
-                    + "Вас прийнято. Талісман ордену вже у вас.");
+            case OK -> player.sendMessage(PREFIX + ChatColor.GREEN + "Вас прийнято.");
             case NO_PATHWAY -> player.sendMessage(PREFIX + ChatColor.RED
                     + "Спершу оберіть свій шлях — орден приймає лише тих, хто вже на ньому.");
             case WRONG_PATHWAY -> player.sendMessage(PREFIX + ChatColor.RED + "Ваш шлях чужий цьому ордену.");
@@ -121,15 +120,18 @@ public class OrderCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    private void handleTalisman(Player player) {
+    /**
+     * Старт злому сховища храму. Ціль і всі гейти (ніч, зона, кулдаун храму) перевіряє
+     * {@code startRaid} — сюди гравець потрапляє або з кнопки автопропозиції, або набравши
+     * команду сам, коли вирішив, що момент слушний.
+     */
+    private void handleRaid(Player player) {
         if (secretOrderService.membershipOf(player.getUniqueId()).isEmpty()) {
             player.sendMessage(PREFIX + ChatColor.RED + "Ви не служите жодному ордену.");
             return;
         }
-        if (secretOrderService.reissueTalisman(player)) {
-            player.sendMessage(PREFIX + ChatColor.GREEN + "Куратор передав вам новий талісман.");
-        } else {
-            player.sendMessage(PREFIX + ChatColor.RED + "Талісман ще не можна перевидати — зачекайте.");
+        if (!secretOrderService.startRaid(player)) {
+            player.sendMessage(PREFIX + ChatColor.GRAY + "Зараз злом неможливий.");
         }
     }
 
@@ -231,7 +233,7 @@ public class OrderCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             String lower = args[0].toLowerCase();
-            return List.of("invites", "accept", "talisman", "leave", "info").stream()
+            return List.of("invites", "accept", "raid", "leave", "info").stream()
                     .filter(o -> o.startsWith(lower))
                     .toList();
         }

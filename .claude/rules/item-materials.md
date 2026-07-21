@@ -24,7 +24,7 @@ paths:
 |---|---|---|
 | Інгредієнти | `MUSIC_DISC_FAR` | `CustomItemFactory` (з `custom-items.yml`) |
 | Предмети здібностей | `MUSIC_DISC_WARD` | `AbilityItemFactory.ABILITY_ITEM_MATERIAL` |
-| Предмети орденів (талісман, шифроване послання) | `MUSIC_DISC_11` | `CustomItemFactory` |
+| Предмети орденів (шифроване послання) | `MUSIC_DISC_11` | `CustomItemFactory` |
 | Характеристика | `MUSIC_DISC_CHIRP` | `CharacteristicCodec` |
 | Монети (фунт / коппет) | `MUSIC_DISC_MELLOHI` / `MUSIC_DISC_STAL` | `CurrencyCodec` |
 | Книга рецептів | `ENCHANTED_BOOK` | `CustomItemFactory` |

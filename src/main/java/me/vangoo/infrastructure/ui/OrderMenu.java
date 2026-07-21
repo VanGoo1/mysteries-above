@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Талісман-меню таємної організації: вступ за шифрованим посланням, головне меню,
+ * Меню таємної організації (вкладка в {@link AbilityMenu}): вступ за шифрованим посланням, головне меню,
  * завдання (доставка/полювання/храмові й шпигунські операції) та прохання до куратора
  * за фавори. Структура за зразком {@link ChurchMenu}, той самий triumph-gui.
  */
@@ -89,7 +89,7 @@ public class OrderMenu {
                 ChatColor.DARK_RED + "" + ChatColor.BOLD + "Вихід можливий лише НАЗАВЖДИ:",
                 ChatColor.RED + order.displayName() + " більше ніколи вас не прийме",
                 ChatColor.GRAY + "а вступ в інший орден відкриється лише через якийсь час");
-        ItemStack get = button(Material.ENDER_EYE, ChatColor.GREEN + "Талісман " + order.displayName(),
+        ItemStack get = button(Material.ENDER_EYE, ChatColor.GREEN + "Зв'язок з " + order.displayName(),
                 ChatColor.GREEN + "Завдання: доставки, полювання, храмові й шпигунські операції",
                 ChatColor.GREEN + "Підвищуйте вислугу перед орденом за виконані завдання",
                 ChatColor.GRAY + "Прохання до куратора: розвіддані, рецепти, Характеристики...");
@@ -114,7 +114,6 @@ public class OrderMenu {
         }
         switch (result) {
             case OK -> {
-                player.sendMessage(PREFIX + ChatColor.GREEN + "Вас прийнято. Талісман ордену вже у вас.");
                 openMain(player);
             }
             case NO_PATHWAY -> player.sendMessage(PREFIX + ChatColor.RED
@@ -221,7 +220,9 @@ public class OrderMenu {
             case RAID -> {
                 ItemStack display = button(Material.TRIPWIRE_HOOK, ChatColor.DARK_RED + "Злом сховища: "
                                 + ChatColor.WHITE + task.targetName(),
-                        ChatColor.GRAY + "Прокрадіться в межі храму глупої ночі й почніть злом",
+                        ChatColor.GRAY + "Прокрадіться в межі храму глупої ночі й зачекайте:",
+                        ChatColor.GRAY + "зв'язковий вийде на вас протягом хвилини",
+                        ChatColor.DARK_GRAY + "(або почніть самі: /order raid)",
                         ChatColor.GRAY + "Тримайтесь у зоні храму, поки триває канал",
                         weightLine(task.weight()),
                         "",
