@@ -13,6 +13,7 @@ import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.*;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
@@ -41,6 +42,8 @@ public class TravellersDoor extends ActiveAbility {
 
     // Зберігаємо таймери для скасування
     private static final Map<UUID, BukkitTask> spectatorTimeouts = new ConcurrentHashMap<>();
+    // Таск, що тримає гравця прихованим від решти (серверний hidePlayer, повторюється).
+    private static final Map<UUID, BukkitTask> veilTasks = new ConcurrentHashMap<>();
 
     @Override
     public String getName() {
@@ -136,6 +139,12 @@ public class TravellersDoor extends ActiveAbility {
      * <p>НЕ {@link GameMode#SPECTATOR} свідомо — у спектаторі клієнт не шле use-item пакет,
      * тож вийти по ПКМ звідти неможливо в принципі. Плата за це: крізь блоки більше не
      * пролетиш, простір тепер «фантомний політ», а не безтілесність.
+     *
+     * <p>Невидимість — СЕРВЕРНИЙ {@code hidePlayer}, а не лише зілля: зілля
+     * {@code INVISIBILITY} лишає броню й предмет у руці видимими для інших, тож у броні
+     * гравця було видно наскрізь. Повне приховання сутності (патерн
+     * {@code PsychologicalInvisibility}) прибирає й броню. Зілля лишаємо — воно гасить
+     * агро мобів. Підтримку невидимості веде {@code startVeilTask}.
      */
     private void enterPhantomMode(UUID playerId) {
         Player player = Bukkit.getPlayer(playerId);
@@ -148,13 +157,20 @@ public class TravellersDoor extends ActiveAbility {
         player.setCollidable(false);
         player.addPotionEffect(new PotionEffect(
                 PotionEffectType.INVISIBILITY, SPECTATOR_DURATION + 100, 0, false, false));
+        hideFromEveryone(player);
     }
 
     /** Повне зняття стану простору. Ідемпотентне — безпечно кликати двічі. */
     private void leavePhantomMode(UUID playerId) {
+        BukkitTask veil = veilTasks.remove(playerId);
+        if (veil != null && !veil.isCancelled()) {
+            veil.cancel();
+        }
+
         Player player = Bukkit.getPlayer(playerId);
         if (player == null || !player.isOnline()) return;
 
+        showToEveryone(player);
         player.setFlying(false);
         player.setAllowFlight(false);
         player.setInvulnerable(false);
@@ -163,6 +179,47 @@ public class TravellersDoor extends ActiveAbility {
         // Скидаємо падіння: гравець виходить у повітрі, а в SURVIVAL це вже летальний рахунок.
         player.setFallDistance(0f);
         player.setGameMode(GameMode.SURVIVAL);
+    }
+
+    /**
+     * Тримає гравця прихованим від решти, поки він у просторі. Періодичний повтор ловить
+     * гравців, які зайшли на сервер уже під час спостереження (як пульс
+     * {@code PsychologicalInvisibility}). Скасовується в {@link #leavePhantomMode} — єдиній
+     * точці виходу, через яку проходять усі шляхи (ручний вихід, таймаут, вихід із гри, cleanUp).
+     */
+    private void startVeilTask(IAbilityContext context, UUID playerId) {
+        BukkitTask veil = context.scheduling().scheduleRepeating(() -> {
+            if (!activeSpectators.contains(playerId)) return;
+            Player p = Bukkit.getPlayer(playerId);
+            if (p != null && p.isOnline()) {
+                hideFromEveryone(p);
+            }
+        }, 10L, 10L);
+        veilTasks.put(playerId, veil);
+    }
+
+    private void hideFromEveryone(Player player) {
+        Plugin plugin = plugin();
+        if (plugin == null) return;
+        for (Player other : Bukkit.getOnlinePlayers()) {
+            if (!other.getUniqueId().equals(player.getUniqueId())) {
+                other.hidePlayer(plugin, player);
+            }
+        }
+    }
+
+    private void showToEveryone(Player player) {
+        Plugin plugin = plugin();
+        if (plugin == null) return;
+        for (Player other : Bukkit.getOnlinePlayers()) {
+            if (!other.getUniqueId().equals(player.getUniqueId())) {
+                other.showPlayer(plugin, player);
+            }
+        }
+    }
+
+    private static Plugin plugin() {
+        return Bukkit.getPluginManager().getPlugin("Mysteries-Above");
     }
 
     private AbilityResult handleSpectatorMode(IAbilityContext context) {
@@ -354,14 +411,8 @@ public class TravellersDoor extends ActiveAbility {
     private void handleSpectatorEntry(IAbilityContext context, DoorData door, UUID playerId, boolean isCaster) {
         enterPhantomMode(playerId);
         activeSpectators.add(playerId);
-
-        // КРИТИЧНО: Заборонити телепортацію через меню спектатора
-        List<Player> onlinePlayers = context.targeting().getNearbyPlayers(10000);
-        for (Player onlinePlayer : onlinePlayers) {
-            if (!onlinePlayer.getUniqueId().equals(playerId)) {
-                context.entity().hidePlayerFromTarget(playerId, onlinePlayer.getUniqueId());
-            }
-        }
+        // Ховаємо гравця від решти й підтримуємо це, поки він у просторі.
+        startVeilTask(context, playerId);
 
         context.effects().playSound(context.playerData().getCurrentLocation(playerId), Sound.BLOCK_PORTAL_TRAVEL, 1.0f, 1.2f);
         context.effects().spawnParticle(Particle.REVERSE_PORTAL, context.playerData().getCurrentLocation(playerId), 30, 0.5, 1, 0.5);
@@ -452,13 +503,7 @@ public class TravellersDoor extends ActiveAbility {
 
         activeSpectators.remove(playerId);
 
-        // Решта коду залишається без змін...
-        if (context.playerData().isOnline(playerId)) {
-            List<Player> onlinePlayers = context.targeting().getNearbyPlayers(10000);
-            for (Player onlinePlayer : onlinePlayers) {
-                context.entity().showPlayerToTarget(playerId, onlinePlayer.getUniqueId());
-            }
-        }
+        // leavePhantomMode сам показує гравця всім (showToEveryone) і скасовує veil-таск.
         leavePhantomMode(playerId);
 
         if (context.playerData().getEyeLocation(playerId) != null &&
@@ -474,13 +519,6 @@ public class TravellersDoor extends ActiveAbility {
                 for (UUID passengerId : passengers) {
                     if (context.playerData().isOnline(passengerId) && activeSpectators.contains(passengerId)) {
                         activeSpectators.remove(passengerId);
-
-                        if (context.playerData().isOnline(passengerId)) {
-                            List<Player> onlinePlayers = context.targeting().getNearbyPlayers(10000);
-                            for (Player onlinePlayer : onlinePlayers) {
-                                context.entity().showPlayerToTarget(passengerId, onlinePlayer.getUniqueId());
-                            }
-                        }
 
                         leavePhantomMode(passengerId);
                         context.entity().teleport(passengerId, context.playerData().getCurrentLocation(playerId));
@@ -627,6 +665,11 @@ public class TravellersDoor extends ActiveAbility {
         for (UUID playerId : activeSpectators) {
             leavePhantomMode(playerId);
         }
+        // leavePhantomMode уже скасовує кожен veil-таск; підчищаємо мапу на випадок розсинхрону.
+        for (BukkitTask veil : veilTasks.values()) {
+            if (veil != null && !veil.isCancelled()) veil.cancel();
+        }
+        veilTasks.clear();
 
         activeDoors.clear();
         activeSpectators.clear();
