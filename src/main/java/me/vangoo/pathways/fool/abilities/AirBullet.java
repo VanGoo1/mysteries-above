@@ -27,6 +27,13 @@ public class AirBullet extends ActiveAbility {
     private static final double MAX_RANGE = 25.0;
     private static final double KNOCKBACK_STRENGTH = 0.8;
 
+    /** Скільки точок сліду лягає за один тік — визначає видиму швидкість кулі. */
+    private static final int POINTS_PER_TICK = 8;
+    private static final Particle.DustOptions BULLET_DUST =
+            new Particle.DustOptions(Color.fromRGB(235, 240, 255), 0.6f);
+    private static final Particle.DustOptions POWERED_DUST =
+            new Particle.DustOptions(Color.fromRGB(180, 210, 255), 1.0f);
+
     @Override
     public String getName() {
         return "Повітряна куля";
@@ -125,22 +132,30 @@ public class AirBullet extends ActiveAbility {
         return AbilityResult.success();
     }
 
+    /**
+     * Слід кулі — рівна лінія без розльоту.
+     *
+     * <p>Раніше тут були {@code CLOUD}+{@code CRIT} із офсетом: обидві мають власну
+     * швидкість і розліталися хмаркою замість того, щоб позначати траєкторію. Тепер —
+     * {@code DUST}: єдина частинка в ТОЧНІЙ точці променя (count 1, нульові офсети й
+     * extra), тож слід збігається з рейтрейсом попадання. Bukkit напряму, бо
+     * {@code IVisualEffectsContext} не має перевантаження з {@code DustOptions}.
+     */
     private void playAirTrail(IAbilityContext context, Location start, Vector direction,
                               double distance, boolean powered) {
-        double step = 0.5;
+        World world = start.getWorld();
+        if (world == null) return;
+
+        Particle.DustOptions dust = powered ? POWERED_DUST : BULLET_DUST;
+        double step = 0.3;
         int steps = (int) (distance / step);
 
         for (int i = 0; i < steps; i++) {
-            int tick = i / 5; // Group particles by time for speed illusion
-            double dist = i * step;
-
-            context.scheduling().scheduleDelayed(() -> {
-                Location point = start.clone().add(direction.clone().multiply(dist));
-                context.effects().spawnParticle(Particle.CLOUD, point, powered ? 3 : 1, 0.02, 0.02, 0.02);
-                if (powered) {
-                    context.effects().spawnParticle(Particle.CRIT, point, 1, 0.01, 0.01, 0.01);
-                }
-            }, tick);
+            long tick = i / POINTS_PER_TICK; // слід іде вперед, а не спалахує весь одразу
+            Location point = start.clone().add(direction.clone().multiply(i * step));
+            context.scheduling().scheduleDelayed(
+                    () -> world.spawnParticle(Particle.DUST, point, 1, 0, 0, 0, 0, dust),
+                    tick);
         }
     }
 }
