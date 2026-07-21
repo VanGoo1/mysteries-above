@@ -1,31 +1,85 @@
 {
   "model": {
-    "type": "select",
-    "property": "custom_model_data",
+    "type": "minecraft:select",
+    "property": "minecraft:custom_model_data",
     "fallback": {
-      "type": "model",
+      "type": "minecraft:model",
       "model": "item/music_disc_ward"
     },
     "cases": [
       {
         "when": "active",
         "model": {
-          "type": "model",
-          "model": "item/active"
+          "type": "minecraft:select",
+          "property": "minecraft:display_context",
+          "fallback": {
+            "type": "minecraft:model",
+            "model": "item/active"
+          },
+          "cases": [
+            {
+              "when": [
+                "firstperson_righthand",
+                "firstperson_lefthand",
+                "thirdperson_righthand",
+                "thirdperson_lefthand"
+              ],
+              "model": {
+                "type": "minecraft:model",
+                "model": "item/hidden"
+              }
+            }
+          ]
         }
       },
       {
         "when": "passive",
         "model": {
-          "type": "model",
-          "model": "item/passive"
+          "type": "minecraft:select",
+          "property": "minecraft:display_context",
+          "fallback": {
+            "type": "minecraft:model",
+            "model": "item/passive"
+          },
+          "cases": [
+            {
+              "when": [
+                "firstperson_righthand",
+                "firstperson_lefthand",
+                "thirdperson_righthand",
+                "thirdperson_lefthand"
+              ],
+              "model": {
+                "type": "minecraft:model",
+                "model": "item/hidden"
+              }
+            }
+          ]
         }
       },
       {
         "when": "permanent_passive",
         "model": {
-          "type": "model",
-          "model": "item/permanent_passive"
+          "type": "minecraft:select",
+          "property": "minecraft:display_context",
+          "fallback": {
+            "type": "minecraft:model",
+            "model": "item/permanent_passive"
+          },
+          "cases": [
+            {
+              "when": [
+                "firstperson_righthand",
+                "firstperson_lefthand",
+                "thirdperson_righthand",
+                "thirdperson_lefthand"
+              ],
+              "model": {
+                "type": "minecraft:model",
+                "model": "item/hidden"
+              }
+            }
+          ]
         }
       }
     ]

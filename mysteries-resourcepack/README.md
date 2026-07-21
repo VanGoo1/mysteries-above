@@ -16,6 +16,12 @@
 | `items/music_disc_far.json`  | інгредієнти (69 кейсів) |
 | `items/music_disc_ward.json` | предмети здібностей (`active` / `passive` / `permanent_passive`) |
 
+Визначення здібностей — вкладений `select`: у руках підставляється прозора `item/hidden`
+(предмет не видно ні тобі, ні іншим гравцям), у GUI лишається справжня іконка. Значення
+`display_context` пишуться злитно (`firstperson_righthand`) — одрук в enum ламає ВСЕ
+визначення й дає фіолетово-чорний квадрат. Поза порожньої руки при цьому НЕ досягається;
+чому — у `.claude/rules/item-materials.md`.
+
 Додати новий інгредієнт:
 1. Спрайт → `assets/minecraft/textures/item/<id>.png` (16×16 або 32×32).
 2. Модель → `assets/minecraft/models/item/<id>.json` (скопіюй сусідню, заміни id).
