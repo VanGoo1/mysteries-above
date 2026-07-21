@@ -10,8 +10,11 @@ import me.vangoo.domain.valueobjects.Sequence;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
@@ -113,6 +116,37 @@ public class TravellersDoor extends ActiveAbility {
                 },
                 Integer.MAX_VALUE
         );
+
+        // 3. У просторі — ЛИШЕ рух: будь-яка агресія скасовується. Фільтр перевіряє
+        //    членство в activeSpectators, тож одна підписка кастера накриває і пасажирів.
+        //    Каст здібностей блокує BeyonderPlayerListener через isInObservationSpace
+        //    (ПКМ у просторі веде тільки на вихід, не на здібність).
+        context.events().subscribeToTemporaryEvent(context.getCasterId(),
+                EntityDamageByEntityEvent.class,
+                e -> isSpectatorDamager(e.getDamager()),
+                e -> e.setCancelled(true),
+                Integer.MAX_VALUE
+        );
+    }
+
+    /** true, якщо шкоду завдає гравець у просторі — прямим ударом або своїм снарядом. */
+    private static boolean isSpectatorDamager(Entity damager) {
+        if (activeSpectators.contains(damager.getUniqueId())) {
+            return true;
+        }
+        return damager instanceof Projectile proj
+                && proj.getShooter() instanceof Entity shooter
+                && activeSpectators.contains(shooter.getUniqueId());
+    }
+
+    /**
+     * Чи гравець зараз у просторі спостереження. Публічний предикат для
+     * {@code BeyonderPlayerListener}, який на його підставі не диспетчить здібності
+     * (той самий патерн, що {@code MarionettistControl.isMainBodyAbilityItem}) — у просторі
+     * дозволено лише рух.
+     */
+    public static boolean isInObservationSpace(UUID playerId) {
+        return activeSpectators.contains(playerId);
     }
 
     @Override

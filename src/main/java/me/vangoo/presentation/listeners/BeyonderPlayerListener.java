@@ -85,6 +85,12 @@ public class BeyonderPlayerListener implements Listener {
             return;
         }
 
+        // У просторі Дверей Мандрівника дозволено лише рух — здібності не кастуються.
+        // ПКМ там веде тільки на вихід (окрема підписка TravellersDoor), не на здібність.
+        if (me.vangoo.pathways.door.abilities.TravellersDoor.isInObservationSpace(player.getUniqueId())) {
+            return;
+        }
+
         ItemStack mainHandItem = player.getInventory().getItemInMainHand();
         ItemStack offHandItem = player.getInventory().getItemInOffHand();
 
