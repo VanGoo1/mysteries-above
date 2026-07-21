@@ -36,6 +36,13 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
         this.pluginLogger = this.getLogger();
 
+        // Команди Citizens не повинні ховати нік живого гравця (тіло-NPC носить нік кастера).
+        // Реєструється і як packet-, і як Bukkit-лістенер — див. javadoc класу.
+        me.vangoo.infrastructure.disguise.CitizensNameplateGuard nameplateGuard =
+                new me.vangoo.infrastructure.disguise.CitizensNameplateGuard();
+        PacketEvents.getAPI().getEventManager().registerListener(nameplateGuard);
+        getServer().getPluginManager().registerEvents(nameplateGuard, this);
+
         // Initialize NBT builder FIRST (needed by CustomItemFactory)
         NBTBuilder.setPlugin(this);
 
@@ -263,6 +270,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(vanillaStructureLootListener, this);
         getServer().getPluginManager().registerEvents(archaeologyLootListener, this);
         getServer().getPluginManager().registerEvents(services.getMarionetteExitListener(), this);
+        getServer().getPluginManager().registerEvents(services.getPaperThrowListener(), this);
         getServer().getPluginManager().registerEvents(services.getMainBodyAbilityListener(), this);
         getServer().getPluginManager().registerEvents(services.getMarionetteLifecycleListener(), this);
         getServer().getPluginManager().registerEvents(services.getMarionetteRestorer(), this);

@@ -54,6 +54,9 @@ public class MarionetteMinionTrait extends Trait {
     private String            originalPlayerName;  // for skin display
     private String            skinTextureValue;    // null if target had no skin
     private String            skinTextureSignature; // null if target had no skin
+    // Тип сутності цілі: PLAYER для гравця, конкретний моб для не-гравця. Визначає,
+    // як виглядає свап (гравець-скін vs packet-маска моба) і як відновити NPC на виході.
+    private String            marionetteEntityType = org.bukkit.entity.EntityType.PLAYER.name();
     private double            capturedMaxHealth   = 20.0; // макс. HP цілі (з бонусом послідовності)
     private double            capturedHealth      = 20.0; // поточне HP цілі на момент перетворення
 
@@ -95,6 +98,25 @@ public class MarionetteMinionTrait extends Trait {
 
     public String getSkinTextureValue()     { return skinTextureValue; }
     public String getSkinTextureSignature() { return skinTextureSignature; }
+
+    // ── Тип сутності цілі (PLAYER vs моб) ─────────────────────────────────────
+
+    public void setMarionetteEntityType(org.bukkit.entity.EntityType type) {
+        if (type != null) this.marionetteEntityType = type.name();
+    }
+
+    public org.bukkit.entity.EntityType getMarionetteEntityType() {
+        try {
+            return org.bukkit.entity.EntityType.valueOf(marionetteEntityType);
+        } catch (IllegalArgumentException e) {
+            return org.bukkit.entity.EntityType.PLAYER;
+        }
+    }
+
+    /** True, якщо ціль була не-гравцем (мобом) — свап іде через packet-маску моба. */
+    public boolean isMobMarionette() {
+        return getMarionetteEntityType() != org.bukkit.entity.EntityType.PLAYER;
+    }
 
     // ── Captured health (HP цілі разом із бонусом від послідовності) ───────────
 
@@ -156,6 +178,7 @@ public class MarionetteMinionTrait extends Trait {
         if (originalPlayerName != null) key.setString("name", originalPlayerName);
         if (skinTextureValue != null) key.setString("skin.value", skinTextureValue);
         if (skinTextureSignature != null) key.setString("skin.signature", skinTextureSignature);
+        key.setString("entityType", marionetteEntityType);
 
         // Шлях/послідовність зберігаємо як ім'я+рівень (регідрація через PathwayManager).
         if (capturedPathway != null && capturedSequence != null) {
@@ -183,6 +206,8 @@ public class MarionetteMinionTrait extends Trait {
         originalPlayerName   = emptyToNull(key.getString("name", ""));
         skinTextureValue     = emptyToNull(key.getString("skin.value", ""));
         skinTextureSignature = emptyToNull(key.getString("skin.signature", ""));
+        // Старі saves.yml без поля → PLAYER (маріонетки-мобів там ще не було).
+        marionetteEntityType = key.getString("entityType", org.bukkit.entity.EntityType.PLAYER.name());
 
         capturedSpirituality    = key.getInt("spirituality", 0);
         capturedMaxSpirituality = key.getInt("maxSpirituality", 0);

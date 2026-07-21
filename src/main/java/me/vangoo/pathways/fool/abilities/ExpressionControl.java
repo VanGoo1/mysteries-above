@@ -3,7 +3,10 @@ package me.vangoo.pathways.fool.abilities;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.domain.services.MasteryProgressionCalculator;
 import me.vangoo.domain.valueobjects.Sequence;
+import me.vangoo.domain.valueobjects.Spirituality;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Particle;
@@ -16,19 +19,18 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Sequence 8: Clown — Expression Control (Контроль міміки)
+ * Sequence 8: Clown — Expression Control (Контроль міміки).
  *
- * Perfect control over facial expressions and body language. Creates a "mask"
- * that blocks all information-gathering abilities from reading the caster.
+ * <p>Ідеальна «маска» блокує здібності читання ({@link #isMasked}). Тепер це
+ * тогл: активна доки не скасуєш, витрачаючи {@value #COST_PER_SECOND} духовності/с
+ * (патерн {@code PsychologicalInvisibility}). При виснаженні авто-вимикається.
  */
 public class ExpressionControl extends ActiveAbility {
 
-    private static final int BASE_COST = 60;
-    private static final int BASE_COOLDOWN = 45;
-    private static final int DURATION_SECONDS = 30;
-    private static final int DURATION_TICKS = DURATION_SECONDS * 20;
+    private static final int COST_PER_SECOND = 10;
+    private static final int COOLDOWN_SECONDS = 5;
 
-    // Active masks: casterUUID -> task
+    // Active masks: casterUUID -> task (static — isMasked є статичним контрактом для зовнішніх викликачів)
     private static final Map<UUID, BukkitTask> activeMasks = new ConcurrentHashMap<>();
     private static final Set<UUID> maskedPlayers = ConcurrentHashMap.newKeySet();
 
@@ -39,19 +41,24 @@ public class ExpressionControl extends ActiveAbility {
 
     @Override
     public String getDescription(Sequence userSequence) {
-        return "Надягає ідеальну «маску» на " + DURATION_SECONDS + " секунд. " +
-                "Здібності читання (Сканування, Телепатія, Духовне бачення) " +
+        return "Надягає ідеальну «маску», активну доки не скасуєте (" + COST_PER_SECOND +
+                " духовності/с). Здібності читання (Сканування, Телепатія, Духовне бачення) " +
                 "не можуть прочитати ваші наміри та стан.";
     }
 
     @Override
     public int getSpiritualityCost() {
-        return BASE_COST;
+        return COST_PER_SECOND;
+    }
+
+    @Override
+    public int getPeriodicCost() {
+        return COST_PER_SECOND;
     }
 
     @Override
     public int getCooldown(Sequence userSequence) {
-        return BASE_COOLDOWN;
+        return COOLDOWN_SECONDS;
     }
 
     /**
@@ -66,10 +73,16 @@ public class ExpressionControl extends ActiveAbility {
     protected AbilityResult performExecution(IAbilityContext context) {
         UUID casterId = context.getCasterId();
 
-        // If already masked, cancel early
         if (maskedPlayers.contains(casterId)) {
             disableMask(context, casterId, "свідоме зняття");
             return AbilityResult.success();
+        }
+
+        Beyonder beyonder = context.getCasterBeyonder();
+        if (beyonder.getSpirituality().current() < COST_PER_SECOND) {
+            context.messaging().sendMessageToActionBar(casterId,
+                    Component.text("✗ Недостатньо духовності", NamedTextColor.RED));
+            return AbilityResult.failure("Недостатньо духовності");
         }
 
         enableMask(context, casterId);
@@ -93,17 +106,25 @@ public class ExpressionControl extends ActiveAbility {
                 return;
             }
 
-            // Duration check
-            if (ticks[0] >= DURATION_TICKS) {
-                disableMask(context, casterId, "час вийшов");
-                return;
+            // Списання духовності раз на секунду.
+            if (ticks[0] % 20 == 0) {
+                Beyonder b = context.getCasterBeyonder();
+                Spirituality sp = b.getSpirituality();
+                if (sp.current() < COST_PER_SECOND) {
+                    disableMask(context, casterId, "виснаження");
+                    return;
+                }
+                b.setSpirituality(sp.decrement(COST_PER_SECOND));
+                double masteryGain = MasteryProgressionCalculator.calculateMasteryGain(COST_PER_SECOND, b.getSequence());
+                if (masteryGain > 0) {
+                    b.setMastery(b.getMastery().add(masteryGain));
+                }
             }
 
             // Action bar update every 2 seconds
             if (ticks[0] % 40 == 0) {
-                int remaining = (DURATION_TICKS - ticks[0]) / 20;
                 context.messaging().sendMessageToActionBar(casterId,
-                        Component.text("🎭 Маска активна (" + remaining + "с)", NamedTextColor.GOLD));
+                        Component.text("🎭 Маска активна", NamedTextColor.GOLD));
             }
 
             // Subtle particles every second
