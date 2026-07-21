@@ -34,3 +34,7 @@ build/
 ### Mac OS ###
 .DS_Store
 .superpowers/
+
+### Graphify ###
+.graphify/
+.claude/GRAPHIFY_PROGRESS.md

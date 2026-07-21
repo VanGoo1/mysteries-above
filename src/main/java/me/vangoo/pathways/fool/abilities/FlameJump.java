@@ -3,9 +3,13 @@ package me.vangoo.pathways.fool.abilities;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
+import me.vangoo.domain.valueobjects.FlameJumpRange;
 import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import java.util.EnumSet;
@@ -22,8 +26,8 @@ public class FlameJump extends ActiveAbility {
 
     private static final int BASE_COST = 70;
     private static final int BASE_COOLDOWN = 6;
-    private static final int SCAN_RADIUS = 30;
     private static final double CONE_ANGLE = 60.0; // degrees
+    private static final int FIRE_IMMUNITY_MAX_TICKS = 300; // 15с страховка
 
     private static final Set<Material> FIRE_SOURCES = EnumSet.of(
             Material.TORCH, Material.SOUL_TORCH,
@@ -34,6 +38,12 @@ public class FlameJump extends ActiveAbility {
             Material.CANDLE, Material.JACK_O_LANTERN
     );
 
+    // Блоки, стоячи в/на яких гравець вважається «у полум'ї» (для fire-immunity).
+    private static final Set<Material> STANDING_FIRE = EnumSet.of(
+            Material.FIRE, Material.SOUL_FIRE, Material.CAMPFIRE, Material.SOUL_CAMPFIRE,
+            Material.MAGMA_BLOCK
+    );
+
     @Override
     public String getName() {
         return "Стрибок крізь полум'я";
@@ -42,7 +52,9 @@ public class FlameJump extends ActiveAbility {
     @Override
     public String getDescription(Sequence userSequence) {
         return "Телепортація до найближчого джерела вогню в напрямку погляду " +
-                "(радіус " + SCAN_RADIUS + " блоків). Факели, вогнища, ліхтарі — все підходить.";
+                "(радіус " + FlameJumpRange.rangeFor(userSequence) + " блоків). Факели, вогнища, " +
+                "ліхтарі — все підходить. Полум'я, у яке ви стрибнули, не завдає вам шкоди, " +
+                "поки ви з нього не вийдете.";
     }
 
     @Override
@@ -65,15 +77,16 @@ public class FlameJump extends ActiveAbility {
 
         Vector lookDir = eyeLoc.getDirection().normalize();
         Location casterLoc = context.playerData().getCurrentLocation(casterId);
+        int scanRadius = FlameJumpRange.rangeFor(context.getCasterBeyonder().getSequence());
 
         // Find best fire source in cone
         Block bestFire = null;
         double bestScore = Double.MAX_VALUE; // Lower is better (distance, weighted by angle)
 
         World world = eyeLoc.getWorld();
-        for (int x = -SCAN_RADIUS; x <= SCAN_RADIUS; x++) {
-            for (int y = -SCAN_RADIUS / 2; y <= SCAN_RADIUS / 2; y++) {
-                for (int z = -SCAN_RADIUS; z <= SCAN_RADIUS; z++) {
+        for (int x = -scanRadius; x <= scanRadius; x++) {
+            for (int y = -scanRadius / 2; y <= scanRadius / 2; y++) {
+                for (int z = -scanRadius; z <= scanRadius; z++) {
                     Block block = world.getBlockAt(
                             casterLoc.getBlockX() + x,
                             casterLoc.getBlockY() + y,
@@ -84,7 +97,7 @@ public class FlameJump extends ActiveAbility {
 
                     Location blockLoc = block.getLocation().add(0.5, 0, 0.5);
                     double distance = casterLoc.distance(blockLoc);
-                    if (distance < 2.0 || distance > SCAN_RADIUS) continue;
+                    if (distance < 2.0 || distance > scanRadius) continue;
 
                     // Check if within cone
                     Vector toBlock = blockLoc.toVector().subtract(casterLoc.toVector()).normalize();
@@ -126,6 +139,9 @@ public class FlameJump extends ActiveAbility {
         // Teleport
         context.entity().teleport(casterId, safeLoc);
 
+        // Полум'я не пече, поки гравець із нього не вийде.
+        grantFireImmunity(context, casterId);
+
         // Arrival effects
         context.effects().spawnParticle(Particle.FLAME, safeLoc.clone().add(0, 0.5, 0), 25, 0.3, 0.3, 0.3);
         context.effects().spawnParticle(Particle.LAVA, safeLoc.clone().add(0, 1, 0), 10, 0.2, 0.3, 0.2);
@@ -145,6 +161,39 @@ public class FlameJump extends ActiveAbility {
         }
 
         return AbilityResult.success();
+    }
+
+    /**
+     * Дає гравцю fire-resistance, доки він стоїть у полум'ї, куди стрибнув.
+     * Ефект оновлюється щотіка, поки гравець у вогні, і природно згасає за ~2с
+     * після виходу — жодних крихких event-підписок (їх стирає unsubscribeAll).
+     */
+    private void grantFireImmunity(IAbilityContext context, UUID casterId) {
+        final int[] ticks = {0};
+        final BukkitTask[] holder = new BukkitTask[1];
+        holder[0] = context.scheduling().scheduleRepeating(() -> {
+            ticks[0]++;
+            Player player = context.getCasterPlayer();
+            if (!context.playerData().isOnline(casterId) || player == null
+                    || ticks[0] > FIRE_IMMUNITY_MAX_TICKS) {
+                if (holder[0] != null) holder[0].cancel();
+                return;
+            }
+            if (standingInFire(player)) {
+                context.entity().applyPotionEffect(casterId, PotionEffectType.FIRE_RESISTANCE, 40, 0);
+                player.setFireTicks(0);
+            } else {
+                // Вийшов із полум'я — припиняємо оновлювати, ефект згасне сам.
+                if (holder[0] != null) holder[0].cancel();
+            }
+        }, 0L, 2L);
+    }
+
+    private boolean standingInFire(Player player) {
+        Location loc = player.getLocation();
+        Material at = loc.getBlock().getType();
+        Material below = loc.clone().add(0, -1, 0).getBlock().getType();
+        return STANDING_FIRE.contains(at) || STANDING_FIRE.contains(below);
     }
 
     private Location findSafeLocationNear(Location center) {

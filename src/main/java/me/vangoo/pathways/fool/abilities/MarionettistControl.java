@@ -1,5 +1,6 @@
 package me.vangoo.pathways.fool.abilities;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
 import com.github.retrooper.packetevents.PacketEvents;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
@@ -11,9 +12,12 @@ import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.entities.Beyonder.BeyonderSnapshot;
 import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
+import me.vangoo.domain.valueobjects.MarionetteTiming;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.infrastructure.abilities.AbilityItemFactory;
 import me.vangoo.infrastructure.citizens.MarionetteMinionTrait;
+import me.vangoo.infrastructure.disguise.EntityDisguiseService;
+import me.vangoo.infrastructure.disguise.PlayerVisibilityRefresher;
 import me.vangoo.infrastructure.disguise.SkinDisguiseService;
 import me.vangoo.infrastructure.ui.NBTBuilder;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -74,10 +78,12 @@ public class MarionettistControl extends ActiveAbility {
     private final Map<UUID, Set<Integer>>         marionetteNpcs = new ConcurrentHashMap<>(); // casterId -> набір npcId (кілька маріонеток)
     private final Map<UUID, BeyonderSnapshot>     possessions    = new ConcurrentHashMap<>();
     private final Map<UUID, String>               originalDisplayNames = new ConcurrentHashMap<>(); // casterId -> справжній нік до посесії
+    private final Map<UUID, PlayerProfile>        originalProfiles     = new ConcurrentHashMap<>(); // casterId -> профіль (скін+ім'я) до посесії
     private final Map<UUID, Double>               preMaxHealth   = new ConcurrentHashMap<>();         // casterId -> макс. HP основного тіла до посесії
     private final Map<Integer, UUID>              marionetteOwner = new ConcurrentHashMap<>();       // npcId -> власник (завжди)
     private final Map<UUID, BukkitTask>           possessionMonitors = new ConcurrentHashMap<>();    // casterId -> тікер дистанції
     private final Map<Integer, Long>              strandedNpcs    = new ConcurrentHashMap<>();       // npcId -> час остаточної смерті (ms)
+    private final Set<UUID>                       mobDisguised    = ConcurrentHashMap.newKeySet();    // касти, замасковані під моба (packet-маска)
 
     // Глобальні (не прив'язані до кастера) сервіси — безпечно тримати у фоновому таску.
     private volatile IGlowingContext  glowingRef;
@@ -95,14 +101,15 @@ public class MarionettistControl extends ActiveAbility {
     public String getDescription(Sequence seq) {
         double range = BASE_SELECT_RANGE * SequenceScaler.calculateMultiplier(
                 seq.level(), SequenceScaler.ScalingStrategy.WEAK);
-        return "Захоплює Нитки Духовного Тіла та перетворює ціль на живу маріонетку.\n\n" +
-                "§7▪ Фаза 1 §f— Фіксація (≤" + (int)TETHER_RANGE + " м, 20 с)\n" +
+        return "Захоплює Нитки Духовного Тіла та перетворює ціль (гравця АБО моба) на живу маріонетку.\n\n" +
+                "§7▪ Фаза 1 §f— Фіксація (≤" + (int)TETHER_RANGE + " м, §e5–20 с§f за засвоєнням)\n" +
                 "§7▪ Фаза 2 §f— Заціпеніння (§cSlowness X / Nausea / Fatigue§f)\n" +
-                "§7▪ Фаза 3 §f— Конверсія через 5 хв — клон з шкірою гравця\n\n" +
+                "§7▪ Конверсія §f— §e5 хв§f (гравець) / §e15 с§f (моб), скейлиться з Sequence\n\n" +
+                "§7Нитки та спалахи обряду бачите §fлише ви§7 — для решти світу нічого не видно.\n" +
+                "§cВеликий разовий урон по жертві збиває фіксацію.\n" +
                 "§eПосвоєння §7(Shift+ПКМ):\n" +
-                "§f  Ввійти  §7→ позиції змінюються, ви отримуєте Шлях цілі\n" +
+                "§f  Ввійти  §7→ позиції змінюються, ви отримуєте тіло/Шлях цілі\n" +
                 "§f  Вийти   §7→ ПКМ предметом §e[Вийти з маріонетки]\n" +
-                "§cЯкщо клон загине поки ви всередині — ви миттєво повертаєтесь.\n" +
                 "§7Дальність: §e" + (int)range + " м";
     }
 
@@ -148,6 +155,9 @@ public class MarionettistControl extends ActiveAbility {
         LivingEntity target = targetOpt.get();
         if (target.getUniqueId().equals(casterId))
             return AbilityResult.failure("§cВи не можете натягнути власні Нитки.");
+        // Багфікс: Citizens-NPC (жрець церкви, посередник ринку тощо) — не жива ціль для Ниток.
+        if (CitizensAPI.hasImplementation() && CitizensAPI.getNPCRegistry().isNPC(target))
+            return AbilityResult.failure("§cЦе не жива ціль для Ниток.");
         if (isMarionetteNpc(target))
             return AbilityResult.failure("§cВи не можете поработити вже існуючу маріонетку.");
 
@@ -181,13 +191,22 @@ public class MarionettistControl extends ActiveAbility {
     // ════════════════════════════════════════════════════════════════════════
 
     private void beginThreading(IAbilityContext ctx, UUID casterId, LivingEntity target) {
+        double mastery = ctx.getCasterBeyonder().getMasteryValue();
+        Sequence seq = ctx.getCasterBeyonder().getSequence();
+        boolean targetIsPlayer = target instanceof Player;
+
         ThreadSession session = new ThreadSession(target.getUniqueId());
+        session.lockTarget    = MarionetteTiming.phase1LockTicks(mastery);
+        session.convertTarget = targetIsPlayer
+                ? MarionetteTiming.playerConvertTicks(seq)
+                : MarionetteTiming.mobSwapTicks(seq);
         activeSessions.put(casterId, session);
+
         ctx.messaging().sendMessage(casterId,
                 "§5[Маріонетист] §fНитки натягуються на §e" + entityName(target) + "§f.");
         ctx.messaging().sendMessageToActionBar(casterId,
                 Component.text("Фіксація ниток… тримайтесь поруч!", NamedTextColor.DARK_PURPLE));
-        ctx.effects().playSound(ctx.getCasterLocation(), Sound.BLOCK_BEACON_ACTIVATE, 0.6f, 0.5f);
+        privateSound(casterId, ctx.getCasterLocation(), Sound.BLOCK_BEACON_ACTIVATE, 0.6f, 0.5f);
 
         BukkitTask task = ctx.scheduling().scheduleRepeating(() -> {
             ThreadSession s = activeSessions.get(casterId);
@@ -204,11 +223,19 @@ public class MarionettistControl extends ActiveAbility {
                 return;
             }
 
+            // Збій фіксації: великий разовий урон по жертві розриває Нитки.
+            double hp = t.getHealth();
+            if (s.lastHealth >= 0 && (s.lastHealth - hp) >= MarionetteTiming.BREAK_DAMAGE_THRESHOLD) {
+                cancelSession(ctx, casterId, "§cНитки збито уроном по жертві!");
+                return;
+            }
+            s.lastHealth = hp;
+
             Location cLoc = ctx.playerData().getCurrentLocation(casterId);
             Location tLoc = ctx.playerData().getCurrentLocation(s.targetId);
             if (cLoc == null || tLoc == null) return;
 
-            drawThreadParticles(cLoc, tLoc, s.locked);
+            drawThreadParticles(ctx, casterId, cLoc, tLoc, s.locked);
 
             if (!s.locked) {
                 if (cLoc.distance(tLoc) > TETHER_RANGE) {
@@ -220,9 +247,9 @@ public class MarionettistControl extends ActiveAbility {
                     s.lockTicks += TICK_INTERVAL;
                     if (s.lockTicks % 80 == 0)
                         ctx.messaging().sendMessageToActionBar(casterId,
-                                Component.text("Фіксація: §e" + (LOCK_TICKS - s.lockTicks) / 20 +
+                                Component.text("Фіксація: §e" + Math.max(0, (s.lockTarget - s.lockTicks) / 20) +
                                         " §5сек", NamedTextColor.DARK_PURPLE));
-                    if (s.lockTicks >= LOCK_TICKS) {
+                    if (s.lockTicks >= s.lockTarget) {
                         s.locked = true;
                         onPhase2Begin(ctx, casterId, t);
                     }
@@ -235,9 +262,9 @@ public class MarionettistControl extends ActiveAbility {
             if (s.totalTicks % 100 == 0)
                 ctx.messaging().sendMessageToActionBar(casterId,
                         Component.text("Конверсія через §c" +
-                                        (CONVERT_TICKS - s.totalTicks) / 20 + " §5сек",
+                                        Math.max(0, (s.convertTarget - s.totalTicks) / 20) + " §5сек",
                                 NamedTextColor.DARK_PURPLE));
-            if (s.totalTicks >= CONVERT_TICKS) {
+            if (s.totalTicks >= s.convertTarget) {
                 removeSession(casterId);
                 convertToMarionette(ctx, casterId, t);
             }
@@ -248,11 +275,11 @@ public class MarionettistControl extends ActiveAbility {
     private void onPhase2Begin(IAbilityContext ctx, UUID casterId, LivingEntity t) {
         ctx.messaging().sendMessage(casterId,
                 "§5[Маріонетист] §fНитки закріплені! Ціль заціпеніє…");
-        ctx.effects().playSound(ctx.getCasterLocation(),
+        privateSound(casterId, ctx.getCasterLocation(),
                 Sound.ENTITY_WARDEN_TENDRIL_CLICKS, 1.2f, 0.6f);
         Location tLoc = ctx.playerData().getCurrentLocation(t.getUniqueId());
         if (tLoc != null)
-            ctx.effects().spawnParticle(Particle.SOUL, tLoc.clone().add(0, 1, 0), 30, 0.4, 0.6, 0.4);
+            privateParticle(casterId, Particle.SOUL, tLoc.clone().add(0, 1, 0), 30, 0.4, 0.6, 0.4);
         applyDebuffs(ctx, t.getUniqueId());
     }
 
@@ -272,6 +299,7 @@ public class MarionettistControl extends ActiveAbility {
 
         String   name       = entityName(target);
         boolean  isPlayer   = target instanceof Player;
+        final EntityType targetType = target.getType();
         Beyonder tBeyonder  = ctx.beyonder().getBeyonder(target.getUniqueId());
         List<ItemStack> inv = captureInventory(target);
 
@@ -302,9 +330,9 @@ public class MarionettistControl extends ActiveAbility {
         final double fMaxHealth = maxHealth;
         final double fHealth    = Math.max(1.0, Math.min(target.getHealth(), maxHealth));
 
-        ctx.effects().playSound(loc, Sound.ENTITY_WITHER_DEATH, 1.5f, 0.5f);
-        ctx.effects().playSphereEffect(loc.clone().add(0, 1, 0), 2.0, Particle.SOUL_FIRE_FLAME, 40);
-        ctx.effects().spawnParticle(Particle.SQUID_INK,
+        privateSound(casterId, loc, Sound.ENTITY_WITHER_DEATH, 1.5f, 0.5f);
+        privateSphere(casterId, loc.clone().add(0, 1, 0), 2.0, Particle.SOUL_FIRE_FLAME, 40);
+        privateParticle(casterId, Particle.SQUID_INK,
                 loc.clone().add(0, 1, 0), 60, 0.6, 0.8, 0.6);
 
         // Речі цілі вже захоплені в маріонетку — очищаємо інвентар ПЕРЕД смертю,
@@ -320,11 +348,18 @@ public class MarionettistControl extends ActiveAbility {
             if (!ctx.playerData().isOnline(casterId)) return;
 
             // Ім'я NPC = ім'я цілі: інші гравці бачать звичайного гравця, не "Маріонетку".
-            // Власник упізнає свої маріонетки лише за світінням-контуром.
-            NPC npc = CitizensAPI.getNPCRegistry().createNPC(EntityType.PLAYER, name);
+            // Власник упізнає свої маріонетки лише за світінням-контуром. Моб-маріонетка —
+            // NPC того ж типу, що й моб (не гравець), тож зберігає вигляд істоти.
+            NPC npc = CitizensAPI.getNPCRegistry().createNPC(
+                    isPlayer ? EntityType.PLAYER : targetType, name);
 
             if (isPlayer)
-                npc.getOrAddTrait(SkinTrait.class).setSkinName(name, true);
+                // Текстурами, а не резолвом за ніком: інакше Citizens прив'яже tablist-запис
+                // маріонетки до профілю (і UUID) справжнього гравця-цілі й забере нік у нього.
+                applyNpcIdentity(npc, name, fSkinValue, fSkinSignature);
+            else
+                // Маріонетка-моб не показує ім'я-нікнейм над головою.
+                setNameplateVisible(npc, false);
 
             npc.spawn(loc);
 
@@ -343,6 +378,7 @@ public class MarionettistControl extends ActiveAbility {
             trait.initialise(casterId, name, tBeyonder, inv);
             trait.setSkin(fSkinValue, fSkinSignature);
             trait.setCapturedHealth(fHealth, fMaxHealth);
+            trait.setMarionetteEntityType(isPlayer ? EntityType.PLAYER : targetType);
             npc.addTrait(trait);
 
             copyEquipmentToNpc(npc, target);
@@ -426,12 +462,33 @@ public class MarionettistControl extends ActiveAbility {
         // Основне тіло — завжди Fool (Marionettist), а Fool не має HP-пасивів, тож ніщо це не перезапише.
         applyPossessionMaxHealth(ctx.getCasterPlayer(), trait);
 
+        boolean mob = trait.isMobMarionette();
+
+        // Для маріонетки-моба залишкове тіло має бути ГРАВЦЕМ (ваше основне тіло), а не мобом:
+        // тимчасово перетворюємо NPC на player-тип. Для гравця-маріонетки він уже player.
+        if (mob) {
+            npc.setBukkitEntityType(EntityType.PLAYER);
+        }
+
         // Тіло-NPC показує спорядження гравця (поки гравець ще у власному тілі) — ДО заміни інвентаря.
         updateNpcInventoryFromPlayer(npc, ctx.getCasterPlayer());
 
-        // Гравець "стає" маріонеткою: вдягаємо її броню+інвентар зі збереженням слотів
-        // (меню-айтем лишається у слоті 9, броня вдягається коректно).
-        applyFullInventory(ctx.getCasterPlayer(), trait.getCapturedInventory());
+        // Гравець "стає" маріонеткою: для гравця-цілі вдягаємо її броню+інвентар зі збереженням слотів
+        // (меню-айтем лишається у слоті 9). Для моба інвентаря нема — власний інвентар гравця НЕ чіпаємо
+        // (інакше applyFullInventory порожнім списком стер би його речі).
+        if (!mob) {
+            applyFullInventory(ctx.getCasterPlayer(), trait.getCapturedInventory());
+        } else {
+            // Маріонетка-моб: тіло, яким керуєте, має ПУСТИЙ інвентар — не можна дюпнути
+            // речі основного тіла і не можна нічого підбирати (гейт у MarionetteLifecycleListener).
+            // Реальний інвентар збережено в originalInventories й повернеться на виході.
+            Player mobBody = ctx.getCasterPlayer();
+            if (mobBody != null) {
+                mobBody.getInventory().clear();
+                mobBody.getInventory().setArmorContents(null);
+                mobBody.getInventory().setItemInOffHand(null);
+            }
+        }
 
         // Позиційний своп
         ctx.entity().teleport(casterId, npcLoc.clone());
@@ -444,24 +501,41 @@ public class MarionettistControl extends ActiveAbility {
 
         spawnSwapEffects(ctx, npcLoc, castLoc);
 
-        // Підміна особистості гравця на маріонетку: нік у чаті/ТАБі + скін.
         Player casterPlayer = ctx.getCasterPlayer();
         String marionetteName = trait.getOriginalPlayerName();
-        if (casterPlayer != null && marionetteName != null) {
+        // Нік І ТЕКСТУРИ ЧИТАЄМО ДО підміни профілю: Paper віддає getName()/профіль уже
+        // підмінені, тож після disguise() тіло-NPC отримало б ім'я та скін маріонетки.
+        String bodyName = (casterPlayer != null) ? casterPlayer.getName() : null;
+        String[] bodyTextures = capturePlayerTextures(casterPlayer);
+        if (mob) {
+            // Маска моба: інші гравці бачать кастера як цей моб, БЕЗ ніка. Нік у чаті/ТАБі не чіпаємо.
+            if (casterPlayer != null) {
+                mobDisguised.add(casterId);
+                EntityDisguiseService.disguiseAsMob(casterPlayer, trait.getMarionetteEntityType());
+            }
+        } else if (casterPlayer != null && marionetteName != null) {
+            // Гравець-ціль: підміна профілю (скін + НІК НАД ГОЛОВОЮ) серверним Paper-API,
+            // а не пакетами — інакше над маріонеткою лишався справжній нік кастера.
+            // Профіль міняємо ПІСЛЯ телепорту, щоб респавн сутності пішов уже з нової позиції.
+            originalProfiles.put(casterId,
+                    SkinDisguiseService.disguise(casterPlayer,
+                            trait.getSkinTextureValue(), trait.getSkinTextureSignature(),
+                            marionetteName));
             originalDisplayNames.put(casterId, casterPlayer.getDisplayName());
-            casterPlayer.setDisplayName(marionetteName);   // нік у чаті
-            casterPlayer.setPlayerListName(marionetteName); // нік у ТАБі (server-side fallback)
-        }
-        if (casterPlayer != null && trait.getSkinTextureValue() != null) {
-            // Скін + ім'я над головою/у ТАБі для інших гравців (PacketEvents).
-            SkinDisguiseService.disguise(casterPlayer,
-                    trait.getSkinTextureValue(), trait.getSkinTextureSignature(), marionetteName);
+            casterPlayer.setDisplayName(marionetteName);    // нік у чаті
+            casterPlayer.setPlayerListName(marionetteName); // нік у ТАБі
         }
 
         // NPC тепер представляє основне тіло гравця → даємо йому нік+скін гравця (а не цілі),
         // інакше «ваше тіло» показувало б нік маріонетки, у якій ви зараз перебуваєте.
-        if (casterPlayer != null) {
-            applyNpcIdentity(npc, casterPlayer.getName(), casterPlayer.getName());
+        // Тіло — гравець, тож нік над головою показуємо (навіть якщо маріонетка була мобом).
+        setNameplateVisible(npc, true);
+        if (bodyName != null) {
+            // Текстури беремо ДО підміни профілю кастера (нижче/вище) — це скін його тіла.
+            String[] bodySkin = bodyTextures;
+            applyNpcIdentity(npc, bodyName,
+                    bodySkin != null ? bodySkin[0] : null,
+                    bodySkin != null ? bodySkin[1] : null);
         }
 
         if (trait.wasBeyonder()) {
@@ -502,16 +576,11 @@ public class MarionettistControl extends ActiveAbility {
         removeSwapBackItem(ctx, casterId);
         removeSwapMenuItem(ctx, casterId);
 
-        if (snap == null) return;
+        // Личину знімаємо БЕЗУМОВНО — до раннього виходу нижче, інакше зламаний знімок
+        // лишав би гравця назавжди у вигляді маріонетки.
+        restoreAppearance(ctx, casterId);
 
-        Player casterPlayerForSkin = ctx.getCasterPlayer();
-        if (casterPlayerForSkin != null) {
-            SkinDisguiseService.undisguise(casterPlayerForSkin);
-            // Повертаємо справжній нік у чаті/ТАБі.
-            String origName = originalDisplayNames.remove(casterId);
-            if (origName != null) casterPlayerForSkin.setDisplayName(origName);
-            casterPlayerForSkin.setPlayerListName(null);
-        }
+        if (snap == null) return;
 
         Beyonder caster = ctx.beyonder().getBeyonder(casterId);
 
@@ -522,10 +591,15 @@ public class MarionettistControl extends ActiveAbility {
         // спорядження назад у саму маріонетку (ДО відновлення власного інвентаря гравця).
         if (!forced && npc != null && npc.isSpawned()) {
             MarionetteMinionTrait trait = npc.getTraitNullable(MarionetteMinionTrait.class);
-            if (trait != null) {
+            boolean mobMarionette = trait != null && trait.isMobMarionette();
+            // Маріонетку-моба НЕ чіпаємо: гравець мав порожній інвентар, тож збереження його
+            // вмісту стерло б спорядження моба, а NPC-моб і так не носить речі гравця.
+            if (trait != null && !mobMarionette) {
                 trait.setCapturedInventory(captureFullInventory(ctx.getCasterPlayer()));
             }
-            updateNpcInventoryFromPlayer(npc, ctx.getCasterPlayer());
+            if (!mobMarionette) {
+                updateNpcInventoryFromPlayer(npc, ctx.getCasterPlayer());
+            }
         }
 
         // Відновлюємо власний інвентар гравця (повний знімок зі слотами) та особистість.
@@ -549,15 +623,33 @@ public class MarionettistControl extends ActiveAbility {
             MarionetteMinionTrait freeTrait = npc.getTraitNullable(MarionetteMinionTrait.class);
             String targetName = (freeTrait != null && freeTrait.getOriginalPlayerName() != null)
                     ? freeTrait.getOriginalPlayerName() : npc.getName();
-            applyNpcIdentity(npc, targetName, targetName);
+            if (freeTrait != null && freeTrait.isMobMarionette()) {
+                // Маріонетка-моб: повертаємо NPC у вигляд моба (був тимчасово player-тілом),
+                // лишаємо ім'я, але знову ховаємо нік над головою.
+                // ДО перейменування: поки авто-оновлення скіна ввімкнене, Citizens резолвить
+                // профіль за ім'ям NPC (зараз це нік кастера) і забирає player-info у живого гравця.
+                disableSkinAutoUpdate(npc);
+                npc.setName(targetName);
+                npc.setBukkitEntityType(freeTrait.getMarionetteEntityType());
+                // Приховування ніка NPC безпечне: команду Citizens, що його ховає, чистить від
+                // імен живих гравців CitizensNameplateGuard (Citizens накопичує в ній усі колишні
+                // назви NPC, зокрема нік кастера, і сам їх ніколи не прибирає).
+                setNameplateVisible(npc, false);
+            } else {
+                // Скін вільної маріонетки — зі збережених текстур цілі, а НЕ резолвом за її ніком:
+                // резолв прив'язав би NPC до профілю справжнього гравця-цілі й забрав би нік уже в НЬОГО.
+                applyNpcIdentity(npc, targetName,
+                        freeTrait != null ? freeTrait.getSkinTextureValue() : null,
+                        freeTrait != null ? freeTrait.getSkinTextureSignature() : null);
+            }
 
             // NPC знову став вільною маріонеткою — повертаємо фіолетове світіння для власника.
             applyGlow(npc, casterId, GLOW_MARIONETTE);
         } else {
             if (castLoc != null) {
-                ctx.effects().spawnParticle(Particle.SOUL_FIRE_FLAME,
+                privateParticle(casterId, Particle.SOUL_FIRE_FLAME,
                         castLoc.clone().add(0, 1, 0), 30, 0.4, 0.6, 0.4);
-                ctx.effects().playSound(castLoc, Sound.ENTITY_WITHER_HURT, 1.2f, 0.5f);
+                privateSound(casterId, castLoc, Sound.ENTITY_WITHER_HURT, 1.2f, 0.5f);
             }
             ctx.messaging().sendMessage(casterId,
                     "§5[Маріонетист] §cМаріонетку знищено! §fВи повернулись у своє тіло.");
@@ -566,6 +658,58 @@ public class MarionettistControl extends ActiveAbility {
         }
         ctx.messaging().sendMessageToActionBar(casterId,
                 Component.text("Ваш Шлях відновлено.", NamedTextColor.GREEN));
+
+        // Личину зняли ВИЩЕ (до телепорту) — інакше ланцюговий свап захопив би як «оригінал»
+        // профіль попередньої маріонетки. Але respawn від того зняття пішов зі СТАРОЇ позиції,
+        // тож глядачі біля нової сутності гравця не отримали — він лишався невидимим.
+        // Тому окремо, вже ПІСЛЯ телепорту, перевстановлюємо поточний вигляд: resync не знає
+        // про личини й лише стверджує те, що на гравцеві зараз, тож безпечний і в ланцюзі.
+        // Ланцюговий свап у МОБА: його личина пакетна, і серверний resync стер би її,
+        // показавши справжнього гравця. Якщо гравець уже в наступній маріонетці — не чіпаємо.
+        ctx.scheduling().scheduleDelayed(() -> {
+            if (currentPossession.containsKey(casterId)) return;
+            PlayerVisibilityRefresher.resync(Bukkit.getPlayer(casterId));
+        }, 1L);
+    }
+
+    /**
+     * Знімає личину маріонетки з гравця (профіль-скін+нік або packet-маску моба).
+     *
+     * <p>Візуальне відновлення відкладене на 2 тіки: телепорт у власне тіло відбувається
+     * НИЖЧЕ в {@code swapOut}, а respawn зі старої позиції не доходив до глядачів біля
+     * нової — гравець лишався невидимим і без ніка над головою.</p>
+     */
+    private void restoreAppearance(IAbilityContext ctx, UUID casterId) {
+        boolean wasMob = mobDisguised.remove(casterId);
+        PlayerProfile originalProfile = originalProfiles.remove(casterId);
+        String originalName = originalDisplayNames.remove(casterId);
+
+        Player player = Bukkit.getPlayer(casterId);
+        if (player == null || !player.isOnline()) return;
+
+        if (!wasMob && (originalProfile != null || originalName != null)) {
+            // Профіль — серверний Paper-API: сервер сам коректно переспавнить гравця глядачам,
+            // тож відкладати не треба. І НЕ МОЖНА: у ланцюговому свапі (гравець → моб)
+            // swapToMarionette кличе swapOut і одразу swapIn, тож відкладене відновлення
+            // спрацювало б УЖЕ ПІСЛЯ вдягання нової личини й стерло б її.
+            SkinDisguiseService.undisguise(player, originalProfile);
+            player.setDisplayName(originalName); // null → дефолтний нік
+            player.setPlayerListName(null);
+        }
+
+        if (wasMob) {
+            // Маска моба — суто пакетна; відновлення робить сервер (hide/show). Тут затримка
+            // потрібна: телепорт у власне тіло відбувається нижче в swapOut, а hide/show зі
+            // старої позиції не дійшов би до глядачів біля нової.
+            ctx.scheduling().scheduleDelayed(() -> {
+                Player back = Bukkit.getPlayer(casterId);
+                if (back == null || !back.isOnline()) return;
+                // Ланцюговий свап: гравець устиг вселитись у НАСТУПНУ маріонетку — її личину
+                // вже вдягнув swapIn, і цей відкладений виклик зняв би саме її.
+                if (currentPossession.containsKey(casterId)) return;
+                EntityDisguiseService.undisguise(back);
+            }, 2L);
+        }
     }
 
     /** Direct exit entry for the swap-back item listener — no cost/cooldown (bypasses execute()). */
@@ -642,13 +786,56 @@ public class MarionettistControl extends ActiveAbility {
      * Тимчасово вдягає на NPC-тіло особистість (нік + скін). Поки гравець керує маріонеткою, її NPC
      * стоїть як «основне тіло» гравця — отже має показувати нік+скін гравця, а не цілі; при виході
      * повертаємо особистість цілі. (Citizens застосовує зміну імені/скіну через респавн NPC.)
+     *
+     * <p><b>Скін ставимо ТЕКСТУРАМИ, а не {@code setSkinName}.</b> Резолв за ніком змушує Citizens
+     * підтягнути справжній {@code GameProfile} того гравця — РАЗОМ З ЙОГО UUID — і завести під ним
+     * tablist-запис NPC. Прибираючи цей запис (а він робить це за частку секунди), Citizens шле
+     * {@code PlayerInfoRemove} з UUID ЖИВОГО гравця: клієнт втрачає player-info і малює гравця без
+     * таблички з ніком. Саме звідси був баг «вийшов із маріонетки-моба — нік блимнув і зник».
+     * Текстури з окремим ключем кешу нічого чужого не резолвлять і цієї колізії не створюють.</p>
      */
-    private void applyNpcIdentity(NPC npc, String name, String skinName) {
+    private void applyNpcIdentity(NPC npc, String name, String textureValue, String textureSignature) {
         if (npc == null || name == null) return;
+        SkinTrait skin = disableSkinAutoUpdate(npc);
         npc.setName(name);
-        if (skinName != null) {
-            npc.getOrAddTrait(SkinTrait.class).setSkinName(skinName, true);
+        if (skin != null && textureValue != null) {
+            // Ключ кешу навмисно НЕ дорівнює ніку — інакше Citizens знову зв'яже NPC із профілем гравця.
+            skin.setSkinPersistent(name + "_marionette", textureSignature, textureValue);
         }
+    }
+
+    /**
+     * Вимикає авто-оновлення скіна NPC за його ім'ям. <b>Обов'язково ДО {@code setName}.</b>
+     *
+     * <p>З увімкненим авто-оновленням Citizens на КОЖНУ зміну імені чи респавн АСИНХРОННО
+     * резолвить профіль гравця з таким ніком — разом із його UUID — і заводить під ним
+     * tablist-запис NPC. Прибираючи цей запис, він шле {@code PlayerInfoRemove} з UUID
+     * ЖИВОГО гравця, і той лишається без таблички з ніком. Саме асинхронність цього фетчу
+     * давала плаваючу затримку 0.5–1.5 с, через яку баг виглядав як гонка таймерів.
+     * Ставити текстури напряму замало: авто-оновлення однаково перезатирає їх резолвом за ім'ям.</p>
+     */
+    private SkinTrait disableSkinAutoUpdate(NPC npc) {
+        if (npc == null) return null;
+        SkinTrait skin = npc.getOrAddTrait(SkinTrait.class);
+        skin.setShouldUpdateSkins(false);
+        return skin;
+    }
+
+    /** Текстури скіну гравця з кешу PacketEvents: {@code [value, signature]}; {@code null} — якщо недоступні. */
+    private String[] capturePlayerTextures(Player player) {
+        if (player == null) return null;
+        try {
+            var user = PacketEvents.getAPI().getPlayerManager().getUser(player);
+            if (user == null || user.getProfile() == null) return null;
+            for (var tex : user.getProfile().getTextureProperties()) {
+                if ("textures".equals(tex.getName())) {
+                    return new String[]{tex.getValue(), tex.getSignature()};
+                }
+            }
+        } catch (Exception ignored) {
+            // Скін просто не підміниться — не привід зривати свап.
+        }
+        return null;
     }
 
     /** Скидає речі маріонетки на землю, пропускаючи службові предмети (меню/керування/здібності тіла). */
@@ -682,6 +869,8 @@ public class MarionettistControl extends ActiveAbility {
         e.setDroppedExp(0);
 
         Location deathLoc = npc.getStoredLocation();
+        // Ім'я читаємо ДО destroy() — після знищення NPC трейт уже недоступний.
+        final String deadName = marionetteName(npc);
 
         // Власник: якщо саме керує — з реєстру посесій; інакше — звичайний власник.
         UUID possessingOwner = possessionByNpc.get(npcId);
@@ -707,11 +896,12 @@ public class MarionettistControl extends ActiveAbility {
         cleanupNpcRecords(npcId, ownerId);
         npc.destroy();
 
+        String deathMsg = "§5[Маріонетист] §7Вашу маріонетку §f" + deadName + " §7знищено.";
         if (ownerCtx != null && ownerId != null) {
-            ownerCtx.messaging().sendMessage(ownerId, "§5[Маріонетист] §7Вашу маріонетку знищено.");
+            ownerCtx.messaging().sendMessage(ownerId, deathMsg);
         } else if (ownerId != null) {
             Player owner = Bukkit.getPlayer(ownerId);
-            if (owner != null) owner.sendMessage("§5[Маріонетист] §7Вашу маріонетку знищено.");
+            if (owner != null) owner.sendMessage(deathMsg);
         }
     }
 
@@ -963,7 +1153,10 @@ public class MarionettistControl extends ActiveAbility {
         return list;
     }
 
-    private void drawThreadParticles(Location from, Location to, boolean locked) {
+    private void drawThreadParticles(IAbilityContext ctx, UUID casterId,
+                                     Location from, Location to, boolean locked) {
+        Player caster = Bukkit.getPlayer(casterId);
+        if (caster == null) return;
         Particle.DustOptions dust = new Particle.DustOptions(
                 locked ? Color.fromRGB(80, 0, 80) : Color.fromRGB(30, 30, 30), 0.6f);
         Vector dir = to.clone().subtract(from).toVector();
@@ -972,17 +1165,52 @@ public class MarionettistControl extends ActiveAbility {
         dir.normalize();
         for (double d = 0.5; d < len; d += 0.5) {
             Location pt = from.clone().add(dir.clone().multiply(d)).add(0, 1, 0);
-            if (pt.getWorld() != null)
-                pt.getWorld().spawnParticle(Particle.DUST, pt, 1, 0, 0, 0, 0, dust);
+            if (pt.getWorld() == null) continue;
+            // Нитки бачить ЛИШЕ кастер: Player.spawnParticle шле пакет тільки цьому гравцю.
+            caster.spawnParticle(Particle.DUST, pt, 1, 0, 0, 0, 0, dust);
         }
     }
 
     private void spawnSwapEffects(IAbilityContext ctx, Location a, Location b) {
-        ctx.effects().spawnParticle(Particle.PORTAL, a.clone().add(0, 1, 0), 50, 0.5, 0.8, 0.5);
-        ctx.effects().spawnParticle(Particle.PORTAL, b.clone().add(0, 1, 0), 50, 0.5, 0.8, 0.5);
-        ctx.effects().playSound(a, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 0.7f);
-        ctx.effects().playSound(b, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 0.7f);
-        ctx.effects().playSound(a, Sound.ENTITY_WARDEN_HEARTBEAT,  0.6f, 1.4f);
+        UUID casterId = ctx.getCasterId();
+        privateParticle(casterId, Particle.PORTAL, a.clone().add(0, 1, 0), 50, 0.5, 0.8, 0.5);
+        privateParticle(casterId, Particle.PORTAL, b.clone().add(0, 1, 0), 50, 0.5, 0.8, 0.5);
+        privateSound(casterId, a, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 0.7f);
+        privateSound(casterId, b, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 0.7f);
+        privateSound(casterId, a, Sound.ENTITY_WARDEN_HEARTBEAT,  0.6f, 1.4f);
+    }
+
+    // ── Приватні ефекти ───────────────────────────────────────────────────────
+    // Уся хореографія Ниток (нитка до цілі, спалах конверсії, спалах свапу) — таємна:
+    // її бачить і чує ЛИШЕ кастер. Тому НЕ через ctx.effects() (він шле світу),
+    // а прямими Player-викликами, що адресують пакет одному гравцю.
+
+    private void privateParticle(UUID casterId, Particle particle, Location loc, int count,
+                                 double offsetX, double offsetY, double offsetZ) {
+        Player caster = Bukkit.getPlayer(casterId);
+        if (caster == null || loc == null || loc.getWorld() == null) return;
+        caster.spawnParticle(particle, loc, count, offsetX, offsetY, offsetZ);
+    }
+
+    private void privateSound(UUID casterId, Location loc, Sound sound, float volume, float pitch) {
+        Player caster = Bukkit.getPlayer(casterId);
+        if (caster == null || loc == null) return;
+        caster.playSound(loc, sound, volume, pitch);
+    }
+
+    /** Разовий спалах-сфера навколо точки — теж лише для кастера (заміна ctx.effects().playSphereEffect). */
+    private void privateSphere(UUID casterId, Location center, double radius, Particle particle, int points) {
+        Player caster = Bukkit.getPlayer(casterId);
+        if (caster == null || center == null || center.getWorld() == null) return;
+        for (int i = 0; i < points; i++) {
+            double theta = Math.acos(1 - 2.0 * (i + 0.5) / points);
+            double phi   = Math.PI * (1 + Math.sqrt(5)) * i;
+            Location pt = center.clone().add(
+                    radius * Math.sin(theta) * Math.cos(phi),
+                    radius * Math.cos(theta),
+                    radius * Math.sin(theta) * Math.sin(phi));
+            caster.spawnParticle(particle, pt, 1, 0, 0, 0);
+        }
     }
 
     private LivingEntity resolveEntity(UUID id) {
@@ -1440,6 +1668,69 @@ public class MarionettistControl extends ActiveAbility {
         if (beyonderRef == null) beyonderRef = ctx.beyonder();
     }
 
+    /** Показує/ховає нік-нікнейм над головою NPC (persistent — переживає рестарт). */
+    private void setNameplateVisible(NPC npc, boolean visible) {
+        if (npc == null) return;
+        npc.data().setPersistent(NPC.Metadata.NAMEPLATE_VISIBLE, visible);
+    }
+
+    // ── Попередження про атаку по маріонетці/тілу (action bar) ─────────────────
+
+    /** Чи керує гравець ЗАРАЗ маріонеткою-мобом (для гейта підбору предметів). */
+    public boolean isControllingMobMarionette(UUID casterId) {
+        return mobDisguised.contains(casterId);
+    }
+
+    /**
+     * Попереджає власника в action bar, коли NPC-маріонетку атакують. Якщо власник саме
+     * керує цією маріонеткою, NPC = його основне тіло → «ваше основне тіло атакують»;
+     * інакше це вільна маріонетка → «вашу маріонетку атакують». Називає, хто саме б'є.
+     */
+    public void onMarionetteDamaged(NPC npc, org.bukkit.entity.Entity damager) {
+        UUID ownerId = marionetteOwner.get(npc.getId());
+        if (ownerId == null) return;
+        Player owner = Bukkit.getPlayer(ownerId);
+        if (owner == null) return;
+
+        org.bukkit.entity.Entity attacker = resolveAttacker(damager);
+        if (attacker != null && attacker.getUniqueId().equals(ownerId)) return; // сам себе — не спамимо
+
+        String name = attackerName(attacker);
+        if (isPossessing(ownerId, npc.getId())) {
+            owner.sendActionBar(Component.text("⚠ Ваше основне тіло атакує " + name + "!",
+                    NamedTextColor.RED));
+        } else {
+            // Маріонеток може бути кілька — називаємо, ЯКУ саме б'ють, інакше попередження марне.
+            owner.sendActionBar(Component.text(
+                    "⚠ Вашу маріонетку «" + marionetteName(npc) + "» атакує " + name + "!",
+                    NamedTextColor.LIGHT_PURPLE));
+        }
+    }
+
+    /** Ім'я маріонетки для повідомлень: ім'я захопленої цілі, фолбек — ім'я NPC. */
+    private String marionetteName(NPC npc) {
+        MarionetteMinionTrait trait = npc.getTraitNullable(MarionetteMinionTrait.class);
+        String name = (trait != null) ? trait.getOriginalPlayerName() : null;
+        if (name == null || name.isBlank()) name = npc.getName();
+        return (name == null || name.isBlank()) ? "Маріонетка" : ChatColor.stripColor(name);
+    }
+
+    /** Снаряд (стріла тощо) → реальний стрілець; інакше саме джерело шкоди. */
+    private org.bukkit.entity.Entity resolveAttacker(org.bukkit.entity.Entity damager) {
+        if (damager instanceof org.bukkit.entity.Projectile proj
+                && proj.getShooter() instanceof org.bukkit.entity.Entity shooter) {
+            return shooter;
+        }
+        return damager;
+    }
+
+    private String attackerName(org.bukkit.entity.Entity attacker) {
+        if (attacker == null) return "щось";
+        if (attacker instanceof Player p) return p.getName();
+        if (attacker.getCustomName() != null) return ChatColor.stripColor(attacker.getCustomName());
+        return attacker.getType().name();
+    }
+
     private String entityName(LivingEntity e) {
         if (e instanceof Player p) return p.getName();
         if (e.getCustomName() != null) return ChatColor.stripColor(e.getCustomName());
@@ -1489,7 +1780,9 @@ public class MarionettistControl extends ActiveAbility {
         possessionByNpc.clear();
         originalInventories.clear();
         originalDisplayNames.clear();
+        originalProfiles.clear();
         preMaxHealth.clear();
+        mobDisguised.clear();
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -1501,6 +1794,9 @@ public class MarionettistControl extends ActiveAbility {
         int     lockTicks  = 0;
         int     totalTicks = 0;
         boolean locked     = false;
+        int     lockTarget    = LOCK_TICKS;    // тривалість фази фіксації (за засвоєнням)
+        int     convertTarget = CONVERT_TICKS; // тривалість фази конверсії (гравець/моб, за Seq)
+        double  lastHealth    = -1;            // для виявлення збою уроном
         private BukkitTask task;
         ThreadSession(UUID t) { targetId = t; }
 

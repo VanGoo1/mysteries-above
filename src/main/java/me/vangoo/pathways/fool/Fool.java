@@ -1,5 +1,6 @@
 package me.vangoo.pathways.fool;
 
+import me.vangoo.pathways.door.abilities.Burning;
 import me.vangoo.pathways.fool.abilities.*;
 import me.vangoo.domain.entities.Pathway;
 import me.vangoo.domain.entities.PathwayGroup;
@@ -16,11 +17,24 @@ import java.util.List;
  * to identity manipulation (Faceless) and spirit control (Marionettist).
  *
  * Sequences:
- *   9: Seer (Провидець) — divination, spirit vision, danger intuition
- *   8: Clown (Клоун) — paper daggers, expression mask, enhanced agility
- *   7: Magician (Фокусник) — flame jump, paper substitution, air bullet, damage transfer
+ *   9: Seer (Провидець) — divination, spirit vision, enhanced danger intuition
+ *      (premonition, see-behind-door, action prediction, lethal dodge)
+ *   8: Clown (Клоун) — passive paper throw (PaperCutter), expression mask (toggle drain),
+ *      clown agility (fall immunity + wall climb)
+ *   7: Magician (Фокусник) — flame jump (fire-immune landing), paper doll substitution,
+ *      air bullet, damage-transfer heal, paper-as-weapons (evolves PaperCutter),
+ *      underwater breathing, illusion creation
  *   6: Faceless (Безликий) — shapeshifting, graceful descent (replaces agility)
- *   5: Marionettist (Маріонетник) — spirit thread control, marionette summon
+ *   5: Marionettist (Маріонетник) — marionette control (mastery-based fixation,
+ *      break-on-damage, mob swap), swap menu, thread sight (see invisibles)
+ *
+ * Each ability owns its own event reactions via context subscriptions under a DEDICATED
+ * subscription key (the SpiritualIntuition/TravellersDoor pattern), so one ability's
+ * unsubscribeAll never clobbers another's: fall immunity (ClownAgility), lethal dodge
+ * (DangerIntuition), doll absorb (PaperSubstitution), recent-damage tracking for heal
+ * (DamageTransfer, one broad sub), paper-weapon on-hit (PaperWeaponry, one broad sub).
+ * The only Fool listener is PaperThrowListener — a single-purpose input handler for the
+ * "hold plain paper + right-click to throw" mechanic, which has no ability-cast entry point.
  */
 public class Fool extends Pathway {
 
@@ -50,7 +64,11 @@ public class Fool extends Pathway {
                 new FlameJump(),
                 new PaperSubstitution(),
                 new AirBullet(),
-                new DamageTransfer()
+                new DamageTransfer(),
+                new PaperWeaponry(),   // еволюція PaperCutter (спільний identity) — заміняє Seq8-версію
+                new AquaticBreath(),
+                new IllusionCreation(),
+                new Burning()
         ));
 
         // Sequence 6: Faceless (Безликий)
@@ -64,7 +82,8 @@ public class Fool extends Pathway {
         MarionettistControl marionettistControl = new MarionettistControl();
         sequenceAbilities.put(5, List.of(
                 marionettistControl,
-                new MarionetteSwapMenu(marionettistControl)
+                new MarionetteSwapMenu(marionettistControl),
+                new ThreadSight()
         ));
     }
 }

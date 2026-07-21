@@ -16,6 +16,7 @@ import me.vangoo.infrastructure.ui.AbilityMenu;
 import me.vangoo.infrastructure.ui.BossBarUtil;
 import me.vangoo.presentation.listeners.BeyonderSleepListener;
 import me.vangoo.presentation.listeners.MarionetteExitListener;
+import me.vangoo.presentation.listeners.PaperThrowListener;
 import me.vangoo.presentation.listeners.MainBodyAbilityListener;
 import me.vangoo.presentation.listeners.MarionetteLifecycleListener;
 import me.vangoo.presentation.listeners.MarionetteRestorer;
@@ -130,6 +131,7 @@ public class ServiceContainer {
     private me.vangoo.presentation.listeners.CreatureDamageListener creatureDamageListener;
     private BeyonderSleepListener beyonderSleepListener;
     private MarionetteExitListener marionetteExitListener;
+    private PaperThrowListener paperThrowListener;
     private MainBodyAbilityListener mainBodyAbilityListener;
     private MarionetteLifecycleListener marionetteLifecycleListener;
     private MarionetteRestorer marionetteRestorer;
@@ -422,6 +424,7 @@ public class ServiceContainer {
         this.rampageRemnantDeathListener = new RampageRemnantDeathListener(wardenRemnantCodec, characteristicExtractor);
         this.beyonderSleepListener = new BeyonderSleepListener(beyonderService);
         this.marionetteExitListener = new MarionetteExitListener(abilityContextFactory, pathwayManager);
+        this.paperThrowListener = new PaperThrowListener(abilityContextFactory, beyonderService, customItemService);
         this.mainBodyAbilityListener = new MainBodyAbilityListener(beyonderService, abilityExecutor, pathwayManager);
         this.marionetteLifecycleListener = new MarionetteLifecycleListener(abilityContextFactory, pathwayManager, characteristicExtractor);
         this.marionetteRestorer = new MarionetteRestorer(pathwayManager);
@@ -516,6 +519,7 @@ public class ServiceContainer {
     public me.vangoo.presentation.listeners.CreatureDamageListener getCreatureDamageListener() { return creatureDamageListener; }
     public BeyonderSleepListener getBeyonderSleepListener() { return beyonderSleepListener; }
     public MarionetteExitListener getMarionetteExitListener() { return marionetteExitListener; }
+    public PaperThrowListener getPaperThrowListener() { return paperThrowListener; }
     public MainBodyAbilityListener getMainBodyAbilityListener() { return mainBodyAbilityListener; }
     public MarionetteLifecycleListener getMarionetteLifecycleListener() { return marionetteLifecycleListener; }
     public MarionetteRestorer getMarionetteRestorer() { return marionetteRestorer; }
