@@ -1,5 +1,7 @@
 package me.vangoo.infrastructure.items;
 
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.DyedItemColor;
 import me.vangoo.domain.PathwayBranding;
 import me.vangoo.domain.brewing.Characteristic;
 import me.vangoo.infrastructure.ui.NBTBuilder;
@@ -25,13 +27,16 @@ public final class CharacteristicCodec {
     public static final String NBT_SEQUENCE = "characteristic_sequence";
 
     /**
-     * Префікс ключа custom-model-data для ресурс-паку. Тепер ПЕР-ШЛЯХОВИЙ
-     * ({@code characteristic_<pathway>}) — кожен шлях можна тонувати окремо.
+     * Ключ custom-model-data для ресурс-паку. УНІВЕРСАЛЬНИЙ ({@code characteristic}) —
+     * одна тонована модель на всі шляхи; колір задає компонент {@code DYED_COLOR}
+     * (див. нижче), а не пер-шляховий ключ моделі. Мусить збігатися з єдиним кейсом
+     * {@code "when": "characteristic"} у {@code items/music_disc_chirp.json}, інакше
+     * select падає на ванільну модель без tint і колір не застосовується.
      */
-    public static final String MODEL_KEY_PREFIX = "characteristic_";
+    public static final String MODEL_KEY = "characteristic";
 
     public static String modelKeyFor(String pathwayName) {
-        return (MODEL_KEY_PREFIX + pathwayName).toLowerCase(java.util.Locale.ROOT);
+        return MODEL_KEY;
     }
 
     /** Будує стак Характеристики для (шлях, seq). */
@@ -49,12 +54,11 @@ public final class CharacteristicCodec {
         DiscItems.applyStackSize(meta);
         // Незнищенний: захист від поломки/зношення (диск і так не має міцності — це підстраховка).
         meta.setUnbreakable(true);
-        meta.addEnchant(Enchantment.UNBREAKING, 1, true); // лише для світіння
         meta.addItemFlags(
-                ItemFlag.HIDE_ENCHANTS,
                 ItemFlag.HIDE_ATTRIBUTES,
                 ItemFlag.HIDE_ADDITIONAL_TOOLTIP,
-                ItemFlag.HIDE_UNBREAKABLE
+                ItemFlag.HIDE_UNBREAKABLE,
+                ItemFlag.HIDE_DYE
         );
 
         // Підготовка під текстуру ресурс-паку (рядковий custom-model-data, як у CustomItemFactory).
@@ -73,6 +77,14 @@ public final class CharacteristicCodec {
                 .setInt(NBT_SEQUENCE, sequence)
                 .build();
         DiscItems.stripJukeboxPlayable(built);
+
+        try {
+            built.setData(
+                    DataComponentTypes.DYED_COLOR,
+                    DyedItemColor.dyedItemColor(PathwayBranding.liquidOf(pathwayName))
+            );
+        } catch (Throwable ignored) {}
+
         return built;
     }
 

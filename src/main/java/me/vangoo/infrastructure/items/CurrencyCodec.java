@@ -49,11 +49,9 @@ public final class CurrencyCodec {
         DiscItems.applyStackSize(meta);
         // Незнищенний: диск не має міцності, це підстраховка від будь-якого зношення.
         meta.setUnbreakable(true);
-        meta.addEnchant(Enchantment.UNBREAKING, 1, true); // лише для світіння
         meta.addItemFlags(
                 ItemFlag.HIDE_ENCHANTS,
                 ItemFlag.HIDE_ATTRIBUTES,
-                ItemFlag.HIDE_ADDITIONAL_TOOLTIP,
                 ItemFlag.HIDE_UNBREAKABLE
         );
         // Підготовка під текстуру ресурс-паку (рядковий custom-model-data, як у Характеристик):

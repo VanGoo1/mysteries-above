@@ -6,8 +6,13 @@
 - **Зілля**: `PathwayPotions` бере колір рідини (`PathwayBranding.liquidOf`) і колір
   назви (`PathwayBranding.textOf`) з брендингу за іменем шляху — конструктор
   `*Potions` кольорів НЕ приймає. Стосується всіх 22 шляхів.
-- **Характеристики**: `CharacteristicCodec` фарбує назву `PathwayBranding.textOf(name)` і
-  ставить пер-шляховий ключ моделі `characteristic_<pathway>` (lowercase) під ресурс-пак.
+- **Характеристики**: `CharacteristicCodec` фарбує назву `PathwayBranding.textOf(name)`,
+  ставить УНІВЕРСАЛЬНИЙ ключ моделі `characteristic` (`CharacteristicCodec.MODEL_KEY`, один
+  на всі шляхи) і компонент `DYED_COLOR` = `PathwayBranding.liquidOf(name)`. Ресурс-пак
+  тонує одну модель диска через `minecraft:dye`-tint, читаючи цей компонент — колір задає
+  дай, НЕ пер-шляховий ключ. Ключ моделі мусить збігатися з єдиним кейсом
+  `"when": "characteristic"` в `items/music_disc_chirp.json`, інакше select падає на
+  ванільну модель без tint і колір не застосовується.
 - Невідомий/`null` шлях → нейтральний сірий фолбек.
 
 ## Як додати/змінити колір
@@ -15,7 +20,8 @@
 1. Додай/зміни рядок `put("<Name>", r, g, b, ChatColor.X)` у статичному блоці
    `PathwayBranding`. Ім'я = ключ `PathwayManager` (без пробілів).
 2. Онови `PathwayBrandingTest` (кількість 22, наявність нового імені).
-3. Ресурс-пак: текстура під ключ `characteristic_<name>` (lowercase) — опційно.
+3. Ресурс-пак: колір Характеристики бере дай (`DYED_COLOR`) — окрема текстура на шлях НЕ
+   потрібна, вистачає однієї тонованої моделі під ключем `characteristic`.
 
 ## Заборони
 
