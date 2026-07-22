@@ -84,17 +84,17 @@ recipes:
 
   Fool:
     9:
-      main: [nighthawk_eyeball]
-      auxiliary: [stellar_aqua_crystal, dragon_savageland_pollen, crimson_star]
+      main: [lavos_squid_blood, star_crystal]
+      auxiliary: [poison_hemlock, dragon_blood_grass_powder]
     8:
-      main: [joker_blood_essence]
-      auxiliary: [marbled_ivory_shard, chameleon_slime]
+      main: [hornacis_goat_horn, human_faced_rose_stalk]
+      auxiliary: [black_rimmed_sunflower_powder, golden_cloak_grass_powder]
     7:
-      main: [phantom_ink]
-      auxiliary: [flamingo_crystal, meteorite_fragment]
+      main: [mist_treant_root, dark_panther_spinal_fluid]
+      auxiliary: [fantasy_grass_oil, droplet_gem_powder]
     6:
-      main: [shapeshifter_gland]
-      auxiliary: [depths_shadow_essence, mirror_silver_dust, soul_wax]
+      main: [thousand_faced_hunter_pituitary, human_skin_shadow_characteristic]
+      auxiliary: [thousand_faced_hunter_blood, deep_sea_naga_hair]
     5:
-      main: [puppeteer_heartstring]
-      auxiliary: [spirit_thread_spool, wraithhold_essence]
+      main: [ancient_wraith_dust, six_winged_gargoyle_core]
+      auxiliary: [ancient_wraith_spirituality, deep_sea_naga_hair]

@@ -67,6 +67,9 @@ public class PsychicPiercing extends ActiveAbility {
         private final UUID casterId;
         private int ticksRun = 0;
         private BukkitTask task; // Field to hold the BukkitTask
+        // Страховка: якщо tick() встиг спрацювати до присвоєння task, cancel() інакше
+        // лишив би задачу крутитись назавжди.
+        private boolean finished = false;
 
         public MentalStrikeTask(IAbilityContext context, UUID casterId) {
             this.context = context;
@@ -79,6 +82,7 @@ public class PsychicPiercing extends ActiveAbility {
         }
 
         private void tick() {
+            if (finished) return;
             ticksRun += 2;
 
             // Перевірка таймауту
@@ -99,36 +103,38 @@ public class PsychicPiercing extends ActiveAbility {
             var targetOpt = context.targeting().getTargetedEntity(MAX_RANGE);
 
             if (targetOpt.isPresent()) {
-                LivingEntity target = targetOpt.get();
-                triggerPiercing(target.getUniqueId());
                 cancel(true);
+                triggerPiercing(targetOpt.get());
             }
         }
 
-        private void triggerPiercing(UUID targetId) {
+        /**
+         * Б'є по ЦІЛІ-СУТНОСТІ, а не по її UUID через {@code playerData()}.
+         *
+         * <p>Тут був баг: {@code playerData().getEyeLocation(targetId)} резолвить UUID через
+         * {@code Bukkit.getPlayer()} і на мобі повертає null, тож метод вилітав у
+         * {@code cancel(false)} ДО рядка з уроном — гравець бачив «Концентрація розсіялась...»
+         * замість пробою, і шкода не проходила взагалі.
+         */
+        private void triggerPiercing(LivingEntity target) {
+            UUID targetId = target.getUniqueId();
             Location casterEye = context.playerData().getEyeLocation(casterId);
-            Location targetEye = context.playerData().getEyeLocation(targetId);
-
-            if (casterEye == null || targetEye == null) {
-                cancel(false); // Cancel if locations are null to prevent infinite running.
-                return;
-            }
+            Location targetEye = target.getEyeLocation();
+            Location targetLoc = target.getLocation();
 
             // === ВІЗУАЛЬНІ ЕФЕКТИ ===
 
             // Блискавка з очей (beam effect)
-            context.effects().playBeamEffect(casterEye, targetEye, Particle.FIREWORK, 0.1, 5);
+            if (casterEye != null) {
+                context.effects().playBeamEffect(casterEye, targetEye, Particle.FIREWORK, 0.1, 5);
+            }
 
             // Звуки
             Location casterLoc = context.playerData().getCurrentLocation(casterId);
-            Location targetLoc = context.playerData().getCurrentLocation(targetId);
-
             if (casterLoc != null) {
                 context.effects().playSound(casterLoc, Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.5f, 1.5f);
             }
-            if (targetLoc != null) {
-                context.effects().playSound(targetLoc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.5f, 2.0f);
-            }
+            context.effects().playSound(targetLoc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.5f, 2.0f);
 
             // === ЗНЯТТЯ ЗАХИСНИХ БАФІВ ===
             context.entity().removePotionEffect(targetId, PotionEffectType.RESISTANCE);
@@ -156,12 +162,12 @@ public class PsychicPiercing extends ActiveAbility {
             }
 
             // Візуальний ефект алерту над ціллю
-            if (targetLoc != null) {
-                context.effects().playAlertHalo(targetLoc.clone().add(0, 2.2, 0), Color.RED);
-            }
+            context.effects().playAlertHalo(targetLoc.clone().add(0, 2.2, 0), Color.RED);
         }
 
         private void cancel(boolean success) {
+            if (finished) return;
+            finished = true;
             if (this.task != null && !this.task.isCancelled()) {
                 this.task.cancel(); // Actually cancel the task
             }

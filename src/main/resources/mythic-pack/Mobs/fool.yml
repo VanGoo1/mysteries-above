@@ -1,51 +1,90 @@
-fool_nighthawk_9:
-  Template: MA_Fool_S9
-  Type: PHANTOM
-  Display: '&8Нічний Яструб'
-  Health: 24
-  Damage: 4
-  Options:
-    MovementSpeed: 0.25
-
-fool_joker_8:
+fool_hornacis_goat_8:
   Template: MA_Fool_S8
-  Type: VINDICATOR
-  Display: '&cДжокер'
+  Type: GOAT
+  Display: '&cСірий Гірський Козел Хорнацис'
   Health: 40
   Damage: 5
   Options:
     MovementSpeed: 0.26
     Scale: 1.1
 
-fool_phantom_ink_7:
+fool_mist_treant_7:
   Template: MA_Fool_S7
   Type: GUARDIAN
-  Display: '&9Примарне Чорнило'
+  Display: '&2Туманний Трент'
   Health: 70
   Damage: 7
   Options:
     MovementSpeed: 0.27
     Scale: 1.2
 
-fool_shapeshifter_6:
+fool_thousand_faced_hunter_6:
   Template: MA_Fool_S6
   Type: WITCH
-  Display: '&5Перевертень'
+  Display: '&5Тисячоликий Мисливець'
   Health: 110
   Damage: 9
   Options:
     MovementSpeed: 0.28
     Scale: 1.35
 
-fool_puppeteer_5:
+fool_ancient_wraith_5:
   Template: MA_Fool_S5
   Type: EVOKER
-  Display: '&dЛялькар'
+  Display: '&dСтародавня Примара'
   Health: 190
   Damage: 12
   Options:
     MovementSpeed: 0.3
     Scale: 1.55
+
+fool_deep_sea_naga:
+  Template: MA_Fool_S6
+  Type: DROWNED
+  Display: '&3Глибоководна Нага'
+  Health: 100
+  Damage: 8
+  Options:
+    MovementSpeed: 0.24
+    Scale: 1.3
+
+fool_dark_panther_7:
+  Template: MA_Fool_S7
+  Type: WOLF
+  Display: '&8Темновізерункова Чорна Пантера'
+  Health: 70
+  Damage: 7
+  Options:
+    MovementSpeed: 0.32
+    Scale: 1.2
+
+fool_human_skin_shadow_6:
+  Template: MA_Fool_S6
+  Type: HUSK
+  Display: '&8Тінь у Людській Шкірі'
+  Health: 110
+  Damage: 9
+  Options:
+    MovementSpeed: 0.27
+    Scale: 1.0
+
+# Летючий кастер: VEX-charge лишаємо (MA_Base не чистить AIGoalSelectors), кіт S5 — інлайном,
+# БЕЗ rangedstance/float, інакше веекс дрейфує геть замість того, щоб битися.
+fool_six_winged_gargoyle_5:
+  Template: MA_Base
+  Type: VEX
+  Display: '&7Шестикрила Горгулья'
+  Health: 150
+  Damage: 11
+  Options:
+    MovementSpeed: 0.26
+    Scale: 1.4
+  Skills:
+  - kitcast{gcd=80;skills=MA_Fool_S5_Marionette:240,MA_Fool_S7_AirBullet:160,MA_Fool_S8_PaperCutter:100} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Fool_S5_Puppets} @self ~onDamaged ?healthpercent{h=<35}
+  - skill{s=MA_Fool_S7_FlameJump} @NearestPlayer{r=3} ~onTimer:20 ?playerwithin{d=3}
+  - skill{s=MA_Fool_S9_DangerIntuition} @trigger ~onDamaged
+  - effect:particles{p=witch;amount=4;hS=0.3;vS=0.5;y=1} @self ~onTimer:20
 
 MA_FoolPuppet:
   Type: ZOMBIE

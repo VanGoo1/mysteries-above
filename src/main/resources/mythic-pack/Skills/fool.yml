@@ -36,10 +36,9 @@ MA_Fool_S7_FlameJump:
   - retreat{strength=1.4;vertical=0.5}
   - effect:sound{s=entity.blaze.shoot;v=1;p=1.2} @self
 
-# Наступальна: нитки маріонетки — pull+slowness (Marionette Control, S5; поглинає MA_Fool_Pull)
+# Наступальна: нитки маріонетки — pull+slowness (Marionette Control, S5; поглинає MA_Fool_Pull).
+# Каст на будь-якого гравця; drainsanity ефективний лише проти Beyonder'ів, але спробу не блокує.
 MA_Fool_S5_Marionette:
-  TargetConditions:
-  - isbeyonder true
   Skills:
   - pull{velocity=1.2}
   - potion{type=SLOWNESS;duration=40;level=1;particles=false}

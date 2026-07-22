@@ -123,7 +123,10 @@ public class AreaOfJurisdiction extends ActiveAbility {
             world.spawnParticle(Particle.FLAME, point, 1, 0, 0, 0);
             world.spawnParticle(Particle.CRIT, point, 1, 0, 0, 0);
         }
-        world.spawnParticle(Particle.FLASH, center.clone().add(0, 1, 0), 1, 0, 0, 0);
+        // НЕ Particle.FLASH: на 1.21.11 він вимагає data-об'єкт org.bukkit.Color, і виклик
+        // без нього кидає IllegalArgumentException("missing required data") просто в каст.
+        // EXPLOSION того самого «спалаху» не потребує даних узагалі.
+        world.spawnParticle(Particle.EXPLOSION, center.clone().add(0, 1, 0), 1, 0, 0, 0);
     }
 
     private void announceToOwner(UUID casterId, int radius) {

@@ -636,6 +636,166 @@ custom-items:
     custom-model-data: "pure_spirituality_tear"
 
   # ============================================
+  # 9 FOOL
+  # ============================================
+  # lavos_squid_blood — визначено вище (9 DOOR), переюзається рецептом Провидця
+  star_crystal:
+    display-name: "§bЗоряний Кристал"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "star_crystal"
+
+  poison_hemlock:
+    display-name: "§7Отруйний Болиголов"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "poison_hemlock"
+
+  dragon_blood_grass_powder:
+    display-name: "§7Порошок Трави Драконової Крові"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "dragon_blood_grass_powder"
+
+  # ============================================
+  # 8 FOOL
+  # ============================================
+  hornacis_goat_horn:
+    display-name: "§7Ріг Сірого Гірського Козла Хорнацис"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "hornacis_goat_horn"
+
+  human_faced_rose_stalk:
+    display-name: "§7Повне Стебло Людинолицьої Троянди"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "human_faced_rose_stalk"
+
+  black_rimmed_sunflower_powder:
+    display-name: "§7Порошок Чорнокаймового Соняшника"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "black_rimmed_sunflower_powder"
+
+  golden_cloak_grass_powder:
+    display-name: "§7Порошок Трави Золотий Плащ"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "golden_cloak_grass_powder"
+
+  # ============================================
+  # 7 FOOL
+  # ============================================
+  mist_treant_root:
+    display-name: "§7Справжній Корінь Туманного Трента"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "mist_treant_root"
+
+  dark_panther_spinal_fluid:
+    display-name: "§7Спинномозкова Рідина Темновізерункової Чорної Пантери"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "dark_panther_spinal_fluid"
+
+  fantasy_grass_oil:
+    display-name: "§7Ефірна Олія Трави Фантазій"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "fantasy_grass_oil"
+
+  droplet_gem_powder:
+    display-name: "§7Порошок Самоцвіту-Краплі"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "droplet_gem_powder"
+
+  # ============================================
+  # 6 FOOL
+  # ============================================
+  thousand_faced_hunter_pituitary:
+    display-name: "§7Мутований Гіпофіз Тисячоликого Мисливця"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "thousand_faced_hunter_pituitary"
+
+  human_skin_shadow_characteristic:
+    display-name: "§7Характеристика Тіні в Людській Шкірі"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "human_skin_shadow_characteristic"
+
+  thousand_faced_hunter_blood:
+    display-name: "§7Кров Тисячоликого Мисливця"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "thousand_faced_hunter_blood"
+
+  deep_sea_naga_hair:
+    display-name: "§7Пасмо Волосся Глибоководної Наги"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "deep_sea_naga_hair"
+
+  # ============================================
+  # 5 FOOL
+  # ============================================
+  ancient_wraith_dust:
+    display-name: "§7Порох Стародавніх Примар"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "ancient_wraith_dust"
+
+  six_winged_gargoyle_core:
+    display-name: "§7Ядро-Кристал Шестикрилої Горгульї"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "six_winged_gargoyle_core"
+
+  ancient_wraith_spirituality:
+    display-name: "§7Залишкова Духовність Стародавніх Примар"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "ancient_wraith_spirituality"
+
+  # ============================================
   # SECRET ORDERS (6c)
   # ============================================
   order_cipher_message:

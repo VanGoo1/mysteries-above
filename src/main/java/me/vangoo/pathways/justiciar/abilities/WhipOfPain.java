@@ -5,11 +5,14 @@ import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.valueobjects.Sequence;
 import org.bukkit.ChatColor;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +22,11 @@ public class WhipOfPain extends ActiveAbility {
 
     private static final double RANGE = 10.0;
     private static final double DAMAGE = 7.0;
+
+    /** Глибина провисання батога посередині — саме вона робить лінію «хлистом», а не променем. */
+    private static final double SAG_DEPTH = 0.45;
+    private static final Particle.DustOptions WHIP_DUST =
+            new Particle.DustOptions(Color.fromRGB(255, 240, 120), 0.8f);
 
     @Override
     public String getName() {
@@ -57,24 +65,22 @@ public class WhipOfPain extends ActiveAbility {
         LivingEntity target = targetOpt.get();
         UUID targetId = target.getUniqueId();
 
+        // Позиції ЦІЛІ беремо з самої сутності, а не через playerData(): той резолвить
+        // UUID через Bukkit.getPlayer() і на будь-якому мобі повертає null — через це весь
+        // блок ефектів мовчки пропускався, і батіг бив «невидимо».
         Location casterEye = context.playerData().getEyeLocation(casterId);
-        Location targetEye = context.playerData().getEyeLocation(targetId);
+        Location targetEye = target.getEyeLocation();
 
-        if (casterEye != null && targetEye != null) {
-            context.effects().playBeamEffect(casterEye.add(0, -0.2, 0), targetEye, Particle.CRIT, 0.2, 5);
-            context.effects().spawnParticle(Particle.ELECTRIC_SPARK, targetEye, 15, 0.5, 0.5, 0.5);
+        if (casterEye != null) {
+            drawWhip(casterEye.clone().add(0, -0.2, 0), targetEye);
         }
-
-        Location targetLoc = context.playerData().getCurrentLocation(targetId);
-        if (targetLoc != null) {
-            context.effects().playSound(targetLoc, Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 0.5f, 1.5f);
-        }
+        context.effects().playSound(target.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 0.8f, 1.5f);
 
         context.entity().damage(targetId, DAMAGE);
         context.entity().applyPotionEffect(targetId, PotionEffectType.SLOWNESS, 60, 4);
         context.entity().applyPotionEffect(targetId, PotionEffectType.BLINDNESS, 40, 0);
 
-        revealDeepSecrets(context, casterId, targetId);
+        revealDeepSecrets(context, casterId, target);
 
         if (context.playerData().isOnline(targetId)) {
             context.messaging().sendMessage(targetId, ChatColor.RED + "Ви не можете стримати правду... Біль змушує вас говорити!");
@@ -83,11 +89,44 @@ public class WhipOfPain extends ActiveAbility {
         return AbilityResult.success();
     }
 
-    private void revealDeepSecrets(IAbilityContext context, UUID casterId, UUID targetId) {
+    /**
+     * Малює батіг: провисла дуга електричних іскр від руки кастера до цілі плюс удар на цілі.
+     *
+     * <p>Прямий Bukkit — партикли з {@code DustOptions}, яких {@code IVisualEffectsContext}
+     * не вміє. Раніше тут був {@code playBeamEffect} з {@code Particle.CRIT}, але до нього
+     * не доходило взагалі: {@code targetEye} для моба був null.
+     */
+    private void drawWhip(Location from, Location to) {
+        World world = from.getWorld();
+        if (world == null || !world.equals(to.getWorld())) return;
+
+        Vector span = to.toVector().subtract(from.toVector());
+        double length = span.length();
+        if (length < 0.1) return;
+
+        int points = Math.max(12, (int) (length * 6));
+        for (int i = 0; i <= points; i++) {
+            double t = (double) i / points;
+            double sag = Math.sin(t * Math.PI) * SAG_DEPTH; // найглибше — посередині
+            Location point = from.clone().add(span.clone().multiply(t)).subtract(0, sag, 0);
+
+            world.spawnParticle(Particle.DUST, point, 1, 0, 0, 0, 0, WHIP_DUST);
+            if (i % 3 == 0) {
+                world.spawnParticle(Particle.ELECTRIC_SPARK, point, 1, 0, 0, 0, 0);
+            }
+        }
+
+        world.spawnParticle(Particle.ELECTRIC_SPARK, to, 25, 0.35, 0.35, 0.35, 0.15);
+        world.spawnParticle(Particle.CRIT, to, 12, 0.3, 0.3, 0.3, 0.2);
+    }
+
+    private void revealDeepSecrets(IAbilityContext context, UUID casterId, LivingEntity target) {
+        UUID targetId = target.getUniqueId();
         context.messaging().sendMessage(casterId, ChatColor.DARK_AQUA + "▬▬▬▬ ПРИМУСОВИЙ ДОПИТ ▬▬▬▬");
 
-        String targetName = context.playerData().getName(targetId);
-        double hp = context.playerData().getHealth(targetId);
+        // Ім'я та HP — теж із сутності: playerData() віддав би "" і 0 для моба.
+        String targetName = target.getName();
+        double hp = target.getHealth();
 
         context.messaging().sendMessage(casterId, ChatColor.GRAY + "Ціль: " + ChatColor.RED + targetName +
                 ChatColor.GRAY + " | HP: " + ChatColor.YELLOW + String.format("%.1f", hp));

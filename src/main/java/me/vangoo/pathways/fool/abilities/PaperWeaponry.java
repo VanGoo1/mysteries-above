@@ -44,6 +44,12 @@ public class PaperWeaponry extends ActiveAbility implements PaperThrower {
 
     public static final String WEAPON_TYPE_NBT = "paper_weapon_type";
     public static final String WEAPON_USES_NBT = "paper_weapon_uses";
+    /**
+     * Унікальний штамп кожного екземпляра — тримає зброю НЕСТАКОВНОЮ. Без нього дві
+     * однакові біти злипались у стак, а {@link #degradeWeapon} списував заряд (і врешті
+     * знищував) увесь стак одним ударом.
+     */
+    public static final String WEAPON_UID_NBT = "paper_weapon_uid";
 
     private static final int BASE_COST = 30;
     private static final int BASE_COOLDOWN = 3;
@@ -148,7 +154,10 @@ public class PaperWeaponry extends ActiveAbility implements PaperThrower {
             weapon.setItemMeta(meta);
         }
         NBTBuilder nbt = new NBTBuilder(weapon);
-        weapon = nbt.setString(WEAPON_TYPE_NBT, type.name()).setInt(WEAPON_USES_NBT, type.uses()).build();
+        weapon = nbt.setString(WEAPON_TYPE_NBT, type.name())
+                .setInt(WEAPON_USES_NBT, type.uses())
+                .setString(WEAPON_UID_NBT, UUID.randomUUID().toString())
+                .build();
 
         player.getInventory().addItem(weapon);
         ensureHitTracking(context);

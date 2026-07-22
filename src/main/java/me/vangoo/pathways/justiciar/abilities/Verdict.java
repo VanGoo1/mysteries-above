@@ -463,7 +463,9 @@ public class Verdict extends ActiveAbility {
     }
 
     private void showEvaporationEffects(IAbilityContext context, Location loc) {
-        context.effects().playWaveEffect(loc, 5, Particle.FLASH, 10);
+        // END_ROD, а не FLASH: FLASH вимагає data-об'єкт Color (крашив Сферу Юрисдикції),
+        // а playWaveEffect не має перевантаження з data — передати його тут просто нічим.
+        context.effects().playWaveEffect(loc, 5, Particle.END_ROD, 10);
         context.effects().spawnParticle(Particle.CLOUD, loc.clone().add(0, 1, 0), 100, 1, 1, 1);
         context.effects().playSound(loc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0f, 1.0f);
     }
