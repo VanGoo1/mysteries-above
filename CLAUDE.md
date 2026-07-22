@@ -35,8 +35,29 @@ Layered / hexagonal design under `me.vangoo`. Dependencies point inward toward `
 - **`infrastructure`** — Bukkit/external integrations: JSON repositories (`JSONBeyonderRepository` wrapped by `BatchedBeyonderRepository`), schedulers, item/recipe/loot factories, UI helpers, `mythic` (MythicMobs bridge: `MythicCreatureGateway`, `MythicBridge`, custom components, `MythicPackInstaller`), and `di.ServiceContainer`.
 - **`presentation`** — `commands`, `listeners` (Bukkit event handlers), and GUI/menu glue.
 
+## Change discipline
+Before changing code:
+- Read target files first.
+- Search usages/callers before changing APIs.
+- Prefer minimal patches.
+- Prefer extending existing patterns over introducing new ones.
+- Avoid broad refactors during feature work.
+- Keep changes limited to the requested feature.
+- Explain architectural changes before implementing them.
+- After two failed approaches, stop and reassess.
+
 ### Wiring (`ServiceContainer`)
 There is **no DI framework**. `MysteriesAbovePlugin.onEnable()` constructs a single `ServiceContainer` (`infrastructure.di`) that manually instantiates every service in dependency order and exposes getters. Listeners, commands, and schedulers are wired from these getters in the plugin's `registerEvents()` / `registerCommands()` / `startSchedulers()`. When you add a service, register it in `ServiceContainer` and thread it through there.
+
+### ServiceContainer maintenance rules
+Avoid unnecessary changes to `ServiceContainer`.
+
+When adding a service:
+- check if an existing service can be extended first
+- add only the required wiring
+- do not reorganize unrelated dependencies
+- do not reorder existing initialization unless required
+- avoid touching unrelated getters or services
 
 ### Ability execution flow
 `Ability.execute(IAbilityContext)` is `final` and runs the pipeline: cooldown check → `canExecute` → `preExecution` → optional sequence-based success roll (`getSequenceCheckTarget`) → `performExecution` (the method subclasses implement) → `postExecution`. Note: for `ACTIVE` abilities the cooldown is **not** set inside `execute()` — it is applied later by `AbilityResourceConsumer` after resource consumption, and `AbilityResult` may be **deferred** (don't set cooldown on deferred results). Use `scaleValue(base, sequence, strategy)` (via `SequenceScaler`) to make effects stronger as the sequence level drops.
@@ -116,3 +137,4 @@ Scoped working rules live in `.claude/rules/*.md` (loaded conditionally via `pat
 - **When you add a new mechanic or cross-cutting pattern that affects — or will plausibly grow to affect — the wider architecture** (a new layer or seam, a lifecycle pattern like sessions, a persistence store, a registration/wiring flow, a config subsystem), add a dedicated rule file for it in `.claude/rules/` describing which classes/services/abstractions to use, where, and how — and update everything it touches: the relevant CLAUDE.md sections, existing rules that now overlap or contradict, and `ArchitectureTest` if the invariant is machine-enforceable.
 - Do this **in the same commit/branch** as the code change. A mechanic that exists only in code and git history is undocumented; a rule that contradicts the code is worse than no rule.
 - Keep rules non-duplicative: architecture overview belongs here in CLAUDE.md; rules hold the mechanism-specific "how to use it correctly" detail.
+
