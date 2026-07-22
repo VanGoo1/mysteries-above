@@ -300,62 +300,102 @@ creatures:
       structure: { keys: [mysteries, nova_structures], chance: 0.12 }
 
   # ============================ FOOL ============================
-  fool_nighthawk_9:
-    base_entity: PHANTOM
+  # Seq 9 (Провидець): кров Кальмара Лавос дає спільний Door-моб door_lavos_squid_7 (GUARDIAN),
+  # другий головний (star_crystal) — форедж. Окремого Fool-кальмара немає.
+  fool_hornacis_goat_8:
+    base_entity: GOAT
     tier: common
     loot:
       min_items: 0
       max_items: 1
       items:
-        - { id: nighthawk_eyeball, weight: 50, min: 1, max: 1 }
+        - { id: hornacis_goat_horn, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [PLAINS, FOREST], replace: [PHANTOM], chance: 0.005 }
+      natural: { biomes: [SNOWY_SLOPES, JAGGED_PEAKS, FROZEN_PEAKS, GROVE], replace: [GOAT], chance: 0.006 }
       structure: { keys: [], chance: 0.0 }
 
-  fool_joker_8:
-    base_entity: VINDICATOR
-    tier: common
-    loot:
-      min_items: 0
-      max_items: 1
-      items:
-        - { id: joker_blood_essence, weight: 50, min: 1, max: 1 }
-    spawn:
-      natural: { biomes: [DARK_FOREST], replace: [VINDICATOR, PILLAGER], chance: 0.00375 }
-      structure: { keys: [], chance: 0.0 }
-
-  fool_phantom_ink_7:
+  fool_mist_treant_7:
     base_entity: GUARDIAN
     tier: common
     loot:
       min_items: 0
       max_items: 1
       items:
-        - { id: phantom_ink, weight: 50, min: 1, max: 1 }
+        - { id: mist_treant_root, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [OCEAN, DEEP_OCEAN], replace: [GUARDIAN, DROWNED], chance: 0.0025 }
       structure: { keys: [], chance: 0.0 }
 
-  fool_shapeshifter_6:
+  fool_thousand_faced_hunter_6:
     base_entity: WITCH
+    tier: common
+    loot:
+      min_items: 1
+      max_items: 2
+      items:
+        - { id: thousand_faced_hunter_pituitary, weight: 50, min: 1, max: 1 }
+        - { id: thousand_faced_hunter_blood, weight: 40, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [SWAMP], replace: [WITCH, ZOMBIE], chance: 0.0015 }
+      structure: { keys: [], chance: 0.0 }
+
+  fool_ancient_wraith_5:
+    base_entity: EVOKER
+    tier: apex
+    loot:
+      min_items: 1
+      max_items: 2
+      items:
+        - { id: ancient_wraith_dust, weight: 50, min: 1, max: 1 }
+        - { id: ancient_wraith_spirituality, weight: 35, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [DARK_FOREST], replace: [], chance: 0.00075 }
+      structure: { keys: [mysteries, nova_structures], chance: 0.12 }
+
+  fool_deep_sea_naga:
+    base_entity: DROWNED
     tier: common
     loot:
       min_items: 0
       max_items: 1
       items:
-        - { id: shapeshifter_gland, weight: 50, min: 1, max: 1 }
+        - { id: deep_sea_naga_hair, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [SWAMP], replace: [WITCH, ZOMBIE], chance: 0.0015 }
+      natural: { biomes: [OCEAN, DEEP_OCEAN, WARM_OCEAN, LUKEWARM_OCEAN], replace: [DROWNED, GUARDIAN], chance: 0.002 }
       structure: { keys: [], chance: 0.0 }
 
-  fool_puppeteer_5:
-    base_entity: EVOKER
+  fool_dark_panther_7:
+    base_entity: WOLF
+    tier: common
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: dark_panther_spinal_fluid, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [JUNGLE, SPARSE_JUNGLE, FOREST], replace: [WOLF], chance: 0.0025 }
+      structure: { keys: [], chance: 0.0 }
+
+  fool_human_skin_shadow_6:
+    base_entity: HUSK
+    tier: common
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: human_skin_shadow_characteristic, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [DARK_FOREST, SWAMP], replace: [ZOMBIE, HUSK], chance: 0.0015 }
+      structure: { keys: [], chance: 0.0 }
+
+  fool_six_winged_gargoyle_5:
+    base_entity: VEX
     tier: apex
     loot:
       min_items: 0
       max_items: 1
       items:
-        - { id: puppeteer_heartstring, weight: 50, min: 1, max: 1 }
+        - { id: six_winged_gargoyle_core, weight: 50, min: 1, max: 1 }
     spawn:
-      natural: { biomes: [DARK_FOREST], replace: [], chance: 0.00075 }
-      structure: { keys: [mysteries, nova_structures], chance: 0.12 }
+      natural: { biomes: [WINDSWEPT_HILLS, JAGGED_PEAKS, STONY_PEAKS], replace: [], chance: 0.00075 }
+      structure: { keys: [mysteries, nova_structures], chance: 0.1 }
