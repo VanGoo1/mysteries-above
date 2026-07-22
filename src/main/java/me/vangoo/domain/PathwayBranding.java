@@ -25,30 +25,29 @@ public final class PathwayBranding {
     }
 
     static {
-        // Наявні 6 (кольори збережено без змін із PotionManager)
-        put("Error", 26, 0, 181, ChatColor.DARK_BLUE);
-        put("Visionary", 128, 128, 128, ChatColor.GRAY);
-        put("Door", 0, 0, 115, ChatColor.BLUE);
-        put("Justiciar", 255, 255, 0, ChatColor.YELLOW);
-        put("WhiteTower", 255, 0, 50, ChatColor.RED);
-        put("Fool", 128, 0, 128, ChatColor.LIGHT_PURPLE);
-        // 16 стубів
-        put("Sun", 255, 190, 0, ChatColor.GOLD);
-        put("Tyrant", 0, 140, 170, ChatColor.DARK_AQUA);
-        put("HangedMan", 205, 130, 160, ChatColor.LIGHT_PURPLE);
-        put("Darkness", 35, 25, 70, ChatColor.DARK_GRAY);
-        put("Death", 150, 165, 140, ChatColor.GRAY);
-        put("TwilightGiant", 150, 110, 70, ChatColor.GOLD);
-        put("RedPriest", 170, 0, 0, ChatColor.DARK_RED);
-        put("Demoness", 200, 0, 120, ChatColor.LIGHT_PURPLE);
-        put("Hermit", 0, 175, 200, ChatColor.AQUA);
-        put("Paragon", 175, 150, 90, ChatColor.YELLOW);
-        put("Mother", 60, 160, 60, ChatColor.GREEN);
-        put("Moon", 170, 190, 225, ChatColor.AQUA);
-        put("Abyss", 80, 0, 120, ChatColor.DARK_PURPLE);
-        put("Chained", 95, 95, 105, ChatColor.GRAY);
-        put("BlackEmperor", 45, 0, 55, ChatColor.DARK_PURPLE);
-        put("WheelOfFortune", 120, 80, 165, ChatColor.LIGHT_PURPLE);
+        put("Error", 102, 153, 161, ChatColor.BLUE);
+        put("Visionary", 143, 181, 241, ChatColor.GRAY);
+        put("Door", 106, 230, 247, ChatColor.AQUA);
+        put("Justiciar", 235, 195, 142, ChatColor.GOLD);
+        put("WhiteTower",118, 134, 225, ChatColor.AQUA);
+        put("Fool", 117, 75, 38, ChatColor.LIGHT_PURPLE);
+
+        put("Sun", 251, 232, 107, ChatColor.YELLOW);
+        put("Tyrant", 70, 115, 199, ChatColor.DARK_AQUA);
+        put("HangedMan", 204, 54, 53, ChatColor.DARK_RED);
+        put("Darkness", 127, 149, 185, ChatColor.DARK_GRAY);
+        put("Death", 114, 143, 108, ChatColor.DARK_GREEN);
+        put("TwilightGiant",232, 120, 99, ChatColor.GOLD);
+        put("RedPriest", 255, 71, 58, ChatColor.RED);
+        put("Demoness", 210, 64, 159, ChatColor.LIGHT_PURPLE);
+        put("Hermit",124, 98, 179, ChatColor.DARK_PURPLE);
+        put("Paragon", 243, 145, 75, ChatColor.GOLD);
+        put("Mother", 60, 183, 153, ChatColor.GREEN);
+        put("Moon", 255, 96, 104, ChatColor.RED);
+        put("Abyss", 132, 31, 17, ChatColor.BLACK);
+        put("Chained", 67, 63, 107, ChatColor.DARK_GRAY);
+        put("BlackEmperor", 29, 35, 65, ChatColor.DARK_BLUE);
+        put("WheelOfFortune", 161, 206, 215, ChatColor.GRAY);
     }
 
     public static final Set<String> NAMES = Set.copyOf(TABLE.keySet());

@@ -1,0 +1,19 @@
+{
+    "model": {
+        "type": "select",
+        "property": "custom_model_data",
+        "fallback": {
+            "type": "model",
+            "model": "item/music_disc_stal"
+        },
+        "cases": [
+            {
+                "when": "coppet",
+                "model": {
+                    "type": "model",
+                    "model": "item/coppet"
+                }
+            }
+        ]
+    }
+}
