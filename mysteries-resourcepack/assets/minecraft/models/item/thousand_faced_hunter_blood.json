@@ -1,0 +1,6 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "item/thousand_faced_hunter_blood"
+    }
+}

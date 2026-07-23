@@ -3,7 +3,6 @@ package me.vangoo.infrastructure.items;
 import me.vangoo.infrastructure.ui.NBTBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -50,7 +49,6 @@ public final class CurrencyCodec {
         // Незнищенний: диск не має міцності, це підстраховка від будь-якого зношення.
         meta.setUnbreakable(true);
         meta.addItemFlags(
-                ItemFlag.HIDE_ENCHANTS,
                 ItemFlag.HIDE_ATTRIBUTES,
                 ItemFlag.HIDE_UNBREAKABLE
         );

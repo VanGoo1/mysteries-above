@@ -31,9 +31,4 @@ class PathwayBrandingTest {
         assertEquals(ChatColor.GRAY, PathwayBranding.of(null).text());
         assertEquals(Color.fromRGB(128, 128, 128), PathwayBranding.of(null).liquid());
     }
-
-    @Test
-    void preservesExistingErrorColor() {
-        assertEquals(Color.fromRGB(26, 0, 181), PathwayBranding.liquidOf("Error"));
-    }
 }

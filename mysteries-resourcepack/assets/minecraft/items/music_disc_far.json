@@ -489,6 +489,132 @@
           "type": "model",
           "model": "item/yellow_amber_powder"
         }
+      },
+      {
+        "when": "ancient_wraith_dust",
+        "model": {
+          "type": "model",
+          "model": "item/ancient_wraith_dust"
+        }
+      },
+      {
+        "when": "ancient_wraith_spirituality",
+        "model": {
+          "type": "model",
+          "model": "item/ancient_wraith_spirituality"
+        }
+      },
+      {
+        "when": "black_rimmed_sunflower_powder",
+        "model": {
+          "type": "model",
+          "model": "item/black_rimmed_sunflower_powder"
+        }
+      },
+      {
+        "when": "dark_panther_spinal_fluid",
+        "model": {
+          "type": "model",
+          "model": "item/dark_panther_spinal_fluid"
+        }
+      },
+      {
+        "when": "deep_sea_naga_hair",
+        "model": {
+          "type": "model",
+          "model": "item/deep_sea_naga_hair"
+        }
+      },
+      {
+        "when": "dragon_blood_grass_powder",
+        "model": {
+          "type": "model",
+          "model": "item/dragon_blood_grass_powder"
+        }
+      },
+      {
+        "when": "droplet_gem_powder",
+        "model": {
+          "type": "model",
+          "model": "item/droplet_gem_powder"
+        }
+      },
+      {
+        "when": "fantasy_grass_oil",
+        "model": {
+          "type": "model",
+          "model": "item/fantasy_grass_oil"
+        }
+      },
+      {
+        "when": "golden_cloak_grass_powder",
+        "model": {
+          "type": "model",
+          "model": "item/golden_cloak_grass_powder"
+        }
+      },
+      {
+        "when": "hornacis_goat_horn",
+        "model": {
+          "type": "model",
+          "model": "item/hornacis_goat_horn"
+        }
+      },
+      {
+        "when": "human_faced_rose_stalk",
+        "model": {
+          "type": "model",
+          "model": "item/human_faced_rose_stalk"
+        }
+      },
+      {
+        "when": "human_skin_shadow_characteristic",
+        "model": {
+          "type": "model",
+          "model": "item/human_skin_shadow_characteristic"
+        }
+      },
+      {
+        "when": "mist_treant_root",
+        "model": {
+          "type": "model",
+          "model": "item/mist_treant_root"
+        }
+      },
+      {
+        "when": "poison_hemlock",
+        "model": {
+          "type": "model",
+          "model": "item/poison_hemlock"
+        }
+      },
+      {
+        "when": "six_winged_gargoyle_core",
+        "model": {
+          "type": "model",
+          "model": "item/six_winged_gargoyle_core"
+        }
+      },
+      {
+        "when": "star_crystal",
+        "model": {
+          "type": "model",
+          "model": "item/star_crystal"
+        }
+      },
+      {
+        "when": "thousand_faced_hunter_blood",
+        "model": {
+          "type": "model",
+          "model": "item/thousand_faced_hunter_blood"
+        }
+      },
+      {
+        "when": "thousand_faced_hunter_pituitary",
+        "model": {
+          "type": "model",
+          "model": "item/thousand_faced_hunter_pituitary"
+        }
       }
     ]
   }
