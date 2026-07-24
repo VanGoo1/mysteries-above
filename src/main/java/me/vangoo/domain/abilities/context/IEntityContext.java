@@ -20,6 +20,8 @@ public interface IEntityContext {
 
     void removePotionEffect(UUID entityId, PotionEffectType effect);
 
+    void reducePotionEffectDuration(UUID entityId, PotionEffectType effect, int ticksToReduce);
+
     void removeAllPotionEffects(UUID entityId);
 
     void consumeItem(UUID humanEntityId, ItemStack item);

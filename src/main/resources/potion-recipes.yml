@@ -98,3 +98,20 @@ recipes:
     5:
       main: [ancient_wraith_dust, six_winged_gargoyle_core]
       auxiliary: [ancient_wraith_spirituality, deep_sea_naga_hair]
+
+  Sun:
+    9:
+      main: [crystal_sunflower, siren_rock]
+      auxiliary: [elf_dark_leaf, midsummer_grass]
+    8:
+      main: [dazzling_soul_powder, heart_of_magma_titan]
+      auxiliary: [aconite_juice]
+    7:
+      main: [dawn_rooster_comb, radiance_pact_tree_fruit]
+      auxiliary: [solidified_magma, fingered_citron_powder]
+    6:
+      main: [tree_of_elders_crystalized_roots, spirit_pact_bird_feather]
+      auxiliary: [radiance_pact_tree_juice, aqua_fern_juice]
+    5:
+      main: [king_dawn_rooster_comb, pure_white_brilliant_rock]
+      auxiliary: [rosemary, king_dawn_rooster_blood]

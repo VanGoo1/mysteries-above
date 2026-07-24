@@ -31,6 +31,8 @@ public class BukkitAbilityContext implements IAbilityContext {
     private final DomainEventPublisher eventPublisher;
     private final RecipeUnlockService recipeUnlockService;
     private final PotionManager potionManager;
+    private final ContractService contractService;
+    private final AmplificationManager amplificationManager;
 
     private IVisualEffectsContext visualEffectsContext;
     private ISchedulingContext schedulingContext;
@@ -44,6 +46,8 @@ public class BukkitAbilityContext implements IAbilityContext {
     private IEntityContext entityContext;
     private IGlowingContext glowingContext;
     private IMessagingContext messagingContext;
+    private IContractContext contractContext;
+    private IAmplificationContext amplificationContext;
 
     public BukkitAbilityContext(
             Player caster,
@@ -52,7 +56,8 @@ public class BukkitAbilityContext implements IAbilityContext {
             BeyonderService beyonderService,
             AbilityLockManager lockManager, GlowingEntities glowingEntities, EffectManager effectManager,
             RampageManager rampageManager, TemporaryEventManager temporaryEventManager, PassiveAbilityManager passiveAbilityManager, DomainEventPublisher eventPublisher,
-            RecipeUnlockService recipeUnlockService, PotionManager potionManager) {
+            RecipeUnlockService recipeUnlockService, PotionManager potionManager, ContractService contractService,
+            AmplificationManager amplificationManager) {
         this.caster = caster;
         this.plugin = plugin;
         this.cooldownManager = cooldownManager;
@@ -67,6 +72,8 @@ public class BukkitAbilityContext implements IAbilityContext {
         this.eventPublisher = eventPublisher;
         this.recipeUnlockService = recipeUnlockService;
         this.potionManager = potionManager;
+        this.contractService = contractService;
+        this.amplificationManager = amplificationManager;
     }
 
     // ==========================================
@@ -192,5 +199,21 @@ public class BukkitAbilityContext implements IAbilityContext {
             messagingContext = new MessagingContext(plugin, scheduling());
         }
         return messagingContext;
+    }
+
+    @Override
+    public IContractContext contracts() {
+        if (contractContext == null) {
+            contractContext = new ContractContext(contractService);
+        }
+        return contractContext;
+    }
+
+    @Override
+    public IAmplificationContext amplification() {
+        if (amplificationContext == null) {
+            amplificationContext = new AmplificationContext(amplificationManager);
+        }
+        return amplificationContext;
     }
 }

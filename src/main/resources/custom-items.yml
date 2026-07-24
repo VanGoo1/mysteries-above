@@ -796,6 +796,173 @@ custom-items:
     custom-model-data: "ancient_wraith_spirituality"
 
   # ============================================
+  # 9 SUN
+  # ============================================
+  crystal_sunflower:
+    display-name: "§eКришталевий Соняшник"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "crystal_sunflower"
+
+  siren_rock:
+    display-name: "§bКамінь Сирени"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "siren_rock"
+
+  elf_dark_leaf:
+    display-name: "§8Темний Листок Ельфа"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "elf_dark_leaf"
+
+  midsummer_grass:
+    display-name: "§aТрава Літнього Сонцестояння"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "midsummer_grass"
+
+  # ============================================
+  # 8 SUN
+  # ============================================
+  dazzling_soul_powder:
+    display-name: "§eПорошок Сяйливої Душі"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "dazzling_soul_powder"
+
+  heart_of_magma_titan:
+    display-name: "§cСерце Магмового Титана"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "heart_of_magma_titan"
+
+  aconite_juice:
+    display-name: "§7Сік Аконіту"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "aconite_juice"
+
+  # ============================================
+  # 7 SUN
+  # ============================================
+  dawn_rooster_comb:
+    display-name: "§cЧервоний Гребінь Світанкового Півня"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "dawn_rooster_comb"
+
+  radiance_pact_tree_fruit:
+    display-name: "§6Плід Дерева Духовного Договору Сяйва"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "radiance_pact_tree_fruit"
+
+  solidified_magma:
+    display-name: "§4Затверділа Магма"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "solidified_magma"
+
+  fingered_citron_powder:
+    display-name: "§eПорошок Пальчастого Цитрона"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "fingered_citron_powder"
+
+  # ============================================
+  # 6 SUN
+  # ============================================
+  tree_of_elders_crystalized_roots:
+    display-name: "§bКристалізоване Коріння Дерева Старійшин"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "tree_of_elders_crystalized_roots"
+
+  spirit_pact_bird_feather:
+    display-name: "§fПеро Птаха Духовного Договору"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "spirit_pact_bird_feather"
+
+  radiance_pact_tree_juice:
+    display-name: "§6Сік Дерева Духовного Договору Сяйва"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "radiance_pact_tree_juice"
+
+  aqua_fern_juice:
+    display-name: "§3Сік Водяної Папороті"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "aqua_fern_juice"
+
+  # ============================================
+  # 5 SUN
+  # ============================================
+  king_dawn_rooster_comb:
+    display-name: "§cГребінь Короля Світанкових Півнів"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "king_dawn_rooster_comb"
+
+  pure_white_brilliant_rock:
+    display-name: "§fЧисто-Білий Осяйний Камінь"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "pure_white_brilliant_rock"
+
+  rosemary:
+    display-name: "§2Розмарин"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "rosemary"
+
+  king_dawn_rooster_blood:
+    display-name: "§4Кров Короля Світанкових Півнів"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "king_dawn_rooster_blood"
+
+  # ============================================
   # SECRET ORDERS (6c)
   # ============================================
   order_cipher_message:
@@ -808,7 +975,7 @@ custom-items:
       - ""
       - "§eПКМ — розшифрувати"
       - ""
-    glow: true
+    glow: false
     custom-model-data: "order_cipher_message"
 
 
