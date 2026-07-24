@@ -8,6 +8,7 @@ import org.bukkit.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import java.util.UUID;
@@ -281,6 +282,228 @@ public class VisualEffectsContext implements IVisualEffectsContext {
         }.runTaskTimer(plugin, 0L, 1L);
     }
     @Override
+    public void playTravelingBeam(Location start, Location end, Color color, Runnable onArrival) {
+        World world = start.getWorld();
+        if (world == null || world != end.getWorld()) {
+            if (onArrival != null) onArrival.run();
+            return;
+        }
+
+        Vector dir = end.toVector().subtract(start.toVector());
+        double distance = dir.length();
+        if (distance < 0.01) {
+            if (onArrival != null) onArrival.run();
+            return;
+        }
+        dir.normalize();
+
+        final Particle.DustOptions core = new Particle.DustOptions(color, 0.6f); // тонке ядро
+        final Particle.DustOptions glow = new Particle.DustOptions(Color.fromRGB(255, 250, 235), 0.4f); // м'який білий
+        final double speed = 1.2; // блоків/тік — плавний, не миттєвий
+
+        new BukkitRunnable() {
+            double traveled = 0;
+
+            @Override
+            public void run() {
+                double segEnd = Math.min(traveled + speed, distance);
+                for (double d = traveled; d <= segEnd; d += 0.25) {
+                    Location p = start.clone().add(dir.clone().multiply(d));
+                    world.spawnParticle(Particle.DUST, p, 1, 0.02, 0.02, 0.02, 0, core);
+                    world.spawnParticle(Particle.DUST, p, 1, 0.05, 0.05, 0.05, 0, glow);
+                }
+                traveled = segEnd;
+                if (traveled >= distance) {
+                    this.cancel();
+                    if (onArrival != null) onArrival.run();
+                }
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+    }
+
+    @Override
+    public void playGlowingDust(Location center, Color color) {
+        if (center.getWorld() == null) return;
+        final World world = center.getWorld();
+
+        // М'який, але помітний спалах святого світла (нульова швидкість — не розлітається)
+        world.spawnParticle(Particle.END_ROD, center, 25, 0.5, 0.5, 0.5, 0.0);
+        world.spawnParticle(Particle.DUST, center, 20, 0.5, 0.5, 0.5, 0.0,
+                new Particle.DustOptions(Color.fromRGB(255, 250, 235), 1.2f));
+
+        // Одне широке золоте кільце по землі — чіткий орієнтир влучання
+        for (int i = 0; i < 24; i++) {
+            double a = 2 * Math.PI * i / 24;
+            world.spawnParticle(Particle.DUST, center.clone().add(Math.cos(a) * 1.4, 0.1, Math.sin(a) * 1.4),
+                    1, 0, 0, 0, 0, new Particle.DustOptions(color, 1.4f));
+        }
+
+        // Золотий пил, що повільно дрейфує вгору й згасає
+        new BukkitRunnable() {
+            int tick = 0;
+            final int duration = 45; // ~2.25 с
+
+            @Override
+            public void run() {
+                if (tick >= duration || center.getWorld() == null) {
+                    this.cancel();
+                    return;
+                }
+                int count = Math.max(2, 10 - tick / 5);            // згасання: усе менше пилинок
+                float size = 1.6f - (tick / (float) duration) * 0.9f; // усе дрібніші
+                Particle.DustOptions dust = new Particle.DustOptions(color, size);
+
+                for (int i = 0; i < count; i++) {
+                    double r = 1.3 * Math.random();                // ширша хмара довкола
+                    double a = Math.random() * 2 * Math.PI;
+                    double x = Math.cos(a) * r;
+                    double z = Math.sin(a) * r;
+                    double y = 0.3 + tick * 0.03;                  // повільний дрейф угору
+                    world.spawnParticle(Particle.DUST, center.clone().add(x, y, z),
+                            1, 0.05, 0.05, 0.05, 0, dust);
+                }
+                tick++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+    }
+
+    @Override
+    public void playRisingSpiral(Location base, double height, double radius,
+                                 Color color, int durationTicks) {
+        final World world = base.getWorld();
+        if (world == null) return;
+        final Location center = base.clone();
+
+        new BukkitRunnable() {
+            int tick = 0;
+            double phase = 0;
+
+            @Override
+            public void run() {
+                if (tick++ >= durationTicks || center.getWorld() == null) {
+                    this.cancel();
+                    return;
+                }
+                phase = (phase + 0.06) % 1.0; // «повзання» вгору
+                drawSpiralFrame(world, center, height, radius, color, phase);
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+    }
+
+    private void drawSpiralFrame(World world, Location base, double height, double radius,
+                                 Color color, double phaseFraction) {
+        final int points = 14;    // пилинок у спіралі на кадр
+        final double turns = 2.0; // витків по висоті стовпа
+        final Particle.DustOptions dust = new Particle.DustOptions(color, 1.0f);
+
+        for (int i = 0; i < points; i++) {
+            // фаза зсуває висоту кожної пилинки — так вони «повзуть» угору й обертаються в низ
+            double frac = ((double) i / points + phaseFraction) % 1.0;
+            double y = frac * height;
+            double angle = frac * turns * 2 * Math.PI;
+            double x = Math.cos(angle) * radius;
+            double z = Math.sin(angle) * radius;
+            world.spawnParticle(Particle.DUST, base.clone().add(x, y, z), 1, 0, 0, 0, 0, dust);
+        }
+
+        // Другий шар: золота іскра END_ROD, що злітає вгору вздовж спіралі
+        double sparkAngle = phaseFraction * turns * 2 * Math.PI;
+        double sx = Math.cos(sparkAngle) * radius;
+        double sz = Math.sin(sparkAngle) * radius;
+        world.spawnParticle(Particle.END_ROD,
+                base.clone().add(sx, height * 0.5, sz), 1, 0.02, 0.05, 0.02, 0.01);
+    }
+
+    @Override
+    public void playFadingAura(Location base, Color color, int durationTicks) {
+        final World world = base.getWorld();
+        if (world == null) return;
+        final Location center = base.clone();
+
+        new BukkitRunnable() {
+            int tick = 0;
+
+            @Override
+            public void run() {
+                if (tick >= durationTicks || center.getWorld() == null) {
+                    this.cancel();
+                    return;
+                }
+                float progress = tick / (float) durationTicks;
+                float size = Math.max(0.5f, 1.4f - progress);   // згасає: пилинки дрібнішають
+                int count = Math.max(3, 12 - tick);             // ... і рідшають
+                final double radius = 0.9;
+                final Particle.DustOptions dust = new Particle.DustOptions(color, size);
+
+                for (int i = 0; i < count; i++) {
+                    double theta = Math.random() * 2 * Math.PI;
+                    double y = Math.random() * 2.0;             // по всій висоті тіла
+                    double x = Math.cos(theta) * radius;
+                    double z = Math.sin(theta) * radius;
+                    world.spawnParticle(Particle.DUST, center.clone().add(x, y, z), 1, 0, 0, 0, 0, dust);
+                }
+                // Другий шар: рідкі золоті іскри END_ROD
+                if (tick % 2 == 0) {
+                    world.spawnParticle(Particle.END_ROD, center.clone().add(0, 1.0, 0),
+                            2, radius * 0.6, 0.6, radius * 0.6, 0.0);
+                }
+                tick++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+    }
+
+    @Override
+    public void playPillarEffect(Location base, double height, double radius,
+                                 Color color, int durationTicks) {
+        final World world = base.getWorld();
+        if (world == null) return;
+        final Location origin = base.clone();
+        final Particle.DustOptions core = new Particle.DustOptions(color, 1.6f);
+        final int levels = 14;
+        final int sparks = 6;
+
+        new BukkitRunnable() {
+            int tick = 0;
+            double phase = 0;
+
+            @Override
+            public void run() {
+                if (tick >= durationTicks || origin.getWorld() == null) {
+                    this.cancel();
+                    return;
+                }
+                phase += 0.2;
+
+                // Об'ємне ядро: два кільця точок на кожному рівні висоти, що обертаються
+                for (int lvl = 0; lvl < levels; lvl++) {
+                    double y = height * lvl / (double) (levels - 1);
+                    for (int ring = 0; ring < 2; ring++) {
+                        double ringRadius = radius * (ring == 0 ? 0.3 : 0.7);
+                        int points = ring == 0 ? 5 : 7;
+                        for (int i = 0; i < points; i++) {
+                            double angle = phase * (ring == 0 ? 1 : -1) + (2 * Math.PI * i / points);
+                            double x = Math.cos(angle) * ringRadius;
+                            double z = Math.sin(angle) * ringRadius;
+                            world.spawnParticle(Particle.DUST, origin.clone().add(x, y, z), 1, 0, 0, 0, 0, core);
+                        }
+                    }
+                }
+
+                // Висхідні іскри вздовж зовнішнього краю для руху й об'єму
+                for (int i = 0; i < sparks; i++) {
+                    double angle = -phase * 1.5 + (2 * Math.PI * i / sparks);
+                    double y = ((tick * 0.6) + i * (height / (double) sparks)) % height;
+                    double x = Math.cos(angle) * radius;
+                    double z = Math.sin(angle) * radius;
+                    world.spawnParticle(Particle.END_ROD, origin.clone().add(x, y, z), 1, 0.02, 0.02, 0.02, 0.01);
+                }
+
+                tick++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+    }
+
+    @Override
     public void playAlertHalo(Location location, Color color) {
         if (location == null || location.getWorld() == null) return;
 
@@ -316,5 +539,177 @@ public class VisualEffectsContext implements IVisualEffectsContext {
                 );
             }
         }
+    }
+
+    @Override
+    public BukkitTask playPersistentHalo(UUID entityId, Color color) {
+        final Particle.DustOptions ring = new Particle.DustOptions(color, 0.65f);
+        final Particle.DustOptions glow = new Particle.DustOptions(Color.fromRGB(255, 250, 220), 0.45f);
+        final int points = 20;
+        final double radius = 0.25;
+
+        return new BukkitRunnable() {
+            double phase = 0;
+
+            @Override
+            public void run() {
+                Entity entity = Bukkit.getEntity(entityId);
+                if (entity == null || !entity.isValid()) {
+                    this.cancel();
+                    return;
+                }
+                World world = entity.getWorld();
+                if (world == null) return;
+                Location center = entity.getLocation().add(0, 2, 0);
+                phase = (phase + 0.03) % 1.0;
+
+                for (int i = 0; i < points; i++) {
+                    double angle = phase * 2 * Math.PI + 2 * Math.PI * i / points;
+                    double x = Math.cos(angle) * radius;
+                    double z = Math.sin(angle) * radius;
+                    world.spawnParticle(Particle.DUST, center.clone().add(x, 0, z), 1, 0, 0, 0, 0, ring);
+                }
+
+                // Другий шар: дві протифазні іскри для об'єму й мерехтіння
+                double sparkAngle = phase * 4 * Math.PI;
+                world.spawnParticle(Particle.DUST,
+                        center.clone().add(Math.cos(sparkAngle) * radius * 0.5, 0.12, Math.sin(sparkAngle) * radius * 0.5),
+                        1, 0, 0, 0, 0, glow);
+                world.spawnParticle(Particle.DUST,
+                        center.clone().add(Math.cos(sparkAngle + Math.PI) * radius * 0.5, -0.12, Math.sin(sparkAngle + Math.PI) * radius * 0.5),
+                        1, 0, 0, 0, 0, glow);
+            }
+        }.runTaskTimer(plugin, 0L, 2L);
+    }
+
+    @Override
+    public void playScriptureAura(Location center, Color color, int durationTicks) {
+        final World world = center.getWorld();
+        if (world == null || color == null) return; // null колір → DUST кидає щотіка й таск спамить вічно
+        final Location origin = center.clone();
+        final Particle.DustOptions glyph = new Particle.DustOptions(color, 1.1f);
+        final int glyphs = 6;        // упорядковані знаки, а не хмара
+        final double radius = 1.0;
+
+        new BukkitRunnable() {
+            int tick = 0;
+            double phase = 0;
+
+            @Override
+            public void run() {
+                if (tick >= durationTicks || origin.getWorld() == null) {
+                    this.cancel();
+                    return;
+                }
+                phase += 0.12;
+                double y = 0.4 + (tick / (double) durationTicks) * 1.6; // повільно піднімаються
+                for (int i = 0; i < glyphs; i++) {
+                    double angle = phase + (2 * Math.PI * i / glyphs);
+                    double x = Math.cos(angle) * radius;
+                    double z = Math.sin(angle) * radius;
+                    Location p = origin.clone().add(x, y, z);
+                    world.spawnParticle(Particle.DUST, p, 1, 0, 0, 0, 0, glyph);
+                    // «письмо»: мерехтіння чарівних символів на кожному знаку
+                    world.spawnParticle(Particle.ENCHANT, p, 2, 0.05, 0.05, 0.05, 0.0);
+                }
+                tick++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+    }
+
+    @Override
+    public void playDescendingSunPillar(Location target, Color color) {
+        final World world = target.getWorld();
+        if (world == null || color == null) return; // null колір → DUST кидає щотіка й таск спамить вічно
+        final Location ground = target.clone();
+        final Particle.DustOptions core = new Particle.DustOptions(color, 1.6f);
+        final double height = 12.0;
+        final double radius = 0.8;
+        final int descendTicks = 16;
+
+        new BukkitRunnable() {
+            int tick = 0;
+
+            @Override
+            public void run() {
+                if (tick > descendTicks || ground.getWorld() == null) {
+                    this.cancel();
+                    return;
+                }
+                // Голова стовпа падає згори вниз
+                double headY = height * (1.0 - tick / (double) descendTicks);
+                for (int ring = 0; ring < 2; ring++) {
+                    double r = radius * (ring == 0 ? 0.4 : 1.0);
+                    int points = ring == 0 ? 5 : 8;
+                    for (int i = 0; i < points; i++) {
+                        double angle = 2 * Math.PI * i / points + tick * 0.3;
+                        double x = Math.cos(angle) * r;
+                        double z = Math.sin(angle) * r;
+                        world.spawnParticle(Particle.DUST, ground.clone().add(x, headY, z), 1, 0, 0, 0, 0, core);
+                    }
+                }
+                // Тонкий згасаючий слід нижче голови
+                world.spawnParticle(Particle.END_ROD, ground.clone().add(0, headY, 0), 2, 0.15, 0.4, 0.15, 0.0);
+
+                if (tick == descendTicks) {
+                    world.spawnParticle(Particle.EXPLOSION, ground, 1); // НЕ FLASH: на 1.21.11 вимагає data org.bukkit.Color
+                    world.spawnParticle(Particle.END_ROD, ground.clone().add(0, 0.3, 0), 30, 0.6, 0.2, 0.6, 0.05);
+                }
+                tick++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+    }
+
+    @Override
+    public void playBrokenSunDisc(UUID entityId, Color color, int durationTicks) {
+        if (color == null) return; // null колір → DUST кидає щотіка й таск спамить вічно
+        final Particle.DustOptions disc = new Particle.DustOptions(color, 0.8f);
+        final int points = 22;
+        final double radius = 0.35;
+        final int gapStart = 7;   // розрив у кільці — диск «зламаний»
+        final int gapEnd = 12;
+
+        new BukkitRunnable() {
+            int tick = 0;
+            double wobble = 0;
+
+            @Override
+            public void run() {
+                Entity entity = Bukkit.getEntity(entityId);
+                if (entity == null || !entity.isValid() || tick >= durationTicks) {
+                    this.cancel();
+                    return;
+                }
+                World world = entity.getWorld();
+                if (world != null) {
+                    wobble += 0.15;
+                    double tilt = Math.sin(wobble) * 0.12; // диск похитується
+                    Location center = entity.getLocation().add(0, 2.2, 0);
+                    for (int i = 0; i < points; i++) {
+                        if (i >= gapStart && i <= gapEnd) continue; // тріщина
+                        double angle = 2 * Math.PI * i / points;
+                        double x = Math.cos(angle) * radius;
+                        double z = Math.sin(angle) * radius;
+                        double y = tilt * Math.sin(angle);
+                        world.spawnParticle(Particle.DUST, center.clone().add(x, y, z), 1, 0, 0, 0, 0, disc);
+                    }
+                }
+                tick += 2;
+            }
+        }.runTaskTimer(plugin, 0L, 2L);
+    }
+
+    @Override
+    public void playHolyLightning(Location location) {
+        final World world = location.getWorld();
+        if (world == null) return;
+        world.strikeLightningEffect(location); // лише візуал: без вогню й шкоди
+        world.spawnParticle(Particle.EXPLOSION, location.clone().add(0, 1, 0), 1); // НЕ FLASH: на 1.21.11 вимагає data org.bukkit.Color
+        world.spawnParticle(Particle.END_ROD, location.clone().add(0, 1, 0), 40, 0.3, 1.2, 0.3, 0.05);
+        Particle.DustOptions gold = new Particle.DustOptions(
+                Color.fromRGB(255, 215, 0), 1.4f);
+        world.spawnParticle(Particle.DUST, location.clone().add(0, 1, 0), 30, 0.5, 1.0, 0.5, 0, gold);
+        world.playSound(location, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.2f, 1.5f);
+        world.playSound(location, Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 0.6f);
     }
 }

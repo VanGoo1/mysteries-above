@@ -301,6 +301,10 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 services.getMythicCreatureGateway(), services.getChurchPriestService(),
                 services.getBeyonderService(), services.getRampageManager(), services.getCreatureRegistry());
         getServer().getPluginManager().registerEvents(orderListener, this);
+
+        me.vangoo.presentation.listeners.ContractListener contractListener =
+                new me.vangoo.presentation.listeners.ContractListener(this, services.getContractService());
+        getServer().getPluginManager().registerEvents(contractListener, this);
     }
 
     private void registerCommands() {

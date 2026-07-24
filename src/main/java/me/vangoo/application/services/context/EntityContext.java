@@ -72,6 +72,25 @@ public class EntityContext implements IEntityContext {
     }
 
     @Override
+    public void reducePotionEffectDuration(UUID entityId, PotionEffectType effect, int ticksToReduce) {
+        Entity entity = getEntity(entityId);
+        if (!(entity instanceof LivingEntity living)) return;
+
+        PotionEffect current = living.getPotionEffect(effect);
+        if (current == null) return;
+
+        int newDuration = current.getDuration() - ticksToReduce;
+        living.removePotionEffect(effect);
+        if (newDuration > 0) {
+            // Спершу видалити: vanilla MobEffectInstance.update() ігнорує коротшу
+            // тривалість навіть з force=true в addPotionEffect — без активного ефекту
+            // порівнювати нема з чим, і новий просто застосовується.
+            living.addPotionEffect(new PotionEffect(effect, newDuration, current.getAmplifier(),
+                    current.isAmbient(), current.hasParticles(), current.hasIcon()));
+        }
+    }
+
+    @Override
     public void removeAllPotionEffects(UUID entityId) {
         Entity entity = getEntity(entityId);
         if (entity instanceof LivingEntity living) {

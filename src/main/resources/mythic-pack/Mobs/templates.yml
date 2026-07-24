@@ -281,3 +281,29 @@ MA_Error_S7:
   - kitcast{gcd=100;skills=MA_Error_S8_SwindlerCharm:160,MA_Error_S9_ShadowTheft:120} @NearestPlayer{r=12} ~onTimer:20
   - potion{type=SPEED;duration=45;level=0;particles=false} @self ~onTimer:40
   - effect:particles{p=smoke;amount=6;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
+
+# ── Sun (MELEE; гравцеві здібності ще не реалізовані — лише золоте світлове ауро) ──
+MA_Sun_S9:
+  Template: MA_Base
+  Skills:
+  - effect:particles{p=end_rod;amount=4;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
+
+MA_Sun_S8:
+  Template: MA_Base
+  Skills:
+  - effect:particles{p=end_rod;amount=5;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
+
+MA_Sun_S7:
+  Template: MA_Base
+  Skills:
+  - effect:particles{p=end_rod;amount=5;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
+
+MA_Sun_S6:
+  Template: MA_Base
+  Skills:
+  - effect:particles{p=end_rod;amount=6;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
+
+MA_Sun_S5:
+  Template: MA_Base
+  Skills:
+  - effect:particles{p=end_rod;amount=6;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20

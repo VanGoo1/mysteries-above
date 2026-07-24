@@ -40,6 +40,7 @@ public class ServiceContainer {
     private CooldownManager cooldownManager;
     private AbilityLockManager abilityLockManager;
     private RampageManager rampageManager;
+    private AmplificationManager amplificationManager;
     private SanityPenaltyHandler sanityPenaltyHandler;
     private PassiveAbilityManager passiveAbilityManager;
     private DomainEventPublisher eventPublisher;
@@ -103,6 +104,9 @@ public class ServiceContainer {
     private ChurchDuelService churchDuelService;
     private me.vangoo.presentation.listeners.DuelListener duelListener;
     private SecretOrderService secretOrderService;
+    private me.vangoo.infrastructure.contracts.JSONContractRepository contractRepository;
+    private me.vangoo.application.services.DivinePunishment divinePunishment;
+    private me.vangoo.application.services.ContractService contractService;
 
     // Schedulers
     private PassiveAbilityScheduler passiveAbilityScheduler;
@@ -174,6 +178,7 @@ public class ServiceContainer {
         this.abilityLockManager = new AbilityLockManager();
         this.eventPublisher = new DomainEventPublisher();
         this.rampageManager = new RampageManager(eventPublisher);
+        this.amplificationManager = new AmplificationManager();
         this.sanityPenaltyHandler = new SanityPenaltyHandler();
         this.passiveAbilityManager = new PassiveAbilityManager();
         this.temporaryEventManager = new TemporaryEventManager(plugin);
@@ -250,6 +255,10 @@ public class ServiceContainer {
         this.orderStateRepository = new me.vangoo.infrastructure.organizations.OrderStateRepository(
                 plugin.getDataFolder() + File.separator + "orders-state.json");
         this.orderItems = new me.vangoo.infrastructure.items.OrderItems(customItemService);
+
+        // --- Sun: контракти ---
+        this.contractRepository = new me.vangoo.infrastructure.contracts.JSONContractRepository(
+                plugin.getDataFolder() + File.separator + "contracts.json");
     }
 
     private void initializeApplicationServices(fr.skytasul.glowingentities.GlowingEntities glowingEntities,
@@ -274,6 +283,14 @@ public class ServiceContainer {
         this.creatureDamageListener = new me.vangoo.presentation.listeners.CreatureDamageListener(
                 mythicCreatureGateway, creatureRegistry, beyonderService);
 
+        me.vangoo.domain.abilities.context.IVisualEffectsContext punishmentEffects =
+                new me.vangoo.application.services.context.VisualEffectsContext(
+                        effectManager, (MysteriesAbovePlugin) plugin);
+        this.divinePunishment = new me.vangoo.application.services.DivinePunishment(
+                abilityLockManager, punishmentEffects);
+        this.contractService = new me.vangoo.application.services.ContractService(
+                contractRepository, divinePunishment);
+
         this.abilityContextFactory = new AbilityContextFactory(
                 (MysteriesAbovePlugin) plugin,
                 cooldownManager,
@@ -286,7 +303,9 @@ public class ServiceContainer {
                 passiveAbilityManager,
                 eventPublisher,
                 recipeUnlockService,
-                potionManager
+                potionManager,
+                contractService,
+                amplificationManager
         );
 
         this.abilityExecutor = new AbilityExecutor(
@@ -498,6 +517,7 @@ public class ServiceContainer {
     public SecretOrderService getSecretOrderService() { return secretOrderService; }
     public me.vangoo.infrastructure.ui.OrderMenu getOrderMenu() { return orderMenu; }
     public me.vangoo.infrastructure.items.OrderItems getOrderItems() { return orderItems; }
+    public me.vangoo.application.services.ContractService getContractService() { return contractService; }
 
     public PassiveAbilityScheduler getPassiveAbilityScheduler() { return passiveAbilityScheduler; }
     public MasteryRegenerationScheduler getMasteryRegenerationScheduler() { return masteryRegenerationScheduler; }

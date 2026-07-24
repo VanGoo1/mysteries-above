@@ -38,7 +38,7 @@ fool_ancient_wraith_5:
     MovementSpeed: 0.3
     Scale: 1.55
 
-fool_deep_sea_naga:
+fool_deep_sea_naga_6:
   Template: MA_Fool_S6
   Type: DROWNED
   Display: '&3Глибоководна Нага'

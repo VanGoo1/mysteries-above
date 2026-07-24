@@ -352,7 +352,7 @@ creatures:
       natural: { biomes: [DARK_FOREST], replace: [], chance: 0.00075 }
       structure: { keys: [mysteries, nova_structures], chance: 0.12 }
 
-  fool_deep_sea_naga:
+  fool_deep_sea_naga_6:
     base_entity: DROWNED
     tier: common
     loot:
@@ -398,4 +398,67 @@ creatures:
         - { id: six_winged_gargoyle_core, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [WINDSWEPT_HILLS, JAGGED_PEAKS, STONY_PEAKS], replace: [], chance: 0.00075 }
+      structure: { keys: [mysteries, nova_structures], chance: 0.1 }
+
+  # ============================ SUN ============================
+  # Головні-інгредієнти зі створінь (частини тіла); рослини/каміння/сік — форедж.
+  sun_siren_9:
+    base_entity: DROWNED
+    tier: common
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: siren_rock, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [OCEAN, DEEP_OCEAN, WARM_OCEAN], replace: [DROWNED, GUARDIAN], chance: 0.005 }
+      structure: { keys: [], chance: 0.0 }
+
+  sun_magma_titan_8:
+    base_entity: MAGMA_CUBE
+    tier: common
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: heart_of_magma_titan, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [BASALT_DELTAS, NETHER_WASTES], replace: [MAGMA_CUBE], chance: 0.00375 }
+      structure: { keys: [], chance: 0.0 }
+
+  sun_dawn_rooster_7:
+    base_entity: CHICKEN
+    tier: common
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: dawn_rooster_comb, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [PLAINS, SUNFLOWER_PLAINS, SAVANNA], replace: [CHICKEN], chance: 0.0025 }
+      structure: { keys: [], chance: 0.0 }
+
+  sun_spirit_pact_bird_6:
+    base_entity: PARROT
+    tier: common
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: spirit_pact_bird_feather, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [JUNGLE, SPARSE_JUNGLE, BAMBOO_JUNGLE], replace: [PARROT], chance: 0.0015 }
+      structure: { keys: [], chance: 0.0 }
+
+  sun_king_dawn_rooster_5:
+    base_entity: CHICKEN
+    tier: apex
+    loot:
+      min_items: 1
+      max_items: 2
+      items:
+        - { id: king_dawn_rooster_comb, weight: 50, min: 1, max: 1 }
+        - { id: king_dawn_rooster_blood, weight: 40, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [SUNFLOWER_PLAINS, SAVANNA_PLATEAU], replace: [], chance: 0.00075 }
       structure: { keys: [mysteries, nova_structures], chance: 0.1 }

@@ -52,44 +52,88 @@ forage:
       - { id: autumn_crocus_essence, weight: 30 }
       - { id: bone_of_the_unyielding_frame, weight: 15 }
       - { id: star_crystal, weight: 25 }
+      - { id: midsummer_grass, weight: 25 }
+      - { id: rosemary, weight: 20 }
+      - { id: eye_of_perfect_recognition, weight: 20 }
     SUNFLOWER_PLAINS:
       - { id: elf_flower_petals, weight: 50 }
       - { id: peppermint_extract, weight: 30 }
       - { id: black_rimmed_sunflower_powder, weight: 20 }
+      - { id: crystal_sunflower, weight: 25 }
+      - { id: dazzling_soul_powder, weight: 20 }
     MEADOW:
       - { id: memory_flower_petals, weight: 40 }
       - { id: crystalline_moon_orchid, weight: 25 }
       - { id: golden_cloak_grass_powder, weight: 20 }
+      - { id: midsummer_grass, weight: 20 }
+      - { id: rosemary, weight: 20 }
+      - { id: condensed_astral_nebula, weight: 12 }
+      - { id: pure_spirituality_tear, weight: 12 }
     FOREST:
       - { id: red_chestnut_flower, weight: 40 }
       - { id: memory_flower_petals, weight: 40 }
       - { id: droplet_gem_powder, weight: 20 }
+      - { id: aconite_juice, weight: 20 }
+      - { id: illusory_chime_tree_fruit, weight: 20 }
+      - { id: wayfinder_tree_root, weight: 15 }
     FLOWER_FOREST:
       - { id: memory_flower_petals, weight: 50 }
       - { id: peppermint_extract, weight: 30 }
       - { id: crystalline_moon_orchid, weight: 20 }
       - { id: fantasy_grass_oil, weight: 20 }
+      - { id: dazzling_soul_powder, weight: 20 }
+      - { id: iridescent_pearl_dust, weight: 25 }
     BIRCH_FOREST:
       - { id: tree_of_wisdom_sap, weight: 40 }
       - { id: yellow_amber_powder, weight: 30 }
+      - { id: tree_of_elders_crystalized_roots, weight: 20 }
+      - { id: thread_of_supernatural_intuition, weight: 25 }
+      - { id: liquid_silver_phantom_residue, weight: 15 }
     DARK_FOREST:
       - { id: memory_flower_petals, weight: 40 }
       - { id: crystalline_moon_orchid, weight: 25 }
       - { id: human_faced_rose_stalk, weight: 25 }
+      - { id: elf_dark_leaf, weight: 25 }
+      - { id: mind_crystal_powder, weight: 20 }
+      - { id: mind_illusion_crystal, weight: 15 }
+      - { id: cursed_wraith_artifact, weight: 15 }
+      - { id: chains_of_collective_fear, weight: 15 }
+      - { id: shackles_of_the_guilty, weight: 12 }
+      - { id: devastated_blank_mask, weight: 15 }
     JUNGLE:
       - { id: ever_shifting_lotus, weight: 40 }
       - { id: tree_of_elders_fruit, weight: 30 }
       - { id: dragon_blood_grass_powder, weight: 20 }
+      - { id: radiance_pact_tree_fruit, weight: 20 }
+      - { id: radiance_pact_tree_juice, weight: 20 }
+      - { id: fingered_citron_powder, weight: 20 }
+      - { id: mimicry_moss_spores, weight: 20 }
     TAIGA:
       - { id: tree_of_elders_fruit, weight: 40 }
       - { id: string_grass_powder, weight: 30 }
+      - { id: aconite_juice, weight: 20 }
+      - { id: tree_of_elders_crystalized_roots, weight: 20 }
+      - { id: astral_mist_essence, weight: 15 }
+      - { id: ancient_rune_powder, weight: 12 }
     SWAMP:
       - { id: dust_of_lake_spirit, weight: 50 }
       - { id: string_grass_powder, weight: 25 }
       - { id: poison_hemlock, weight: 20 }
+      - { id: aqua_fern_juice, weight: 20 }
+      - { id: imbued_ink_sac, weight: 20 }
     DESERT:
       - { id: yellow_amber_powder, weight: 40 }
       - { id: dust_of_lake_spirit, weight: 20 }
+      - { id: solidified_magma, weight: 20 }
+      - { id: pure_white_brilliant_rock, weight: 15 }
+      - { id: starfaced_stone, weight: 20 }
+      - { id: rock_crystal_powder, weight: 25 }
+      - { id: mica_powder, weight: 20 }
     SAVANNA:
       - { id: bone_of_the_unyielding_frame, weight: 40 }
       - { id: ashes_of_a_broken_oath_seal, weight: 20 }
+      - { id: solidified_magma, weight: 20 }
+      - { id: pure_white_brilliant_rock, weight: 15 }
+      - { id: meteorite_crystal, weight: 20 }
+      - { id: ashes_of_a_forbidden_decree, weight: 15 }
+      - { id: ashes_of_a_public_execution, weight: 12 }

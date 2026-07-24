@@ -33,4 +33,6 @@ public interface IAbilityContext {
     IEntityContext entity();
     IGlowingContext glowing();
     IMessagingContext messaging();
+    IContractContext contracts();
+    IAmplificationContext amplification();
 }

@@ -124,6 +124,15 @@ The pure core of `domain` (`entities`, `services`, `spells`, `brewing`, `creatur
   `InstitutionRegistry`, що й церков. Рейд на сховище храму й замах на священика — прямі
   точки дотику з `ChurchVault`/`ChurchService` (другий вихід сховища, sneak-клік по
   священику зарезервовано під шпигунство). Див. `.claude/rules/secret-orders.md`.
+- Магічне засвідчення Sun (Посл. 6): здібність `Contract` відкриває Золотий Сувій
+  (`ContractMenu`) — Мир (`PEACE`)/Клятва (`DEBT`)/Обмін/Засвідчення вміння. `contracts.json`
+  (`JSONContractRepository`) персиститься лише для підписаних `PEACE`/`DEBT`; обмін
+  (validate-at-commit, без застави) і засвідчення (баф союзника через `context.amplification()`)
+  стану не мають. Здібності дістаються сервісу через `IContractContext`/`context.contracts()`.
+  Порушення виявляє `ContractListener` (удар між сторонами `PEACE`, дедлайн `DEBT`) і кличе
+  `ContractService.breach()` → `DivinePunishment.punish()` (holy lightning + true damage +
+  печатка здібностей 10-15 хв + Зламаний Сонячний Диск). `DivinePunishment` — перевикористовуваний
+  ранер покарання для майбутніх механік. Прогрес `Beyonder`'а кара не чіпає. Див. `docs/contracts.md`.
 - Admin commands (all require `mysteriesabove.admin`): `/pathway`, `/mastery`, `/rampager`, `/potion`, `/custom-items`, `/recipe`, `/structure`, `/characteristic`, `/coins`. Creature testing goes through MythicMobs' own command: `/mm mobs spawn <id>`. `/gathering` — гравецька команда (join/menu), її start/stop — адмінські (перевірка права в коді). `/church` — гравецька (leave/info; `leave` двокрокова — діє лише `/church leave confirm`, бо
 вихід із церкви необоротний), bind/unbind — адмінські (перевірка права в коді). `/order` — гравецька команда (invites/accept/raid/leave/info; `leave` теж двокрокова —
 `/order leave confirm`, вихід із ордену необоротний); сам вступ за шифрованим посланням

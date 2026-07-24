@@ -17,6 +17,7 @@ public final class MythicPackInstaller {
             "Mobs/templates.yml",
             "Mobs/error.yml", "Mobs/visionary.yml", "Mobs/door.yml",
             "Mobs/justiciar.yml", "Mobs/whitetower.yml", "Mobs/fool.yml",
+            "Mobs/sun.yml",
             "Skills/error.yml", "Skills/visionary.yml", "Skills/door.yml",
             "Skills/justiciar.yml", "Skills/whitetower.yml", "Skills/fool.yml",
     };
