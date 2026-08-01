@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:item/template_music_disc",
+  "textures": {
+    "layer0": "minecraft:item/music_disc_chirp"
+  },
+  "overrides": [
+    { "predicate": { "custom_model_data": 7313883 }, "model": "item/music_disc_chirp_custom_w7yj" }
+  ]
+}
