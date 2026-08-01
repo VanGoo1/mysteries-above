@@ -294,6 +294,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(services.getMarionetteExitListener(), this);
         getServer().getPluginManager().registerEvents(services.getPaperThrowListener(), this);
         getServer().getPluginManager().registerEvents(new PaperWeaponProtectionListener(), this);
+        getServer().getPluginManager().registerEvents(new JukeboxGuardListener(), this);
         getServer().getPluginManager().registerEvents(services.getMainBodyAbilityListener(), this);
         getServer().getPluginManager().registerEvents(services.getMarionetteLifecycleListener(), this);
         getServer().getPluginManager().registerEvents(services.getMarionetteRestorer(), this);
