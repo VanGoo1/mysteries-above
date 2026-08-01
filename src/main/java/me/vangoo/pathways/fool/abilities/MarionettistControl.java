@@ -325,7 +325,7 @@ public class MarionettistControl extends ActiveAbility {
 
         // HP цілі (разом із бонусом від послідовності) — щоб маріонетка успадкувала його.
         double maxHealth = 20.0;
-        AttributeInstance mhAttr = target.getAttribute(Attribute.MAX_HEALTH);
+        AttributeInstance mhAttr = target.getAttribute(Attribute.GENERIC_MAX_HEALTH);
         if (mhAttr != null) maxHealth = mhAttr.getValue();
         final double fMaxHealth = maxHealth;
         final double fHealth    = Math.max(1.0, Math.min(target.getHealth(), maxHealth));
@@ -369,7 +369,7 @@ public class MarionettistControl extends ActiveAbility {
             // Маріонетка успадковує HP цілі (разом із бонусом від послідовності).
             Entity npcEntity = npc.getEntity();
             if (npcEntity instanceof LivingEntity le) {
-                AttributeInstance attr = le.getAttribute(Attribute.MAX_HEALTH);
+                AttributeInstance attr = le.getAttribute(Attribute.GENERIC_MAX_HEALTH);
                 if (attr != null) attr.setBaseValue(fMaxHealth);
                 le.setHealth(Math.min(fHealth, fMaxHealth));
             }
@@ -1609,7 +1609,7 @@ public class MarionettistControl extends ActiveAbility {
     /** Переймає макс. HP маріонетки на гравця, зберігаючи попередній (для відновлення на виході). */
     private void applyPossessionMaxHealth(Player player, MarionetteMinionTrait trait) {
         if (player == null || trait == null) return;
-        AttributeInstance attr = player.getAttribute(Attribute.MAX_HEALTH);
+        AttributeInstance attr = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
         if (attr == null) return;
 
         double oldMax = attr.getBaseValue();
@@ -1629,7 +1629,7 @@ public class MarionettistControl extends ActiveAbility {
         if (oldMax == null) return;
         Player player = Bukkit.getPlayer(casterId);
         if (player == null) return;
-        AttributeInstance attr = player.getAttribute(Attribute.MAX_HEALTH);
+        AttributeInstance attr = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
         if (attr == null) return;
 
         double curMax = attr.getBaseValue();

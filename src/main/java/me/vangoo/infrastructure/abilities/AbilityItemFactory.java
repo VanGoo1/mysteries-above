@@ -5,12 +5,12 @@ import me.vangoo.domain.abilities.core.AbilityType;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.infrastructure.items.DiscItems;
+import me.vangoo.infrastructure.items.ItemModelData;
 import me.vangoo.infrastructure.ui.NBTBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.components.CustomModelDataComponent;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.Nullable;
 
@@ -59,17 +59,12 @@ public class AbilityItemFactory {
                 }
             }
 
-            try {
-                CustomModelDataComponent comp = meta.getCustomModelDataComponent();
-                String modelKey = switch (ability.getType()) {
-                    case ACTIVE -> "active";
-                    case TOGGLEABLE_PASSIVE -> "passive";
-                    case PERMANENT_PASSIVE -> "permanent_passive";
-                };
-                comp.setStrings(java.util.List.of(modelKey));
-                meta.setCustomModelDataComponent(comp);
-            } catch (Throwable ignored) {
-            }
+            String modelKey = switch (ability.getType()) {
+                case ACTIVE -> "active";
+                case TOGGLEABLE_PASSIVE -> "passive";
+                case PERMANENT_PASSIVE -> "permanent_passive";
+            };
+            ItemModelData.apply(meta, modelKey);
 
             DiscItems.applyStackSize(meta);
             meta.setLore(lore);

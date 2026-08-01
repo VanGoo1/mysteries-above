@@ -12,9 +12,16 @@ import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.Tag;
+import org.bukkit.entity.AbstractSkeleton;
+import org.bukkit.entity.Giant;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Phantom;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.SkeletonHorse;
+import org.bukkit.entity.Wither;
+import org.bukkit.entity.Zoglin;
+import org.bukkit.entity.Zombie;
+import org.bukkit.entity.ZombieHorse;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.potion.PotionEffectType;
@@ -182,8 +189,9 @@ public class LightningStrike extends ActiveAbility {
 
     /** Розряд по одній цілі: шкода (×2 нежиті), параліч і сам удар блискавки. */
     static void smite(IAbilityContext context, Player caster, LivingEntity victim, int damage, Color color) {
-        // getCategory() на 1.21+ кидає UnsupportedOperationException — нежить визначаємо тегом.
-        double finalDamage = Tag.ENTITY_TYPES_UNDEAD.isTagged(victim.getType())
+        // getCategory() на 1.21+ кидає UnsupportedOperationException, а ванільного тега
+        // #undead в 1.21.1 ще немає — визначаємо нежить за типом сутності.
+        double finalDamage = isUndead(victim)
                 ? damage * PURIFICATION_MULTIPLIER
                 : damage;
         victim.damage(finalDamage, caster);
@@ -194,6 +202,18 @@ public class LightningStrike extends ActiveAbility {
         context.effects().playLightningBolt(victim.getLocation(), color);
         context.effects().playExplosionRingEffect(victim.getLocation(), 1.4, Particle.DUST,
                 new Particle.DustOptions(color, 1.3f));
+    }
+
+    /** Нежить для «очищувального» множника шкоди (ванільний склад тега {@code #undead}). */
+    private static boolean isUndead(LivingEntity victim) {
+        return victim instanceof Zombie          // + Drowned, Husk, ZombieVillager, PigZombie
+                || victim instanceof AbstractSkeleton  // + Skeleton, Stray, WitherSkeleton, Bogged
+                || victim instanceof SkeletonHorse
+                || victim instanceof ZombieHorse
+                || victim instanceof Phantom
+                || victim instanceof Wither
+                || victim instanceof Zoglin
+                || victim instanceof Giant;
     }
 
     /** Найближча жива сутність довкола, окрім самого кастера. */

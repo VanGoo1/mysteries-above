@@ -123,8 +123,8 @@ public class ScanGazePassive extends ToggleablePassiveAbility {
 
         // === БАЗОВІ ДАНІ ===
         double hp = Math.round(target.getHealth() * 10.0) / 10.0;
-        double maxHp = target.getAttribute(Attribute.MAX_HEALTH) != null
-                ? Math.round(target.getAttribute(Attribute.MAX_HEALTH).getValue() * 10.0) / 10.0
+        double maxHp = target.getAttribute(Attribute.GENERIC_MAX_HEALTH) != null
+                ? Math.round(target.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue() * 10.0) / 10.0
                 : 20.0;
 
         int hunger = target.getFoodLevel();

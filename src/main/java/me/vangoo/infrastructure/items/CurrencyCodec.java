@@ -6,7 +6,6 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.components.CustomModelDataComponent;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.List;
@@ -52,15 +51,9 @@ public final class CurrencyCodec {
                 ItemFlag.HIDE_ATTRIBUTES,
                 ItemFlag.HIDE_UNBREAKABLE
         );
-        // Підготовка під текстуру ресурс-паку (рядковий custom-model-data, як у Характеристик):
+        // Підготовка під текстуру ресурс-паку (як у Характеристик):
         // MODEL_POUND/MODEL_COPPET — стабільні ключі, під які підставляється будь-яка твоя текстура.
-        try {
-            CustomModelDataComponent cmd = meta.getCustomModelDataComponent();
-            cmd.setStrings(List.of(modelKey));
-            meta.setCustomModelDataComponent(cmd);
-        } catch (Throwable ignored) {
-            // Старіше API без CustomModelDataComponent — предмет лишається валідним.
-        }
+        ItemModelData.apply(meta, modelKey);
         item.setItemMeta(meta);
         ItemStack built = new NBTBuilder(item).setString(NBT_COIN, coinType).build();
         DiscItems.stripJukeboxPlayable(built);

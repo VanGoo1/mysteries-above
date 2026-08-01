@@ -6,7 +6,6 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.components.CustomModelDataComponent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -44,18 +43,11 @@ public class CustomItemFactory {
             meta.setLore(item.lore());
         }
 
-        // Set custom model data (String format using Paper DataComponent API)
+        // Set custom model data (рядковий ключ згортається в число — див. ItemModelData)
         if (item.hasCustomModelData()) {
             // Використовуємо item.id() як рядковий ідентифікатор для custom model data.
             // Якщо у тебе є окрема властивість (наприклад item.customModelKey()), підстав її.
-            String modelKey = item.customModelData();
-
-            try {
-                CustomModelDataComponent comp = meta.getCustomModelDataComponent();
-                comp.setStrings(java.util.List.of(modelKey));
-                meta.setCustomModelDataComponent(comp);
-            } catch (Throwable t) {
-            }
+            ItemModelData.apply(meta, item.customModelData());
         }
 
         // Add glow effect

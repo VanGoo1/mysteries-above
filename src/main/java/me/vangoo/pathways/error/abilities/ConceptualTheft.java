@@ -530,7 +530,7 @@ public class ConceptualTheft extends ActiveAbility {
 
     private AttributeInstance maxHealth(UUID entityId) {
         return Bukkit.getEntity(entityId) instanceof LivingEntity living
-                ? living.getAttribute(Attribute.MAX_HEALTH) : null;
+                ? living.getAttribute(Attribute.GENERIC_MAX_HEALTH) : null;
     }
 
     private void shiftMaxHealth(UUID entityId, double delta) {

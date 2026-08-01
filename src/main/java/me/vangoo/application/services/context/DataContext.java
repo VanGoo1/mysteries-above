@@ -219,7 +219,7 @@ public class DataContext implements IDataContext {
             return 0.0;
         }
 
-        AttributeInstance attribute = player.getAttribute(Attribute.MAX_HEALTH);
+        AttributeInstance attribute = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
 
         if (attribute != null) {
             return attribute.getValue();

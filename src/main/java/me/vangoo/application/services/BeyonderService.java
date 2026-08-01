@@ -84,7 +84,7 @@ public class BeyonderService {
      * (його може бути не викликано), тож робимо це безумовно в спільній точці видалення Beyonder'а.
      */
     private void resetMaxHealthToDefault(Player player) {
-        AttributeInstance attr = player.getAttribute(Attribute.MAX_HEALTH);
+        AttributeInstance attr = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
         if (attr == null) return;
 
         double def = attr.getDefaultValue(); // ванільний дефолт гравця (20)

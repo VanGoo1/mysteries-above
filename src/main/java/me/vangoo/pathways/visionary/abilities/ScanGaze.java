@@ -66,15 +66,15 @@ public class ScanGaze extends ActiveAbility {
         // === БАЗОВІ ДАНІ ===
         double hp = Math.round(context.playerData().getHealth(target.getUniqueId()) * 10.0) / 10.0;
         double maxHp = 20.0;
-        if (target.getAttribute(Attribute.MAX_HEALTH) != null) {
+        if (target.getAttribute(Attribute.GENERIC_MAX_HEALTH) != null) {
             maxHp = Math.round(context.playerData().getMaxHealth(target.getUniqueId()) * 10.0) / 10.0;
         }
 
         int hunger = context.playerData().getFoodLevel(target.getUniqueId());
 
         int armor = 0;
-        if (target.getAttribute(Attribute.ARMOR) != null) {
-            armor = (int) Math.round(target.getAttribute(Attribute.ARMOR).getValue());
+        if (target.getAttribute(Attribute.GENERIC_ARMOR) != null) {
+            armor = (int) Math.round(target.getAttribute(Attribute.GENERIC_ARMOR).getValue());
         }
 
         StringBuilder message = new StringBuilder();

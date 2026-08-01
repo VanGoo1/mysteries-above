@@ -222,7 +222,7 @@ public class GoodMemory extends ToggleablePassiveAbility {
     }
 
     private int getHealthPercentage(LivingEntity target) {
-        double maxHealth = Objects.requireNonNull(target.getAttribute(Attribute.MAX_HEALTH)).getValue();
+        double maxHealth = Objects.requireNonNull(target.getAttribute(Attribute.GENERIC_MAX_HEALTH)).getValue();
         return (int) Math.round((target.getHealth() / maxHealth) * 100);
     }
 

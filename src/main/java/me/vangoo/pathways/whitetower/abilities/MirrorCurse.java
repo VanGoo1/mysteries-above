@@ -71,7 +71,7 @@ public class MirrorCurse extends ActiveAbility {
 
         // 2. Перевірка здоров'я
         double maxHealth = 20.0;
-        var maxHealthAttr = target.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+        var maxHealthAttr = target.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH);
         if (maxHealthAttr != null) maxHealth = maxHealthAttr.getValue();
 
         double currentHealth = target.getHealth();

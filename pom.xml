@@ -136,13 +136,15 @@
         <dependency>
             <groupId>net.citizensnpcs</groupId>
             <artifactId>citizens-main</artifactId>
-            <version>2.0.43-SNAPSHOT</version>
+            <!-- 2.0.35-SNAPSHOT — гілка Citizens доби MC 1.21.1 (останній білд 23.10.2024). -->
+            <version>2.0.35-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>net.coreprotect</groupId>
             <artifactId>coreprotect</artifactId>
-            <version>23.1</version>
+            <!-- 22.4 — останній реліз CoreProtect під 1.21/1.21.1 (23.x = CE, від 1.21.2+). -->
+            <version>22.4</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -158,17 +160,18 @@
             <scope>provided</scope>
         </dependency>
         <!-- BetterModel: 3D-моделі мобів. Окремий плагін (softdepend), не shade.
-             Артефакт bettermodel-bukkit-api (3.x) — наступник легасі io.github.toxicity188:bettermodel (1.x). -->
+             1.15.2 — остання гілка з NMS-модулем v1_21_R1 (тобто з підтримкою 1.21/1.21.1);
+             наступник bettermodel-bukkit-api (2.x/3.x) починається з v1_21_R3 і на 1.21.1 не працює. -->
         <dependency>
             <groupId>io.github.toxicity188</groupId>
-            <artifactId>bettermodel-bukkit-api</artifactId>
-            <version>3.3.0</version>
+            <artifactId>bettermodel</artifactId>
+            <version>1.15.2</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
-            <version>1.21.11-R0.1-SNAPSHOT</version>
+            <version>1.21.1-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

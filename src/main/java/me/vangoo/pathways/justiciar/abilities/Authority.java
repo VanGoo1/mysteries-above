@@ -128,7 +128,8 @@ public class Authority extends ActiveAbility {
         }
 
         // 3. Захисники
-        if (entity instanceof IronGolem || entity instanceof Snowman || entity instanceof CopperGolem) {
+        // Мідний голем з'явився лише в 1.21.9 — на 1.21.1 такого типу сутності немає.
+        if (entity instanceof IronGolem || entity instanceof Snowman) {
             return true;
         }
 

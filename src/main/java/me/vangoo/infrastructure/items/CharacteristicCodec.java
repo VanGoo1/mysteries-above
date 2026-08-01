@@ -1,7 +1,5 @@
 package me.vangoo.infrastructure.items;
 
-import io.papermc.paper.datacomponent.DataComponentTypes;
-import io.papermc.paper.datacomponent.item.DyedItemColor;
 import me.vangoo.domain.PathwayBranding;
 import me.vangoo.domain.brewing.Characteristic;
 import me.vangoo.infrastructure.ui.NBTBuilder;
@@ -11,7 +9,6 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.components.CustomModelDataComponent;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.List;
@@ -28,10 +25,14 @@ public final class CharacteristicCodec {
 
     /**
      * Ключ custom-model-data для ресурс-паку. УНІВЕРСАЛЬНИЙ ({@code characteristic}) —
-     * одна тонована модель на всі шляхи; колір задає компонент {@code DYED_COLOR}
-     * (див. нижче), а не пер-шляховий ключ моделі. Мусить збігатися з єдиним кейсом
-     * {@code "when": "characteristic"} у {@code items/music_disc_chirp.json}, інакше
-     * select падає на ванільну модель без tint і колір не застосовується.
+     * одна модель на всі шляхи. Мусить збігатися з єдиним override'ом
+     * {@code custom_model_data} у {@code models/item/music_disc_chirp.json} (число рахує
+     * {@link ItemModelData}), інакше предмет намалюється ванільною пластинкою.
+     *
+     * <p>На 1.21.1 модель НЕ тонується під шлях: компонент {@code dyed_color} до
+     * не-шкіряних предметів тут ще не застосовується, а Paper-API для запису компонентів
+     * ({@code io.papermc.paper.datacomponent}) з'явився лише в 1.21.4. Колір шляху лишається
+     * в назві предмета ({@link PathwayBranding#textOf}).
      */
     public static final String MODEL_KEY = "characteristic";
 
@@ -61,14 +62,8 @@ public final class CharacteristicCodec {
                 ItemFlag.HIDE_DYE
         );
 
-        // Підготовка під текстуру ресурс-паку (рядковий custom-model-data, як у CustomItemFactory).
-        try {
-            CustomModelDataComponent cmd = meta.getCustomModelDataComponent();
-            cmd.setStrings(List.of(modelKeyFor(pathwayName)));
-            meta.setCustomModelDataComponent(cmd);
-        } catch (Throwable ignored) {
-            // Старіше API без CustomModelDataComponent — пропускаємо, предмет лишається валідним.
-        }
+        // Підготовка під текстуру ресурс-паку (як у CustomItemFactory).
+        ItemModelData.apply(meta, modelKeyFor(pathwayName));
 
         item.setItemMeta(meta);
 
@@ -77,13 +72,6 @@ public final class CharacteristicCodec {
                 .setInt(NBT_SEQUENCE, sequence)
                 .build();
         DiscItems.stripJukeboxPlayable(built);
-
-        try {
-            built.setData(
-                    DataComponentTypes.DYED_COLOR,
-                    DyedItemColor.dyedItemColor(PathwayBranding.liquidOf(pathwayName))
-            );
-        } catch (Throwable ignored) {}
 
         return built;
     }
