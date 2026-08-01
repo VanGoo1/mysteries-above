@@ -4,11 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-`mysteries-above` is a Spigot/Bukkit Minecraft plugin (Java 21, API 1.21) inspired by *Lord of the Mysteries*. Players become **Beyonders** who progress along a **Pathway** through **Sequences** (9 = weakest → 0 = strongest), unlocking **Abilities** at each sequence by drinking potions. Much of the in-code text, descriptions, and comments are in **Ukrainian** — keep new user-facing strings consistent with that.
+`mysteries-above` is a Spigot/Bukkit Minecraft plugin (Java 21, targeting **Paper 1.21.1**;
+version-sensitive details live in `.claude/rules/minecraft-version.md`) inspired by *Lord of the Mysteries*. Players become **Beyonders** who progress along a **Pathway** through **Sequences** (9 = weakest → 0 = strongest), unlocking **Abilities** at each sequence by drinking potions. Much of the in-code text, descriptions, and comments are in **Ukrainian** — keep new user-facing strings consistent with that.
 
 ## Commands
 
-- **Build**: `mvn clean package` (default goal; produces a shaded plugin JAR via maven-shade-plugin). Shading bundles `glowingentities`, `EffectLib`, and `triumph-gui`; `paper-api` (the server runs Paper), `coreprotect`, MythicMobs (`io.lumine:Mythic-Dist`), and BetterModel (`io.github.toxicity188:bettermodel-bukkit-api`) are `provided` — those are separate plugin dependencies (`depend: [Citizens, MythicMobs]`, `softdepend: [CoreProtect, BetterModel]` in `plugin.yml`), not shaded into the JAR.
+- **Build**: `mvn clean package` (default goal; produces a shaded plugin JAR via maven-shade-plugin). Shading bundles `glowingentities`, `EffectLib`, and `triumph-gui`; `paper-api` (the server runs Paper), `coreprotect`, MythicMobs (`io.lumine:Mythic-Dist`), and BetterModel (`io.github.toxicity188:bettermodel`) are `provided` — those are separate plugin dependencies (`depend: [Citizens, MythicMobs]`, `softdepend: [CoreProtect, BetterModel]` in `plugin.yml`), not shaded into the JAR. Dependency versions are pinned to what supports 1.21.1 — do not bump them without reading `.claude/rules/minecraft-version.md`.
 - **Run tests**: `mvn test` (JUnit 5; ArchUnit for architecture rules). Surefire + test deps live in `pom.xml`.
 - **Single test class**: `mvn test -Dtest=SpellRecipeTest`
 - **Single test method**: `mvn test -Dtest=SpellRecipeTest#aoeScalesWithPowerAndArea`

@@ -29,6 +29,6 @@ paths:
 
 ## Залежності збірки
 
-Shade-йдуть `glowingentities`, `EffectLib`, `triumph-gui`; `paper-api`, `coreprotect`, MythicMobs (`io.lumine:Mythic-Dist`) та BetterModel (`io.github.toxicity188:bettermodel-bukkit-api`) — `provided` (MythicMobs — plugin-залежність через `depend`, BetterModel — через `softdepend`, обидва не shade). Нову бібліотеку додавай свідомо: або в shade (росте JAR), або як plugin-залежність у `plugin.yml`.
+Shade-йдуть `glowingentities`, `EffectLib`, `triumph-gui`; `paper-api`, `coreprotect`, MythicMobs (`io.lumine:Mythic-Dist`) та BetterModel (`io.github.toxicity188:bettermodel`) — `provided` (MythicMobs — plugin-залежність через `depend`, BetterModel — через `softdepend`, обидва не shade). Нову бібліотеку додавай свідомо: або в shade (росте JAR), або як plugin-залежність у `plugin.yml`.
 
-Увага: `bettermodel-bukkit-api` (3.x) — НЕ той самий артефакт, що легасі `io.github.toxicity188:bettermodel` (1.x, застиг на 1.15.2). Версія артефакту збігається з версією самого плагіна BetterModel.
+Увага: `bettermodel` (1.x, застиг на 1.15.2) — НЕ той самий артефакт, що наступник `bettermodel-bukkit-api` (2.x/3.x). Тут навмисно 1.x: лише в ньому лишився NMS-модуль `v1_21_R1`, тобто підтримка 1.21.1. Версія артефакту збігається з версією самого плагіна BetterModel; усі версії залежностей прив'язані до цільової 1.21.1 — див. `.claude/rules/minecraft-version.md`.

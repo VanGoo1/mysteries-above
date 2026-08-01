@@ -5,36 +5,44 @@
 
 ## Кастомні предмети (інгредієнти)
 
-Кожен предмет плагіну = **музична пластинка** + рядковий `custom_model_data` (= id предмета
-з `src/main/resources/custom-items.yml`). Пластинка, а не `PAPER`, бо ванільний папір шлях
-Блазня споживає як справжній ресурс — див. `.claude/rules/item-materials.md`, там же таблиця
-«категорія → матеріал». Плагін виставляє компонент у `CustomItemFactory`; пак ловить рядок у
-`assets/minecraft/items/<material>.json` і підставляє модель.
+Цільова версія — **Minecraft 1.21.1** (`pack_format: 34`). Тут `custom_model_data` ще
+**числовий**: рядкові ключі й `assets/minecraft/items/*.json` (`minecraft:select`) з'явились
+лише в 1.21.4, тому вибір моделі робить масив `overrides` у самій моделі пластинки.
 
-| Файл визначення | Категорія |
+Кожен предмет плагіну = **музична пластинка** + `custom_model_data`. Пластинка, а не `PAPER`,
+бо ванільний папір шлях Блазня споживає як справжній ресурс — див. `docs/item-materials.md`,
+там же таблиця «категорія → матеріал». Читабельний ключ (= id предмета з
+`src/main/resources/custom-items.yml`) плагін згортає в число через
+`me.vangoo.infrastructure.items.ItemModelData`; пак тримає те саме число в `overrides`.
+
+| Файл моделі | Категорія |
 |---|---|
-| `items/music_disc_far.json`  | інгредієнти (69 кейсів) |
-| `items/music_disc_ward.json` | предмети здібностей (`active` / `passive` / `permanent_passive`) |
+| `models/item/music_disc_far.json`     | інгредієнти |
+| `models/item/music_disc_ward.json`    | предмети здібностей (`active` / `passive` / `permanent_passive`) |
+| `models/item/music_disc_chirp.json`   | Характеристики |
+| `models/item/music_disc_mellohi.json` / `music_disc_stal.json` | монети (фунт / коппет) |
 
-Визначення здібностей — вкладений `select`: у руках підставляється прозора `item/hidden`
-(предмет не видно ні тобі, ні іншим гравцям), у GUI лишається справжня іконка. Значення
-`display_context` пишуться злитно (`firstperson_righthand`) — одрук в enum ламає ВСЕ
-визначення й дає фіолетово-чорний квадрат. Поза порожньої руки при цьому НЕ досягається;
-чому — у `.claude/rules/item-materials.md`.
+Моделі здібностей мають `display` зі `scale: [0, 0, 0]` на ручних контекстах — у руці предмета
+не видно ні тобі, ні іншим гравцям, у GUI лишається справжня іконка. Поза порожньої руки при
+цьому НЕ досягається; чому — у `docs/item-materials.md`.
 
 Додати новий інгредієнт:
 1. Спрайт → `assets/minecraft/textures/item/<id>.png` (16×16 або 32×32).
 2. Модель → `assets/minecraft/models/item/<id>.json` (скопіюй сусідню, заміни id).
-3. Прив'язка → новий `case` в `assets/minecraft/items/music_disc_far.json`:
-   `{ "when": "<id>", "model": { "type": "minecraft:model", "model": "minecraft:item/<id>" } }`
+3. Перегенеруй прив'язки (з кореня репозиторію):
+   `powershell -ExecutionPolicy Bypass -File tools/resourcepack/rp-item-models.gen.ps1`
 
-Пропустиш крок 2 або 3 — предмет тихо стане звичайною пластинкою. Це ловить
-`ResourcePackItemModelTest` (`mvn test`), а не очі на сервері.
+Override'и руками не пиши: число рахує та сама функція, що в плагіні, а порядок у масиві мусить
+зростати (ванільний предикат матчить `>=` і виграє останній збіг). Пропустиш крок 2 або 3 —
+предмет тихо стане звичайною пластинкою. Це ловить `ResourcePackItemModelTest` (`mvn test`),
+а не очі на сервері.
 
-**Ще без текстур** (законно падають на ванільний вигляд, файлів `items/*.json` не мають):
-Характеристики (`MUSIC_DISC_CHIRP`, ключі `characteristic_<шлях>`), монети
-(`MUSIC_DISC_MELLOHI` / `MUSIC_DISC_STAL`), предмети орденів (`MUSIC_DISC_11`),
-книга рецептів (`ENCHANTED_BOOK`).
+**Ще без текстур** (законно падають на ванільний вигляд, моделей не мають): частина
+інгредієнтів, предмети орденів (`MUSIC_DISC_11`), книга рецептів (`ENCHANTED_BOOK`).
+
+Характеристика на 1.21.1 має ОДНУ спільну модель на всі 22 шляхи: тонування компонентом
+`dyed_color` тут ще недоступне (і Bukkit-API для його запису теж), тож колір шляху лишається
+тільки в назві предмета.
 
 ## «Зачаровані» блоки фореджу (донори)
 
@@ -64,4 +72,6 @@
    require-resource-pack=true
    ```
 
-`pack.mcmeta` тримає `min_format`/`max_format` під версію клієнта — онови при апдейті MC.
+`pack.mcmeta` тримає `pack_format` під версію клієнта (34 = 1.21/1.21.1) — онови при апдейті MC.
+Разом із форматом доведеться повернути й `assets/minecraft/items/*.json` із рядковими ключами:
+з 1.21.4 це рідний спосіб, а `overrides` там уже застарілі.
