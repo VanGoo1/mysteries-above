@@ -52,6 +52,15 @@ function Read-CustomItems([string]$path) {
     return $items
 }
 
+# Усі 22 зареєстровані pathway (PathwayManager.initializePathways) — той самий список імен,
+# що й ключі PathwayBranding. CharacteristicCodec.modelKeyFor будує "characteristic_<ім'я>".
+$pathwayNames = @(
+    'Error', 'Visionary', 'Door', 'Justiciar', 'WhiteTower', 'Fool',
+    'Sun', 'Tyrant', 'HangedMan', 'Hermit', 'Paragon', 'BlackEmperor',
+    'Darkness', 'Death', 'TwilightGiant', 'Mother', 'Moon',
+    'RedPriest', 'Demoness', 'Abyss', 'Chained', 'WheelOfFortune'
+)
+
 # Ключі, яких немає в custom-items.yml: їх ставить код, а не конфіг.
 # Формат: матеріал = @{ ключ = ім'я моделі в models/item }.
 $staticKeys = @{
@@ -60,9 +69,17 @@ $staticKeys = @{
         'passive'            = 'passive'
         'permanent_passive'  = 'permanent_passive'
     }
-    'MUSIC_DISC_CHIRP'   = [ordered]@{ 'characteristic' = 'music_disc_chirp_custom_w7yj' }  # CharacteristicCodec
+    'MUSIC_DISC_CHIRP'   = [ordered]@{}  # CharacteristicCodec — заповнюється нижче, на pathway
     'MUSIC_DISC_MELLOHI' = [ordered]@{ 'gold_pound' = 'pound' }                             # CurrencyCodec
     'MUSIC_DISC_STAL'    = [ordered]@{ 'coppet' = 'coppet' }                                # CurrencyCodec
+}
+
+# Один ключ моделі на шлях (CharacteristicCodec.modelKeyFor -> "characteristic_<Name>").
+# Модель — music_disc_chirp_<name-lowercase> (генерує tools/resourcepack/tint-characteristics.gen.ps1
+# з сірої заготовки music_disc_chirp_custom_w7yj.png + кольору з PathwayBranding). Поки для шляху
+# немає моделі — Add-Key нижче законно пропускає його, предмет лишається ванільною пластинкою.
+foreach ($name in $pathwayNames) {
+    $staticKeys['MUSIC_DISC_CHIRP']["characteristic_$name"] = "music_disc_chirp_$($name.ToLowerInvariant())"
 }
 
 # Збираємо ключ → модель по матеріалах.

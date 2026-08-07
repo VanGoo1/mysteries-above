@@ -4,6 +4,27 @@
     "layer0": "minecraft:item/music_disc_chirp"
   },
   "overrides": [
-    { "predicate": { "custom_model_data": 7313883 }, "model": "item/music_disc_chirp_custom_w7yj" }
+    { "predicate": { "custom_model_data": 1355461 }, "model": "item/music_disc_chirp_hangedman" },
+    { "predicate": { "custom_model_data": 1487102 }, "model": "item/music_disc_chirp_tyrant" },
+    { "predicate": { "custom_model_data": 1889188 }, "model": "item/music_disc_chirp_whitetower" },
+    { "predicate": { "custom_model_data": 2006164 }, "model": "item/music_disc_chirp_abyss" },
+    { "predicate": { "custom_model_data": 2336144 }, "model": "item/music_disc_chirp_justiciar" },
+    { "predicate": { "custom_model_data": 3418952 }, "model": "item/music_disc_chirp_sun" },
+    { "predicate": { "custom_model_data": 3772540 }, "model": "item/music_disc_chirp_visionary" },
+    { "predicate": { "custom_model_data": 4843056 }, "model": "item/music_disc_chirp_death" },
+    { "predicate": { "custom_model_data": 5559724 }, "model": "item/music_disc_chirp_redpriest" },
+    { "predicate": { "custom_model_data": 5713489 }, "model": "item/music_disc_chirp_twilightgiant" },
+    { "predicate": { "custom_model_data": 5796658 }, "model": "item/music_disc_chirp_door" },
+    { "predicate": { "custom_model_data": 5856234 }, "model": "item/music_disc_chirp_fool" },
+    { "predicate": { "custom_model_data": 6064773 }, "model": "item/music_disc_chirp_moon" },
+    { "predicate": { "custom_model_data": 6148061 }, "model": "item/music_disc_chirp_blackemperor" },
+    { "predicate": { "custom_model_data": 6170052 }, "model": "item/music_disc_chirp_error" },
+    { "predicate": { "custom_model_data": 7019902 }, "model": "item/music_disc_chirp_demoness" },
+    { "predicate": { "custom_model_data": 7913863 }, "model": "item/music_disc_chirp_mother" },
+    { "predicate": { "custom_model_data": 8142562 }, "model": "item/music_disc_chirp_paragon" },
+    { "predicate": { "custom_model_data": 8478236 }, "model": "item/music_disc_chirp_chained" },
+    { "predicate": { "custom_model_data": 8478247 }, "model": "item/music_disc_chirp_hermit" },
+    { "predicate": { "custom_model_data": 8933587 }, "model": "item/music_disc_chirp_wheeloffortune" },
+    { "predicate": { "custom_model_data": 9424145 }, "model": "item/music_disc_chirp_darkness" }
   ]
 }
