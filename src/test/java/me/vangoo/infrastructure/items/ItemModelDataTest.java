@@ -30,7 +30,15 @@ class ItemModelDataTest {
 
     /** Сталі ключі, які ставить код, а не конфіг (AbilityItemFactory / CharacteristicCodec / CurrencyCodec). */
     private static final List<String> CODE_KEYS = List.of(
-            "active", "passive", "permanent_passive", "characteristic", "gold_pound", "coppet");
+            "active", "passive", "permanent_passive", "characteristic", "gold_pound", "coppet",
+            "characteristic_Error", "characteristic_Visionary", "characteristic_Door",
+            "characteristic_Justiciar", "characteristic_WhiteTower", "characteristic_Fool",
+            "characteristic_Sun", "characteristic_Tyrant", "characteristic_HangedMan",
+            "characteristic_Hermit", "characteristic_Paragon", "characteristic_BlackEmperor",
+            "characteristic_Darkness", "characteristic_Death", "characteristic_TwilightGiant",
+            "characteristic_Mother", "characteristic_Moon", "characteristic_RedPriest",
+            "characteristic_Demoness", "characteristic_Abyss", "characteristic_Chained",
+            "characteristic_WheelOfFortune");
 
     @Test
     void valuesAreFrozenForever() {
@@ -40,6 +48,30 @@ class ItemModelDataTest {
         assertEquals(7313883, ItemModelData.of("characteristic"));
         assertEquals(9632173, ItemModelData.of("gold_pound"));
         assertEquals(5276955, ItemModelData.of("coppet"));
+
+        // CharacteristicCodec.modelKeyFor — один ключ на pathway (PathwayManager.initializePathways).
+        assertEquals(6170052, ItemModelData.of("characteristic_Error"));
+        assertEquals(3772540, ItemModelData.of("characteristic_Visionary"));
+        assertEquals(5796658, ItemModelData.of("characteristic_Door"));
+        assertEquals(2336144, ItemModelData.of("characteristic_Justiciar"));
+        assertEquals(1889188, ItemModelData.of("characteristic_WhiteTower"));
+        assertEquals(5856234, ItemModelData.of("characteristic_Fool"));
+        assertEquals(3418952, ItemModelData.of("characteristic_Sun"));
+        assertEquals(1487102, ItemModelData.of("characteristic_Tyrant"));
+        assertEquals(1355461, ItemModelData.of("characteristic_HangedMan"));
+        assertEquals(8478247, ItemModelData.of("characteristic_Hermit"));
+        assertEquals(8142562, ItemModelData.of("characteristic_Paragon"));
+        assertEquals(6148061, ItemModelData.of("characteristic_BlackEmperor"));
+        assertEquals(9424145, ItemModelData.of("characteristic_Darkness"));
+        assertEquals(4843056, ItemModelData.of("characteristic_Death"));
+        assertEquals(5713489, ItemModelData.of("characteristic_TwilightGiant"));
+        assertEquals(7913863, ItemModelData.of("characteristic_Mother"));
+        assertEquals(6064773, ItemModelData.of("characteristic_Moon"));
+        assertEquals(5559724, ItemModelData.of("characteristic_RedPriest"));
+        assertEquals(7019902, ItemModelData.of("characteristic_Demoness"));
+        assertEquals(2006164, ItemModelData.of("characteristic_Abyss"));
+        assertEquals(8478236, ItemModelData.of("characteristic_Chained"));
+        assertEquals(8933587, ItemModelData.of("characteristic_WheelOfFortune"));
     }
 
     @Test
