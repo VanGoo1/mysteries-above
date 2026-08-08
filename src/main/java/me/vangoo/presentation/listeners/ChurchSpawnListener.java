@@ -15,7 +15,8 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Знайдене село → поруч спавниться випадкова ще не розміщена церква (кожна — раз на світ).
+ * Знайдене село → поруч спавниться випадкова ще не розміщена церква (кожна —
+ * раз на світ).
  * Ключ села — min-кут bbox структурного старту; оброблені села персистяться.
  */
 public class ChurchSpawnListener implements Listener {
@@ -32,7 +33,7 @@ public class ChurchSpawnListener implements Listener {
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent event) {
         for (GeneratedStructure structure : event.getChunk().getStructures()) {
-            NamespacedKey key = Registry.STRUCTURE.getKey(structure.getStructure());
+            NamespacedKey key = structure.getStructure().getKey();
             if (key == null || !key.getKey().startsWith("village")) {
                 continue;
             }
