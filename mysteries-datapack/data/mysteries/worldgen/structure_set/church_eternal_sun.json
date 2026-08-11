@@ -1,0 +1,15 @@
+{
+  "structures": [
+    {
+      "structure": "mysteries:church_eternal_sun",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 123456790,
+    "spacing": 32,
+    "separation": 16,
+    "spread_type": "linear"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "mysteries:church_fool",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "mysteries:church_fool",
+        "processors": "minecraft:empty"
+      }
+    }
+  ]
+}

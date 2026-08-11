@@ -1,0 +1,15 @@
+{
+  "structures": [
+    {
+      "structure": "mysteries:church_fool",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 123456791,
+    "spacing": 32,
+    "separation": 16,
+    "spread_type": "linear"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "mysteries:church_evernight",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "mysteries:church_evernight",
+        "processors": "minecraft:empty"
+      }
+    }
+  ]
+}
