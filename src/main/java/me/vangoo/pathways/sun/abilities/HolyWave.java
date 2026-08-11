@@ -59,7 +59,7 @@ public class HolyWave extends ActiveAbility {
 
     @Override
     public int getSpiritualityCost() {
-        return 45;
+        return 250;
     }
 
     @Override

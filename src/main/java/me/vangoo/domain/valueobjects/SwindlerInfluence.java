@@ -17,12 +17,12 @@ public final class SwindlerInfluence {
 
     // --- Вартість духовності та базові кулдауни (сек) ---
     public static final int ELOQUENCE_COST = 35;
-    public static final int ELOQUENCE_COOLDOWN_SECONDS = 45;
+    public static final int ELOQUENCE_COOLDOWN_SECONDS = 20;
     public static final int MISDIRECTION_COST = 30;
     public static final int MISDIRECTION_COOLDOWN_SECONDS = 30;
     public static final int DISRUPTION_COST = 45;
     public static final int DISRUPTION_COOLDOWN_SECONDS = 60;
-    public static final int MATERIAL_THEFT_COST = 50;
+    public static final int MATERIAL_THEFT_COST = 60;
 
     // --- Дальності (блоки) ---
     public static final double CHARM_AGGRO_RANGE = 16.0;

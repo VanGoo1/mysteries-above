@@ -40,7 +40,7 @@ public class Balance extends PermanentPassiveAbility {
 
     @Override
     public String getDescription(Sequence sequence) {
-        return "§fДосконале чуття рівноваги морського вовка: вас важче збити з ніг " +
+        return "§fДосконале чуття рівноваги морської сутності: вас важче збити з ніг " +
                 "§b(опір відкиданню)§f.";
     }
 

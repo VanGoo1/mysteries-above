@@ -21,10 +21,10 @@ import org.bukkit.util.Vector;
  */
 public class Windblades extends ActiveAbility {
 
-    private static final int BASE_DAMAGE = 7;
+    private static final int BASE_DAMAGE = 5;
     private static final double MAX_RANGE = 30.0;
     private static final double KNOCKBACK = 0.6;
-    private static final int COOLDOWN = 4;
+    private static final int COOLDOWN = 10;
     private static final int SPIRITUALITY_COST = 40;
     private static final double FAN_SPREAD_DEGREES = 20.0;
 
@@ -38,7 +38,7 @@ public class Windblades extends ActiveAbility {
         int damage = scaleValue(BASE_DAMAGE, sequence, SequenceScaler.ScalingStrategy.MODERATE);
         return String.format(
                 "§fСтискає повітря у невидиме різальне лезо — §c%d §fшкоди першій істоті " +
-                        "на лінії зору (%d блоків). §7Присідь §f— віяло з трьох лез ширшим сектором.",
+                        "на лінії зору (%d блоків). §7Присівши §f— віяло з трьох лез ширшим сектором.",
                 damage, (int) MAX_RANGE);
     }
 

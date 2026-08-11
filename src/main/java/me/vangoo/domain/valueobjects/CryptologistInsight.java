@@ -21,7 +21,7 @@ public final class CryptologistInsight {
     }
 
     // --- Вартість і дальності ---
-    public static final int DECRYPTION_COST = 60;
+    public static final int DECRYPTION_COST = 110;
     public static final int DECRYPTION_COOLDOWN_SECONDS = 45;
     private static final int DECRYPTION_COOLDOWN_FLOOR_SECONDS = 20;
 

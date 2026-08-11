@@ -201,6 +201,25 @@ public interface IVisualEffectsContext {
     void playGroundTrail(Location from, Location to, Color color, int durationTicks);
 
     /**
+     * {@link #playDustMark}, видима ЛИШЕ одному глядачеві (пакетний партикл, не
+     * {@code World.spawnParticle}) — для приватних міток на кшталт слідів
+     * Спостережливості, які не мають бачити сторонні.
+     *
+     * @param viewerId єдиний гравець, який бачить мітку
+     */
+    void playDustMarkFor(UUID viewerId, Location center, Color color, double spread, float size,
+                        int count, int durationTicks);
+
+    /**
+     * {@link #playGroundTrail}, видимий ЛИШЕ одному глядачеві — той самий приватний
+     * трюк, що й {@link #playDustMarkFor}.
+     *
+     * @param viewerId єдиний гравець, який бачить слід
+     */
+    void playGroundTrailFor(UUID viewerId, Location from, Location to, Color color,
+                            int durationTicks);
+
+    /**
      * Разова висхідна спіраль навколо точки: пилинки кольору шляху шикуються у спіраль
      * від {@code base} до {@code base + height} і «повзуть» знизу вгору протягом
      * {@code durationTicks}, після чого ефект сам гасне. Самодостатній (володіє власним
@@ -338,6 +357,38 @@ public interface IVisualEffectsContext {
                              double width, double height, Color color, int durationTicks);
 
     /**
+     * ВОРОТА: вертикальний прямокутний портал — рамка кольору шляху, темна утроба всередині
+     * (дим/чорнило, а не суцільна заливка) і кільця всмоктування, що стягуються до центру.
+     * На відміну від {@link #playStandingCurtain} (рухома брижами завіса без нутра) — це
+     * непрозорий отвір, крізь який щось тягне; на відміну від {@link #playVortexEffect}
+     * (вихор навколо точки) — площинний, як двері, а не об'ємний вир. Самодостатній
+     * (володіє власним таском); лише малює — тягу й шкоду рахує здібність.
+     *
+     * @param center        низ брами (ноги); висота росте вгору, як у {@link #playStandingCurtain}
+     * @param facing        напрям, КУДИ дивиться брама (площина перпендикулярна йому)
+     * @param width         ширина брами
+     * @param height        висота брами
+     * @param color         колір рамки й кілець (з PathwayBranding)
+     * @param durationTicks скільки брама стоїть
+     */
+    void playUnderworldGate(Location center, org.bukkit.util.Vector facing,
+                            double width, double height, Color color, int durationTicks);
+
+    /**
+     * ХВАТ: примарні руки, що піднімаються з-під ніг цілі й стискаються навколо неї, плюс
+     * кільце на землі («земля не пускає») і душевні іскри на кінчиках пальців. Свідомо НЕ
+     * {@link #playCircleEffect} і не {@link #playVortexEffect}: там кільце й вихор, а тут
+     * потрібні саме руки, що тримають — інакше іммобілізація читається як звичайна аура.
+     * Самодостатній (володіє власним таском); лише малює — сповільнення накладає здібність.
+     *
+     * @param target        локація цілі (ноги); ефект статичний, тож для довгого хвату
+     *                      викликається повторно за новою локацією
+     * @param color         колір рук (з PathwayBranding)
+     * @param durationTicks скільки руки тримаються
+     */
+    void playGraspingHands(Location target, Color color, int durationTicks);
+
+    /**
      * Блоки-примари: ОДИН гравець бачить {@code count} фальшивих блоків {@code material},
      * що з'являються у порожніх клітинках у радіусі {@code radius} довкола {@code center};
      * решта світу нічого не бачить. Через {@code durationTicks} усі клітинки самі
@@ -368,4 +419,18 @@ public interface IVisualEffectsContext {
      * @param durationTicks скільки оболонка тримається
      */
     void playWardingShell(UUID entityId, Color color, double radius, int durationTicks);
+
+    /**
+     * Силует душі, видимий ЛИШЕ одному глядачеві: висхідний стовпчик {@code SOUL} у людський
+     * зріст плюс кільце-німб з пилу кольору шляху над ним. Один кадр — власного таска не має,
+     * тож той, хто малює душу довго, перемальовує її своїм тіком.
+     *
+     * <p>Свідомо не {@link #playPillarEffect}: той малює стовп усьому світу, а душу на місці
+     * смерті має бачити тільки медіум.
+     *
+     * @param viewerId єдиний гравець, який бачить силует
+     * @param base     низ силуету (місце смерті)
+     * @param color    колір німба (з PathwayBranding)
+     */
+    void playSoulWisp(UUID viewerId, Location base, Color color);
 }

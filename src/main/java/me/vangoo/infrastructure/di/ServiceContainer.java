@@ -109,6 +109,7 @@ public class ServiceContainer {
     private me.vangoo.application.services.ContractService contractService;
     private me.vangoo.infrastructure.waypoints.WaypointStore waypointStore;
     private me.vangoo.infrastructure.theft.TheftLedger theftLedger;
+    private me.vangoo.infrastructure.retinue.RetinueStore retinueStore;
 
     // Schedulers
     private PassiveAbilityScheduler passiveAbilityScheduler;
@@ -144,6 +145,7 @@ public class ServiceContainer {
     private me.vangoo.presentation.listeners.GatheringListener gatheringListener;
     private me.vangoo.presentation.listeners.OrganizerClickListener organizerClickListener;
     private me.vangoo.presentation.listeners.CurrencyExchangeListener currencyExchangeListener;
+    private me.vangoo.presentation.listeners.RetinueRestoreListener retinueRestoreListener;
 
     // Recipes
     private RecipeBookCraftingRecipe recipeBookCraftingRecipe;
@@ -269,6 +271,16 @@ public class ServiceContainer {
         // --- Error: реєстр крадіжок сили (Прометей, Seq 6) ---
         this.theftLedger = new me.vangoo.infrastructure.theft.TheftLedger(
                 plugin.getDataFolder() + File.separator + "theft.json");
+
+        // --- Death: персистентний почет нежиті (Посл. 6) ---
+        this.retinueStore = new me.vangoo.infrastructure.retinue.RetinueStore(
+                plugin.getDataFolder() + File.separator + "retinue.json");
+        // UndeadRetinue будується всередині Death.initializeAbilities() (виклик іде з
+        // Pathway-конструктора, до того, як ServiceContainer міг би передати сховище напряму),
+        // тому проставляємо сеттером — той самий прийом, що ChurchService.setFalsePapersCheck.
+        if (pathwayManager.getPathway("Death") instanceof me.vangoo.pathways.death.Death death) {
+            death.getRetinue().setStore(retinueStore);
+        }
     }
 
     private void initializeApplicationServices(fr.skytasul.glowingentities.GlowingEntities glowingEntities,
@@ -475,6 +487,8 @@ public class ServiceContainer {
                 organizerNpcService, gatheringService, confirmationMenu);
         this.currencyExchangeListener = new me.vangoo.presentation.listeners.CurrencyExchangeListener(
                 currencyCodec, confirmationMenu);
+        this.retinueRestoreListener = new me.vangoo.presentation.listeners.RetinueRestoreListener(
+                pathwayManager, abilityContextFactory);
     }
 
     private void initializeRecipes() {
@@ -485,6 +499,7 @@ public class ServiceContainer {
     public PathwayManager getPathwayManager() { return pathwayManager; }
     public CooldownManager getCooldownManager() { return cooldownManager; }
     public AbilityLockManager getAbilityLockManager() { return abilityLockManager; }
+    public me.vangoo.infrastructure.theft.TheftLedger getTheftLedger() { return theftLedger; }
     public RampageManager getRampageManager() { return rampageManager; }
     public SanityPenaltyHandler getSanityPenaltyHandler() { return sanityPenaltyHandler; }
     public PassiveAbilityManager getPassiveAbilityManager() { return passiveAbilityManager; }
@@ -568,6 +583,7 @@ public class ServiceContainer {
     public me.vangoo.presentation.listeners.GatheringListener getGatheringListener() { return gatheringListener; }
     public me.vangoo.presentation.listeners.OrganizerClickListener getOrganizerClickListener() { return organizerClickListener; }
     public me.vangoo.presentation.listeners.CurrencyExchangeListener getCurrencyExchangeListener() { return currencyExchangeListener; }
+    public me.vangoo.presentation.listeners.RetinueRestoreListener getRetinueRestoreListener() { return retinueRestoreListener; }
 
     public RecipeBookCraftingRecipe getRecipeBookCraftingRecipe() { return recipeBookCraftingRecipe; }
 

@@ -34,8 +34,8 @@ public class SeaTongue extends ActiveAbility {
     private static final int BASE_RADIUS = 16;
     private static final int BASE_DURATION_SECONDS = 20;
     private static final int SIGHT_RANGE = 25;
-    private static final int COOLDOWN = 60;
-    private static final int SPIRITUALITY_COST = 35;
+    private static final int COOLDOWN = 30;
+    private static final int SPIRITUALITY_COST = 50;
 
     @Override
     public String getName() {
@@ -46,8 +46,8 @@ public class SeaTongue extends ActiveAbility {
     public String getDescription(Sequence sequence) {
         return String.format(
                 "§fВи говорите мовою глибин: морська живність у радіусі §b%d §fблоків на §b%d §fсекунд " +
-                        "стає на ваш бік — підсилена силою та швидкістю, кидається на вашу ціль. " +
-                        "Водночас усі вороги поруч проступають крізь воду й стіни — видно лише вам.",
+                        "стає на ваш бік — підсилена силою та швидкістю, кидається на вашу ціль.\n" +
+                        "Водночас усіх ворогів поруч видно крізь воду й стіни — видно лише вам.",
                 radius(sequence), duration(sequence));
     }
 

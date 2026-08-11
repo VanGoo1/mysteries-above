@@ -24,8 +24,8 @@ import java.util.UUID;
 public class Wrath extends ActiveAbility {
 
     private static final int BASE_DURATION_TICKS = 140; // MODERATE-скейл: Seq 8 ≈ 8 с, Seq 5 ≈ 11 с
-    private static final int COOLDOWN = 30;
-    private static final int SPIRITUALITY_COST = 40;
+    private static final int COOLDOWN = 20;
+    private static final int SPIRITUALITY_COST = 50;
     /** «Очі палають яростю» — вогняний акцент ефекту, не колір шляху. */
     private static final Color RAGE_EYES = Color.fromRGB(255, 70, 40);
 
@@ -36,9 +36,8 @@ public class Wrath extends ActiveAbility {
 
     @Override
     public String getDescription(Sequence sequence) {
-        return "§fВи впадаєте в шал: очі палають яростю, м'язи набрякають, тіло наливається " +
-                "§cсилою " + (strengthAmplifier(sequence) + 1) + "§f, а рухи стають §bстрімкими " +
-                (speedAmplifier(sequence) + 1) + "§f. Триває §b" +
+        return "§fВи стаєте шаленим: очі палають яростю, м'язи набрякають, тіло наливається " +
+                "§cсилою " + (strengthAmplifier(sequence) + 1) + "§f, а рухи стають §bстрімкими " + "§f. Триває §b" +
                 (durationTicks(sequence) / 20) + " с§f.";
     }
 

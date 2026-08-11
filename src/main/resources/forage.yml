@@ -5,10 +5,10 @@
 forage:
   spawn:
     interval-seconds: 40      # як часто планувальник перевіряє гравців
-    chance: 0.25              # шанс спробувати спавн ноди за тік на гравця
+    chance: 0.10              # шанс спробувати спавн ноди за тік на гравця
     max-nearby: 3             # не спавнити, якщо стільки нод вже в радіусі 32 блоки
     ttl-seconds: 90           # нода зникає, якщо її не зібрали
-    search-radius: 8          # радіус пошуку вегетації біля гравця (на рівні ніг)
+    search-radius: 15          # радіус пошуку вегетації біля гравця (на рівні ніг)
     particle-period-ticks: 40 # період тихих GLOW-частинок над зачарованими блоками
     leaves:                   # цілі в кронах (повні блоки листя)
       - OAK_LEAVES
@@ -84,6 +84,7 @@ forage:
       - { id: illusory_chime_tree_fruit, weight: 20 }
       - { id: wayfinder_tree_root, weight: 15 }
       - { id: white_chestnut_balm, weight: 25 }
+      - { id: leaf_blessed_by_a_natural_spirit, weight: 20 }
     FLOWER_FOREST:
       - { id: memory_flower_petals, weight: 50 }
       - { id: peppermint_extract, weight: 30 }
@@ -110,6 +111,10 @@ forage:
       - { id: shackles_of_the_guilty, weight: 12 }
       - { id: devastated_blank_mask, weight: 15 }
       - { id: larch_essential_oil, weight: 15 }
+      - { id: cloth_wrapped_persons_crystal, weight: 20 }
+      - { id: cemetery_blood_rose, weight: 20 }
+      - { id: piece_of_spirit_world_crystal, weight: 15 }
+      - { id: shadow_of_death, weight: 12 }
     JUNGLE:
       - { id: ever_shifting_lotus, weight: 40 }
       - { id: tree_of_elders_fruit, weight: 30 }
@@ -132,6 +137,9 @@ forage:
       - { id: poison_hemlock, weight: 20 }
       - { id: aqua_fern_juice, weight: 20 }
       - { id: imbued_ink_sac, weight: 20 }
+      - { id: black_lily, weight: 20 }
+      - { id: corpse_scented_essential_oil, weight: 20 }
+      - { id: decomposing_fluid_from_the_dead, weight: 15 }
     DESERT:
       - { id: yellow_amber_powder, weight: 40 }
       - { id: dust_of_lake_spirit, weight: 20 }

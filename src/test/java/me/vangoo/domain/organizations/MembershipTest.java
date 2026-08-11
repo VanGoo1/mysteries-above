@@ -16,7 +16,7 @@ class MembershipTest {
         m.addContribution(250);
         assertEquals(250, m.lifetimeContribution());
         assertEquals(250, m.balance());
-        assertEquals(ChurchRank.SLUZHKA, m.rank(THRESHOLDS));
+        assertEquals(ChurchRank.SLUHA, m.rank(THRESHOLDS));
     }
 
     @Test

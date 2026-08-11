@@ -26,8 +26,8 @@ public class SlickWater extends ActiveAbility {
     private static final double SLIDE_GAIN = 0.45;   // наскільки підсилюється власний рух цілі
     private static final double SLIDE_CAP = 1.1;     // щоб не жбурляло через пів карти
     private static final int DURATION_TICKS = 200;   // 10 с
-    private static final int COOLDOWN = 15;
-    private static final int SPIRITUALITY_COST = 30;
+    private static final int COOLDOWN = 25;
+    private static final int SPIRITUALITY_COST = 60;
 
     @Override
     public String getName() {

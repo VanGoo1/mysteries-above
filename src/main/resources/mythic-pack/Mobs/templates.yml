@@ -3,7 +3,9 @@
 # (ГКД ~6с, у S5 ~4с; вибір зважено-випадковий серед готових — перша у списку найважча);
 # реактивні/пасивні — окремі тригерні рядки поза ГКД. Стійка: RANGED-шаблони вимикають рухові AI-цілі і додають rangedstance (стоїть-кастує
 # в смузі 5..11, відходить кроком, мілі-відповідь по provoke) + provoke ~onTimer при гравці в 3 блоках (перехід у melee за близькістю, не за уроном);
-# MELEE — нічого. Числа тут — баланс істот, незалежний від гравцевих здібностей.
+# MELEE — нічого. Виняток: моб на МИРНОМУ ванільному типі (CHICKEN, PARROT, GOAT…) не має goal
+# `meleeattack` — без власного блоку AIGoalSelectors у самому мобі він бере ціль і стоїть.
+# Числа тут — баланс істот, незалежний від гравцевих здібностей.
 MA_Base:
   # Плейсхолдер: шаблон ніколи не спавниться, але MythicMobs вантажить кожен запис Mobs/*.yml
   # як моба і без Type кидає "No Type specified". Конкретні моби перекривають Type власним.
@@ -261,89 +263,157 @@ MA_Whitetower_S5:
   - provoke{seconds=4} @self ~onTimer:10 ?playerwithin{d=3}
   - effect:particles{p=end_rod;amount=4;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
 
-# ── Error (MELEE, трикстер; гравцеві здібності S7–S5 ще не існують — кіт S8, сильніший) ──
+# ── Error (MELEE, трикстер-злодій) ──
+# Кишенькова крадіжка йде окремим рядком поза ГКД: вона мусить спрацьовувати ВПРИТУЛ
+# (?playerwithin{d=3}), а не змагатися за слот у kitcast з дистанційними дебафами.
 MA_Error_S9:
   Template: MA_Base
   Skills:
   - kitcast{gcd=120;skills=MA_Error_S9_ShadowTheft:160} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Error_S9_Pickpocket} @NearestPlayer{r=3} ~onTimer:60 ?playerwithin{d=3}
   - effect:particles{p=smoke;amount=6;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
 
 MA_Error_S8:
   Template: MA_Base
   Skills:
-  - kitcast{gcd=120;skills=MA_Error_S8_SwindlerCharm:200,MA_Error_S9_ShadowTheft:160} @NearestPlayer{r=12} ~onTimer:20
+  - kitcast{gcd=120;skills=MA_Error_S8_MindLock:220,MA_Error_S8_SwindlerCharm:200,MA_Error_S9_ShadowTheft:160} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Error_S9_Pickpocket} @NearestPlayer{r=3} ~onTimer:60 ?playerwithin{d=3}
   - potion{type=SPEED;duration=45;level=0;particles=false} @self ~onTimer:40
   - effect:particles{p=smoke;amount=6;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
 
 MA_Error_S7:
   Template: MA_Base
   Skills:
-  - kitcast{gcd=100;skills=MA_Error_S8_SwindlerCharm:160,MA_Error_S9_ShadowTheft:120} @NearestPlayer{r=12} ~onTimer:20
+  - kitcast{gcd=100;skills=MA_Error_S7_Decryption:200,MA_Error_S8_MindLock:200,MA_Error_S8_SwindlerCharm:160,MA_Error_S9_ShadowTheft:120} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Error_S9_Pickpocket} @NearestPlayer{r=3} ~onTimer:50 ?playerwithin{d=3}
   - potion{type=SPEED;duration=45;level=0;particles=false} @self ~onTimer:40
   - effect:particles{p=smoke;amount=6;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
 
 MA_Error_S6:
   Template: MA_Base
   Skills:
-  - kitcast{gcd=100;skills=MA_Error_S8_SwindlerCharm:140,MA_Error_S9_ShadowTheft:100} @NearestPlayer{r=12} ~onTimer:20
+  - kitcast{gcd=100;skills=MA_Error_S6_PowerTheft:300,MA_Error_S7_Decryption:180,MA_Error_S8_MindLock:180,MA_Error_S8_SwindlerCharm:140,MA_Error_S9_ShadowTheft:100} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Error_S9_Pickpocket} @NearestPlayer{r=3} ~onTimer:50 ?playerwithin{d=3}
   - potion{type=SPEED;duration=45;level=0;particles=false} @self ~onTimer:40
   - effect:particles{p=smoke;amount=7;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
 
 MA_Error_S5:
   Template: MA_Base
   Skills:
-  - kitcast{gcd=80;skills=MA_Error_S8_SwindlerCharm:120,MA_Error_S9_ShadowTheft:80} @NearestPlayer{r=12} ~onTimer:20
+  - kitcast{gcd=80;skills=MA_Error_S5_ConceptualTheft:340,MA_Error_S5_PowerTheft:300,MA_Error_S7_Decryption:160,MA_Error_S8_MindLock:160,MA_Error_S8_SwindlerCharm:120,MA_Error_S9_ShadowTheft:80} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Error_S9_Pickpocket} @NearestPlayer{r=3} ~onTimer:40 ?playerwithin{d=3}
   - potion{type=SPEED;duration=45;level=1;particles=false} @self ~onTimer:40
   - effect:particles{p=smoke;amount=8;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
 
-# ── Sun (MELEE; гравцеві здібності ще не реалізовані — лише золоте світлове ауро) ──
+# ── Sun (MELEE, святе світло) ──
+# S6: гравцеві здібності S6 не бойові (Notarization/Contract) — той самий кіт S7, коротші кулдауни
 MA_Sun_S9:
   Template: MA_Base
   Skills:
+  - kitcast{gcd=120;skills=MA_Sun_S9_Singing:200} @NearestPlayer{r=12} ~onTimer:20
   - effect:particles{p=end_rod;amount=4;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
 
 MA_Sun_S8:
   Template: MA_Base
   Skills:
+  - kitcast{gcd=120;skills=MA_Sun_S8_Sunshine:180,MA_Sun_S9_Singing:220} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Sun_S8_Blessing} @self ~onDamaged ?healthpercent{h=<50}
   - effect:particles{p=end_rod;amount=5;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
 
 MA_Sun_S7:
   Template: MA_Base
   Skills:
+  - kitcast{gcd=120;skills=MA_Sun_S7_HolyLight:160,MA_Sun_S7_Cleave:140,MA_Sun_S7_FireOfLight:200,MA_Sun_S8_Sunshine:220} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Sun_S7_Halo} @PlayersInRadius{r=6} ~onTimer:40
+  - skill{s=MA_Sun_S8_Blessing} @self ~onDamaged ?healthpercent{h=<50}
   - effect:particles{p=end_rod;amount=5;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
 
 MA_Sun_S6:
   Template: MA_Base
   Skills:
+  - kitcast{gcd=120;skills=MA_Sun_S7_HolyLight:140,MA_Sun_S7_Cleave:120,MA_Sun_S7_FireOfLight:180,MA_Sun_S8_Sunshine:200} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Sun_S7_Halo} @PlayersInRadius{r=6} ~onTimer:40
+  - skill{s=MA_Sun_S8_Blessing} @self ~onDamaged ?healthpercent{h=<50}
   - effect:particles{p=end_rod;amount=6;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
 
 MA_Sun_S5:
   Template: MA_Base
   Skills:
+  - kitcast{gcd=80;skills=MA_Sun_S5_HolyWave:260,MA_Sun_S7_HolyLight:120,MA_Sun_S7_Cleave:100,MA_Sun_S7_FireOfLight:160,MA_Sun_S8_Sunshine:180} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Sun_S7_Halo} @PlayersInRadius{r=6} ~onTimer:40
+  - skill{s=MA_Sun_S8_Blessing} @self ~onDamaged ?healthpercent{h=<50}
   - effect:particles{p=end_rod;amount=6;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
 
-# ── Tyrant (MELEE, морські; скіли ще не зроблені — лише буруни води) ──
+# ── Tyrant (MELEE, морські) ──
 MA_Tyrant_S9:
   Template: MA_Base
   Skills:
+  - kitcast{gcd=120;skills=MA_Tyrant_S9_SeaLunge:160} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Tyrant_S9_IllusoryScales} @self ~onDamaged
   - effect:particles{p=bubble;amount=4;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
 
 MA_Tyrant_S8:
   Template: MA_Base
   Skills:
+  - kitcast{gcd=120;skills=MA_Tyrant_S8_RagingBlow:180,MA_Tyrant_S9_SeaLunge:160} @NearestPlayer{r=12} ~onTimer:20
+  - skill{s=MA_Tyrant_S8_Wrath} @self ~onDamaged ?healthpercent{h=<45}
+  - skill{s=MA_Tyrant_S9_IllusoryScales} @self ~onDamaged
   - effect:particles{p=bubble;amount=5;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
 
 MA_Tyrant_S7:
   Template: MA_Base
   Skills:
+  - kitcast{gcd=120;skills=MA_Tyrant_S7_AzureWave:180,MA_Tyrant_S7_PreciseThrow:160,MA_Tyrant_S8_RagingBlow:200,MA_Tyrant_S9_SeaLunge:220} @NearestPlayer{r=14} ~onTimer:20
+  - skill{s=MA_Tyrant_S7_RestorativeWater} @self ~onDamaged ?healthpercent{h=<50}
+  - skill{s=MA_Tyrant_S8_Wrath} @self ~onDamaged ?healthpercent{h=<45}
+  - skill{s=MA_Tyrant_S9_IllusoryScales} @self ~onDamaged
   - effect:particles{p=bubble;amount=5;hS=0.4;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
 
 MA_Tyrant_S6:
   Template: MA_Base
   Skills:
+  - kitcast{gcd=120;skills=MA_Tyrant_S6_Windblades:160,MA_Tyrant_S6_PressureWave:200,MA_Tyrant_S7_AzureWave:180,MA_Tyrant_S7_PreciseThrow:160,MA_Tyrant_S8_RagingBlow:200} @NearestPlayer{r=14} ~onTimer:20
+  - skill{s=MA_Tyrant_S7_RestorativeWater} @self ~onDamaged ?healthpercent{h=<50}
+  - skill{s=MA_Tyrant_S8_Wrath} @self ~onDamaged ?healthpercent{h=<45}
+  - skill{s=MA_Tyrant_S9_IllusoryScales} @self ~onDamaged
   - effect:particles{p=bubble;amount=6;hS=0.4;vS=0.6;y=1;speed=0.01} @self ~onTimer:20
 
 MA_Tyrant_S5:
   Template: MA_Base
   Skills:
+  - kitcast{gcd=80;skills=MA_Tyrant_S5_LightningStrike:240,MA_Tyrant_S5_WindBinding:200,MA_Tyrant_S6_Windblades:140,MA_Tyrant_S6_PressureWave:180,MA_Tyrant_S7_AzureWave:160,MA_Tyrant_S7_PreciseThrow:140} @NearestPlayer{r=14} ~onTimer:20
+  - skill{s=MA_Tyrant_S5_WaterCurtain} @self ~onDamaged ?healthpercent{h=<55}
+  - skill{s=MA_Tyrant_S8_Wrath} @self ~onDamaged ?healthpercent{h=<45}
+  - skill{s=MA_Tyrant_S9_IllusoryScales} @self ~onDamaged
   - effect:particles{p=bubble;amount=6;hS=0.5;vS=0.6;y=1;speed=0.01} @self ~onTimer:20
+
+# ── Death (MELEE, потойбічний тиск) ──
+MA_Death_S9:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Death_S9_Decay:160} @NearestPlayer{r=12} ~onTimer:20
+  - effect:particles{p=soul;amount=4;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
+
+MA_Death_S8:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Death_S8_GraveChill:180,MA_Death_S9_Decay:160} @NearestPlayer{r=12} ~onTimer:20
+  - effect:particles{p=soul;amount=5;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
+
+MA_Death_S7:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Death_S7_Frost:200,MA_Death_S8_GraveChill:160,MA_Death_S9_Decay:120} @NearestPlayer{r=12} ~onTimer:20
+  - effect:particles{p=soul;amount=5;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
+
+MA_Death_S6:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=120;skills=MA_Death_S6_ShadowGrasp:220,MA_Death_S7_Frost:180,MA_Death_S8_GraveChill:140,MA_Death_S9_Decay:100} @NearestPlayer{r=12} ~onTimer:20
+  - effect:particles{p=soul;amount=6;hS=0.3;vS=0.5;y=1;speed=0.01} @self ~onTimer:20
+
+MA_Death_S5:
+  Template: MA_Base
+  Skills:
+  - kitcast{gcd=80;skills=MA_Death_S5_UnderworldPull:260,MA_Death_S6_ShadowGrasp:200,MA_Death_S7_Frost:160,MA_Death_S8_GraveChill:120,MA_Death_S9_Decay:80} @NearestPlayer{r=12} ~onTimer:20
+  - effect:particles{p=soul;amount=8;hS=0.4;vS=0.6;y=1;speed=0.02} @self ~onTimer:20

@@ -77,7 +77,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         // MythicMobs bridge: static holder must be initialized before
         // CustomComponentRegistry
         // scans the components package (see .claude/rules/mythic-creatures.md).
-        me.vangoo.infrastructure.mythic.MythicBridge.init(services.getBeyonderService());
+        me.vangoo.infrastructure.mythic.MythicBridge.init(services.getBeyonderService(),
+                services.getAbilityLockManager(), services.getTheftLedger());
         me.vangoo.infrastructure.mythic.MythicBridge.registerComponents(this);
 
         boolean packChanged = new me.vangoo.infrastructure.mythic.MythicPackInstaller(this).installOrUpdate();
@@ -96,6 +97,14 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         // depend).
         // Call exactly once — a double call would orphan duplicate NPCs.
         services.getChurchSiteService().spawnAllNpcs();
+
+        // Backfill church vaults: a pathway/recipe added after a church was already bound
+        // (e.g. Death potion recipes) never reaches its vault otherwise, since binding only
+        // happens once. seedVaultIfAbsent is idempotent per pathway+sequence, so this is a
+        // cheap no-op once every vault is caught up.
+        for (var site : services.getChurchSiteService().sites()) {
+            services.getChurchService().seedVaultIfAbsent(site.institutionId());
+        }
 
         // Start schedulers
         services.startSchedulers();
@@ -315,6 +324,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(services.getGatheringListener(), this);
         getServer().getPluginManager().registerEvents(services.getOrganizerClickListener(), this);
         getServer().getPluginManager().registerEvents(services.getCurrencyExchangeListener(), this);
+        getServer().getPluginManager().registerEvents(services.getRetinueRestoreListener(), this);
 
         ChurchListener churchListener = new ChurchListener(
                 services.getChurchPriestService(), services.getChurchMenu(), services.getChurchService(),

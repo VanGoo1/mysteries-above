@@ -21,11 +21,11 @@ import java.util.Optional;
  */
 public class PreciseThrow extends ActiveAbility {
 
-    private static final int BASE_DAMAGE = 6;
+    private static final int BASE_DAMAGE = 8;
     private static final double MAX_RANGE = 30.0;
     private static final double KNOCKBACK = 0.5;
     private static final int COOLDOWN = 6;
-    private static final int SPIRITUALITY_COST = 25;
+    private static final int SPIRITUALITY_COST = 50;
 
     @Override
     public String getName() {

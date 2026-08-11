@@ -33,6 +33,18 @@ public record Sequence(int level) {
         return level > MIN_SEQUENCE;
     }
 
+    /** Слабша послідовність (число росте); Посл. 9 — межа, слабшати нікуди. */
+    public Sequence demote() {
+        if (!canDemote()) {
+            throw new IllegalStateException("Cannot demote from sequence " + level);
+        }
+        return new Sequence(level + 1);
+    }
+
+    public boolean canDemote() {
+        return level < MAX_SEQUENCE;
+    }
+
     public boolean isStarter() {
         return level == MAX_SEQUENCE;
     }

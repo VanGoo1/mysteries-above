@@ -1,0 +1,104 @@
+# ── Кіт S9..S5: мобові версії гравцевих здібностей Tyrant ──
+# Наступальна: морський випад — притягування з ударом (SeaLunge, S9)
+MA_Tyrant_S9_SeaLunge:
+  Skills:
+  - damage{amount=5}
+  - pull{velocity=1.0}
+  - effect:particles{p=bubble;amount=14;hS=0.3;vS=0.5;y=1;speed=0.05}
+  - effect:sound{s=entity.player.splash;v=1;p=0.8}
+
+# Реактивна (поза ГКД): ілюзорна луска — резист при уроні (IllusoryScales, S9)
+MA_Tyrant_S9_IllusoryScales:
+  Cooldown: 12
+  Skills:
+  - potion{type=RESISTANCE;duration=50;level=0;particles=false} @self
+  - effect:particles{p=glow;amount=12;hS=0.3;vS=0.5;y=1} @self
+
+# Наступальна: шалений удар (RagingBlow, S8)
+MA_Tyrant_S8_RagingBlow:
+  Skills:
+  - damage{amount=7}
+  - throw{velocity=6;velocityY=2}
+  - effect:particles{p=crit;amount=14;hS=0.3;vS=0.4;y=1;speed=0.2}
+  - effect:sound{s=entity.ravager.attack;v=0.8;p=0.9}
+
+# Реактивна (поза ГКД): лють — підсилення на низькому HP (Wrath, S8)
+MA_Tyrant_S8_Wrath:
+  Cooldown: 25
+  Skills:
+  - potion{type=STRENGTH;duration=120;level=1;particles=false} @self
+  - potion{type=SPEED;duration=120;level=0;particles=false} @self
+  - effect:particles{p=angry_villager;amount=10;hS=0.4;vS=0.6;y=1.6} @self
+  - effect:sound{s=entity.ravager.roar;v=1;p=0.8} @self
+
+# Наступальна: лазурова хвиля — снаряд води (AzureWave, S7)
+MA_Tyrant_S7_AzureWave:
+  Skills:
+  - projectile{onHitSkill=MA_Tyrant_S7_AzureWave_Hit;velocity=16;interval=1;hitRadius=1.4;verticalHitRadius=1.4;maxRange=18}
+  - effect:sound{s=entity.player.splash.high_speed;v=1;p=1.2} @self
+MA_Tyrant_S7_AzureWave_Hit:
+  Skills:
+  - damage{amount=6}
+  - throw{velocity=5;velocityY=2}
+  - effect:particles{p=splash;amount=24;hS=0.5;vS=0.5;y=1;speed=0.05}
+
+# Наступальна: точний кидок — гарпун (PreciseThrow, S7)
+MA_Tyrant_S7_PreciseThrow:
+  Skills:
+  - projectile{onHitSkill=MA_Tyrant_S7_PreciseThrow_Hit;velocity=22;interval=1;hitRadius=1;verticalHitRadius=1;maxRange=20}
+  - effect:sound{s=entity.arrow.shoot;v=1;p=0.8} @self
+MA_Tyrant_S7_PreciseThrow_Hit:
+  Skills:
+  - damage{amount=8}
+  - effect:particles{p=crit;amount=10;hS=0.2;vS=0.2;y=1;speed=0.1}
+
+# Реактивна (поза ГКД): відновна вода — самозцілення (RestorativeWater, S7)
+MA_Tyrant_S7_RestorativeWater:
+  Cooldown: 16
+  Skills:
+  - heal{amount=7} @self
+  - effect:particles{p=falling_water;amount=18;hS=0.4;vS=0.7;y=1.2} @self
+  - effect:sound{s=block.water.ambient;v=1;p=1.4} @self
+
+# Наступальна: вітряні леза (Windblades, S6)
+MA_Tyrant_S6_Windblades:
+  Skills:
+  - projectile{onHitSkill=MA_Tyrant_S6_Windblades_Hit;velocity=20;interval=1;hitRadius=1.2;verticalHitRadius=1.2;maxRange=18}
+  - effect:sound{s=entity.breeze.shoot;v=1;p=1.2} @self
+MA_Tyrant_S6_Windblades_Hit:
+  Skills:
+  - damage{amount=7}
+  - effect:particles{p=sweep_attack;amount=3;hS=0.3;vS=0.3;y=1}
+  - effect:particles{p=cloud;amount=12;hS=0.4;vS=0.4;y=1;speed=0.05}
+
+# Наступальна: хвиля тиску — відкидання (PressureWave, S6)
+MA_Tyrant_S6_PressureWave:
+  Skills:
+  - damage{amount=5}
+  - throw{velocity=9;velocityY=4}
+  - potion{type=SLOWNESS;duration=30;level=1;particles=false}
+  - effect:particles{p=cloud;amount=26;hS=0.6;vS=0.4;y=1;speed=0.1}
+  - effect:sound{s=entity.breeze.wind_burst;v=1;p=0.9}
+
+# Наступальна: удар блискавки (LightningStrike, S5)
+MA_Tyrant_S5_LightningStrike:
+  Skills:
+  - lightning{damage=9}
+  - effect:sound{s=entity.lightning_bolt.thunder;v=0.8;p=1.2}
+
+# Наступальна: вітряні пута — корінь (WindBinding, S5)
+MA_Tyrant_S5_WindBinding:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - potion{type=SLOWNESS;duration=40;level=4;particles=false}
+  - potion{type=MINING_FATIGUE;duration=60;level=1;particles=false}
+  - effect:particles{p=cloud;amount=24;hS=0.3;vS=0.2;y=0.3;speed=0.1}
+
+# Реактивна (поза ГКД): водяна завіса — щит при уроні (WaterCurtain, S5)
+MA_Tyrant_S5_WaterCurtain:
+  Cooldown: 18
+  Skills:
+  - potion{type=RESISTANCE;duration=60;level=1;particles=false} @self
+  - effect:particles{p=falling_water;amount=30;hS=0.6;vS=0.9;y=1} @self
+  - effect:sound{s=block.water.ambient;v=1;p=0.8} @self

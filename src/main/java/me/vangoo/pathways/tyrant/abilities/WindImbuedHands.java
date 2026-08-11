@@ -30,8 +30,8 @@ public class WindImbuedHands extends ActiveAbility {
 
     private static final int BASE_BONUS_DAMAGE = 4;   // «наскрізна» шкода понад звичайний удар
     private static final int DURATION_TICKS = 120;    // 6 секунд
-    private static final int COOLDOWN = 12;
-    private static final int SPIRITUALITY_COST = 45;
+    private static final int COOLDOWN = 25;
+    private static final int SPIRITUALITY_COST = 70;
 
     @Override
     public String getName() {

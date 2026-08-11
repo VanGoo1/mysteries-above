@@ -16,6 +16,13 @@ public interface IRecipeUnlockRepository {
     boolean unlockRecipe(UUID playerId, UnlockedRecipe recipe);
 
     /**
+     * Take an unlocked recipe away from a player (Death Seq 7 transfers it to the medium).
+     *
+     * @return true if the player actually had it
+     */
+    boolean revokeRecipe(UUID playerId, UnlockedRecipe recipe);
+
+    /**
      * Check if player has unlocked recipe
      */
     boolean hasUnlockedRecipe(UUID playerId, String pathwayName, int sequence);

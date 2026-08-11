@@ -76,12 +76,12 @@ public class HolyLightSummoning extends ActiveAbility {
 
     @Override
     public int getSpiritualityCost() {
-        return 55;
+        return 80;
     }
 
     @Override
     public int getCooldown(Sequence sequence) {
-        return isEnhanced(sequence) ? 30 : 35;
+        return isEnhanced(sequence) ? 8 : 10;
     }
 
     @Override

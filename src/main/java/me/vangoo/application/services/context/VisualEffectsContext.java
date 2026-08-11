@@ -470,6 +470,69 @@ public class VisualEffectsContext implements IVisualEffectsContext {
         }.runTaskTimer(plugin, 0L, MARK_REDRAW_PERIOD);
     }
 
+    @Override
+    public void playDustMarkFor(UUID viewerId, Location center, Color color, double spread,
+                                float size, int count, int durationTicks) {
+        Player viewer = Bukkit.getPlayer(viewerId);
+        if (viewer == null || color == null || center.getWorld() == null) return;
+        Particle.DustOptions dust = new Particle.DustOptions(color, size);
+        if (durationTicks <= 0) {
+            viewer.spawnParticle(Particle.DUST, center, count, spread, spread, spread, 0, dust);
+            return;
+        }
+        new BukkitRunnable() {
+            int tick = 0;
+
+            @Override
+            public void run() {
+                Player p = Bukkit.getPlayer(viewerId);
+                if (p == null || !p.isOnline() || tick > durationTicks) {
+                    this.cancel();
+                    return;
+                }
+                p.spawnParticle(Particle.DUST, center, count, spread, spread, spread, 0, dust);
+                tick += MARK_REDRAW_PERIOD;
+            }
+        }.runTaskTimer(plugin, 0L, MARK_REDRAW_PERIOD);
+    }
+
+    @Override
+    public void playGroundTrailFor(UUID viewerId, Location from, Location to, Color color,
+                                   int durationTicks) {
+        World world = from.getWorld();
+        if (world == null || color == null || world != to.getWorld()) return;
+        if (Bukkit.getPlayer(viewerId) == null) return;
+
+        Vector step = to.toVector().subtract(from.toVector());
+        double distance = step.length();
+        if (distance < 1.0) return;
+        int points = Math.max(1, Math.min(MAX_TRAIL_POINTS, (int) (distance / TRAIL_STEP)));
+        step.multiply(1.0 / points);
+
+        List<Location> path = new ArrayList<>();
+        for (int i = 1; i <= points; i++) {
+            path.add(groundUnder(from.clone().add(step.clone().multiply(i))));
+        }
+
+        Particle.DustOptions dust = new Particle.DustOptions(color, 1.0f);
+        new BukkitRunnable() {
+            int tick = 0;
+
+            @Override
+            public void run() {
+                Player p = Bukkit.getPlayer(viewerId);
+                if (p == null || !p.isOnline() || tick > durationTicks) {
+                    this.cancel();
+                    return;
+                }
+                for (Location point : path) {
+                    p.spawnParticle(Particle.DUST, point, 2, 0.08, 0.02, 0.08, 0, dust);
+                }
+                tick += MARK_REDRAW_PERIOD;
+            }
+        }.runTaskTimer(plugin, 0L, MARK_REDRAW_PERIOD);
+    }
+
     /** Поверхня під точкою (до 6 блоків униз), щоб слід лежав по землі, а не висів у повітрі. */
     private Location groundUnder(Location point) {
         Location probe = point.clone();
@@ -918,6 +981,130 @@ public class VisualEffectsContext implements IVisualEffectsContext {
     }
 
     @Override
+    public void playUnderworldGate(Location center, Vector facing, double width, double height,
+                                   Color color, int durationTicks) {
+        World world = center.getWorld();
+        if (world == null || facing.lengthSquared() < 1e-6 || durationTicks <= 0) return;
+
+        final Vector forward = facing.clone().setY(0).normalize();
+        final Vector side = new Vector(-forward.getZ(), 0, forward.getX());
+        final Particle.DustOptions frame = new Particle.DustOptions(color, 1.4f);
+        final Particle.DustOptions ring = new Particle.DustOptions(color, 0.9f);
+        final Location origin = center.clone();
+        final int columns = Math.max(6, (int) Math.round(width * 3));
+        final int levels = Math.max(6, (int) Math.round(height * 3));
+        final double ringRadius = Math.min(width, height) / 2.0;
+        final int ringCount = 3;
+        final int ringPeriodTicks = 10;
+
+        new BukkitRunnable() {
+            int tick = 0;
+
+            @Override
+            public void run() {
+                if (tick++ >= durationTicks) {
+                    this.cancel();
+                    return;
+                }
+
+                // Рамка — контур прямокутника (верх/низ + боки).
+                for (int i = 0; i <= columns; i++) {
+                    double x = (i / (double) columns - 0.5) * width;
+                    Location column = origin.clone().add(side.clone().multiply(x));
+                    world.spawnParticle(Particle.DUST, column, 1, 0, 0, 0, 0, frame);
+                    world.spawnParticle(Particle.DUST, column.clone().add(0, height, 0), 1, 0, 0, 0, 0, frame);
+                }
+                for (int lvl = 0; lvl <= levels; lvl++) {
+                    double y = height * lvl / (double) levels;
+                    world.spawnParticle(Particle.DUST,
+                            origin.clone().add(side.clone().multiply(-width / 2)).add(0, y, 0),
+                            1, 0, 0, 0, 0, frame);
+                    world.spawnParticle(Particle.DUST,
+                            origin.clone().add(side.clone().multiply(width / 2)).add(0, y, 0),
+                            1, 0, 0, 0, 0, frame);
+                }
+
+                // Темна утроба — розсіяний дим/чорнило, не суцільна заливка.
+                Location core = origin.clone().add(0, height / 2.0, 0);
+                world.spawnParticle(Particle.SQUID_INK, core, 3, width * 0.3, height * 0.3, 0.05, 0);
+                world.spawnParticle(Particle.SMOKE, core, 2, width * 0.25, height * 0.25, 0.05, 0.01);
+
+                // Кільця всмоктування — стягуються до центру щопівсекунди, зі зсувом фази.
+                for (int r = 0; r < ringCount; r++) {
+                    double phase = ((tick + r * ringPeriodTicks / ringCount) % ringPeriodTicks)
+                            / (double) ringPeriodTicks;
+                    double radius = (1.0 - phase) * ringRadius;
+                    for (int a = 0; a < 12; a++) {
+                        double angle = Math.PI * 2 * a / 12;
+                        Location point = core.clone()
+                                .add(side.clone().multiply(Math.cos(angle) * radius))
+                                .add(0, Math.sin(angle) * radius, 0);
+                        world.spawnParticle(Particle.DUST, point, 1, 0, 0, 0, 0, ring);
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+    }
+
+    @Override
+    public void playGraspingHands(Location target, Color color, int durationTicks) {
+        final World world = target.getWorld();
+        if (world == null) return;
+        final Location center = target.clone();
+        final int hands = 4;
+        final int armSegments = 4;
+
+        new BukkitRunnable() {
+            int tick = 0;
+
+            @Override
+            public void run() {
+                if (tick >= durationTicks || center.getWorld() == null) {
+                    this.cancel();
+                    return;
+                }
+                // Пульс стискання: долоні то сходяться до цілі, то трохи попускають.
+                double squeeze = 0.35 + 0.65 * Math.abs(Math.cos(tick * 0.12));
+                double radius = 1.1 * squeeze;
+                final Particle.DustOptions dust = new Particle.DustOptions(color, 1.1f);
+
+                for (int h = 0; h < hands; h++) {
+                    double angle = (2 * Math.PI / hands) * h + tick * 0.02; // повільне обертання
+                    // Передпліччя: тягнеться з-під землі вгору, нахиляючись до цілі.
+                    for (int seg = 0; seg <= armSegments; seg++) {
+                        double frac = (double) seg / armSegments;
+                        double r = radius * (1.0 - frac * 0.45);
+                        world.spawnParticle(Particle.DUST,
+                                center.clone().add(Math.cos(angle) * r, frac * 1.3, Math.sin(angle) * r),
+                                1, 0, 0, 0, 0, dust);
+                    }
+                    // Другий шар: пальці — душевні іскри на вершині, зігнуті всередину.
+                    double fingerRadius = radius * 0.55;
+                    for (int finger = -1; finger <= 1; finger++) {
+                        double fingerAngle = angle + finger * 0.22;
+                        world.spawnParticle(Particle.SCULK_SOUL,
+                                center.clone().add(Math.cos(fingerAngle) * fingerRadius, 1.35,
+                                        Math.sin(fingerAngle) * fingerRadius),
+                                1, 0.02, 0.02, 0.02, 0.0);
+                    }
+                }
+
+                // Третій шар: кільце на землі — ціль тримає не лише руки, а й сама земля.
+                if (tick % 4 == 0) {
+                    final int ringPoints = 10;
+                    for (int i = 0; i < ringPoints; i++) {
+                        double a = (2 * Math.PI / ringPoints) * i;
+                        world.spawnParticle(Particle.DUST,
+                                center.clone().add(Math.cos(a) * 1.2, 0.1, Math.sin(a) * 1.2),
+                                1, 0, 0, 0, 0, dust);
+                    }
+                }
+                tick++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+    }
+
+    @Override
     public void playPhantomBlocks(UUID viewerId, Location center, Material material,
                                   int count, double radius, int durationTicks) {
         Player viewer = Bukkit.getPlayer(viewerId);
@@ -998,5 +1185,28 @@ public class VisualEffectsContext implements IVisualEffectsContext {
                 ticks += 2;
             }
         }.runTaskTimer(plugin, 0L, 2L);
+    }
+
+    @Override
+    public void playSoulWisp(UUID viewerId, Location base, Color color) {
+        Player viewer = Bukkit.getPlayer(viewerId);
+        if (viewer == null || !viewer.isOnline() || base == null || base.getWorld() == null) return;
+        if (!viewer.getWorld().equals(base.getWorld())) return;
+
+        // Стовпчик душі в людський зріст — читається як силует, а не як хмарка
+        for (int step = 0; step < 6; step++) {
+            viewer.spawnParticle(Particle.SOUL, base.clone().add(0, 0.25 + step * 0.28, 0),
+                    1, 0.09, 0.05, 0.09, 0.0);
+        }
+
+        // Німб над силуетом: другий шар, кольором шляху
+        Particle.DustOptions halo = new Particle.DustOptions(color, 0.9f);
+        Location crown = base.clone().add(0, 1.95, 0);
+        for (int i = 0; i < 8; i++) {
+            double angle = 2 * Math.PI * i / 8;
+            viewer.spawnParticle(Particle.DUST,
+                    crown.clone().add(Math.cos(angle) * 0.3, 0, Math.sin(angle) * 0.3),
+                    1, 0, 0, 0, 0, halo);
+        }
     }
 }

@@ -25,7 +25,7 @@ public class SeaLunge extends ActiveAbility {
     private static final double KNOCKBACK = 1.2;
     private static final double HIT_RADIUS = 3.0;
     private static final int COOLDOWN = 6;
-    private static final int SPIRITUALITY_COST = 20;
+    private static final int SPIRITUALITY_COST = 35;
 
     @Override
     public String getName() {
@@ -36,7 +36,7 @@ public class SeaLunge extends ActiveAbility {
     public String getDescription(Sequence sequence) {
         int damage = scaleValue(BASE_DAMAGE, sequence, SequenceScaler.ScalingStrategy.MODERATE);
         return String.format(
-                "§fСила моря кидає вас уперед стрімким ривком. Усіх на шляху §c відкидає " +
+                "§fСила моря кидає вас уперед стрімким ривком. Усіх на шляху §cвідкидає " +
                         "§fі завдає §c%d §fшкоди.", damage);
     }
 

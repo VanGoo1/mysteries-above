@@ -15,6 +15,7 @@ import me.vangoo.domain.organizations.ChurchRank;
 import me.vangoo.domain.organizations.ChurchTask;
 import me.vangoo.domain.organizations.Institution;
 import me.vangoo.domain.organizations.Membership;
+import me.vangoo.domain.organizations.PathwayAccess;
 import me.vangoo.domain.organizations.PotionOrder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -98,15 +99,19 @@ public class ChurchMenu {
                 .rows(3)
                 .disableAllInteractions()
                 .create();
+        List<String> infoLore = new ArrayList<>();
+        infoLore.add(church.lore());
+        infoLore.add("");
+        infoLore.addAll(pathwayLines(church));
         gui.setItem(2, 4, new GuiItem(button(Material.PAPER, ChatColor.GOLD + church.displayName(),
-                church.lore()), e -> e.setCancelled(true)));
+                infoLore.toArray(String[]::new)), e -> e.setCancelled(true)));
         if (churchService.hasAbandoned(player.getUniqueId(), institutionId)) {
             // Зречену церкву не пропонуємо вступити взагалі — кнопка все одно відмовила б.
             gui.setItem(2, 6, new GuiItem(button(Material.BARRIER, ChatColor.RED + "Двері зачинено",
                     ChatColor.GRAY + "Ви колись зреклися цієї церкви"), e -> e.setCancelled(true)));
         } else {
             gui.setItem(2, 6, new GuiItem(button(Material.EMERALD, ChatColor.GREEN + "[Вступити]",
-                            "Приєднатися до церкви"),
+                    "Приєднатися до церкви"),
                     e -> runSynced(player, () -> confirmJoin(player, church))));
         }
         gui.open(player);
@@ -166,13 +171,13 @@ public class ChurchMenu {
                 .disableAllInteractions()
                 .create();
         gui.setItem(2, 2, new GuiItem(button(Material.BOOK, ChatColor.AQUA + "Завдання",
-                        "Полювання та доставки"),
+                "Полювання та доставки"),
                 e -> runSynced(player, () -> openTasks(player, institutionId))));
         gui.setItem(2, 4, new GuiItem(button(Material.BREWING_STAND, ChatColor.LIGHT_PURPLE + "Замовлення зілля",
-                        "Замовити зілля зі сховища церкви"),
+                "Замовити зілля зі сховища церкви"),
                 e -> runSynced(player, () -> openOrder(player, institutionId))));
         gui.setItem(2, 6, new GuiItem(button(Material.GOLD_INGOT, ChatColor.GOLD + "Пожертви",
-                        "Пожертвувати предмет або монети"),
+                "Пожертвувати предмет або монети"),
                 e -> runSynced(player, () -> openDonations(player, institutionId))));
         gui.setItem(2, 8, new GuiItem(rankTile(player), e -> e.setCancelled(true)));
         gui.setItem(3, 5, new GuiItem(button(Material.BARRIER, ChatColor.RED + "Покинути церкву"),
@@ -269,13 +274,13 @@ public class ChurchMenu {
 
         if (churchService.canStartTrial(player)) {
             gui.setItem(6, 9, new GuiItem(button(Material.NETHER_STAR, ChatColor.LIGHT_PURPLE + "[Випробування шляху]",
-                            "Дуель зі створінням 9 послідовності.",
-                            ChatColor.RED + "Смертельно небезпечно — добре підготуйтесь!",
-                            "Перемога відкриє вибір шляху домену."),
+                    "Дуель зі створінням 9 послідовності.",
+                    ChatColor.RED + "Смертельно небезпечно — добре підготуйтесь!",
+                    "Перемога відкриє вибір шляху домену."),
                     e -> runSynced(player, () -> confirmTrial(player, institutionId))));
         } else if (churchService.hasPassedTrial(player.getUniqueId())) {
             gui.setItem(6, 9, new GuiItem(button(Material.NETHER_STAR, ChatColor.GREEN + "[Обрати шлях]",
-                            "Ви здолали випробування — оберіть свій шлях"),
+                    "Ви здолали випробування — оберіть свій шлях"),
                     e -> runSynced(player, () -> openTrialPathwayChoice(player, institutionId))));
         }
         gui.open(player);
@@ -369,7 +374,7 @@ public class ChurchMenu {
         boolean ready = order.isReady(System.currentTimeMillis());
         if (ready) {
             gui.setItem(2, 5, new GuiItem(button(Material.POTION, ChatColor.GREEN + "[Забрати]",
-                            "Зілля " + order.pathwayName() + " Посл. " + order.sequence() + " готове"),
+                    "Зілля " + order.pathwayName() + " Посл. " + order.sequence() + " готове"),
                     e -> runSynced(player, () -> {
                         churchService.claimOrder(player);
                         openMain(player, institutionId);
@@ -446,7 +451,7 @@ public class ChurchMenu {
                 .disableAllInteractions()
                 .create();
         gui.setItem(2, 4, new GuiItem(button(Material.CHEST, ChatColor.GREEN + "Пожертвувати предмет у руці",
-                        "Інгредієнт, книга рецептів чи Характеристика"),
+                "Інгредієнт, книга рецептів чи Характеристика"),
                 e -> runSynced(player, () -> {
                     int points = churchService.donateFromHand(player);
                     if (points > 0) {
@@ -457,7 +462,7 @@ public class ChurchMenu {
                     openDonations(player, institutionId);
                 })));
         gui.setItem(2, 6, new GuiItem(button(Material.GOLD_INGOT, ChatColor.GOLD + "Пожертвувати монети",
-                        "Фунти й коппети"),
+                "Фунти й коппети"),
                 e -> runSynced(player, () -> moneyPicker.open(player, "Пожертва монет", false,
                         (PoundMoney money) -> {
                             int points = churchService.donateCoins(player, money);
@@ -475,6 +480,20 @@ public class ChurchMenu {
     }
 
     // ── Хелпери ──────────────────────────────────────────────────────────────
+
+    /**
+     * Рядки лору «які шляхи має церква і до якої послідовності»: церква завжди має
+     * непорожній список доступів (гарантія {@link Institution}), тож fallback тут не потрібен.
+     */
+    private List<String> pathwayLines(Institution church) {
+        List<String> lines = new ArrayList<>();
+        lines.add(ChatColor.AQUA + "Шляхи церкви:");
+        for (PathwayAccess access : church.accesses()) {
+            String seq = access.isFull() ? "повний доступ" : "до Посл. " + access.minSequence();
+            lines.add(ChatColor.GRAY + "• " + access.pathwayName() + " (" + seq + ")");
+        }
+        return lines;
+    }
 
     /** Пікер шляху (для ініціації або замовлення без шляху) — по item на шлях. */
     private void openPathwayPicker(Player player, String title, List<String> choices,

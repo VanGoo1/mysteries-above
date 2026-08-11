@@ -23,7 +23,7 @@ public class Sunshine extends ActiveAbility {
     private static final int BASE_DAMAGE = 8;
     private static final int FIRE_TICKS = 60; // 3 секунди
     private static final int BLIND_TICKS = 60; // 3 секунди
-    private static final int COOLDOWN = 10;
+    private static final int COOLDOWN = 5;
 
     @Override
     public String getName() {
@@ -42,7 +42,7 @@ public class Sunshine extends ActiveAbility {
 
     @Override
     public int getSpiritualityCost() {
-        return 35;
+        return 45;
     }
 
     @Override

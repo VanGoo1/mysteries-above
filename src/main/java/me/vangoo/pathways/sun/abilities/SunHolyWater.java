@@ -44,7 +44,7 @@ public class SunHolyWater extends ActiveAbility {
     public String getDescription(Sequence sequence) {
         int damage = scaleValue(BASE_DAMAGE, sequence, SequenceScaler.ScalingStrategy.MODERATE);
         return String.format(
-                "§fОсвячує пляшку води в руці: вивільняє сплеск екзорцизму навколо (радіус §e%.0f §fбл).\n " +
+                "§fОсвячує пляшку води в інвентарі: вивільняє сплеск екзорцизму навколо (радіус §e%.0f §fбл).\n " +
                         "§7Шкода: §c%d §7по нежиті, §c%.0f%% §7більше — по темних шляхах. Відганяє холод/послаблення союзникам.",
                 RADIUS, damage, (HolyAffinity.damageMultiplier(true) / HolyAffinity.damageMultiplier(false) - 1) * 100
         );
@@ -52,7 +52,7 @@ public class SunHolyWater extends ActiveAbility {
 
     @Override
     public int getSpiritualityCost() {
-        return 40;
+        return 60;
     }
 
     @Override

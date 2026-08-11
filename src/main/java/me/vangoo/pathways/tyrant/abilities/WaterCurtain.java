@@ -29,7 +29,7 @@ public class WaterCurtain extends ActiveAbility {
     private static final double SHELTER_RANGE = 5.0; // доки завіса ще прикриває кастера
     private static final int DURATION_TICKS = 160;   // 8 с
     private static final int COOLDOWN = 20;
-    private static final int SPIRITUALITY_COST = 40;
+    private static final int SPIRITUALITY_COST = 100;
 
     @Override
     public String getName() {

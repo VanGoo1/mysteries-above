@@ -57,8 +57,8 @@ public class LightningStrike extends ActiveAbility {
     private static final int PARALYSIS_TICKS = 60;
     private static final int INFUSION_TICKS = 600;  // 30 с
     private static final int INFUSION_HITS = 5;
-    private static final int COOLDOWN = 10;
-    private static final int SPIRITUALITY_COST = 45;
+    private static final int COOLDOWN = 30;
+    private static final int SPIRITUALITY_COST = 200;
 
     private final Map<UUID, Mode> modes = new ConcurrentHashMap<>();
 
@@ -86,11 +86,11 @@ public class LightningStrike extends ActiveAbility {
         int damage = scaleValue(BASE_DAMAGE, sequence, SequenceScaler.ScalingStrategy.MODERATE);
         int infused = scaleValue(BASE_INFUSED_DAMAGE, sequence, SequenceScaler.ScalingStrategy.MODERATE);
         return String.format(
-                "§fСріблясто-біла блискавка — єдина, що не потребує посередника. " +
+                "§fСріблясто-біла блискавка — сила шторму.\n" +
                         "§bУдар§f: §c%d §fшкоди по цілі на лінії зору §7(або по найближчому ворогові позаду)§f, " +
-                        "параліч, §c×2 §fпо нежиті й «електричні змійки» на §b%d §fсусідів. " +
+                        "параліч, §c×2 §fпо нежиті й «електричні змійки» на §b%d §fсусідів.\n" +
                         "§bНасичення§f: зброя в руці на §b%d с §fдодає §c%d §fшкоди й параліч " +
-                        "наступним §b%d §fударам. §7Shift+каст — перемкнути режим.",
+                        "наступним §b%d §fударам.\n§7Shift+каст — перемкнути режим.",
                 damage, MAX_CHAINS, INFUSION_TICKS / 20, infused, INFUSION_HITS);
     }
 

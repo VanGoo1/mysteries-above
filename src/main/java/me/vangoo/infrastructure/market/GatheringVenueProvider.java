@@ -18,6 +18,7 @@ public class GatheringVenueProvider {
     public static final String WORLD_NAME = "mysteries_gathering";
     private static final int PLATFORM_Y = 64;
     private static final int HALF = 8;
+    private static final int WALL_HEIGHT = 5;
 
     public Location venueSpawn() {
         World world = getOrCreateWorld();
@@ -73,6 +74,25 @@ public class GatheringVenueProvider {
         }
         // Кафедра ринку: правий клік відкриває меню (обробляє GatheringListener)
         world.getBlockAt(1, PLATFORM_Y + 1, 0).setType(Material.LECTERN);
+        buildBarrierWalls(world);
+    }
+
+    /** Невидимі непробивні стіни по периметру платформи — щоб не випасти у порожнечу. */
+    private void buildBarrierWalls(World world) {
+        int minX = -HALF - 1;
+        int maxX = HALF + 1;
+        int minZ = -HALF - 1;
+        int maxZ = HALF + 1;
+        for (int y = PLATFORM_Y; y < PLATFORM_Y + WALL_HEIGHT; y++) {
+            for (int x = minX; x <= maxX; x++) {
+                world.getBlockAt(x, y, minZ).setType(Material.BARRIER);
+                world.getBlockAt(x, y, maxZ).setType(Material.BARRIER);
+            }
+            for (int z = minZ; z <= maxZ; z++) {
+                world.getBlockAt(minX, y, z).setType(Material.BARRIER);
+                world.getBlockAt(maxX, y, z).setType(Material.BARRIER);
+            }
+        }
     }
 
     /** Порожній генератор: жодних чанків, лише void. */

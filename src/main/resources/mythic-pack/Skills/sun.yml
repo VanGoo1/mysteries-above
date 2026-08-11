@@ -1,0 +1,72 @@
+# ── Кіт S9..S5: мобові версії гравцевих здібностей Sun ──
+# S6 гравцеві здібності не бойові (Notarization/Contract) — шаблон S6 бере кіт S7
+# із коротшими кулдаунами, як у Door/Fool.
+# Наступальна: спів — дезорієнтація (Singing, S9)
+MA_Sun_S9_Singing:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - potion{type=NAUSEA;duration=60;level=0;particles=false}
+  - potion{type=SLOWNESS;duration=40;level=0;particles=false}
+  - effect:particles{p=note;amount=10;hS=0.4;vS=0.5;y=1.6}
+  - effect:sound{s=block.note_block.chime;v=1;p=1.4}
+
+# Наступальна: сонячне сяйво — спалах світла (Sunshine, S8)
+MA_Sun_S8_Sunshine:
+  Skills:
+  - damage{amount=5}
+  - potion{type=BLINDNESS;duration=30;level=0;particles=false}
+  - effect:particles{p=end_rod;amount=20;hS=0.4;vS=0.6;y=1;speed=0.02}
+  - effect:sound{s=block.beacon.activate;v=0.7;p=1.6}
+
+# Реактивна (поза ГКД): благословення — самозцілення при уроні (Blessing, S8)
+MA_Sun_S8_Blessing:
+  Cooldown: 14
+  Skills:
+  - heal{amount=6} @self
+  - potion{type=REGENERATION;duration=60;level=0;particles=false} @self
+  - effect:particles{p=glow;amount=14;hS=0.4;vS=0.6;y=1} @self
+  - effect:sound{s=block.beacon.power_select;v=0.6;p=1.8} @self
+
+# Наступальна: заклик святого світла — промінь (HolyLightSummoning, S7)
+MA_Sun_S7_HolyLight:
+  Skills:
+  - projectile{onHitSkill=MA_Sun_S7_HolyLight_Hit;velocity=18;interval=1;hitRadius=1.2;verticalHitRadius=1.2;maxRange=18}
+  - effect:sound{s=block.beacon.activate;v=1;p=1.2} @self
+MA_Sun_S7_HolyLight_Hit:
+  Skills:
+  - damage{amount=7}
+  - effect:particles{p=end_rod;amount=18;hS=0.3;vS=0.3;y=1;speed=0.05}
+
+# Наступальна: розсічення очищення — удар з відкиданням (CleaveOfPurification, S7)
+MA_Sun_S7_Cleave:
+  Skills:
+  - damage{amount=8}
+  - throw{velocity=6;velocityY=2}
+  - effect:particles{p=sweep_attack;amount=3;hS=0.3;vS=0.3;y=1}
+  - effect:sound{s=entity.player.attack.sweep;v=1;p=0.9}
+
+# Наступальна: вогонь світла — підпал (FireOfLight, S7)
+MA_Sun_S7_FireOfLight:
+  Skills:
+  - ignite{ticks=80}
+  - damage{amount=3}
+  - effect:particles{p=soul_fire_flame;amount=16;hS=0.3;vS=0.5;y=1;speed=0.02}
+  - effect:sound{s=entity.blaze.shoot;v=0.8;p=1.6}
+
+# Аура-зона (поза ГКД): сонячний німб (SunHalo, S7)
+MA_Sun_S7_Halo:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - potion{type=GLOWING;duration=60;level=0;particles=false}
+  - potion{type=WEAKNESS;duration=50;level=0;particles=false}
+
+# Наступальна: свята хвиля — вибух світла (HolyWave, S5)
+MA_Sun_S5_HolyWave:
+  Skills:
+  - damage{amount=11}
+  - throw{velocity=8;velocityY=3}
+  - potion{type=BLINDNESS;duration=40;level=0;particles=false}
+  - effect:particles{p=end_rod;amount=40;hS=0.8;vS=0.8;y=1;speed=0.1}
+  - effect:sound{s=entity.lightning_bolt.thunder;v=0.6;p=1.8}

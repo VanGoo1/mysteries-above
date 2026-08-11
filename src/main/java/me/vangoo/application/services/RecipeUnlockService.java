@@ -25,6 +25,13 @@ public class RecipeUnlockService {
     }
 
     /**
+     * Take a recipe away from a player (Death Seq 7: the recipe moves, it is not copied)
+     */
+    public boolean revokeRecipe(UUID playerId, String pathwayName, int sequence) {
+        return repository.revokeRecipe(playerId, UnlockedRecipe.of(pathwayName, sequence));
+    }
+
+    /**
      * Check if player can craft this potion
      */
     public boolean canCraftPotion(UUID playerId, String pathwayName, int sequence) {

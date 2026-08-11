@@ -34,9 +34,8 @@ public class WindSprint extends ActiveAbility {
 
     @Override
     public String getDescription(Sequence sequence) {
-        return "§fВітер підхоплює ваш крок: ви біжите §bудвічі швидше§f, лишаючи за собою " +
-                "вітряний слід. §7Підтримка: " + PERIODIC_COST + " духовності/с · " +
-                "Стихає, коли скінчиться духовність.";
+        return "§fВітер підхоплює ваш крок: ви біжите §bдуже швидко§f, лишаючи за собою " +
+                "вітряний слід..";
     }
 
     @Override

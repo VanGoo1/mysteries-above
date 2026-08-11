@@ -57,7 +57,7 @@ public class CleaveOfPurification extends ActiveAbility {
 
     @Override
     public int getSpiritualityCost() {
-        return 30;
+        return 65;
     }
 
     @Override

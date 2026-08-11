@@ -28,8 +28,8 @@ import java.util.UUID;
  */
 final class BlessingSession {
 
-    static final long REFRESH_PERIOD_TICKS = 100L; // вікно списання/оновлення (5 с)
-    private static final int EFFECT_DURATION_TICKS = 120; // тривалість Опору — перекриває вікно
+    static final long REFRESH_PERIOD_TICKS = 20L; // вікно списання/оновлення (1 с, узгоджено з лорою "N/сек")
+    private static final int EFFECT_DURATION_TICKS = 40; // тривалість Опору — перекриває вікно
     private static final int AURA_DURATION_TICKS = 16;    // швидке згасання аури активації
 
     private final UUID ownerId;

@@ -15,8 +15,10 @@ paths:
 
 ## Інші сховища
 
-- `recipe_unlocks.json` — `JSONRecipeUnlockRepository` + `RecipeUnlockService`.
+- `recipe_unlocks.json` — `JSONRecipeUnlockRepository` + `RecipeUnlockService` (`unlockRecipe` **і** `revokeRecipe`: рецепт уміє не лише з'являтись, а й переїжджати від жертви до медіума — `.claude/rules/lingering-souls.md`).
+- **Свідомо БЕЗ файлу**: реєстр душ `LingeringSouls` (Death, Посл. 7) живе лише в пам'яті — рестарт стирає душі за задумом, як і личину `TheftOfHeavenlySecrets`. Не заводь під нього сховище.
 - `waypoints.json` — `WaypointStore` (морські мітки Морської Пам'яті, Tyrant; до 10 на гравця, пише після кожної мутації). Здібності дістаються сховища через `context.waypoints()` (`IWaypointContext`).
+- `retinue.json` — `RetinueStore` (почет нежиті Death, Посл. 6; переживає relog і рестарт, на відміну від `LingeringSouls` вище — пише лише при виході з серверу). `UndeadRetinue` лишається простим об'єктом шляху, сховище дістається йому сеттером із `ServiceContainer`. Див. `.claude/rules/lingering-souls.md`.
 - Маріонетки (Fool) — NPC зберігає **Citizens** у своєму `saves.yml` через `MarionetteMinionTrait`; регідрація на старті — `MarionetteRestorer` (+ фолбек-скан через 40 тіків в `onEnable`). Не знищуй NPC в `onDisable`.
 
 ## Ресурси (`src/main/resources`)

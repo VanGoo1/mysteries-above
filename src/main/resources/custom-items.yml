@@ -1312,4 +1312,171 @@ custom-items:
     glow: false
     custom-model-data: "order_cipher_message"
 
+  # ============================================
+  # 9 DEATH
+  # ============================================
+  desiccated_mature_black_spotted_frog:
+    display-name: "§2Висохла доросла чорноплямиста жаба"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "desiccated_mature_black_spotted_frog"
+
+  cloth_wrapped_persons_crystal:
+    display-name: "§8Кристал загорнутої в тканину людини"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: true
+    custom-model-data: "cloth_wrapped_persons_crystal"
+
+  black_lily:
+    display-name: "§5Чорна лілія"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "black_lily"
+
+  # ============================================
+  # 8 DEATH
+  # ============================================
+  death_calling_crows_eyeball:
+    display-name: "§8Око Смертозивної ворони"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "death_calling_crows_eyeball"
+
+  cemetery_blood_rose:
+    display-name: "§4Кладовищенська кривава троянда"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "cemetery_blood_rose"
+
+  death_calling_crow_feather:
+    display-name: "§8Перо Смертозивної ворони"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "death_calling_crow_feather"
+
+  corpse_scented_essential_oil:
+    display-name: "§2Ефірна олія із запахом трупа"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "corpse_scented_essential_oil"
+
+  # ============================================
+  # 7 DEATH
+  # ============================================
+  phantom_cats_forepaw:
+    display-name: "§7Передня лапа Кота-Привида"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "phantom_cats_forepaw"
+
+  piece_of_spirit_world_crystal:
+    display-name: "§dУламок кристала Світу Духів"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: true
+    custom-model-data: "piece_of_spirit_world_crystal"
+
+  phantom_cat_blood:
+    display-name: "§3Кров Кота-Привида"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "phantom_cat_blood"
+
+  leaf_blessed_by_a_natural_spirit:
+    display-name: "§aЛист, благословенний природним духом"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "leaf_blessed_by_a_natural_spirit"
+
+  # ============================================
+  # 6 DEATH
+  # ============================================
+  shadow_of_death:
+    display-name: "§8Тінь Смерті"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "shadow_of_death"
+
+  soul_of_a_pale_lich:
+    display-name: "§fДуша Блідого Ліча"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: true
+    custom-model-data: "soul_of_a_pale_lich"
+
+  fragmented_bones_of_pale_lich:
+    display-name: "§7Розколоті кістки Блідого Ліча"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "fragmented_bones_of_pale_lich"
+
+  decomposing_fluid_from_the_dead:
+    display-name: "§2Розкладна рідина мерця"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "decomposing_fluid_from_the_dead"
+
+  # ============================================
+  # 5 DEATH
+  # ============================================
+  skull_of_an_underworld_wanderer:
+    display-name: "§8Череп Мандрівника Загробного світу"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "skull_of_an_underworld_wanderer"
+
+  crystal_core_left_by_a_thousand_armed_wraith:
+    display-name: "§5Кристалове ядро, залишене Тисячоруким Привидом"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: true
+    custom-model-data: "crystal_core_left_by_a_thousand_armed_wraith"
+
+  piece_of_rotten_flesh_from_underworld_wanderer:
+    display-name: "§2Шматок гнилої плоті Мандрівника Загробного світу"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "piece_of_rotten_flesh_from_underworld_wanderer"
+
+  residual_powder_of_a_thousand_armed_wraith:
+    display-name: "§dЗалишковий порошок Тисячорукого Привида"
+    material: MUSIC_DISC_FAR
+    lore:
+      - ""
+    glow: false
+    custom-model-data: "residual_powder_of_a_thousand_armed_wraith"
+
 

@@ -51,7 +51,7 @@ public class HolyOath extends ActiveAbility {
 
     @Override
     public int getSpiritualityCost() {
-        return 45;
+        return 90;
     }
 
     @Override

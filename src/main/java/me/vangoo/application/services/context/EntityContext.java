@@ -19,6 +19,7 @@ import org.bukkit.util.Vector;
 
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.bukkit.Bukkit.getEntity;
@@ -26,9 +27,17 @@ import static org.bukkit.Bukkit.getEntity;
 public class EntityContext implements IEntityContext {
 
     private final MysteriesAbovePlugin plugin;
+    /** Шлюз без стану (тримає лише plugin), тож окремої реєстрації в ServiceContainer не просить. */
+    private final me.vangoo.infrastructure.mythic.MythicCreatureGateway creatureGateway;
 
     public EntityContext(MysteriesAbovePlugin plugin) {
         this.plugin = plugin;
+        this.creatureGateway = new me.vangoo.infrastructure.mythic.MythicCreatureGateway(plugin);
+    }
+
+    @Override
+    public Optional<UUID> summonCreature(String mobId, Location location) {
+        return creatureGateway.spawn(mobId, location).map(Entity::getUniqueId);
     }
 
     @Override

@@ -29,10 +29,10 @@ import java.util.UUID;
 public class Notarization extends ActiveAbility {
 
     private static final double RANGE = 15.0;
-    private static final int BASE_SILENCE_SECONDS = 6;
-    private static final int BASE_AMPLIFY_SECONDS = 8;
+    private static final int BASE_SILENCE_SECONDS = 13;
+    private static final int BASE_AMPLIFY_SECONDS = 15;
     private static final double AMPLIFY_DAMAGE_MULTIPLIER = 1.25;
-    private static final int COOLDOWN = 25;
+    private static final int COOLDOWN = 100;
 
     @Override
     public String getName() {
@@ -46,14 +46,14 @@ public class Notarization extends ActiveAbility {
         return String.format(
                 "§fПрисівши й дивлячись на ціль — засвідчує §5Нуліфікацію§f: глушить здібності цілі " +
                         "на %d с.\nБез присідання — §6Ампліфікацію§f: удари завдають ×1.25 шкоди й " +
-                        "подвоюють вашу поточну Прудкість на %d с.",
+                        "подвоюють вашу поточну Швидкість на %d с.",
                 silence, amplify
         );
     }
 
     @Override
     public int getSpiritualityCost() {
-        return 45;
+        return 200;
     }
 
     @Override

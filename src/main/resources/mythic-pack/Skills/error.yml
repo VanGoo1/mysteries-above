@@ -1,5 +1,7 @@
-# ── Кіт S9..S7: мобові версії гравцевих здібностей Error ──
-# (гравцеві здібності S7–S5 ще не існують — нижчі шаблони підсилюють цей самий кіт)
+# ── Кіт S9..S5: мобові версії гравцевих здібностей Error ──
+# Шлях крадія: моб не лише дебафить, а й ЗАБИРАЄ — річ із кишені (stealitem),
+# доступ до сил (sealabilities) і саму силу (stealability, той самий TheftLedger,
+# що й у гравця-Прометея, див. .claude/rules/ability-theft.md).
 # Наступальна: крадіжка тіні — зміщення жертви (ShadowTheft, S9; поглинає телепорт MA_Error_Chaos)
 MA_Error_S9_ShadowTheft:
   TargetConditions:
@@ -10,6 +12,14 @@ MA_Error_S9_ShadowTheft:
   - effect:particles{p=smoke;amount=10;hS=0.3;vS=0.5;y=1;speed=0.02}
   - effect:sound{s=entity.enderman.teleport;v=0.8;p=0.7}
 
+# Наступальна: кишенькова крадіжка — річ падає під ноги злодію (MaterialTheft, S9).
+# Без isbeyonder: обікрасти можна будь-кого, на те він і злодій.
+MA_Error_S9_Pickpocket:
+  Skills:
+  - stealitem{amount=1}
+  - effect:particles{p=smoke;amount=14;hS=0.4;vS=0.3;y=0.8;speed=0.02}
+  - effect:sound{s=entity.item.pickup;v=1;p=0.6}
+
 # Наступальна: шарм шахрая — обман (SwindlerCharm, S8; поглинає дебафи MA_Error_Chaos)
 MA_Error_S8_SwindlerCharm:
   TargetConditions:
@@ -19,3 +29,57 @@ MA_Error_S8_SwindlerCharm:
   - potion{type=WEAKNESS;duration=80;level=0;particles=false}
   - drainsanity{amount=1} 0.1
   - effect:particles{p=smoke;amount=8;hS=0.4;vS=0.5;y=1.6}
+
+# Наступальна: ментальний розлад — коротка печатка ВСІХ сил (MentalDisruption, S8)
+MA_Error_S8_MindLock:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - sealabilities{seconds=4}
+  - drainsanity{amount=1} 0.2
+  - effect:particles{p=squid_ink;amount=18;hS=0.3;vS=0.6;y=1.8;speed=0.01}
+  - effect:sound{s=block.iron_door.close;v=0.9;p=0.5}
+
+# Наступальна: дешифрування — викриття жертви (Decryption, S7)
+MA_Error_S7_Decryption:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - potion{type=GLOWING;duration=100;level=0;particles=false}
+  - potion{type=MINING_FATIGUE;duration=80;level=1;particles=false}
+  - drainsanity{amount=1} 0.15
+  - effect:particles{p=enchant;amount=20;hS=0.4;vS=0.6;y=1.6}
+  - effect:sound{s=block.enchantment_table.use;v=1;p=0.7}
+
+# Наступальна: крадіжка сили — одна здібність мовчить 90 с (PowerTheft, S6)
+MA_Error_S6_PowerTheft:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - stealability{seconds=90}
+  - drainsanity{amount=1} 0.25
+  - effect:particles{p=smoke;amount=30;hS=0.5;vS=0.8;y=1.2;speed=0.05}
+  - effect:sound{s=entity.enderman.stare;v=1;p=0.5}
+
+# Наступальна: концептуальна крадіжка — забирає сон і кроки (ConceptualTheft, S5)
+MA_Error_S5_ConceptualTheft:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - sealabilities{seconds=8}
+  - potion{type=BLINDNESS;duration=60;level=0;particles=false}
+  - potion{type=SLOWNESS;duration=80;level=3;particles=false}
+  - potion{type=WEAKNESS;duration=120;level=1;particles=false}
+  - drainsanity{amount=2} 0.4
+  - effect:particles{p=squid_ink;amount=40;hS=0.6;vS=1.0;y=1.4;speed=0.02}
+  - effect:sound{s=entity.elder_guardian.curse;v=1;p=0.8}
+
+# Наступальна: крадіжка сили Крадія снів — довше вікно (PowerTheft, тір S5)
+MA_Error_S5_PowerTheft:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - stealability{seconds=180}
+  - drainsanity{amount=1} 0.3
+  - effect:particles{p=smoke;amount=40;hS=0.6;vS=0.9;y=1.2;speed=0.05}
+  - effect:sound{s=entity.enderman.stare;v=1;p=0.4}

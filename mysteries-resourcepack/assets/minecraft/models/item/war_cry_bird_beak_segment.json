@@ -1,0 +1,6 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "item/war_cry_bird_beak_segment"
+    }
+}

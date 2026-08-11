@@ -70,8 +70,8 @@ public class Decryption extends ActiveAbility {
 
     @Override
     public String getDescription(Sequence userSequence) {
-        return "Ви вичитуєте правду з того, на що дивитесь. Жива ціль у межах "
-                + (int) CryptologistInsight.CROSSHAIR_RANGE + " блоків: активні чари, "
+        return "Ви вичитуєте правду з того, на що дивитесь.\n" +
+                "Жива ціль у межах " + (int) CryptologistInsight.CROSSHAIR_RANGE + " блоків: активні чари, "
                 + "недавнє застосування сил Потойбіччя, стан розуму.\n"
                 + "Блок у прицілі: сліди на місці, ім'я винуватця і слід по землі туди, "
                 + "де він зараз.\n"
@@ -85,8 +85,8 @@ public class Decryption extends ActiveAbility {
                 + CryptologistInsight.depthThreshold(1, userSequence) + "/"
                 + CryptologistInsight.depthThreshold(2, userSequence) + "/"
                 + CryptologistInsight.depthThreshold(3, userSequence) + ") — здібність не вгадує.\n"
-                + "Глибоке читання привертає увагу вищих сил: до "
-                + CryptologistInsight.sanityLoss(3, userSequence) + " глузду.";
+                + "Глибоке читання привертає увагу вищих сил: прибавка до "
+                + CryptologistInsight.sanityLoss(3, userSequence) + " втрати контролю.";
     }
 
     @Override
@@ -592,9 +592,7 @@ public class Decryption extends ActiveAbility {
         @Override
         public String getDescription(Sequence userSequence) {
             return "Чужа ілюзія в межах " + (int) NOTICE_RANGE + " блоків тримається на вас лише "
-                    + DreamStealerTheft.ILLUSION_DISPEL_SECONDS + " с.\n"
-                    + "Потім ви бачите шов: назву здібності й того, хто її сплів — його "
-                    + "підсвічує колір Помилки.";
+                    + DreamStealerTheft.ILLUSION_DISPEL_SECONDS + " с.\n";
         }
 
         @Override

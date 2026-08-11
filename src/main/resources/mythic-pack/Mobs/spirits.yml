@@ -1,0 +1,37 @@
+# Духи — істоти, що НЕ належать жодному шляху.
+#
+# Живуть окремим файлом саме тому, що дух не є власністю Смерті: з ним працює
+# Могильник (Death, Посл. 8 — Спілкування з духами), а згодом Spirit Warlock
+# (Darkness) і будь-хто ще, кому лор дає доступ до Світу Духів. Клас здібності
+# посилається лише на id моба, тож новий споживач нічого тут не змінює.
+#
+# Дух свідомо НЕ нежить: база VEX, тож ані Tag.ENTITY_TYPES_UNDEAD, ані бонуси
+# Sun по нежиті на нього не діють (окрема категорія «дух»).
+# Тег ma_spirit — ЄДИНИЙ спосіб упізнати духа з коду: шар здібностей не має права
+# торкатись MythicMobs API (ArchitectureTest.mythicMobsApiIsConfinedToBridgePackage),
+# а scoreboard-тег читається чистим Bukkit'ом (entity.getScoreboardTags()).
+#
+# Шаблону немає навмисно: MA_<Pathway>_S<seq> існують, щоб нести кіт здібностей
+# послідовності, а в духа кіту немає — Type стоїть прямо, партикли тут же.
+#
+# Вигляд тримається в одному місці (Type + Options): щоб накласти кастомну модель
+# у майбутньому, достатньо додати сюди рядок (Disguise/Model) — код знає моба лише
+# за id spirit_wandering і правок не потребує.
+spirit_wandering:
+  Type: VEX
+  Display: '&7Блукаючий Дух'
+  Health: 20
+  Damage: 3
+  AITargetSelectors:
+  - 0 clear
+  - 1 attacker
+  - 2 players
+  Options:
+    PreventOtherDrops: true
+    MaxCombatDistance: 32
+    Despawn: true
+    MovementSpeed: 0.28
+    Scale: 1.0
+  Skills:
+  - addtag{t=ma_spirit} @self ~onSpawn
+  - effect:particles{p=soul;amount=4;hS=0.3;vS=0.4;y=1;speed=0.01} @self ~onTimer:20

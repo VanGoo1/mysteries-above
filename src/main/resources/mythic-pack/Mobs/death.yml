@@ -1,0 +1,81 @@
+death_blackspotted_frog_9:
+  Template: MA_Death_S9
+  Type: FROG
+  Display: '&2Чорноплямиста жаба'
+  Health: 22
+  Damage: 4
+  # FROG — мирний ванільний тип: без цього блоку моб бере ціль (MA_Base), але не б'є.
+  AIGoalSelectors:
+  - 0 clear
+  - 1 float
+  - 2 meleeattack
+  - 3 lookatplayers
+  - 4 randomlookaround
+  Options:
+    MovementSpeed: 0.26
+
+death_calling_crow_8:
+  Template: MA_Death_S8
+  Type: PARROT
+  Display: '&8Смертозивна ворона'
+  Health: 40
+  Damage: 5
+  # PARROT — мирний ванільний тип: той самий meleeattack-виняток.
+  AIGoalSelectors:
+  - 0 clear
+  - 1 float
+  - 2 meleeattack
+  - 3 lookatplayers
+  - 4 randomlookaround
+  Options:
+    MovementSpeed: 0.3
+
+death_phantom_cat_7:
+  Template: MA_Death_S7
+  Type: CAT
+  Display: '&7Кіт-Привид'
+  Health: 66
+  Damage: 7
+  # CAT — мирний ванільний тип: той самий meleeattack-виняток.
+  AIGoalSelectors:
+  - 0 clear
+  - 1 float
+  - 2 meleeattack
+  - 3 lookatplayers
+  - 4 randomlookaround
+  Options:
+    MovementSpeed: 0.3
+    Scale: 1.1
+
+death_pale_lich_6:
+  Template: MA_Death_S6
+  Type: WITHER_SKELETON
+  Display: '&fБлідий Ліч'
+  Health: 92
+  Damage: 9
+  Options:
+    MovementSpeed: 0.27
+    Scale: 1.2
+
+death_underworld_wanderer_5:
+  Template: MA_Death_S5
+  # ZOMBIE, не ZOMBIE_VILLAGER: MythicMobs 5.13.0 має баг у BukkitZombieVillager
+  # (плутає локальні змінні профессії/типу поселенця), тож ZOMBIE_VILLAGER завжди
+  # пише "Invalid villager type configured" незалежно від конфігу.
+  Type: ZOMBIE
+  Display: '&8Мандрівник Загробного світу'
+  Health: 140
+  Damage: 10
+  Options:
+    MovementSpeed: 0.26
+    Scale: 1.1
+
+death_thousand_armed_wraith_5:
+  Template: MA_Death_S5
+  Type: VEX
+  Display: '&5Тисячорукий Привид'
+  Health: 130
+  Damage: 12
+  Options:
+    MovementSpeed: 0.32
+    Scale: 1.6

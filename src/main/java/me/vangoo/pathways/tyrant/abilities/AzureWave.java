@@ -31,8 +31,8 @@ public class AzureWave extends ActiveAbility {
     private static final double WIDTH = 5.0;        // ширина фронту
     private static final double KNOCKBACK = 1.3;
     private static final int DURATION_TICKS = 20;   // ~1 с проходу
-    private static final int COOLDOWN = 18;
-    private static final int SPIRITUALITY_COST = 50;
+    private static final int COOLDOWN = 15;
+    private static final int SPIRITUALITY_COST = 70;
 
     @Override
     public String getName() {

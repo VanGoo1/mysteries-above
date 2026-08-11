@@ -32,7 +32,7 @@ public class FireOfLight extends ActiveAbility {
     private static final int BASE_DAMAGE = 12;
     private static final int FIRE_TICKS = 140; // довше за звичайний підпал — "море вогню"
     private static final int WEAKNESS_TICKS = 100;
-    private static final int COOLDOWN = 30;
+    private static final int COOLDOWN = 15;
 
     @Override
     public String getName() {
@@ -51,7 +51,7 @@ public class FireOfLight extends ActiveAbility {
 
     @Override
     public int getSpiritualityCost() {
-        return 60;
+        return 110;
     }
 
     @Override

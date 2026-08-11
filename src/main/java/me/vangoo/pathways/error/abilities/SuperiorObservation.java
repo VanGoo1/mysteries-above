@@ -107,17 +107,17 @@ public class SuperiorObservation extends PermanentPassiveAbility {
                 + "та цінні предмети в гравців у радіусі 10 блоків.";
         if (userSequence.level() > GAZE_TIER) return base;
         String gaze = base + "\nПогляд на істоту в межах "
-                + (int) SwindlerInfluence.OBSERVATION_GAZE_RANGE + " блоків читає її намір:\n"
+                + (int) SwindlerInfluence.OBSERVATION_GAZE_RANGE + " блоків читає її намір:"
                 + "чи вона цілиться у вас і чи вона Потойбічна.\nПрироду Потойбічного "
                 + "сильнішого за вас розгледіти не вдається.";
         if (userSequence.level() > EVIDENCE_TIER) return gaze;
         String evidence = gaze + "\nБлоки зі свіжими слідами в радіусі "
                 + (int) CryptologistInsight.EVIDENCE_MARK_RADIUS + " блоків самі впадають у око "
                 + "(оновлюється кожні " + CryptologistInsight.EVIDENCE_MARK_INTERVAL_SECONDS
-                + " с) — їх читає Дешифрування.";
+                + " с)";
         if (userSequence.level() > TREASURE_TIER) return evidence;
-        return evidence + "\nСхованки з цінностями — скрині, дропи й чужі інвентарі — "
-                + "самі проступають у радіусі " + (int) PrometheusTheft.VALUABLES_RADIUS
+        return evidence + "\nШлях до схованкок з цінностями"
+                + "буде видно у радіусі " + (int) PrometheusTheft.VALUABLES_RADIUS
                 + " блоків із приблизною вартістю й типом, а руда — у радіусі "
                 + (int) PrometheusTheft.ORE_SCAN_RADIUS + ".";
     }
@@ -154,19 +154,24 @@ public class SuperiorObservation extends PermanentPassiveAbility {
             List<RecordedEvent> traces = context.events().getPastEvents(center,
                     (int) CryptologistInsight.EVIDENCE_MARK_RADIUS,
                     CryptologistInsight.TRACE_LOOKUP_WINDOW_SECONDS);
-            context.scheduling().scheduleDelayed(() -> showEvidence(context, traces), 0L);
+            context.scheduling().scheduleDelayed(() -> showEvidence(context, casterId, traces), 0L);
         });
     }
 
-    private void showEvidence(IAbilityContext context, List<RecordedEvent> traces) {
+    private void showEvidence(IAbilityContext context, UUID casterId, List<RecordedEvent> traces) {
         Color errorColor = PathwayBranding.liquidOf("Error");
+        Player caster = Bukkit.getPlayer(casterId);
+        String casterName = caster == null ? null : caster.getName();
         Set<String> seen = new HashSet<>();
         for (RecordedEvent trace : traces) {
+            // Власні сліди кастера не підсвічуємо — здібність шукає ЧУЖУ активність.
+            if (casterName != null && casterName.equalsIgnoreCase(trace.getActor())) continue;
             Location loc = trace.getLocation();
             if (!seen.add(loc.getBlockX() + ":" + loc.getBlockY() + ":" + loc.getBlockZ())) continue;
             // Нерухома мітка, що лежить кілька секунд: слідів буває до 8 одразу — має бути
-            // помітно й достатньо довго, щоб встигнути глянути, але не «ялинка».
-            context.effects().playDustMark(loc.clone().add(0.5, 0.6, 0.5), errorColor,
+            // помітно й достатньо довго, щоб встигнути глянути, але не «ялинка». Бачить лише
+            // сам кастер — інакше чужі сліди підсвічувались би всім гравцям поблизу.
+            context.effects().playDustMarkFor(casterId, loc.clone().add(0.5, 0.6, 0.5), errorColor,
                     0.2, 1.0f, 6, EVIDENCE_MARK_TICKS);
             if (seen.size() >= MAX_EVIDENCE_MARKS) return;
         }
@@ -339,14 +344,16 @@ public class SuperiorObservation extends PermanentPassiveAbility {
         detectedItems.add(ChatColor.LIGHT_PURPLE + "Схованки: " + found.size()
                 + " (" + valueLabel(best.value()) + ": " + best.type() + ")");
 
+        // Приватна мітка й слід — бачить лише кастер, інакше вказали б на схованку всім поруч.
         Color errorColor = PathwayBranding.liquidOf("Error");
         for (int i = 0; i < Math.min(MAX_TREASURE_MARKS, found.size()); i++) {
-            context.effects().playDustMark(found.get(i).location(), errorColor,
+            context.effects().playDustMarkFor(casterId, found.get(i).location(), errorColor,
                     0.25, 1.0f, 6, TREASURE_MARK_TICKS);
         }
         Treasure nearest = Collections.min(found,
                 Comparator.comparingDouble(t -> t.location().distanceSquared(center)));
-        context.effects().playGroundTrail(center, nearest.location(), errorColor, TREASURE_MARK_TICKS);
+        context.effects().playGroundTrailFor(casterId, center, nearest.location(), errorColor,
+                TREASURE_MARK_TICKS);
         context.effects().playSoundForPlayer(casterId, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.4f, 1.8f);
     }
 

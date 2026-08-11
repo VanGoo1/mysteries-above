@@ -40,7 +40,7 @@ public class RagingBlow extends ActiveAbility {
     private static final double KNOCKBACK = 1.8;
     private static final double HIT_RADIUS = 4.0;
     private static final int COOLDOWN = 10;
-    private static final int SPIRITUALITY_COST = 35;
+    private static final int SPIRITUALITY_COST = 70;
     private static final int PERMANENT_DURATION = Integer.MAX_VALUE;
 
     private final Set<UUID> registered = ConcurrentHashMap.newKeySet();
@@ -55,8 +55,8 @@ public class RagingBlow extends ActiveAbility {
     public String getDescription(Sequence sequence) {
         int damage = scaleValue(BASE_DAMAGE, sequence, SequenceScaler.ScalingStrategy.MODERATE);
         return String.format(
-                "§fНакопичуйте гнів, б'ючи ворогів у ближньому бою §7(%d влучань)§f. Коли гнів дозріє, " +
-                        "вивільніть його фронтальним ударом на §c%d §fшкоди з потужним відкиданням. " +
+                "§fНакопичуйте гнів, б'ючи ворогів у ближньому бою §7(%d влучань)§f.\nКоли гнів накопичиться, " +
+                        "вивільніть його фронтальним ударом на §c%d §fшкоди з потужним відкиданням.\n" +
                         "§8Під час Люті гнів накопичується удвічі швидше.", THRESHOLD, damage);
     }
 

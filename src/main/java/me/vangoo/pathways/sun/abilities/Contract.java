@@ -39,12 +39,12 @@ public class Contract extends ActiveAbility {
 
     @Override
     public int getSpiritualityCost() {
-        return 80;
+        return 100;
     }
 
     @Override
     public int getCooldown(Sequence sequence) {
-        return 30;
+        return 120;
     }
 
     @Override

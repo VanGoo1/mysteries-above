@@ -35,8 +35,8 @@ public class Singing extends ActiveAbility {
     private static final double CHARM_AMPLIFY = 1.3;
     private static final int CHARM_AMPLIFY_SECONDS = 10;
     private static final double ROAR_KNOCKBACK = 1.3;
-    private static final int COOLDOWN = 20;
-    private static final int SPIRITUALITY_COST = 50;
+    private static final int COOLDOWN = 40;
+    private static final int SPIRITUALITY_COST = 160;
 
     private final Map<UUID, Mode> modes = new ConcurrentHashMap<>();
 
@@ -62,11 +62,11 @@ public class Singing extends ActiveAbility {
     @Override
     public String getDescription(Sequence sequence) {
         return String.format(
-                "§fГолос б'є духовно — §lкрізь стіни й затулені вуха§r§f, у радіусі §b%d §fблоків. " +
+                "§fГолос б'є духовно — §lкрізь стіни й затулені вуха§r§f, у радіусі §b%d §fблоків.\n" +
                         "§bЧарівний спів§f: вороги марніють і втрачають орієнтацію, а ваша шкода " +
-                        "зростає на §c30%%§f. §bКакофонія§f: мобів охоплює лють — вони кидаються " +
-                        "один на одного, гравці слабнуть. §bГромовий Рев§f: усіх відкидає, " +
-                        "моби тікають, гравців накриває пітьма. §7Shift+каст — перемкнути голос.",
+                        "зростає на §c30%%§f.\n§bКакофонія§f: мобів охоплює лють — вони кидаються " +
+                        "один на одного, гравці слабнуть.\n§bГромовий Рев§f: усіх відкидає, " +
+                        "моби тікають, гравців накриває пітьма.\n§7Shift+каст — перемкнути голос.",
                 (int) RADIUS);
     }
 

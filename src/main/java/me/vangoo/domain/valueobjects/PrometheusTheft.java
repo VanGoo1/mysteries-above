@@ -23,8 +23,8 @@ public final class PrometheusTheft {
     }
 
     // --- Крадіжка сили ---
-    public static final int POWER_THEFT_COST = 90;
-    public static final int POWER_THEFT_COOLDOWN_SECONDS = 300;
+    public static final int POWER_THEFT_COST = 200;
+    public static final int POWER_THEFT_COOLDOWN_SECONDS = 200;
     private static final int POWER_THEFT_COOLDOWN_FLOOR_SECONDS = 120;
     public static final double POWER_THEFT_RANGE = 50.0;
 

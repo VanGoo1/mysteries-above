@@ -8,7 +8,7 @@ import me.vangoo.domain.entities.Pathway;
 import java.util.List;
 import java.util.Map;
 
-/** Зілля шляху Death — заготовка: кольори з брендингу, рецептів варіння ще немає. */
+/** Зілля шляху Death: кольори з брендингу, рецепти варіння — з potion-recipes.yml. */
 public class DeathPotions extends PathwayPotions {
     public DeathPotions(Pathway pathway, IItemResolver itemResolver,
                          Map<Integer, RecipeDefinition> recipes) {

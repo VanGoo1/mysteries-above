@@ -61,6 +61,22 @@ public class JSONRecipeUnlockRepository implements IRecipeUnlockRepository {
     }
 
     @Override
+    public boolean revokeRecipe(UUID playerId, UnlockedRecipe recipe) {
+        if (playerId == null || recipe == null) {
+            return false;
+        }
+
+        Set<UnlockedRecipe> playerRecipes = unlockedRecipes.get(playerId);
+        if (playerRecipes == null || !playerRecipes.remove(recipe)) {
+            return false;
+        }
+
+        saveToFile();
+        LOGGER.info(String.format("Revoked recipe from player %s: %s", playerId, recipe));
+        return true;
+    }
+
+    @Override
     public boolean hasUnlockedRecipe(UUID playerId, String pathwayName, int sequence) {
         if (playerId == null || pathwayName == null) {
             return false;

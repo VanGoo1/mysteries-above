@@ -29,8 +29,8 @@ public class WindBinding extends ActiveAbility {
     private static final double MAX_RANGE = 20.0;
     private static final int SLOWNESS_AMPLIFIER = 5;     // SLOWNESS VI
     private static final int JUMP_BLOCK_AMPLIFIER = 128; // від'ємний стрибок — ціль не відривається від землі
-    private static final int COOLDOWN = 18;
-    private static final int SPIRITUALITY_COST = 40;
+    private static final int COOLDOWN = 30;
+    private static final int SPIRITUALITY_COST = 150;
 
     @Override
     public String getName() {

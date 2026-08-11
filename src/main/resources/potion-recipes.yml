@@ -144,3 +144,20 @@ recipes:
     5:
       main: [siren_throat, crystal_jellyfish_cluster]
       auxiliary: [siren_hair_strands, crystal_jellyfish_tentacles]
+
+  Death:
+    9:
+      main: [desiccated_mature_black_spotted_frog, cloth_wrapped_persons_crystal]
+      auxiliary: [black_lily]
+    8:
+      main: [death_calling_crows_eyeball, death_calling_crow_feather]
+      auxiliary: [cemetery_blood_rose, corpse_scented_essential_oil]
+    7:
+      main: [phantom_cats_forepaw, piece_of_spirit_world_crystal]
+      auxiliary: [phantom_cat_blood, leaf_blessed_by_a_natural_spirit]
+    6:
+      main: [soul_of_a_pale_lich, fragmented_bones_of_pale_lich]
+      auxiliary: [shadow_of_death, decomposing_fluid_from_the_dead]
+    5:
+      main: [skull_of_an_underworld_wanderer, crystal_core_left_by_a_thousand_armed_wraith]
+      auxiliary: [piece_of_rotten_flesh_from_underworld_wanderer, residual_powder_of_a_thousand_armed_wraith]

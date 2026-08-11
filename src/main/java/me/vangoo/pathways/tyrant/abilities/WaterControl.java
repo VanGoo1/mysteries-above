@@ -38,7 +38,7 @@ public class WaterControl extends ActiveAbility {
     private static final int SOAK_TICKS = 100;     // ~5 с
     private static final int WATER_SCAN_RADIUS = 4;
     private static final int COOLDOWN = 8;
-    private static final int SPIRITUALITY_COST = 30;
+    private static final int SPIRITUALITY_COST = 60;
 
     private final Map<UUID, Mode> modes = new ConcurrentHashMap<>();
 
@@ -66,10 +66,10 @@ public class WaterControl extends ActiveAbility {
         int jet = scaleValue(BASE_JET_DAMAGE, sequence, SequenceScaler.ScalingStrategy.MODERATE);
         int soak = scaleValue(BASE_SOAK_DAMAGE, sequence, SequenceScaler.ScalingStrategy.MODERATE);
         return String.format(
-                "§fКерує наявною водою — §lлише біля води або під дощем§r§f. " +
-                        "§bСтрумінь§f: §c%d §fшкоди й відкид цілі. §bЩит§f: водяна завіса, " +
-                        "опір і регенерація на 6 с. §bПросочення§f: ціль набрякає водою — " +
-                        "§c%d §fшкоди, сповільнення й збите полум'я. §7Shift+каст — перемкнути режим.",
+                "§fКерує наявною водою — §lлише біля води або під дощем§r§f.\n" +
+                        "§bСтрумінь§f: §c%d §fшкоди й відкид цілі.\n§bЩит§f: водяна завіса, " +
+                        "опір і регенерація на 6 с.\n§bПросочення§f: ціль набрякає водою — " +
+                        "§c%d §fшкоди, сповільнення й збите полум'я.\n§7Shift+каст — перемкнути режим.",
                 jet, soak);
     }
 

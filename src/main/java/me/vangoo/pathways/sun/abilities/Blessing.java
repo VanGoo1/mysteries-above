@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Blessing extends ActiveAbility {
 
     private static final int BASE_RANGE = 10;
-    private static final int PERIODIC_COST = 15;
+    private static final int PERIODIC_COST = 10;
     private static final int COOLDOWN = 3;
     private static final int BASE_UNDEAD_BONUS = 3;
 
@@ -57,9 +57,9 @@ public class Blessing extends ActiveAbility {
         int amplifier = calculateAmplifier(sequence);
         int bonus = scaleValue(BASE_UNDEAD_BONUS, sequence, SequenceScaler.ScalingStrategy.MODERATE);
         return String.format(
-                "§fОповиває себе й союзників поруч §bОпором %d§f, знімає Виснаження й Морок. " +
+                "§fОповиває себе й союзників поруч §bОпором %d§f, знімає Висушування й Темряву. " +
                         "Поки активне — ваші удари в ближньому бою завдають §c+%d §fсвятої шкоди по темних/нежиті.\n " +
-                        "§7Радіус: %d бл · Гасне, коли скінчиться духовність.",
+                        "§7Радіус: %d бл.",
                 amplifier + 1, bonus, range
         );
     }

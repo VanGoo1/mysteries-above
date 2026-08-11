@@ -627,3 +627,221 @@ creatures:
     spawn:
       natural: { biomes: [DEEP_OCEAN, DEEP_FROZEN_OCEAN], replace: [], chance: 0.00075 }
       structure: { keys: [mysteries, nova_structures], chance: 0.1 }
+
+  # ============================ DEATH ============================
+  death_blackspotted_frog_9:
+    base_entity: FROG
+    tier: common
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: desiccated_mature_black_spotted_frog, weight: 50, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [SWAMP, MANGROVE_SWAMP], replace: [FROG], chance: 0.005 }
+      structure: { keys: [], chance: 0.0 }
+
+  death_calling_crow_8:
+    base_entity: PARROT
+    tier: common
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: death_calling_crows_eyeball, weight: 50, min: 1, max: 1 }
+        - { id: death_calling_crow_feather, weight: 35, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [DARK_FOREST, SWAMP], replace: [BAT], chance: 0.00375 }
+      structure: { keys: [], chance: 0.0 }
+
+  death_phantom_cat_7:
+    base_entity: CAT
+    tier: common
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: phantom_cats_forepaw, weight: 50, min: 1, max: 1 }
+        - { id: phantom_cat_blood, weight: 35, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [DARK_FOREST, TAIGA], replace: [CAT], chance: 0.0025 }
+      structure: { keys: [], chance: 0.0 }
+
+  death_pale_lich_6:
+    base_entity: WITHER_SKELETON
+    tier: common
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: soul_of_a_pale_lich, weight: 50, min: 1, max: 1 }
+        - { id: fragmented_bones_of_pale_lich, weight: 35, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [DRIPSTONE_CAVES, DARK_FOREST], replace: [WITHER_SKELETON, SKELETON], chance: 0.0015 }
+      structure: { keys: [], chance: 0.0 }
+
+  death_underworld_wanderer_5:
+    base_entity: ZOMBIE_VILLAGER
+    tier: apex
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: skull_of_an_underworld_wanderer, weight: 50, min: 1, max: 1 }
+        - { id: piece_of_rotten_flesh_from_underworld_wanderer, weight: 35, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [SWAMP, DARK_FOREST], replace: [], chance: 0.00075 }
+      structure: { keys: [mysteries, nova_structures], chance: 0.12 }
+
+  death_thousand_armed_wraith_5:
+    base_entity: VEX
+    tier: apex
+    loot:
+      min_items: 0
+      max_items: 1
+      items:
+        - { id: crystal_core_left_by_a_thousand_armed_wraith, weight: 50, min: 1, max: 1 }
+        - { id: residual_powder_of_a_thousand_armed_wraith, weight: 35, min: 1, max: 1 }
+    spawn:
+      natural: { biomes: [DARK_FOREST], replace: [], chance: 0.00075 }
+      structure: { keys: [mysteries, nova_structures], chance: 0.1 }
+
+  # ====================== БЕЗ ШЛЯХУ: ДУХИ ======================
+  # Виняток із правила «одне створіння на (шлях × послідовність)»: дух не належить
+  # жодному шляху. З ним працює Могильник (Death, Посл. 8), згодом Spirit Warlock
+  # (Darkness) — тому pathway задано явно неіснуючим ім'ям "spirits". Наслідки
+  # свідомі й безпечні: ухил Закону Конвергенції на нього не діє, а церкви й ордени
+  # не беруть його у HUNT-завдання (їхній pathway→group резолв дає null).
+  # sequence: 8 — рівень сили, а не належність; окремо тримає духа поза пулом
+  # церковних дуелей ініціації (той бере лише sequence 9).
+  # Дух — не джерело інгредієнтів (loot 0/0), а атмосфера й матеріал для Спілкування
+  # з духами: могильник вербує саме такого, замість платити за прикликання.
+  # Тематичні місця смерті: Долина душевного піску й печери (у Deep Dark ванільного
+  # природного спавну немає — там дух приходить лише через лут Стародавнього міста).
+  spirit_wandering:
+    base_entity: VEX
+    pathway: spirits
+    sequence: 8
+    tier: common
+    loot:
+      min_items: 0
+      max_items: 0
+      items: []
+    spawn:
+      natural: { biomes: [SOUL_SAND_VALLEY, DRIPSTONE_CAVES, DEEP_DARK], replace: [SKELETON, STRAY, ZOMBIE], chance: 0.02 }
+      structure: { keys: [ancient_city, abandoned_mineshaft], chance: 0.08 }
+
+  # =================== БЕЗ ШЛЯХУ: СВІТ ДУХІВ (ПЕКЛО) ===================
+  # Ті самі чотири істоти S1g-j, що й mythic-pack/Mobs/spirit-world.yml — не належать жодному
+  # шляху, тож pathway задано явно неіснуючим ім'ям "spirit-world" (той самий трюк, що й
+  # "spirits" вище): ухил Конвергенції не діє, HUNT церков/орденів їх не бере. Раніше цих
+  # істот кликала лише здібність за плату; тепер вони самі блукають Пеклом, а Домовленість
+  # з духами (Death, Посл. 6) лише пропонує їм служити (shift-ПКМ) — див.
+  # .claude/rules/summoned-creatures.md. sequence — рівень сили тіру, не 9, щоб не потрапити
+  # в пул дуелей церковної ініціації (той бере лише sequence 9). Лут 0/0: істота не джерело
+  # інгредієнтів, а майбутній слуга.
+  death_knight:
+    base_entity: WITHER_SKELETON
+    pathway: spirit-world
+    sequence: 6
+    tier: common
+    loot:
+      min_items: 0
+      max_items: 0
+      items: []
+    spawn:
+      natural: { biomes: [NETHER_WASTES], replace: [WITHER_SKELETON, ZOMBIFIED_PIGLIN], chance: 0.01 }
+      structure: { keys: [], chance: 0.0 }
+
+  shadow_swallowing_python:
+    base_entity: CAVE_SPIDER
+    pathway: spirit-world
+    sequence: 6
+    tier: common
+    loot:
+      min_items: 0
+      max_items: 0
+      items: []
+    spawn:
+      natural: { biomes: [WARPED_FOREST, SOUL_SAND_VALLEY], replace: [ZOMBIFIED_PIGLIN, ENDERMAN], chance: 0.012 }
+      structure: { keys: [], chance: 0.0 }
+
+  living_shadow:
+    base_entity: VEX
+    pathway: spirit-world
+    sequence: 6
+    tier: common
+    loot:
+      min_items: 0
+      max_items: 0
+      items: []
+    spawn:
+      natural: { biomes: [CRIMSON_FOREST], replace: [ZOMBIFIED_PIGLIN, PIGLIN], chance: 0.012 }
+      structure: { keys: [], chance: 0.0 }
+
+  lake_goddess:
+    base_entity: DROWNED
+    pathway: spirit-world
+    sequence: 6
+    tier: common
+    loot:
+      min_items: 0
+      max_items: 0
+      items: []
+    spawn:
+      natural: { biomes: [SOUL_SAND_VALLEY, BASALT_DELTAS], replace: [STRIDER, ZOMBIFIED_PIGLIN], chance: 0.008 }
+      structure: { keys: [], chance: 0.0 }
+
+  # Ще четверо S1g-j-подібних, цього разу з тіру Воротаря (Посл. 5): А10/А11/S2/S3 плану
+  # death-seq5.md. Той самий трюк pathway: "spirit-world" — поза Конвергенцією й HUNT.
+  death_envoy:
+    base_entity: PHANTOM
+    pathway: spirit-world
+    sequence: 5
+    tier: common
+    loot:
+      min_items: 0
+      max_items: 0
+      items: []
+    spawn:
+      natural: { biomes: [NETHER_WASTES, CRIMSON_FOREST], replace: [GHAST, ZOMBIFIED_PIGLIN], chance: 0.01 }
+      structure: { keys: [], chance: 0.0 }
+
+  pus_of_man:
+    base_entity: HUSK
+    pathway: spirit-world
+    sequence: 5
+    tier: common
+    loot:
+      min_items: 0
+      max_items: 0
+      items: []
+    spawn:
+      natural: { biomes: [BASALT_DELTAS, SOUL_SAND_VALLEY], replace: [ZOMBIFIED_PIGLIN, STRIDER], chance: 0.012 }
+      structure: { keys: [], chance: 0.0 }
+
+  pale_girl:
+    base_entity: STRAY
+    pathway: spirit-world
+    sequence: 5
+    tier: common
+    loot:
+      min_items: 0
+      max_items: 0
+      items: []
+    spawn:
+      natural: { biomes: [SOUL_SAND_VALLEY, CRIMSON_FOREST], replace: [ZOMBIFIED_PIGLIN, PIGLIN], chance: 0.01 }
+      structure: { keys: [], chance: 0.0 }
+
+  sea_beasts:
+    base_entity: GUARDIAN
+    pathway: spirit-world
+    sequence: 5
+    tier: common
+    loot:
+      min_items: 0
+      max_items: 0
+      items: []
+    spawn:
+      natural: { biomes: [BASALT_DELTAS, WARPED_FOREST], replace: [STRIDER, HOGLIN], chance: 0.008 }
+      structure: { keys: [], chance: 0.0 }

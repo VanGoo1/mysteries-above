@@ -34,7 +34,7 @@ public class ResistanceToHorror extends PermanentPassiveAbility {
     @Override
     public String getDescription(Sequence sequence) {
         return "§fCвяте світло опирається страху: щосекунди зрізає по 2 секунди " +
-                "з тривалості дебафів (Нудота, Сліпота, Слабкість, Морок), " +
+                "з тривалості дебафів (Нудота, Сліпота, Слабкість, Темрява), " +
                 "прискорюючи їхній сплив.";
     }
 

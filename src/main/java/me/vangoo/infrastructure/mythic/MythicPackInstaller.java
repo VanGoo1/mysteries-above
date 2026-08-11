@@ -17,9 +17,14 @@ public final class MythicPackInstaller {
             "Mobs/templates.yml",
             "Mobs/error.yml", "Mobs/visionary.yml", "Mobs/door.yml",
             "Mobs/justiciar.yml", "Mobs/whitetower.yml", "Mobs/fool.yml",
-            "Mobs/sun.yml", "Mobs/tyrant.yml",
+            "Mobs/sun.yml", "Mobs/tyrant.yml", "Mobs/death.yml",
+            // Духи не належать жодному шляху (Death Посл. 8, згодом Darkness) — окремий файл.
+            "Mobs/spirits.yml",
+            // Істоти Світу Духів — теж рід без шляху (Death Посл. 6 кличе їх перший).
+            "Mobs/spirit-world.yml",
             "Skills/error.yml", "Skills/visionary.yml", "Skills/door.yml",
             "Skills/justiciar.yml", "Skills/whitetower.yml", "Skills/fool.yml",
+            "Skills/sun.yml", "Skills/tyrant.yml", "Skills/death.yml",
     };
 
     private final Plugin plugin;

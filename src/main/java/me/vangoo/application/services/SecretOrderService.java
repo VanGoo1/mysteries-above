@@ -416,6 +416,7 @@ public class SecretOrderService {
         String pathway = pathwayNameOf(player);
         return registry.all().stream()
                 .filter(o -> o.type() == InstitutionType.SECRET_ORDER)
+                .filter(o -> registry.isSpawnEnabled(o.id())) // шлях ще не реалізований — не пропонувати вступ
                 .filter(o -> o.acceptsPathway(pathway))
                 .filter(o -> !hasAbandoned(id, o.id()))
                 .toList();
@@ -473,6 +474,7 @@ public class SecretOrderService {
         Map<String, String> pathwayToGroup = pathwayToGroupMap();
         List<Institution> candidates = registry.all().stream()
                 .filter(o -> o.type() == InstitutionType.SECRET_ORDER)
+                .filter(o -> registry.isSpawnEnabled(o.id())) // шлях ще не реалізований — не запрошувати
                 .filter(o -> !hasAbandoned(id, o.id()))
                 .toList();
         InvitationRules.pickOrder(deed, deedPathwayOrNull, playerPathway, candidates, pathwayToGroup, random)
@@ -1115,6 +1117,11 @@ public class SecretOrderService {
                 .toList();
         for (String churchId : toRespawn) {
             boolean respawned = false;
+            if (!registry.isSpawnEnabled(churchId)) {
+                priestClosedUntil.remove(churchId); // шлях ще не реалізований — священика не відроджуємо
+                changed = true;
+                continue;
+            }
             Optional<ChurchSiteRepository.Site> siteOpt = churchSiteService.siteOf(churchId);
             if (siteOpt.isPresent()) {
                 ChurchSiteRepository.Site site = siteOpt.get();

@@ -85,7 +85,7 @@ public final class DreamStealerTheft {
     /** Множник шкоди від «вкраденої відповіді на молитву», доки личина тримається. */
     public static final double DISGUISE_DAMAGE_MULTIPLIER = 1.25;
     /** Скільки триває викриття: провалений обряд лишає злодія без здібностей. */
-    public static final int DISGUISE_EXPOSURE_SECONDS = 10;
+    public static final int DISGUISE_EXPOSURE_SECONDS = 500;
     /** Скільки запалених свічок треба вівтарю Личини (як і в Ритуальній магії). */
     public static final int DISGUISE_CANDLES_REQUIRED = 3;
 

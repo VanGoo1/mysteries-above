@@ -3,9 +3,11 @@ package me.vangoo.application.services;
 import me.vangoo.domain.valueobjects.RecordedEvent;
 import net.coreprotect.CoreProtect;
 import net.coreprotect.CoreProtectAPI;
+import net.coreprotect.utility.EntityUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.entity.EntityType;
 import org.bukkit.plugin.Plugin;
 
 import java.util.ArrayList;
@@ -14,6 +16,11 @@ import java.util.Collections;
 import java.util.List;
 
 public class CoreProtectHandler {
+
+    /** Дія-вбивство в лукапі CoreProtect (порядок дій: break 0, place 1, click 2, kill 3). */
+    private static final int KILL_ACTION = 3;
+    /** Поле рядка лукапу, де лежить id істоти-жертви (див. {@link #victimName(String[])}). */
+    private static final int VICTIM_TYPE_INDEX = 5;
 
     private static CoreProtectAPI api;
     private static boolean initialized = false;
@@ -92,6 +99,32 @@ public class CoreProtectHandler {
             e.printStackTrace();
         }
 
+        // 3. СМЕРТІ (вбивства) — потрібні Розтину шляху Смерті.
+        try {
+            List<Integer> killActions = new ArrayList<>(Collections.singletonList(KILL_ACTION));
+
+            List<String[]> killLookup = api.performLookup(
+                    timeSeconds, null, null, null, null, killActions, radius, center
+            );
+
+            if (killLookup != null) {
+                for (String[] data : killLookup) {
+                    CoreProtectAPI.ParseResult result = api.parseResult(data);
+                    Location loc = new Location(center.getWorld(), result.getX(), result.getY(), result.getZ());
+
+                    events.add(new RecordedEvent(
+                            loc,
+                            formatKill(result, data),
+                            RecordedEvent.EventType.DEATH,
+                            result.getTimestamp(),
+                            result.getPlayer()
+                    ));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         // Сортуємо: нові зверху
         events.sort((a, b) -> Long.compare(b.getTimestamp(), a.getTimestamp()));
 
@@ -159,6 +192,29 @@ public class CoreProtectHandler {
         };
     }
 
+    private static String formatKill(CoreProtectAPI.ParseResult result, String[] data) {
+        return "§4" + cleanName(result.getPlayer()) + " вбив " + victimName(data);
+    }
+
+    /**
+     * Кого саме вбили. {@code ParseResult.getType()} для вбивства марний: він проганяє id
+     * істоти через {@code Material}, і «ZOMBIE» перетворюється на null. Тому беремо id
+     * напряму з того самого поля, що читає сам {@code ParseResult}, і резолвимо публічним
+     * {@code EntityUtils}.
+     */
+    private static String victimName(String[] data) {
+        // ponytail: індекс 5 — внутрішній layout лукапу CoreProtect (перевірено по реалізації
+        // ParseResult.getType(), яка стереже ту саму довжину 13). Зміниться формат — впадемо
+        // на «істоту», ніколи в помилку.
+        if (data == null || data.length < 13) return "істоту";
+        try {
+            EntityType type = EntityUtils.getEntityType(Integer.parseInt(data[VICTIM_TYPE_INDEX]));
+            return type != null ? cleanMaterialName(type.name()) : "істоту";
+        } catch (Exception e) {
+            return "істоту";
+        }
+    }
+
     private static boolean isIgnored(Material mat) {
         if (mat == null) return true;
         return mat == Material.GRASS_BLOCK || mat == Material.TALL_GRASS || mat == Material.AIR ||
@@ -169,6 +225,7 @@ public class CoreProtectHandler {
         return switch (actionId) {
             case 0 -> RecordedEvent.EventType.BLOCK_BREAK;
             case 1 -> RecordedEvent.EventType.BLOCK_PLACE;
+            case KILL_ACTION -> RecordedEvent.EventType.DEATH;
             case 4 -> RecordedEvent.EventType.CONTAINER_TRANSACTION;
             default -> null;
         };

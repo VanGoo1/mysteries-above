@@ -42,9 +42,8 @@ public class WindFlight extends ActiveAbility {
 
     @Override
     public String getDescription(Sequence sequence) {
-        return "§fВітер підіймає вас у небо: §bПольот§f тримає в повітрі та ширяє на місці, а " +
-                "§bКовзання§f лагідно опускає. §7Shift+каст — перемкнути режим · Підтримка: " +
-                getPeriodicCost(sequence) + " духовності/с · Стихає, коли скінчиться духовність.";
+        return "§fВітер підіймає вас у небо: §bПольот§f тримає в повітрі, а " +
+                "§bКовзання§f лагідно опускає.\n§7Shift+каст — перемкнути режим";
     }
 
     @Override

@@ -20,6 +20,8 @@ public class Singing extends ActiveAbility {
     private static final int BASE_RANGE = 8;
     private static final int BASE_DURATION_SECONDS = 10;
     private static final int COOLDOWN = 20;
+    private static final int COST = 35;
+
 
     private static final PotionEffectType[] NEGATIVE_EFFECTS = {
             PotionEffectType.POISON,
@@ -40,19 +42,18 @@ public class Singing extends ActiveAbility {
     @Override
     public String getDescription(Sequence sequence) {
         int range = scaleValue(BASE_RANGE, sequence, SequenceScaler.ScalingStrategy.MODERATE);
-        int duration = scaleValue(BASE_DURATION_SECONDS, sequence, SequenceScaler.ScalingStrategy.MODERATE);
         int amplifier = calculateAmplifier(sequence);
 
         return String.format(
                 "§fОбдаровує союзників поруч Регенерацією, Силою %d та Швидкістю %d, " +
-                        "знімаючи негативні ефекти.\n§7Радіус: %d бл. · Тривалість: %d с.",
-                amplifier + 1, amplifier + 1, range, duration
+                        "знімаючи негативні ефекти.\n§7Радіус: %d бл.",
+                amplifier + 1, amplifier + 1, range
         );
     }
 
     @Override
     public int getSpiritualityCost() {
-        return 25;
+        return COST;
     }
 
     @Override

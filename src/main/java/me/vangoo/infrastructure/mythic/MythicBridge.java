@@ -12,11 +12,17 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class MythicBridge {
 
     private static volatile BeyonderService beyonderService;
+    private static volatile me.vangoo.application.services.AbilityLockManager abilityLockManager;
+    private static volatile me.vangoo.infrastructure.theft.TheftLedger theftLedger;
 
     private MythicBridge() {}
 
-    public static void init(BeyonderService service) {
+    public static void init(BeyonderService service,
+                            me.vangoo.application.services.AbilityLockManager locks,
+                            me.vangoo.infrastructure.theft.TheftLedger ledger) {
         beyonderService = service;
+        abilityLockManager = locks;
+        theftLedger = ledger;
     }
 
     /** Реєструє кастомні механіки/умови MythicMobs (пакет components). Викликати в onEnable ПІСЛЯ init(...). */
@@ -26,5 +32,15 @@ public final class MythicBridge {
 
     public static BeyonderService beyonders() {
         return beyonderService;
+    }
+
+    /** Печатка всіх здібностей жертви (MA_Error_*_MindLock). */
+    public static me.vangoo.application.services.AbilityLockManager abilityLocks() {
+        return abilityLockManager;
+    }
+
+    /** Реєстр крадіжок: моб краде силу так само, як гравець-Прометей (MA_Error_S6_PowerTheft). */
+    public static me.vangoo.infrastructure.theft.TheftLedger thefts() {
+        return theftLedger;
     }
 }

@@ -22,13 +22,13 @@ import java.util.Optional;
  */
 public class WaterFilm extends ActiveAbility {
 
-    private static final int BASE_DOT = 2;          // шкода за тік задухи
+    private static final int BASE_DOT = 1;          // шкода за тік задухи
     private static final double MAX_RANGE = 25.0;
     private static final int DURATION_TICKS = 120;  // ~6 с, "важко зняти"
     private static final int TICK_PERIOD = 20;      // тік задухи щосекунди
     private static final int VISUAL_PERIOD = 5;     // оновлення плівки, щоб іти за ціллю
-    private static final int COOLDOWN = 14;
-    private static final int SPIRITUALITY_COST = 40;
+    private static final int COOLDOWN = 30;
+    private static final int SPIRITUALITY_COST = 80;
 
     @Override
     public String getName() {
@@ -40,7 +40,7 @@ public class WaterFilm extends ActiveAbility {
         int dot = scaleValue(BASE_DOT, sequence, SequenceScaler.ScalingStrategy.MODERATE);
         return String.format(
                 "§fВодяна плівка огортає голову цілі: осліплення, слабкість і задуха на суходолі — " +
-                        "§c%d §fшкоди щосекунди протягом 6 с. Важко зняти.", dot);
+                        "§c%d §fшкоди щосекунди протягом 6 с.", dot);
     }
 
     @Override

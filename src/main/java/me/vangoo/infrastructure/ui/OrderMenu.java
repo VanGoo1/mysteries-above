@@ -13,6 +13,7 @@ import me.vangoo.domain.organizations.FavorOptions;
 import me.vangoo.domain.organizations.Institution;
 import me.vangoo.domain.organizations.OrderMembership;
 import me.vangoo.domain.organizations.OrderTask;
+import me.vangoo.domain.organizations.PathwayAccess;
 import me.vangoo.domain.organizations.TaskWeight;
 import me.vangoo.infrastructure.items.OrderItems;
 import net.kyori.adventure.text.Component;
@@ -65,10 +66,14 @@ public class OrderMenu {
         List<Institution> orders = secretOrderService.joinableOrders(player);
         PaginatedGui gui = paginated("🗝 Таємні ордени", () -> {});
         for (Institution order : orders) {
+            List<String> lore = new ArrayList<>();
+            lore.add(ChatColor.GRAY + order.lore());
+            lore.add("");
+            lore.addAll(pathwayLines(order));
+            lore.add("");
+            lore.add(ChatColor.GREEN + "▸ Клацніть, щоб оцінити пропозицію");
             ItemStack display = button(Material.KNOWLEDGE_BOOK, ChatColor.LIGHT_PURPLE + order.displayName(),
-                    ChatColor.GRAY + order.lore(),
-                    "",
-                    ChatColor.GREEN + "▸ Клацніть, щоб оцінити пропозицію");
+                    lore.toArray(String[]::new));
             gui.addItem(new GuiItem(display, e -> {
                 e.setCancelled(true);
                 runSynced(player, () -> confirmJoin(player, order));
@@ -144,10 +149,10 @@ public class OrderMenu {
                 .disableAllInteractions()
                 .create();
         gui.setItem(2, 2, new GuiItem(button(Material.BOOK, ChatColor.AQUA + "Завдання",
-                        "Доставки, полювання, операції"),
+                "Доставки, полювання, операції"),
                 e -> runSynced(player, () -> openTasks(player))));
         gui.setItem(2, 5, new GuiItem(button(Material.ENDER_EYE, ChatColor.LIGHT_PURPLE + "Куратор",
-                        "Обміняйте свої заслуги на речі "),
+                "Обміняйте свої заслуги на речі "),
                 e -> runSynced(player, () -> openCurator(player))));
         gui.setItem(2, 8, new GuiItem(myOrderTile(player, order), e -> e.setCancelled(true)));
         gui.open(player);
@@ -220,10 +225,10 @@ public class OrderMenu {
             case RAID -> {
                 ItemStack display = button(Material.TRIPWIRE_HOOK, ChatColor.DARK_RED + "Злом сховища: "
                                 + ChatColor.WHITE + task.targetName(),
-                        ChatColor.GRAY + "Прокрадіться в межі храму глупої ночі й зачекайте:",
+                        ChatColor.GRAY + "Прокрадіться в межі храму вночі й зачекайте:",
                         ChatColor.GRAY + "зв'язковий вийде на вас протягом хвилини",
                         ChatColor.DARK_GRAY + "(або почніть самі: /order raid)",
-                        ChatColor.GRAY + "Тримайтесь у зоні храму, поки триває канал",
+                        ChatColor.GRAY + "Тримайтесь у зоні храму, щоб підтримувати рейд",
                         weightLine(task.weight()),
                         "",
                         ChatColor.GREEN + "▸ Клацніть, щоб здати здобич зі схованки");
@@ -405,6 +410,23 @@ public class OrderMenu {
     }
 
     // ── Хелпери ──────────────────────────────────────────────────────────────
+
+    /**
+     * Рядки лору «якими шляхами йде інституція»: назва шляху й до якої послідовності
+     * приймають (0 = повний доступ). Порожні доступи в ордені = приймає будь-кого.
+     */
+    private List<String> pathwayLines(Institution institution) {
+        if (institution.accesses().isEmpty()) {
+            return List.of(ChatColor.AQUA + "Шляхи: приймає будь-кого, хто вже обрав шлях");
+        }
+        List<String> lines = new ArrayList<>();
+        lines.add(ChatColor.AQUA + "Шляхи ордену:");
+        for (PathwayAccess access : institution.accesses()) {
+            String seq = access.isFull() ? "повний доступ" : "до Посл. " + access.minSequence();
+            lines.add(ChatColor.GRAY + "• " + access.pathwayName() + " (" + seq + ")");
+        }
+        return lines;
+    }
 
     private PaginatedGui paginated(String title, Runnable back) {
         PaginatedGui gui = Gui.paginated()

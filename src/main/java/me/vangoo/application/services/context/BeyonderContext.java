@@ -185,6 +185,23 @@ public class BeyonderContext implements IBeyonderContext {
     }
 
     @Override
+    public Optional<UnlockedRecipe> stealRecipe(UUID victimId, UUID thiefId) {
+        Set<UnlockedRecipe> thiefRecipes = recipeUnlockService.getUnlockedRecipes(thiefId);
+        // Найсильніше з того, чого злодій ще не знає: менша послідовність = цінніший рецепт.
+        Optional<UnlockedRecipe> prize = recipeUnlockService.getUnlockedRecipes(victimId).stream()
+                .filter(recipe -> !thiefRecipes.contains(recipe))
+                .min(Comparator.comparingInt(UnlockedRecipe::sequence));
+        if (prize.isEmpty()) {
+            return Optional.empty();
+        }
+
+        UnlockedRecipe recipe = prize.get();
+        recipeUnlockService.revokeRecipe(victimId, recipe.pathwayName(), recipe.sequence());
+        recipeUnlockService.unlockRecipe(thiefId, recipe.pathwayName(), recipe.sequence());
+        return prize;
+    }
+
+    @Override
     public void setOverride(UUID playerId, Beyonder override) {
         beyonderService.setOverride(playerId, override);
     }

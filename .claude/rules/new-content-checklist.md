@@ -26,10 +26,11 @@ paths:
 3. Зареєструвати зілля в `PotionManager.initializePotions()` (колір, `IItemResolver` → `customItemService`, рецепти з `potion-recipes.yml`).
 4. Рецепти інгредієнтів — секція у `potion-recipes.yml` (читає `PotionRecipeConfigLoader`, матчить `domain.brewing.BrewMatcher`).
 
-Наразі зареєстровано 22 pathways: 6 повних (Error, Visionary, Door, Justiciar,
-WhiteTower, Fool — реалізовані здібності й рецепти варіння) + 16 заготовок (Sun,
-Tyrant, HangedMan, Hermit, Paragon, BlackEmperor, Darkness, Death, TwilightGiant,
-Mother, Moon, RedPriest, Demoness, Abyss, Chained, WheelOfFortune). Кожна заготовка
+Наразі зареєстровано 22 pathways: 9 зі здібностями (Error, Visionary, Door, Justiciar,
+WhiteTower, Fool, Sun, Tyrant, Death — усі мають і здібності, Й рецепти варіння; Death
+поки покриває лише Посл. 9-5, за списком своїх здібностей) + 13 заготовок (HangedMan, Hermit, Paragon,
+BlackEmperor, Darkness, TwilightGiant, Mother, Moon, RedPriest, Demoness, Abyss,
+Chained, WheelOfFortune). Кожна заготовка
 має ВЛАСНИЙ пакет `me.vangoo.pathways.<name>` (клас `<Name> extends Pathway` з
 порожнім `initializeAbilities()`, клас `<Name>Potions extends PathwayPotions`,
 порожній пакет `abilities` з `package-info.java`) — ідентично реальним шляхам, під
@@ -40,7 +41,8 @@ Mother, Moon, RedPriest, Demoness, Abyss, Chained, WheelOfFortune). Кожна �
 
 ## Нова істота (полювання)
 
-Повний механізм — `.claude/rules/mythic-creatures.md`. Коротко:
+Повний механізм — `docs/mythic-creatures.md`. Істота, яку кличе здібність, або істота
+**без шляху** (дух) — додатково `.claude/rules/summoned-creatures.md`. Коротко:
 
 1. Моб (стати, вигляд, скіли) — у MythicMobs-паку `mythic-pack/Mobs/<pathway>.yml` (+ метаскіли в `Skills/<pathway>.yml` за потреби); новий файл — дописати в `MythicPackInstaller.PACK_FILES`.
 2. Дефініція у `creatures.yml` → `CreatureConfigLoader` → реєстр у `ServiceContainer` (`creatureRegistry`).

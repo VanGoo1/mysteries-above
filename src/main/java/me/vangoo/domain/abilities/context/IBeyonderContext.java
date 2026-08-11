@@ -29,6 +29,14 @@ public interface IBeyonderContext {
     /** Рецепти зілль (шлях+послідовність), у які входить цей інгредієнт; порожньо — якщо ніде. */
     List<UnlockedRecipe> findRecipesUsing(ItemStack ingredient);
 
+    /**
+     * Голос мертвих (Смерть, Посл. 7): ОДНА транзакція «забрати в жертви — віддати злодію».
+     * Рецепт саме ПЕРЕЇЖДЖАЄ, не копіюється, тож ферма рецептів неможлива.
+     *
+     * @return що саме переїхало; порожньо, якщо в жертви немає нічого нового для злодія
+     */
+    Optional<UnlockedRecipe> stealRecipe(UUID victimId, UUID thiefId);
+
     void setOverride(UUID playerId, Beyonder override);
 
     void removeOverride(UUID playerId);

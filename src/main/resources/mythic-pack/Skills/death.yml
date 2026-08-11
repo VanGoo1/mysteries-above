@@ -1,0 +1,56 @@
+# ── Кіт S9..S5: мобові версії гравцевих здібностей Death ──
+# Смерть не краде й не дебафить розум ілюзією (Error) чи наказом (Justiciar) — вона тягне
+# ціль ближче до потойбіччя: холод, гниття, тіні. Кожен щабель додає власний штрих
+# (гниття S9 -> холод S8 -> лід медіума S7 -> тіні провідника S6 -> хватка воротаря S5).
+
+# Наступальна: гниттьовий дотик трупозбирача (CadavericResilience/GloomyPresence, S9)
+MA_Death_S9_Decay:
+  Skills:
+  - damage{amount=4}
+  - potion{type=POISON;duration=60;level=0;particles=false}
+  - effect:particles{p=squid_ink;amount=10;hS=0.3;vS=0.4;y=1;speed=0.02}
+  - effect:sound{s=entity.zombie.infect;v=0.8;p=0.6}
+
+# Наступальна: могильний холод (тіло могильника, S8)
+MA_Death_S8_GraveChill:
+  Skills:
+  - damage{amount=5}
+  - potion{type=SLOWNESS;duration=50;level=1;particles=false}
+  - potion{type=WEAKNESS;duration=50;level=0;particles=false}
+  - effect:particles{p=soul;amount=14;hS=0.3;vS=0.5;y=1;speed=0.02}
+  - effect:sound{s=block.soul_sand.break;v=0.9;p=0.6}
+
+# Наступальна: морозна тінь медіума (FrostShadowSession, S7)
+MA_Death_S7_Frost:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - damage{amount=6}
+  - potion{type=SLOWNESS;duration=60;level=2;particles=false}
+  - drainsanity{amount=1} 0.2
+  - effect:particles{p=snowflake;amount=18;hS=0.3;vS=0.5;y=1;speed=0.05}
+  - effect:sound{s=block.glass.break;v=0.8;p=1.4}
+
+# Наступальна: хватка тіней провідника (SpiritWorldKnowledge/Resurrection, S6)
+MA_Death_S6_ShadowGrasp:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - damage{amount=7}
+  - potion{type=BLINDNESS;duration=50;level=0;particles=false}
+  - potion{type=NAUSEA;duration=60;level=0;particles=false}
+  - drainsanity{amount=1} 0.25
+  - effect:particles{p=soul;amount=24;hS=0.4;vS=0.6;y=1.2;speed=0.03}
+  - effect:sound{s=entity.wither.ambient;v=0.7;p=0.5}
+
+# Наступальна: тяга в Загробний Світ воротаря (DoorToTheUnderworld: DRAG, S5)
+MA_Death_S5_UnderworldPull:
+  TargetConditions:
+  - isbeyonder true
+  Skills:
+  - damage{amount=9}
+  - potion{type=DARKNESS;duration=60;level=0;particles=false}
+  - potion{type=SLOWNESS;duration=60;level=2;particles=false}
+  - drainsanity{amount=2} 0.3
+  - effect:particles{p=soul;amount=40;hS=0.5;vS=0.9;y=1.2;speed=0.05}
+  - effect:sound{s=entity.enderman.scream;v=0.9;p=0.5}

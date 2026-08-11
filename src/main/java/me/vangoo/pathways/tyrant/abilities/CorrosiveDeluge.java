@@ -28,7 +28,7 @@ public class CorrosiveDeluge extends ActiveAbility {
     private static final int DURATION_TICKS = 160;  // 8 с
     private static final int PULSE_TICKS = 20;      // шкода раз на секунду
     private static final int COOLDOWN = 25;
-    private static final int SPIRITUALITY_COST = 55;
+    private static final int SPIRITUALITY_COST = 150;
 
     @Override
     public String getName() {

@@ -217,6 +217,22 @@ public class Beyonder {
         abilities = abilityTransformer.transform(oldAbilities, newSequenceAbilities);
     }
 
+    /**
+     * Слабшає на одну послідовність (Закон Конвергенції: Характеристика вже вилучена в маріонетку,
+     * тож живий оригінал втрачає відповідну частку сили). No-op на Посл. 9 — слабшати нікуди.
+     */
+    public synchronized void demote() {
+        if (!sequence.canDemote()) {
+            return;
+        }
+        sequence = sequence.demote();
+        mastery = mastery.reset();
+        updateMaximumSpirituality();
+
+        List<Ability> newSequenceAbilities = collectAllAbilitiesForCurrentSequence();
+        abilities = abilityTransformer.transform(new ArrayList<>(), newSequenceAbilities);
+    }
+
     public synchronized void advanceWithPathwayChange(Pathway newPathway) {
         if (newPathway == null) {
             throw new IllegalArgumentException("New pathway cannot be null");

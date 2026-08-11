@@ -20,4 +20,9 @@ public class RampageContext implements IRampageContext {
         }
         return false;
     }
+
+    @Override
+    public boolean isInRampage(UUID playerId) {
+        return playerId != null && rampageManager.isInRampage(playerId);
+    }
 }

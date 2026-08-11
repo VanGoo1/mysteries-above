@@ -1,0 +1,6 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "item/tree_of_elders_crystalized_roots"
+    }
+}

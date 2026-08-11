@@ -34,11 +34,8 @@ public class NightVision extends ActiveAbility {
 
     @Override
     public String getDescription(Sequence sequence) {
-        return "§fДва мініатюрних сонця у ваших очах: дарують §bНічне бачення§f і не дають " +
-                "§5Мороку§f вас засліпити. §7Підтримка: " + PERIODIC_COST + " духовності/с · " +
-                "Гасне, коли скінчиться духовність.";
+        return "§fДва мініатюрних сонця у ваших очах: дарують §bНічне бачення§f і не дають " + "§5Темряві§f вас засліпити.";
     }
-
     @Override
     public int getSpiritualityCost() {
         return PERIODIC_COST; // ціна першого вікна при активації

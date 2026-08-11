@@ -30,6 +30,22 @@
 4. Файл додано? Впиши його в `MythicPackInstaller.PACK_FILES`.
 5. Перевірка in-server: `/mm mobs spawn <id>`, скіли/лут/агро.
 
+## Істота без шляху і виклик здібністю
+
+Не кожна істота належить шляху. Дух (`spirit_wandering`, файл пака `Mobs/spirits.yml`)
+спавниться у світі як усі, але ним користуються різні шляхи (Смерть Посл. 8 — перша,
+Darkness — згодом), тож він живе у файлі **за родом істоти**, без шаблону
+`MA_<Pathway>_S<seq>` (кіту здібностей у нього немає) і з явними `pathway:`/`sequence:` у
+`creatures.yml`. Неіснуюче ім'я шляху (`pathway: spirits`) навмисне: ухил Конвергенції на
+істоту не діє, у HUNT-завдання церков/орденів вона не потрапляє, у пул дуелей ініціації —
+теж (той бере лише `sequence: 9`).
+
+Здібність приводить моба в гру **лише** через `context.entity().summonCreature(id, loc)`
+(шар здібностей не має права на MythicMobs API), а впізнає його по scoreboard-тегу, який
+пак ставить сам (`addtag{t=...} @self ~onSpawn`). Повний перелік правил для таких істот —
+керування супутником, прибирання, «мирна» версія ворожого моба — у
+`.claude/rules/summoned-creatures.md`.
+
 ## Кіти здібностей (kitcast)
 
 Кожен шаблон `MA_<Pathway>_S<seq>` має ОДИН рядок-диспетчер:
@@ -55,16 +71,25 @@
   (в `infrastructure.mythic.components`).
 - Посилання на метаскіли пінить `MythicPackKitReferenceTest` (kitcast/skill{s=}/onHitSkill/
   randomskill → мусить існувати в Skills/*.yml).
-- Діра в гравцевому ростері (напр. Error 7–5) — кіт не росте: той самий kitcast із коротшими
-  кулдаунами/меншим gcd у нижчому шаблоні.
+- Діра в гравцевому ростері (напр. Sun 6, де здібності не бойові) — кіт не росте: той самий
+  kitcast із коротшими кулдаунами/меншим gcd у нижчому шаблоні.
+- **Шлях зі здібностями МУСИТЬ мати `Skills/<pathway>.yml` і `kitcast` у шаблонах.** Шаблон,
+  де лишились самі `effect:particles`, — це не «мирна» істота, а забутий шлях: моб світиться
+  й нічого не робить. Пиши кіт у той самий момент, коли додаєш шляху перші бойові здібності.
 
 ## Межі (ArchitectureTest)
 
 - `io.lumine..` — ТІЛЬКИ в `me.vangoo.infrastructure.mythic..` (`mythicMobsApiIsConfinedToBridgePackage`).
   Спавн/ідентифікація для решти коду — через `MythicCreatureGateway` (`spawn(id, loc)`, `isCreature`, `creatureId`).
-- Кастомні механіки/умови (`drainsanity`, `scatter`, `isbeyonder`) — в `infrastructure.mythic.components`;
+- Кастомні механіки/умови (`drainsanity`, `scatter`, `isbeyonder`, `stealitem`, `sealabilities`,
+  `stealability`) — в `infrastructure.mythic.components`;
   сервіси беруть зі статичного `MythicBridge` (єдиний дозволений static-виняток: конструктор диктує MythicMobs).
-  Реєстрація компонентів — `MythicBridge.registerComponents(plugin)`, викликати в `onEnable` ПІСЛЯ `MythicBridge.init(beyonderService)`.
+  Реєстрація компонентів — `MythicBridge.registerComponents(plugin)`, викликати в `onEnable` ПІСЛЯ
+  `MythicBridge.init(beyonderService, abilityLockManager, theftLedger)`.
+  **Механіка, що б'є по гравцеві, перевикористовує наявний сервіс, а не заводить власний стан:**
+  `sealabilities` → `AbilityLockManager`, `stealability` → `TheftLedger`
+  (див. `.claude/rules/ability-theft.md`). Новий стан у механіці = другий примус повз
+  `AbilityExecutor`, тобто баг.
   Конструктор компонента — ОБОВʼЯЗКОВО публічний із параметром load-event
   (`MythicMechanicLoadEvent` / `MythicConditionLoadEvent`) — реєстр шукає саме його рефлексією.
   Скіл-клок MythicMobs АСИНХРОННИЙ (дефолт `ThreadSafetyLevel.EITHER`): механіка, що чіпає Bukkit

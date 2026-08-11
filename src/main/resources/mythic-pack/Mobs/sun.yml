@@ -18,12 +18,21 @@ sun_magma_titan_8:
     MovementSpeed: 0.24
     Scale: 1.2
 
+# Курка/папуга — мирні ванільні типи: MA_Base дає їм ціль (AITargetSelectors), але
+# goal `meleeattack` у них немає, тож без цього блоку моб стоїть біля гравця й нічого
+# не робить. Тримай його на КОЖНОМУ мобі мирного типу.
 sun_dawn_rooster_7:
   Template: MA_Sun_S7
   Type: CHICKEN
   Display: '&6Світанковий Півень'
   Health: 60
   Damage: 6
+  AIGoalSelectors:
+  - 0 clear
+  - 1 float
+  - 2 meleeattack
+  - 3 lookatplayers
+  - 4 randomlookaround
   Options:
     MovementSpeed: 0.3
     Scale: 1.3
@@ -34,6 +43,12 @@ sun_spirit_pact_bird_6:
   Display: '&eПтах Духовного Договору'
   Health: 95
   Damage: 8
+  AIGoalSelectors:
+  - 0 clear
+  - 1 float
+  - 2 meleeattack
+  - 3 lookatplayers
+  - 4 randomlookaround
   Options:
     MovementSpeed: 0.32
     Scale: 1.3
@@ -44,6 +59,12 @@ sun_king_dawn_rooster_5:
   Display: '&cКороль Світанкових Півнів'
   Health: 180
   Damage: 12
+  AIGoalSelectors:
+  - 0 clear
+  - 1 float
+  - 2 meleeattack
+  - 3 lookatplayers
+  - 4 randomlookaround
   Options:
     MovementSpeed: 0.32
     Scale: 1.8

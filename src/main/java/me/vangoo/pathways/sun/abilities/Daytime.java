@@ -34,8 +34,7 @@ public class Daytime extends ActiveAbility {
 
     @Override
     public String getDescription(Sequence sequence) {
-        return "§fОсвітлює довкола вас, наче настав день: світло природно поширюється далі §7(≈10+ бл)§f. " +
-                "§7Підтримка: " + PERIODIC_COST + " духовності/с · Гасне, коли скінчиться духовність.";
+        return "§fОсвітлює довкола вас, наче настав день: світло природно поширюється далі §7(≈10+ бл)§f.";
     }
 
     @Override

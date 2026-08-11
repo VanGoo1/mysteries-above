@@ -36,7 +36,7 @@ public class LightningBoltArrow extends ActiveAbility {
     private static final int ARMING_TICKS = 1200;  // 60 с на 5 пострілів
     private static final int FLIGHT_TICKS = 200;   // скільки чекаємо влучання
     private static final int COOLDOWN = 25;
-    private static final int SPIRITUALITY_COST = 60;
+    private static final int SPIRITUALITY_COST = 120;
 
     @Override
     public String getName() {
