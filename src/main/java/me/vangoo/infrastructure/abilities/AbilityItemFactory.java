@@ -19,12 +19,17 @@ import java.util.List;
 
 public class AbilityItemFactory {
 
-    /** Статична NBT-мітка предмета здібності — дозволяє розпізнати його без контексту Beyonder. */
+    /**
+     * Статична NBT-мітка предмета здібності — дозволяє розпізнати його без
+     * контексту Beyonder.
+     */
     public static final String ABILITY_ITEM_NBT = "ability_item";
 
     /**
-     * Матеріал предмета здібності. Власна пластинка на категорію: не сплутати з ванільним папером,
-     * який шлях Блазня споживає як ресурс, і видно категорію навіть без ресурс-паку.
+     * Матеріал предмета здібності. Власна пластинка на категорію: не сплутати з
+     * ванільним папером,
+     * який шлях Блазня споживає як ресурс, і видно категорію навіть без
+     * ресурс-паку.
      * Обробку пластинки (стак, jukebox) робить {@link DiscItems}.
      */
     public static final Material ABILITY_ITEM_MATERIAL = Material.MUSIC_DISC_WARD;
@@ -35,8 +40,7 @@ public class AbilityItemFactory {
         if (meta != null) {
             meta.setDisplayName(ChatColor.GOLD + ability.getName());
             List<String> lore = new ArrayList<>(List.of(
-                    ChatColor.GRAY + "--------------------------------------------"
-            ));
+                    ChatColor.GRAY + "--------------------------------------------"));
 
             List<String> descriptionLines = splitDescriptionByMarker(ability.getDescription(userSequence));
             for (String line : descriptionLines) {
@@ -70,7 +74,8 @@ public class AbilityItemFactory {
             meta.setLore(lore);
             item.setItemMeta(meta);
         }
-        // Мітимо предмет статичною NBT-міткою, щоб його можна було розпізнати без Beyonder
+        // Мітимо предмет статичною NBT-міткою, щоб його можна було розпізнати без
+        // Beyonder
         // (очищення дропу при смерті гравця та фільтр речей маріонетки).
         if (item.hasItemMeta()) {
             item = new NBTBuilder(item).setBoolean(ABILITY_ITEM_NBT, true).build();
@@ -78,7 +83,6 @@ public class AbilityItemFactory {
         DiscItems.stripJukeboxPlayable(item);
         return item;
     }
-
 
     @Nullable
     public Ability getAbilityFromItem(ItemStack item, Beyonder beyonder) {
@@ -112,7 +116,8 @@ public class AbilityItemFactory {
 
     /**
      * Розбиває опис на рядки по маркеру "/n".
-     * Повертає список рядків без провідних/кінцевих пробілів; порожні частини ігноруються.
+     * Повертає список рядків без провідних/кінцевих пробілів; порожні частини
+     * ігноруються.
      */
     private List<String> splitDescriptionByMarker(String description) {
         List<String> lines = new ArrayList<>();
@@ -120,13 +125,15 @@ public class AbilityItemFactory {
             return lines;
         }
 
-        // Якщо в описі є справжні перенос рядка (\n), теж їх обробимо разом із маркером "/n"
+        // Якщо в описі є справжні перенос рядка (\n), теж їх обробимо разом із маркером
+        // "/n"
         // Спочатку замінимо всі реальні newlines на маркер, щоб уніфікувати розбиття.
         String normalized = description.replace("\r\n", "/n").replace("\n", "/n").replace("\r", "/n");
 
         String[] parts = normalized.split("/n");
         for (String part : parts) {
-            if (part == null) continue;
+            if (part == null)
+                continue;
             String trimmed = part.trim();
             if (!trimmed.isEmpty()) {
                 lines.add(trimmed);
@@ -139,7 +146,9 @@ public class AbilityItemFactory {
         return getAbilityFromItem(item, beyonder) != null;
     }
 
-    /** Розпізнає предмет здібності за статичною NBT-міткою (без контексту Beyonder). */
+    /**
+     * Розпізнає предмет здібності за статичною NBT-міткою (без контексту Beyonder).
+     */
     public static boolean isAbilityItem(ItemStack item) {
         if (item == null || item.getType() == Material.AIR || !item.hasItemMeta()) {
             return false;
