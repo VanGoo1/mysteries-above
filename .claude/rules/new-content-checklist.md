@@ -13,7 +13,7 @@ paths:
 ## Нова здібність
 
 1. Клас у `me.vangoo.pathways.<pathway>.abilities`, база — `ActiveAbility` / `PermanentPassiveAbility` / `ToggleablePassiveAbility` / `OneTimeUseAbility`.
-2. Балансні формули — у `domain` (VO або `domain.services`) з unit-тестом; у здібності лише glue + ефекти (див. правило pathway-abilities).
+2. Балансні формули — у `domain` (VO або `domain.services`); у здібності лише glue + ефекти (див. правило pathway-abilities). **Тест на самі числа НЕ пиши** — перевірки «вартість дорівнює 30» видалені свідомо (див. `domain-purity.md`); тестуй лише логіку, що має лишатись правдивою при будь-якому балансі.
 3. Додати в `initializeAbilities()` конкретного pathway: `sequenceAbilities.put(seq, List.of(...))`. Здібності нижчих Sequence успадковуються при advance через `AbilityTransformer`; заміна версії — через спільний `AbilityIdentity`.
 4. Опис/назва/повідомлення — українською; опис через `getDescription(Sequence)` показує вже відскейлені числа (`scaleValue`).
 5. Якщо здібність тримає стан — правила сесій + `cleanUp()` обов'язково.

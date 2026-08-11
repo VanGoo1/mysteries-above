@@ -158,9 +158,10 @@ Optional<Beyonder> getCreatureBeyonder(UUID id);   // міфічна істот�
 ## Баланс і файл
 
 - Усі числа (тривалості, шанс, вартість, кулдаун, `corruptionTransfer`) — у
-  `domain.valueobjects.PrometheusTheft` (Посл. 6, тест `PrometheusTheftTest`) і
+  `domain.valueobjects.PrometheusTheft` (Посл. 6) і
   `DreamStealerTheft` (Посл. 5: сім режимів Концептуальної крадіжки, Посл-5 тір
-  Крадіжки сили, розвіювання ілюзій, Личина; тест `DreamStealerTheftTest`). Два тіри —
+  Крадіжки сили, розвіювання ілюзій, Личина). Числа тестами не прибиті — див.
+  `domain-purity.md`. Два тіри —
   два VO, і ніякого «спільного» третього: у `TheftLedger` і в здібностях жодних
   магічних констант часу.
 - `theft.json` у теці плагіна, Gson, запис після кожної мутації, побитий/відсутній
