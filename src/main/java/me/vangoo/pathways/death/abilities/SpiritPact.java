@@ -59,26 +59,10 @@ public class SpiritPact extends ActiveAbility {
         return String.format(
                 "Істоти Світу Духів блукають Пеклом самі — знайдіть їх і домовтесь.\n\n" +
                         "§7Домовленість (shift-ПКМ по істоті):\n" +
-                        "§f🕴 Жива тінь — %d духовності\n" +
-                        "§f🐍 Пітон, що ковтає тіні — %d духовності\n" +
-                        "§f⚔ Лицар Смерті — %d духовності\n" +
-                        "§f🌊 Богиня Озера — %d духовності\n" +
-                        "§f👻 Посланець Смерті — %d духовності\n" +
-                        "§f🩸 Гній Людини — %d духовності\n" +
-                        "§f❄ Бліда Дівчинка — %d духовності\n" +
-                        "§f🐙 Морська Примара — %d духовності\n" +
-                        "§8Дальність — %d блоків, разом до %d слуг у почті\n\n" +
-                        "§7Просте ПКМ відкриває накази почту:\n" +
+                        "§8Дальність — %d блоків, разом до %d слуг загалом\n\n" +
+                        "§7Просте ПКМ відкриває накази для слуг:\n" +
                         "§fслідувати / убити ціль / стерегти місце / розпустити\n" +
                         "§fта приховання й появу — духи розчиняються в тінях",
-                SpiritGuideLore.LIVING_SHADOW_COST,
-                SpiritGuideLore.SHADOW_PYTHON_COST,
-                SpiritGuideLore.DEATH_KNIGHT_COST,
-                SpiritGuideLore.LAKE_GODDESS_COST,
-                GatekeeperLore.DEATH_ENVOY_RECRUIT_COST,
-                GatekeeperLore.PUS_OF_MAN_RECRUIT_COST,
-                GatekeeperLore.PALE_GIRL_RECRUIT_COST,
-                GatekeeperLore.SEA_BEASTS_RECRUIT_COST,
                 (int) CLAIM_RANGE,
                 GatekeeperLore.retinueCap(userSequence));
     }
@@ -122,7 +106,7 @@ public class SpiritPact extends ActiveAbility {
             return;
         }
         if (retinue.isFull(casterId, sequence)) {
-            context.messaging().sendMessage(casterId, "§8Почет уже повний.");
+            context.messaging().sendMessage(casterId, "§8Слуг вже максимальна кількість.");
             return;
         }
 
@@ -148,8 +132,8 @@ public class SpiritPact extends ActiveAbility {
     void orderFollow(IAbilityContext context, Player caster) {
         UUID casterId = caster.getUniqueId();
         context.messaging().sendMessage(casterId, retinue.follow(casterId)
-                ? ChatColor.DARK_GREEN + "☠ Почет іде за вами"
-                : ChatColor.GRAY + "☠ Почту немає");
+                ? ChatColor.DARK_GREEN + "☠ Слуги йдуть за вами"
+                : ChatColor.GRAY + "☠ Слуг немає");
     }
 
     void orderAttack(IAbilityContext context, Player caster) {
@@ -160,11 +144,11 @@ public class SpiritPact extends ActiveAbility {
             return;
         }
         if (!retinue.attack(casterId, target.getUniqueId())) {
-            context.messaging().sendMessage(casterId, ChatColor.GRAY + "☠ Почту немає");
+            context.messaging().sendMessage(casterId, ChatColor.GRAY + "☠ Слуг немає");
             return;
         }
         context.effects().playSound(target.getLocation(), Sound.ENTITY_ZOMBIE_AMBIENT, 1.0f, 0.5f);
-        context.messaging().sendMessage(casterId, ChatColor.DARK_GREEN + "☠ Почет кинувся на "
+        context.messaging().sendMessage(casterId, ChatColor.DARK_GREEN + "☠ Слуги кинулись на "
                 + ChatColor.WHITE + target.getName());
     }
 
@@ -181,7 +165,7 @@ public class SpiritPact extends ActiveAbility {
     void disbandRetinue(IAbilityContext context, Player caster) {
         UUID casterId = caster.getUniqueId();
         if (!retinue.release(casterId)) {
-            context.messaging().sendMessage(casterId, ChatColor.GRAY + "☠ Почту немає");
+            context.messaging().sendMessage(casterId, ChatColor.GRAY + "☠ Слуг немає");
         }
     }
 
@@ -189,12 +173,12 @@ public class SpiritPact extends ActiveAbility {
     void toggleHide(IAbilityContext context, Player caster) {
         UUID casterId = caster.getUniqueId();
         if (!retinue.toggleHidden(context, casterId)) {
-            context.messaging().sendMessage(casterId, ChatColor.GRAY + "☠ Почту немає");
+            context.messaging().sendMessage(casterId, ChatColor.GRAY + "☠ Слуг немає");
             return;
         }
         context.messaging().sendMessage(casterId, retinue.isHidden(casterId)
-                ? ChatColor.DARK_GRAY + "☠ Почет розчинився в тінях"
-                : ChatColor.DARK_GREEN + "☠ Почет знову видимий");
+                ? ChatColor.DARK_GRAY + "☠ Слуги розчинились в тінях"
+                : ChatColor.DARK_GREEN + "☠ Слуг знову видно");
     }
 
     boolean retinueHidden(UUID ownerId) {

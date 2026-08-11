@@ -42,15 +42,15 @@ public final class SpiritMediumLore {
 
     // --- Ілюзорне око (розвідка) ---
     public static final int ILLUSORY_EYE_COST = 30;
-    private static final int ILLUSORY_EYE_COOLDOWN_SECONDS = 45;
+    private static final int ILLUSORY_EYE_COOLDOWN_SECONDS = 40;
     private static final int ILLUSORY_EYE_COOLDOWN_FLOOR_SECONDS = 15;
     private static final int ILLUSORY_EYE_DURATION_SECONDS = 15;
     private static final double ILLUSORY_EYE_RADIUS = 48.0;
     private static final double ILLUSORY_EYE_RADIUS_CAP = 64.0;
 
     // --- Морозна тінь (домен холоду + крижаний обладунок + коса) ---
-    public static final int FROST_SHADOW_COST = 55;
-    private static final int FROST_COOLDOWN_SECONDS = 90;
+    public static final int FROST_SHADOW_COST = 90;
+    private static final int FROST_COOLDOWN_SECONDS = 50;
     private static final int FROST_COOLDOWN_FLOOR_SECONDS = 30;
     private static final int FROST_DURATION_SECONDS = 12;
     /** Радіус домену росте MODERATE саме щоб дійти до вікіних «10 to 20 meter range». */
@@ -63,10 +63,10 @@ public final class SpiritMediumLore {
     private static final double SCYTHE_DAMAGE_MULTIPLIER_CAP = 2.5;
 
     // --- Земляний дух (затягування в землю; коштує крові) ---
-    public static final int EARTH_SPIRIT_COST = 40;
+    public static final int EARTH_SPIRIT_COST = 80;
     /** Ціна кров'ю в HP (2 = серце). Стала: кров — це кров, сильнішому медіуму її не менше. */
     public static final int EARTH_SPIRIT_BLOOD_HP = 4;
-    private static final int EARTH_COOLDOWN_SECONDS = 60;
+    private static final int EARTH_COOLDOWN_SECONDS = 55;
     private static final int EARTH_COOLDOWN_FLOOR_SECONDS = 20;
     private static final int EARTH_HOLD_SECONDS = 5;
     /** Радіус болота навколо схопленого (блоки): сусіди грузнуть, але в землю не йдуть. */
@@ -75,8 +75,8 @@ public final class SpiritMediumLore {
     private static final double EARTH_RANGE_CAP = 24.0;
 
     // --- Голос мертвих ---
-    public static final int VOICE_COST = 35;
-    private static final int VOICE_DEAD_COOLDOWN_SECONDS = 120;
+    public static final int VOICE_COST = 100;
+    private static final int VOICE_DEAD_COOLDOWN_SECONDS = 500;
     private static final int VOICE_DEAD_COOLDOWN_FLOOR_SECONDS = 40;
     private static final double VOICE_DEAD_RADIUS = 8.0;
     private static final double VOICE_DEAD_RADIUS_CAP = 16.0;
@@ -89,11 +89,11 @@ public final class SpiritMediumLore {
     private static final int VOICE_BACKLASH_CAP = 40;
 
     // --- Трупна личина (тогл) ---
-    public static final int GUISE_ACTIVATION_COST = 20;
+    public static final int GUISE_ACTIVATION_COST = 10;
     /** Періодична ціна тогла за секунду; від Послідовності не залежить. */
-    public static final int GUISE_PERIODIC_COST = 2;
+    public static final int GUISE_PERIODIC_COST = 10;
     /** Антиспам перемикача, не сила — тому стала. */
-    public static final int GUISE_COOLDOWN_SECONDS = 10;
+    public static final int GUISE_COOLDOWN_SECONDS = 5;
 
     /** Радіус Сприйняття духів (блоки): Посл. 7 = 24, росте WEAK до стелі 48. */
     public static double perceptionRadius(Sequence sequence) {

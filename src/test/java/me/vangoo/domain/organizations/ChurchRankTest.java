@@ -12,7 +12,7 @@ class ChurchRankTest {
     void ranksResolveByLifetimeContribution() {
         assertEquals(ChurchRank.VIRIANYN, ChurchRank.of(0, THRESHOLDS));
         assertEquals(ChurchRank.VIRIANYN, ChurchRank.of(199, THRESHOLDS));
-        assertEquals(ChurchRank.SLUZHKA, ChurchRank.of(200, THRESHOLDS));
+        assertEquals(ChurchRank.SLUHA, ChurchRank.of(200, THRESHOLDS));
         assertEquals(ChurchRank.DYAKON, ChurchRank.of(600, THRESHOLDS));
         assertEquals(ChurchRank.YEPYSKOP, ChurchRank.of(1500, THRESHOLDS));
         assertEquals(ChurchRank.KARDYNAL, ChurchRank.of(9999, THRESHOLDS));

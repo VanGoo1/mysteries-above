@@ -86,7 +86,7 @@ public class InternalUnderworld extends ActiveAbility {
                 GatekeeperLore.LAKE_GODDESS_CAST_COST, GatekeeperLore.LAKE_GODDESS_EROSION_HP),
         WANDERING_SPIRIT("Мандрівний дух", "розвідка: підсвічує живих навколо",
                 GatekeeperLore.WANDERING_SPIRIT_CAST_COST, GatekeeperLore.WANDERING_SPIRIT_EROSION_HP),
-        RESURRECTED_SERVANT("Воскреслий слуга", "вибух правдивої шкоди довкола вас",
+        RESURRECTED_SERVANT("Воскреслий слуга", "вибух чистої шкоди довкола вас",
                 GatekeeperLore.RESURRECTED_SERVANT_CAST_COST, GatekeeperLore.RESURRECTED_SERVANT_EROSION_HP),
         DEATH_ENVOY("Посланець Смерті", "примарна рука на далекій відстані: шкода, Повільність, Сліпота",
                 GatekeeperLore.DEATH_ENVOY_CAST_COST, GatekeeperLore.DEATH_ENVOY_EROSION_HP),
@@ -131,14 +131,14 @@ public class InternalUnderworld extends ActiveAbility {
 
     @Override
     public String getDescription(Sequence sequence) {
-        return "§fВаше тіло — клітка для одного духа чи нежиті з власного почту.\n\n" +
-                "§7Shift-ПКМ по слузі — поглинути (почет тане на одного);\n" +
+        return "§fВаше тіло — клітка для одного духа чи нежиті з власних слуг.\n\n" +
+                "§7Shift-ПКМ по слузі — поглинути;\n" +
                 "§7Shift-ПКМ без цілі, коли хтось усередині, — випустити;\n" +
                 "§7Звичайне ПКМ кличе силу того, хто живе всередині.\n\n" +
-                "§7Кожен окупант дає свою унікальну силу — тримайте здібність у руці, щоб " +
+                "§7Кожен дає свою унікальну силу — тримайте здібність у руці, щоб " +
                 "постійно бачити поточну силу в action-bar.\n\n" +
                 "§8Поки хтось усередині: max HP нижче (ерозія), повільний дренаж розсудку, " +
-                "але Тління на вас не діє.";
+                "але Висушування на вас не діє.";
     }
 
     @Override

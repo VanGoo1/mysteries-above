@@ -69,7 +69,7 @@ public class SpiritChanneling extends ActiveAbility {
 
     @Override
     public String getName() {
-        return "Прикликання духів";
+        return "Допомога середніх духів";
     }
 
     @Override
@@ -81,14 +81,12 @@ public class SpiritChanneling extends ActiveAbility {
     /** Розділ почту з'являється в описі рівно тоді, коли з'являється в меню. */
     private String retinueDescription(Sequence userSequence) {
         return String.format(
-                "\n\n§7Почет нежиті (Провідник духів):\n" +
-                        "§f☠ Підкорення — уся безхазяйна нежить у %d бл вступає в почет\n" +
+                "\n\n§aВідкрито нових слуг:\n" +
+                        "§f☠ Підкорення — уся безхазяйна нежить у %d бл вступає вам на службу\n" +
                         "§f  ✦ %d духовності, разом до %d слуг\n" +
                         "§f✦ Обмін духом — слуга гине, а вашу душу %d с не дістати\n" +
-                        "§f  ✦ %d духовності + 1 слуга\n" +
-                        "§f🕊 Зліт — невидима сила підкидає вас угору, %d духовності\n" +
-                        "§8Істот Світу Духів шукайте самі в Пеклі — про них і про накази\n" +
-                        "§8почту дбає «Домовленість з духами»",
+                        "§f  ✦ %d духовності\n" +
+                        "§f🕊 Зліт — невидима сила підкидає вас угору, %d духовності\n",
                 (int) SpiritGuideLore.subjugationRadius(userSequence),
                 SpiritGuideLore.SUBJUGATION_COST,
                 GatekeeperLore.retinueCap(userSequence),

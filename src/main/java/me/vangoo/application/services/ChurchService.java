@@ -901,19 +901,20 @@ public class ChurchService {
 
     // ── Сховище церкви (правило 11) ──────────────────────────────────────────
 
+    /**
+     * Засіює сховище церкви рецептами/інгредієнтами/Характеристиками кожного шляху,
+     * до якого вона має доступ. Ключ "recipe:<p>:<seq>" неспоживний — його наявність
+     * і є ознакою "вже засіяно рівно для цього шляху+рівня", тож повторний виклик
+     * (напр. після додавання нового шляху церкві чи його рецептів варіння) лише
+     * добиває те, чого бракує, а не пропускає все сховище цілком.
+     */
     public void seedVaultIfAbsent(String institutionId) {
-        ChurchVault existing = vaults.get(institutionId);
-        // Непорожнє сховище завжди містить неспоживні ключі "recipe:<p>:<seq>" —
-        // це надійна ознака "вже засіяно"; порожнє могло з'явитись лише через
-        // ліниву вставку в vaultOf() і мусить бути засіяне тут.
-        if (existing != null && !existing.snapshot().isEmpty()) {
-            return;
-        }
         Institution church = registry.byId(institutionId).orElse(null);
         if (church == null) {
             return;
         }
-        ChurchVault vault = existing != null ? existing : new ChurchVault();
+        ChurchVault vault = vaultOf(institutionId);
+        boolean changed = false;
         for (PathwayAccess access : church.accesses()) {
             if (pathwayManager.getPathway(access.pathwayName()) == null) {
                 continue;
@@ -927,7 +928,12 @@ public class ChurchService {
                 if (def == null) {
                     continue;
                 }
-                vault.add("recipe:" + access.pathwayName() + ":" + seq, 1);
+                String recipeKey = "recipe:" + access.pathwayName() + ":" + seq;
+                if (vault.amountOf(recipeKey) > 0) {
+                    continue;
+                }
+                changed = true;
+                vault.add(recipeKey, 1);
                 for (String rawId : allIds(def)) {
                     if (rawId.startsWith("vanilla:")) {
                         continue;
@@ -938,8 +944,9 @@ public class ChurchService {
                         config.vaultSeedCharacteristicsPerSeq());
             }
         }
-        vaults.put(institutionId, vault);
-        persistState();
+        if (changed) {
+            persistState();
+        }
     }
 
     public ChurchVault vaultOf(String institutionId) {

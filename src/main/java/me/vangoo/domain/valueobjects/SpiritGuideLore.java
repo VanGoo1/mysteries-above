@@ -31,17 +31,17 @@ public final class SpiritGuideLore {
     public static final int CORPSE_TTL_SECONDS = 5 * 60;
 
     // --- Мова мертвих (виривання душі) ---
-    public static final int LANGUAGE_COST = 60;
-    private static final int LANGUAGE_COOLDOWN_SECONDS = 70;
-    private static final int LANGUAGE_COOLDOWN_FLOOR_SECONDS = 30;
-    private static final int LANGUAGE_DURATION_SECONDS = 5;
+    public static final int LANGUAGE_COST = 100;
+    private static final int LANGUAGE_COOLDOWN_SECONDS = 20;
+    private static final int LANGUAGE_COOLDOWN_FLOOR_SECONDS = 5;
+    private static final int LANGUAGE_DURATION_SECONDS = 6;
     private static final double LANGUAGE_RANGE = 20.0;
     private static final double LANGUAGE_RANGE_CAP = 32.0;
 
     // --- Воскресіння (труп → слуга) ---
-    public static final int RESURRECTION_COST = 35;
-    private static final int RESURRECTION_COOLDOWN_SECONDS = 12;
-    private static final int RESURRECTION_COOLDOWN_FLOOR_SECONDS = 5;
+    public static final int RESURRECTION_COST = 150;
+    private static final int RESURRECTION_COOLDOWN_SECONDS = 80;
+    private static final int RESURRECTION_COOLDOWN_FLOOR_SECONDS = 20;
 
     // --- Почет ---
     /**
@@ -51,7 +51,7 @@ public final class SpiritGuideLore {
     public static final int RETINUE_CAP = 10;
 
     // --- Підкорення нежиті (площа) ---
-    public static final int SUBJUGATION_COST = 45;
+    public static final int SUBJUGATION_COST = 150;
     private static final int SUBJUGATION_COOLDOWN_SECONDS = 45;
     private static final int SUBJUGATION_COOLDOWN_FLOOR_SECONDS = 20;
     private static final double SUBJUGATION_RADIUS = 12.0;
@@ -67,7 +67,7 @@ public final class SpiritGuideLore {
     private static final int PACT_COOLDOWN_FLOOR_SECONDS = 10;
 
     // --- Обмін духом (щит від душевних ефектів ціною слуги) ---
-    public static final int SPIRIT_SWAP_COST = 40;
+    public static final int SPIRIT_SWAP_COST = 110;
     /** Скільки слуг з'їдає обмін. */
     public static final int SPIRIT_SWAP_SERVANT_COST = 1;
     private static final int SPIRIT_SWAP_WARD_SECONDS = 30;

@@ -17,6 +17,7 @@ public class DuelArenaProvider {
     public static final String WORLD_NAME = "mysteries_duel";
     private static final int PLATFORM_Y = 64;
     private static final int HALF = 10;
+    private static final int WALL_HEIGHT = 5;
 
     public Location arenaSpawn() {
         World world = getOrCreateWorld();
@@ -62,6 +63,25 @@ public class DuelArenaProvider {
         }
         for (int[] corner : new int[][]{{-HALF, -HALF}, {-HALF, HALF}, {HALF, -HALF}, {HALF, HALF}}) {
             world.getBlockAt(corner[0], PLATFORM_Y + 1, corner[1]).setType(Material.SOUL_LANTERN);
+        }
+        buildBarrierWalls(world);
+    }
+
+    /** Невидимі непробивні стіни по периметру арени — щоб не випасти у порожнечу. */
+    private void buildBarrierWalls(World world) {
+        int minX = -HALF - 1;
+        int maxX = HALF + 1;
+        int minZ = -HALF - 1;
+        int maxZ = HALF + 1;
+        for (int y = PLATFORM_Y; y < PLATFORM_Y + WALL_HEIGHT; y++) {
+            for (int x = minX; x <= maxX; x++) {
+                world.getBlockAt(x, y, minZ).setType(Material.BARRIER);
+                world.getBlockAt(x, y, maxZ).setType(Material.BARRIER);
+            }
+            for (int z = minZ; z <= maxZ; z++) {
+                world.getBlockAt(minX, y, z).setType(Material.BARRIER);
+                world.getBlockAt(maxX, y, z).setType(Material.BARRIER);
+            }
         }
     }
 

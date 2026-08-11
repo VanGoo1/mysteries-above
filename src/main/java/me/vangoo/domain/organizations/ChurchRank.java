@@ -3,7 +3,7 @@ package me.vangoo.domain.organizations;
 /** Ранги церкви за сумарним вкладом. Стеля замовлень: чим вищий ранг — тим сильніші зілля. */
 public enum ChurchRank {
     VIRIANYN("Вірянин", 8),
-    SLUZHKA("Служка", 6),
+    SLUHA("Слуга", 6),
     DYAKON("Диякон", 4),
     YEPYSKOP("Єпископ", 2),
     KARDYNAL("Кардинал", 0);

@@ -102,8 +102,7 @@ public class SpiritPerception extends PermanentPassiveAbility {
                         "§f✦ Духи світяться крізь стіни в радіусі %d блоків\n" +
                         "§f✦ Душі загиблих видно на місці смерті ще %d хв\n" +
                         "§f✦ Тіла загиблих (і мобів) видно ще %d хв\n" +
-                        "§f✦ Духи шепочуть про ворога за спиною (не частіше ніж раз на %d с)\n" +
-                        "§8(бачите тільки ви; духовність не витрачається)",
+                        "§f✦ Духи шепочуть про ворога за спиною (не частіше ніж раз на %d с)\n",
                 (int) SpiritMediumLore.perceptionRadius(userSequence),
                 SpiritMediumLore.SOUL_TTL_SECONDS / 60,
                 SpiritGuideLore.CORPSE_TTL_SECONDS / 60,
@@ -112,7 +111,7 @@ public class SpiritPerception extends PermanentPassiveAbility {
         if (userSequence.level() > 5) return base;
 
         return base + String.format(
-                "\n§f✦ Ви відчуваєте нежить і істот Загробного Світу, що заходять у радіус " +
+                "\n§f✦ Ви відчуваєте нежить і істот Загробного Світу, що заходяться у радіусі " +
                         "%d блоків",
                 (int) UNDERWORLD_APPROACH_RADIUS);
     }

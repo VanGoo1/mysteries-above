@@ -80,6 +80,7 @@ public class ChurchSiteService {
         return churchService.registry().churches().stream()
                 .map(Institution::id)
                 .filter(id -> !placed.contains(id))
+                .filter(churchService.registry()::isSpawnEnabled) // шлях ще не реалізований — не спавнити
                 .toList();
     }
 
@@ -87,6 +88,9 @@ public class ChurchSiteService {
         for (ChurchSiteRepository.Site s : sites) {
             if (priestClosurePredicate.test(s.institutionId())) {
                 continue; // храм закритий після замаху — священика відродить SecretOrderService
+            }
+            if (!churchService.registry().isSpawnEnabled(s.institutionId())) {
+                continue; // шлях ще не реалізований — священика не спавнимо навіть якщо сайт лишився зі старих даних
             }
             World w = Bukkit.getWorld(s.world());
             if (w != null) {

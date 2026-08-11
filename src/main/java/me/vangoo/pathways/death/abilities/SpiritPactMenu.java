@@ -42,19 +42,19 @@ class SpiritPactMenu {
 
         gui.setItem(FOLLOW_SLOT, new GuiItem(
                 order(Material.BONE, ChatColor.DARK_GREEN + "☠ За мною",
-                        "Почет іде за вами й нікого не чіпає."), event -> {
+                        "Слуги йдуть за вами й нікого не чіпають."), event -> {
             gui.close(caster);
             ability.orderFollow(context, caster);
         }));
         gui.setItem(ATTACK_SLOT, new GuiItem(
                 order(Material.IRON_SWORD, ChatColor.RED + "⚔ Убити ціль",
-                        "Дивіться на ціль: почет кинеться на неї."), event -> {
+                        "Дивіться на ціль: слуги кинуться на неї."), event -> {
             gui.close(caster);
             ability.orderAttack(context, caster);
         }));
         gui.setItem(GUARD_SLOT, new GuiItem(
                 order(Material.SHIELD, ChatColor.GOLD + "⛨ Стерегти місце",
-                        "Почет лишається там, де ви стоїте."), event -> {
+                        "Слуги лишаються там, де ви стоїте."), event -> {
             gui.close(caster);
             ability.orderGuard(context, caster);
         }));
@@ -79,8 +79,8 @@ class SpiritPactMenu {
                 ? ChatColor.DARK_GRAY + "👁 Показати"
                 : ChatColor.DARK_PURPLE + "🌑 Приховати";
         String hint = hidden
-                ? "Почет зараз розчинений у тінях."
-                : "Почет розчиниться в тінях — невидимий, поки не покажете знову.";
+                ? "Слуги зараз розчинені у тінях."
+                : "Слуги розчиняться в тінях — невидимі, поки не покажете знову.";
         return order(hidden ? Material.GLOW_INK_SAC : Material.INK_SAC, name, hint);
     }
 

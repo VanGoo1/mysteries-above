@@ -43,8 +43,7 @@ public class DeathSight extends PermanentPassiveAbility {
         return String.format(
                 "Ваша природа сама бачить духовні тіла — без жодного напруження.\n\n" +
                         "§7Поточні бонуси:\n" +
-                        "§f✦ Невидиме видає себе димком душі в радіусі %d блоків\n" +
-                        "§8(бачите тільки ви; духовність не витрачається)",
+                        "§f✦ Невидиме видає себе димком душі в радіусі %d блоків.\n",
                 (int) CorpseCollectorLore.deathSightRange(userSequence));
     }
 

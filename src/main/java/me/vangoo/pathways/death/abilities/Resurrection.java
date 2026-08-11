@@ -59,9 +59,9 @@ public class Resurrection extends ActiveAbility {
                         "він ходить за вами й б'є лише за наказом.\n\n" +
                         "§7Поточні бонуси:\n" +
                         "§a☠ Тіло поблизу (%d бл) встає зомбі або скелетом\n" +
-                        "§b✦ Почет: до %d слуг (спільний на всі способи)\n" +
+                        "§b✦ Кількість: до %d слуг (спільний на всі способи)\n" +
                         "§7☠ Тіла лежать %d хв після смерті\n" +
-                        "§7⇩ Каст у присіданні розпускає весь почет",
+                        "§7⇩ Каст у присіданні розпускає всіх слуг",
                 (int) RAISE_RADIUS,
                 GatekeeperLore.retinueCap(userSequence),
                 SpiritGuideLore.CORPSE_TTL_SECONDS / 60);
@@ -91,7 +91,7 @@ public class Resurrection extends ActiveAbility {
         if (caster.isSneaking()) {
             boolean released = retinue.release(casterId);
             if (!released) {
-                context.messaging().sendMessage(casterId, ChatColor.GRAY + "☠ Почту немає");
+                context.messaging().sendMessage(casterId, ChatColor.GRAY + "☠ Слуг немає");
             }
             return AbilityResult.deferred();
         }

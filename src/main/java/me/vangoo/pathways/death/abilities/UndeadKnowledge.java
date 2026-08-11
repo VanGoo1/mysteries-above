@@ -55,16 +55,16 @@ public class UndeadKnowledge extends ActiveAbility {
 
     @Override
     public String getName() {
-        return "Знання (Нежить)";
+        return "Знання Нежиті";
     }
 
     @Override
     public String getDescription(Sequence userSequence) {
         return String.format(
-                "Ви знаєте нежить зсередини — і живу, і давно охололу.\n\n" +
+                "Ви знаєте нежить зсередини\n" +
                         "§7У прицілі нежить: §fмітка слабкого місця\n" +
                         "§c⚔ Ваш урон по ній ×%.2f протягом %d с §7(до %d бл)\n\n" +
-                        "§7Нежиті в прицілі немає: §fрозтин місця\n" +
+                        "§7Нежиті в прицілі немає: §fсканування місця\n" +
                         "§b☠ Смерті в радіусі %d бл за останні %d хв (до %d записів)",
                 CorpseCollectorLore.markDamageMultiplier(userSequence),
                 CorpseCollectorLore.markDurationSeconds(userSequence),
