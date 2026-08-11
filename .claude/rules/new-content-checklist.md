@@ -27,8 +27,8 @@ paths:
 4. Рецепти інгредієнтів — секція у `potion-recipes.yml` (читає `PotionRecipeConfigLoader`, матчить `domain.brewing.BrewMatcher`).
 
 Наразі зареєстровано 22 pathways: 9 зі здібностями (Error, Visionary, Door, Justiciar,
-WhiteTower, Fool, Sun, Tyrant — здібності Й рецепти варіння; Death — поки лише
-здібності Посл. 9-5, без рецептів) + 13 заготовок (HangedMan, Hermit, Paragon,
+WhiteTower, Fool, Sun, Tyrant, Death — усі мають і здібності, Й рецепти варіння; Death
+поки покриває лише Посл. 9-5, за списком своїх здібностей) + 13 заготовок (HangedMan, Hermit, Paragon,
 BlackEmperor, Darkness, TwilightGiant, Mother, Moon, RedPriest, Demoness, Abyss,
 Chained, WheelOfFortune). Кожна заготовка
 має ВЛАСНИЙ пакет `me.vangoo.pathways.<name>` (клас `<Name> extends Pathway` з

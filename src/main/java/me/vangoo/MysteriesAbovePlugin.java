@@ -96,6 +96,14 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         // Call exactly once — a double call would orphan duplicate NPCs.
         services.getChurchSiteService().spawnAllNpcs();
 
+        // Backfill church vaults: a pathway/recipe added after a church was already bound
+        // (e.g. Death potion recipes) never reaches its vault otherwise, since binding only
+        // happens once. seedVaultIfAbsent is idempotent per pathway+sequence, so this is a
+        // cheap no-op once every vault is caught up.
+        for (var site : services.getChurchSiteService().sites()) {
+            services.getChurchService().seedVaultIfAbsent(site.institutionId());
+        }
+
         // Start schedulers
         services.startSchedulers();
 

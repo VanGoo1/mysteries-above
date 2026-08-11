@@ -44,20 +44,20 @@ public class SpiritCommunication extends ActiveAbility {
 
     @Override
     public String getName() {
-        return "Спілкування з духами";
+        return "Призив простого духа";
     }
 
     @Override
     public String getDescription(Sequence userSequence) {
         return String.format(
-                "Ви говорите з духами, і вони слухають. Дух кружляє над вами й сам не бʼється, " +
-                        "але щойно ви когось ударили — летить та тримає ту ціль згори.\n\n" +
+                "Дух кружляє над вами й сам не бʼється, " +
+                        "але коли ви когось ударили, то летить та тримає ціль.\n\n" +
                         "§7Поточні бонуси:\n" +
-                        "§a☠ Почет: до %d духів\n" +
+                        "§a☠ Слуги: до %d духів\n" +
                         "§b✋ Хват: Повільність %d на %d с (кожен ваш удар поновлює)\n" +
                         "§d✦ Вербування духа поблизу (%d бл.): %d духовності\n" +
                         "§d✦ Прикликання зі Світу Духів: %d духовності\n" +
-                        "§7⇩ Каст у присіданні відпускає весь почет",
+                        "§7⇩ Каст у присіданні відпускає всіх слуг",
                 GravediggerLore.spiritLimit(userSequence),
                 GravediggerLore.GRASP_SLOWNESS_AMPLIFIER + 1,
                 GravediggerLore.graspSeconds(userSequence),

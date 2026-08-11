@@ -2,6 +2,7 @@ package me.vangoo.domain.organizations;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static me.vangoo.domain.organizations.InstitutionType.CHURCH;
 import static me.vangoo.domain.organizations.InstitutionType.SECRET_ORDER;
@@ -10,6 +11,21 @@ import static me.vangoo.domain.organizations.PathwayAccess.partial;
 
 /** Кодовий реєстр усіх канонічних інституцій (10 церков + 25 таємних організацій). */
 public final class InstitutionRegistry {
+
+    /**
+     * Інституції, чиї шляхи ще не реалізовані в плагіні. Дані лишаються в реєстрі
+     * (encyclopedia/команди й далі можуть їх резолвити), але вони виключені зі
+     * спавну священиків і з появи запрошень/списків приєднання — щоб не давати
+     * гравцю шлях, якого немає.
+     */
+    private static final Set<String> SPAWN_DISABLED = Set.of(
+            "church-god-of-combat", "church-earth-mother", "church-steam-machinery",
+            "church-eternal-darkness", "church-ruler-of-calamity",
+            "order-moses-ascetic", "order-demoness-sect", "order-shadow-of-order",
+            "order-blood-sanctify", "order-theosophy", "order-life-school",
+            "order-rose-school", "order-iron-blood-cross", "order-element-dawn",
+            "order-naturism-sect", "order-nightstalkers", "order-bliss-society",
+            "order-god-descent-school");
 
     private final List<Institution> all = buildAll();
 
@@ -27,6 +43,11 @@ public final class InstitutionRegistry {
 
     public List<Institution> churchesAccepting(String pathwayNameOrNull) {
         return churches().stream().filter(c -> c.acceptsPathway(pathwayNameOrNull)).toList();
+    }
+
+    /** false — інституція з нереалізованим шляхом: не спавнити священика й не пропонувати вступ. */
+    public boolean isSpawnEnabled(String institutionId) {
+        return !SPAWN_DISABLED.contains(institutionId);
     }
 
     private static List<Institution> buildAll() {

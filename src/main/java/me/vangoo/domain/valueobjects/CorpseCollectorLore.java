@@ -27,7 +27,7 @@ public final class CorpseCollectorLore {
     public static final int PHYSIQUE_HP_BASE = 3;
 
     // --- Знання (Нежить): спільні для обох режимів каста ---
-    public static final int KNOWLEDGE_COST = 15;
+    public static final int KNOWLEDGE_COST = 40;
     private static final int KNOWLEDGE_COOLDOWN_SECONDS = 12;
     private static final int KNOWLEDGE_COOLDOWN_FLOOR_SECONDS = 4;
 

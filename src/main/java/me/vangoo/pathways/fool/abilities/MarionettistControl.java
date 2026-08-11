@@ -385,6 +385,16 @@ public class MarionettistControl extends ActiveAbility {
             trait.setMarionetteEntityType(isPlayer ? EntityType.PLAYER : targetType);
             npc.addTrait(trait);
 
+            // Закон Конвергенції: Характеристика цілі щойно захоплена в маріонетку (trait.initialise
+            // прочитав pathway/sequence ДО цього рядка) — оригінал більше не тримає повну силу.
+            if (tBeyonder != null && tBeyonder.getSequence().canDemote()) {
+                tBeyonder.demote();
+                ctx.beyonder().updateBeyonder(target.getUniqueId());
+                ctx.messaging().sendMessage(target.getUniqueId(),
+                        "§5[Маріонетист] §7Вашу Характеристику вилучено в маріонетку — "
+                                + "Послідовність ослабла до §e" + tBeyonder.getSequence().level() + "§7.");
+            }
+
             copyEquipmentToNpc(npc, target);
 
             marionetteNpcs.computeIfAbsent(casterId, k -> ConcurrentHashMap.newKeySet())

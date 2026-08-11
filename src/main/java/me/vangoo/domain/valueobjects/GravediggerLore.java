@@ -29,12 +29,12 @@ public final class GravediggerLore {
 
     // --- Спілкування з духами: ціни ---
     /** Прикликати духа зі Світу Духів (нікого немає поблизу). */
-    public static final int SPIRIT_SUMMON_COST = 25;
+    public static final int SPIRIT_SUMMON_COST = 75;
     /** Домовитись із духом, що вже блукає поруч — дешевше за прикликання. */
-    public static final int SPIRIT_RECRUIT_COST = 12;
+    public static final int SPIRIT_RECRUIT_COST = 25;
 
-    private static final int SPIRIT_COOLDOWN_SECONDS = 15;
-    private static final int SPIRIT_COOLDOWN_FLOOR_SECONDS = 5;
+    private static final int SPIRIT_COOLDOWN_SECONDS = 30;
+    private static final int SPIRIT_COOLDOWN_FLOOR_SECONDS = 15;
 
     // --- Спілкування з духами: почет ---
     private static final int SPIRIT_LIMIT = 2;
@@ -59,7 +59,7 @@ public final class GravediggerLore {
     public static final int GRASP_SLOWNESS_AMPLIFIER = 3;
 
     // --- Око Смерті (вузол) ---
-    public static final int EYE_COST = 20;
+    public static final int EYE_COST = 50;
     private static final int EYE_COOLDOWN_SECONDS = 14;
     private static final int EYE_COOLDOWN_FLOOR_SECONDS = 5;
     private static final double EYE_RANGE = 24.0;

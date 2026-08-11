@@ -55,15 +55,13 @@ public class VoiceOfTheDead extends ActiveAbility {
     @Override
     public String getDescription(Sequence userSequence) {
         return String.format(
-                "Ви говорите з душею — байдуже, чи вона вже відлетіла, чи ще тримається " +
-                        "живого тіла.\n\n" +
+                "Ви говорите з душею цілі.\n\n" +
                         "§7Поточні бонуси:\n" +
-                        "§f☠ Мертві: душі чутно в радіусі %d блоків\n" +
+                        "§f☠ Мертві: душу видно в радіусі %d блоків\n" +
                         "§f  ✦ Душа віддає рецепт зілля — найцінніший із тих, яких ви не знаєте\n" +
-                        "§c  ✦ Рецепт саме ПЕРЕХОДИТЬ до вас: небіжчик його втрачає\n" +
+                        "§c  ✦ Рецепт саме ПЕРЕХОДИТЬ до вас: ціль його втрачає\n" +
                         "§f❤ Живі: гравець у прицілі за %d блоків віддає своє досьє\n" +
-                        "§c  ✦ Сильніша Послідовність відбиває допит: до %d розсудку по вас\n" +
-                        "§8(допитана душа відходить назавжди; ціль допиту це відчуває)",
+                        "§c  ✦ Сильніша Послідовність відбиває допит: до %d збільшення порчи по вам\n",
                 (int) SpiritMediumLore.voiceDeadRadius(userSequence),
                 (int) SpiritMediumLore.voiceLivingRange(userSequence),
                 SpiritMediumLore.voiceBacklashSanity(userSequence, Sequence.of(0)));

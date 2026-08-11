@@ -33,7 +33,7 @@ public class SpiritWorldKnowledge extends PermanentPassiveAbility {
 
     @Override
     public String getName() {
-        return "Знання (Світ Духів)";
+        return "Знання Світу Духів";
     }
 
     @Override
@@ -42,8 +42,7 @@ public class SpiritWorldKnowledge extends PermanentPassiveAbility {
                 "Ви знаєте Світ Духів: кожна мертва душа сама називає вам себе.\n\n" +
                         "§7Поточні бонуси:\n" +
                         "§f✦ Погляд на нежить, духа чи одержимого (до %d бл) показує\n" +
-                        "  §7його рід, здоров'я і слабке місце\n" +
-                        "§8(працює само, духовність не витрачається)",
+                        "  §7його рід, здоров'я і слабке місце\n",
                 (int) LOOK_RANGE);
     }
 

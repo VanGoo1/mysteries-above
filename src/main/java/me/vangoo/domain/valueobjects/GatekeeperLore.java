@@ -52,9 +52,9 @@ public final class GatekeeperLore {
     // без ручного дублювання AbilityResourceConsumer. Той самий компроміс уже прийнятий
     // Вердиктом (Justiciar, Посл. 6): один каст = одна ціна незалежно від обраного режиму.
     // Числа беремо від DRAG — найважчого й першого реалізованого режиму.
-    public static final int DOOR_COST = 70;
-    private static final int DOOR_COOLDOWN_SECONDS = 60;
-    private static final int DOOR_COOLDOWN_FLOOR_SECONDS = 30;
+    public static final int DOOR_COST = 200;
+    private static final int DOOR_COOLDOWN_SECONDS = 40;
+    private static final int DOOR_COOLDOWN_FLOOR_SECONDS = 10;
 
     // --- Дальність, на яку можна поставити двері (дивлячись у точку) — спільна для всіх
     // чотирьох режимів, не лише DRAG: жоден режим більше не бере ціль-сутність, кожен
@@ -142,9 +142,9 @@ public final class GatekeeperLore {
     // різниця вручну, той самий прийом, що SpiritPact.pay(); кулдаун касту спільний на всіх
     // шістьох, як і в SpiritPact.pactCooldownSeconds. Поглинання/виселення — безкоштовні й
     // без кулдауну: єдиний слот окупанта сам собою не дає їх спамити. ---
-    public static final int UNDERWORLD_CAST_BASE_COST = 30;
-    private static final int UNDERWORLD_CAST_COOLDOWN_SECONDS = 30;
-    private static final int UNDERWORLD_CAST_COOLDOWN_FLOOR_SECONDS = 15;
+    public static final int UNDERWORLD_CAST_BASE_COST = 300;
+    private static final int UNDERWORLD_CAST_COOLDOWN_SECONDS = 100;
+    private static final int UNDERWORLD_CAST_COOLDOWN_FLOOR_SECONDS = 30;
 
     public static final int DEATH_KNIGHT_CAST_COST = 40;
     public static final int SHADOW_PYTHON_CAST_COST = 45;

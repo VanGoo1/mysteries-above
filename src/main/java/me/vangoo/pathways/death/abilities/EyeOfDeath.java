@@ -62,13 +62,11 @@ public class EyeOfDeath extends ActiveAbility {
     @Override
     public String getDescription(Sequence userSequence) {
         return String.format(
-                "Ви натискаєте на очі, і світ сіріє: у цілі стає видно вузол — місце, де " +
-                        "смерть уже тримається за неї. Наступний ваш удар іде просто у вузол.\n\n" +
+                "При використанні наступний ваш удар збільшує шкоду.\n\n" +
                         "§7Поточні бонуси:\n" +
-                        "§a☠ Мертве (нежить, духи, реймпейджери): ×%.2f, крізь броню\n" +
+                        "§a☠ Мертве (нежить, духи, та ті, хто втатили контроль): ×%.2f, крізь броню\n" +
                         "§b❤ Живе: ×%.2f\n" +
-                        "§d✦ Дальність погляду: %d блоків\n" +
-                        "§7⇩ Вузол чекає, доки ви не вдарите; новий каст переносить його",
+                        "§d✦ Дальність погляду: %d блоків\n" ,
                 GravediggerLore.eyeDeadDamageMultiplier(userSequence),
                 GravediggerLore.eyeLivingDamageMultiplier(userSequence),
                 (int) GravediggerLore.eyeRange(userSequence));

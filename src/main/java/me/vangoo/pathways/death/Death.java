@@ -63,7 +63,7 @@ public class Death extends Pathway {
                 new SpiritVision(),
                 new PhysicalEnhancement(
                         DEATH_PHYSIQUE,
-                        "Тіло трупозбирача",
+                        "Тіло Трупозбирача",
                         "Ваше тіло холодніє, а присутність стає похмурою",
                         CorpseCollectorLore.PHYSIQUE_HP_BASE)));
 
@@ -72,7 +72,7 @@ public class Death extends Pathway {
                 new EyeOfDeath(),
                 new PhysicalEnhancement(
                         DEATH_PHYSIQUE,
-                        "Тіло могильника",
+                        "Тіло Могильника",
                         "Тіло могильника лишається холодним, але вже не важким: " +
                                 "могили копаються легко, а кроки стають швидкими.",
                         GravediggerLore.PHYSIQUE_HP_BASE,
@@ -95,7 +95,7 @@ public class Death extends Pathway {
                 new RitualMagic(),
                 new PhysicalEnhancement(
                         DEATH_PHYSIQUE,
-                        "Тіло медіума",
+                        "Тіло Медіума",
                         "Тіло медіума майже не міцніє понад могильникове — сила тепер " +
                                 "не в м'язах, а в духовності.",
                         SpiritMediumLore.PHYSIQUE_HP_BASE,
@@ -108,7 +108,7 @@ public class Death extends Pathway {
                 new SpiritPact(retinue),
                 new PhysicalEnhancement(
                         DEATH_PHYSIQUE,
-                        "Тіло провідника",
+                        "Тіло Провідника",
                         "Тіло провідника носить у собі чужу смерть: холод глибший, " +
                                 "а рухи легші за живі.",
                         SpiritGuideLore.PHYSIQUE_HP_BASE,
@@ -120,7 +120,7 @@ public class Death extends Pathway {
                 new InternalUnderworld(retinue),
                 new PhysicalEnhancement(
                         DEATH_PHYSIQUE,
-                        "Тіло воротаря",
+                        "Тіло Вартового",
                         "Тіло воротаря стоїть на межі життя й смерті: сила зростає, а " +
                                 "кроки лишаються швидкими, як у провідника.",
                         GatekeeperLore.PHYSIQUE_HP_BASE,

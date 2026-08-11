@@ -32,7 +32,7 @@ public class GatekeeperStep extends ActiveAbility {
 
     @Override
     public String getName() {
-        return "Крок Воротаря";
+        return "Крок Вартового";
     }
 
     @Override
@@ -40,8 +40,7 @@ public class GatekeeperStep extends ActiveAbility {
         double distance = GatekeeperLore.stepDistance(sequence);
         int damage = GatekeeperLore.stepImpactDamage(sequence);
         return String.format(
-                "§fОдин крок закриває відстань: ви кидаєтесь уперед крізь вітрові потоки на " +
-                        "§b%.0f §fблоків, а хто опиниться поруч у місці приземлення — дістає §c%d §fшкоди.",
+                "§fВи кидаєтесь уперед на " + "§b%.0f §fблоків, а хто опиниться поруч у місці приземлення отримує §c%d §fшкоди.",
                 distance, damage);
     }
 

@@ -59,7 +59,10 @@ death_pale_lich_6:
 
 death_underworld_wanderer_5:
   Template: MA_Death_S5
-  Type: ZOMBIE_VILLAGER
+  # ZOMBIE, не ZOMBIE_VILLAGER: MythicMobs 5.13.0 має баг у BukkitZombieVillager
+  # (плутає локальні змінні профессії/типу поселенця), тож ZOMBIE_VILLAGER завжди
+  # пише "Invalid villager type configured" незалежно від конфігу.
+  Type: ZOMBIE
   Display: '&8Мандрівник Загробного світу'
   Health: 140
   Damage: 10

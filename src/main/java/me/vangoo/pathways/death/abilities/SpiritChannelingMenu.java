@@ -99,7 +99,7 @@ class SpiritChannelingMenu {
     private ItemStack subjugateIcon(Sequence sequence, int size) {
         List<String> lore = List.of(
                 ChatColor.GRAY + "Уся безхазяйна нежить довкола схиляє голову",
-                ChatColor.GRAY + "й стає до вашого почту.",
+                ChatColor.GRAY + "й стає до вашими слугами.",
                 " ",
                 ChatColor.GRAY + "Радіус: " + ChatColor.WHITE
                         + (int) SpiritGuideLore.subjugationRadius(sequence) + " блоків",
@@ -122,7 +122,7 @@ class SpiritChannelingMenu {
     private ItemStack spiritSwapIcon(Sequence sequence) {
         List<String> lore = List.of(
                 ChatColor.GRAY + "Ви міняєтесь духом зі слугою: усе, що б'є",
-                ChatColor.GRAY + "по душі, знаходить нежить замість вас.",
+                ChatColor.GRAY + "вас по душі - нежить отримає замість вас.",
                 " ",
                 ChatColor.GRAY + "Щит: " + ChatColor.WHITE
                         + SpiritGuideLore.spiritSwapWardSeconds(sequence) + " с",
@@ -213,7 +213,7 @@ class SpiritChannelingMenu {
                         + (int) SpiritMediumLore.EARTH_SWAMP_RADIUS + " блоків",
                 ChatColor.GRAY + "Духовність: " + ChatColor.WHITE
                         + SpiritMediumLore.EARTH_SPIRIT_COST,
-                ChatColor.GRAY + "Кров: " + ChatColor.RED
+                ChatColor.GRAY + "Забирає: " + ChatColor.RED
                         + SpiritMediumLore.EARTH_SPIRIT_BLOOD_HP + " HP",
                 " ",
                 ChatColor.DARK_GRAY + "Дивіться на ціль перед вибором",
