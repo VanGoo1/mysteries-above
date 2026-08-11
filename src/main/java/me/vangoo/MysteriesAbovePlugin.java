@@ -35,6 +35,13 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
         this.pluginLogger = this.getLogger();
 
+        // PacketEvents 2.8.0 вішає серверний хендлер на будь-який канал зі списку з'єднань,
+        // включно з UDP чужих модів, і той падає на кожній датаграмі. Знімаємо його звідти.
+        me.vangoo.infrastructure.compat.PacketEventsUdpGuard udpGuard =
+                new me.vangoo.infrastructure.compat.PacketEventsUdpGuard(pluginLogger);
+        udpGuard.sweep();
+        getServer().getPluginManager().registerEvents(udpGuard, this);
+
         // Команди Citizens не повинні ховати нік живого гравця (тіло-NPC носить нік
         // кастера).
         // Реєструється і як packet-, і як Bukkit-лістенер — див. javadoc класу.

@@ -9,11 +9,11 @@ version-sensitive details live in `.claude/rules/minecraft-version.md`) inspired
 
 ## Commands
 
-- **Build**: `mvn clean package` (default goal; produces a shaded plugin JAR via maven-shade-plugin). Shading bundles `glowingentities`, `EffectLib`, and `triumph-gui`; `paper-api` (the server runs Paper), `coreprotect`, MythicMobs (`io.lumine:Mythic-Dist`), and BetterModel (`io.github.toxicity188:bettermodel`) are `provided` — those are separate plugin dependencies (`depend: [Citizens, MythicMobs]`, `softdepend: [CoreProtect, BetterModel]` in `plugin.yml`), not shaded into the JAR. Dependency versions are pinned to what supports 1.21.1 — do not bump them without reading `.claude/rules/minecraft-version.md`.
+- **Build**: `mvn clean package` (default goal; produces a shaded plugin JAR via maven-shade-plugin). Shading bundles `glowingentities`, `EffectLib`, and `triumph-gui`; `spigot-api` (the live server is **Arclight**, not Paper — Paper-only API is a compile error on purpose, see `.claude/rules/minecraft-version.md`), `coreprotect`, MythicMobs (`io.lumine:Mythic-Dist`), and BetterModel (`io.github.toxicity188:bettermodel`) are `provided` — those are separate plugin dependencies (`depend: [Citizens, MythicMobs]`, `softdepend: [CoreProtect, BetterModel]` in `plugin.yml`), not shaded into the JAR. Dependency versions are pinned to what supports 1.21.1 — do not bump them without reading `.claude/rules/minecraft-version.md`.
 - **Run tests**: `mvn test` (JUnit 5; ArchUnit for architecture rules). Surefire + test deps live in `pom.xml`.
 - **Single test class**: `mvn test -Dtest=SpellRecipeTest`
 - **Single test method**: `mvn test -Dtest=SpellRecipeTest#aoeScalesWithPowerAndArea`
-- Pure-domain logic (progression, balance) is unit-tested without Bukkit; ability **effects** are verified in-server, not mocked.
+- Pure-domain **logic** (progression, selection, state rules) is unit-tested without Bukkit; ability **effects** are verified in-server, not mocked. **Balance constants are deliberately NOT pinned by tests** — the per-ability balance VO tests were removed on purpose (they broke on every tuning pass and pinned nothing worth defending). Do not re-add a test that asserts a cost/cooldown/duration equals a literal.
 
 ## Architecture
 

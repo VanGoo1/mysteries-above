@@ -221,7 +221,7 @@ public class DoorToTheUnderworld extends ActiveAbility {
                 victim.addPotionEffect(new PotionEffect(
                         PotionEffectType.WITHER, GatekeeperLore.DRAG_WITHER_SECONDS * 20, 0));
 
-                AttributeInstance maxHealthAttr = victim.getAttribute(Attribute.MAX_HEALTH);
+                AttributeInstance maxHealthAttr = victim.getAttribute(Attribute.GENERIC_MAX_HEALTH);
                 double maxHealth = maxHealthAttr != null ? maxHealthAttr.getValue() : 20.0;
                 if (victim.getHealth() > 0 && victim.getHealth() / maxHealth < GatekeeperLore.DRAG_EXECUTE_HP_FRACTION) {
                     victim.setHealth(0.0);

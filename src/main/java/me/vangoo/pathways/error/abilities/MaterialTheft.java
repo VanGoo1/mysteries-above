@@ -285,8 +285,10 @@ public class MaterialTheft extends ActiveAbility {
             for (int dz = -chunkRange; dz <= chunkRange; dz++) {
                 if (!world.isChunkLoaded(centerChunkX + dx, centerChunkZ + dz)) continue;
                 Chunk chunk = world.getChunkAt(centerChunkX + dx, centerChunkZ + dz);
-                for (BlockState state : chunk.getTileEntities(
-                        block -> block.getLocation().distanceSquared(center) <= rangeSquared, false)) {
+                // Ванільний getTileEntities() без предиката (Paper-перевантаження з фільтром
+                // тут немає) — відсіюємо за відстанню самі.
+                for (BlockState state : chunk.getTileEntities()) {
+                    if (state.getLocation().distanceSquared(center) > rangeSquared) continue;
                     if (!(state instanceof Container container)) continue;
                     Location source = state.getLocation().add(0.5, 0.5, 0.5);
                     Loot loot = pick(container.getInventory(), source, null, anyItem);

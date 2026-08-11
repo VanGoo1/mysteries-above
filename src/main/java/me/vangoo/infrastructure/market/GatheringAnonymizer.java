@@ -1,6 +1,7 @@
 package me.vangoo.infrastructure.market;
 
-import com.destroystokyo.paper.profile.PlayerProfile;
+import me.vangoo.infrastructure.compat.SkinProfiles;
+import me.vangoo.infrastructure.compat.SkinProfiles.SkinProfile;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -12,29 +13,28 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Анонімність на час OPEN: усім один дефолтний скін (Paper setPlayerProfile без
- * властивості textures), нік-таблички сховані scoreboard-командою, табліст маскується.
+ * Анонімність на час OPEN: усім один дефолтний скін (профіль без властивості textures —
+ * через {@link SkinProfiles}), нік-таблички сховані scoreboard-командою, табліст маскується.
  * Профіль НЕ персистентний — релогін/рестарт повертає справжній вигляд сам собою.
+ * На сервері без API профілів скін лишається справжнім, решта маскування працює.
  */
 public class GatheringAnonymizer {
 
     private static final String TEAM_NAME = "ma_gathering";
 
-    private final Map<UUID, PlayerProfile> savedProfiles = new HashMap<>();
+    private final Map<UUID, SkinProfile> savedProfiles = new HashMap<>();
 
     public void mask(Player player, String alias) {
-        savedProfiles.putIfAbsent(player.getUniqueId(), player.getPlayerProfile());
-        PlayerProfile masked = player.getPlayerProfile();
-        masked.removeProperty("textures"); // без текстур → дефолтний скін у всіх
-        player.setPlayerProfile(masked);
+        savedProfiles.putIfAbsent(player.getUniqueId(), SkinProfiles.snapshot(player));
+        SkinProfiles.clearTextures(player); // без текстур → дефолтний скін у всіх
         player.setPlayerListName(ChatColor.DARK_GRAY + alias);
         team().addEntry(player.getName());
     }
 
     public void unmask(Player player) {
-        PlayerProfile original = savedProfiles.remove(player.getUniqueId());
+        SkinProfile original = savedProfiles.remove(player.getUniqueId());
         if (original != null) {
-            player.setPlayerProfile(original);
+            SkinProfiles.restore(player, original);
         }
         player.setPlayerListName(null);
         team().removeEntry(player.getName());

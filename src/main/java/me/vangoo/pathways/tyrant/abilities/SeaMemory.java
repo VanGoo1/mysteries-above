@@ -7,6 +7,7 @@ import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.domain.valueobjects.Waypoint;
+import me.vangoo.infrastructure.compat.ActionBars;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -149,7 +150,7 @@ public class SeaMemory extends ActiveAbility {
         Location target = guide.target;
 
         if (loc.getWorld() == null || !loc.getWorld().equals(target.getWorld())) {
-            p.sendActionBar(Component.text("Мітка «" + guide.name + "» в іншому світі", NamedTextColor.RED));
+            ActionBars.send(p, Component.text("Мітка «" + guide.name + "» в іншому світі", NamedTextColor.RED));
             if (guide.elapsedTicks >= MAX_GUIDE_TICKS) {
                 stopGuide(id);
             }
@@ -162,14 +163,14 @@ public class SeaMemory extends ActiveAbility {
         double dist = Math.sqrt(dx * dx + dz * dz + dy * dy);
 
         if (dist <= ARRIVAL_RADIUS) {
-            p.sendActionBar(Component.text("✔ Ви дісталися мітки «" + guide.name + "»", NamedTextColor.AQUA));
+            ActionBars.send(p, Component.text("✔ Ви дісталися мітки «" + guide.name + "»", NamedTextColor.AQUA));
             p.playSound(loc, Sound.AMBIENT_UNDERWATER_EXIT, 0.8f, 1.4f);
             stopGuide(id);
             return;
         }
 
         int i = relativeArrowIndex(p, dx, dz);
-        p.sendActionBar(Component.text(
+        ActionBars.send(p, Component.text(
                 REL_ARROWS[i] + " " + REL_NAMES[i] + "  " + Math.round(dist) + " м → " + guide.name,
                 NamedTextColor.AQUA));
 

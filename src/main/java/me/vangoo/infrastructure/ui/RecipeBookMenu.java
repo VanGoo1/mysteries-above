@@ -9,6 +9,7 @@ import me.vangoo.domain.valueobjects.UnlockedRecipe;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -260,8 +261,8 @@ public class RecipeBookMenu {
                 Component titleComponent = Component.text("📖 Рецепти: " + pathwayName)
                         .color(NamedTextColor.DARK_GRAY)
                         .decorate(TextDecoration.BOLD);
-                // Оновлюємо заголовок
-                gui.updateTitle(titleComponent);
+                // updateTitle на 3.1.7 приймає лише String (Component-перевантаження з'явилось в 3.1.13).
+                gui.updateTitle(LegacyComponentSerializer.legacySection().serialize(titleComponent));
 
                 gui.update();
             });
@@ -502,7 +503,7 @@ public class RecipeBookMenu {
                         .color(NamedTextColor.DARK_GRAY)
                         .decorate(TextDecoration.BOLD);
 
-                gui.updateTitle(titleComponent);
+                gui.updateTitle(LegacyComponentSerializer.legacySection().serialize(titleComponent));
 
                 gui.update();
             }

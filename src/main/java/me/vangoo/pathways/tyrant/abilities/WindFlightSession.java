@@ -2,6 +2,7 @@ package me.vangoo.pathways.tyrant.abilities;
 
 import me.vangoo.domain.abilities.context.IBeyonderContext;
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.infrastructure.compat.ActionBars;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -90,7 +91,7 @@ final class WindFlightSession {
         if (++runs % COST_EVERY == 0) {
             Beyonder beyonder = beyonderContext.getBeyonder(ownerId);
             if (beyonder == null || beyonder.getSpirituality().current() < periodicCost) {
-                owner.sendActionBar(Component.text("✗ Духовність вичерпана — вітер стихає"));
+                ActionBars.send(owner, Component.text("✗ Духовність вичерпана — вітер стихає"));
                 cancel();
                 return;
             }

@@ -7,13 +7,14 @@ import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.valueobjects.GravediggerLore;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.pathways.common.Spirits;
+import me.vangoo.pathways.common.UndeadEntities;
+import me.vangoo.infrastructure.compat.ActionBars;
 import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.Tag;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.LivingEntity;
@@ -131,7 +132,7 @@ public class EyeOfDeath extends ActiveAbility {
      * вікі прямо каже, що ті рахуються мертвими душами.
      */
     private boolean isDeadSoul(IAbilityContext context, LivingEntity target) {
-        if (Tag.ENTITY_TYPES_UNDEAD.isTagged(target.getType())) return true;
+        if (UndeadEntities.isUndead(target.getType())) return true;
         if (Spirits.isSpirit(target)) return true;
         return target instanceof Player player && context.rampage().isInRampage(player.getUniqueId());
     }
@@ -181,13 +182,13 @@ public class EyeOfDeath extends ActiveAbility {
     /** Читанка слабкого місця: чим ціль є для смерті й скільком ударам вона ще належить. */
     private void reportWeakness(IAbilityContext context, UUID casterId, LivingEntity target,
                                 boolean dead, double multiplier) {
-        AttributeInstance maxHealth = target.getAttribute(Attribute.MAX_HEALTH);
+        AttributeInstance maxHealth = target.getAttribute(Attribute.GENERIC_MAX_HEALTH);
         int healthPercent = maxHealth == null || maxHealth.getValue() <= 0
                 ? 100
                 : (int) Math.round(100.0 * target.getHealth() / maxHealth.getValue());
 
         String essence;
-        if (Tag.ENTITY_TYPES_UNDEAD.isTagged(target.getType())) {
+        if (UndeadEntities.isUndead(target.getType())) {
             essence = "нежить";
         } else if (Spirits.isSpirit(target)) {
             essence = "дух";
@@ -199,7 +200,7 @@ public class EyeOfDeath extends ActiveAbility {
 
         Player caster = context.getCasterPlayer();
         if (caster != null) {
-            caster.sendActionBar(Component.text(
+            ActionBars.send(caster, Component.text(
                     ChatColor.DARK_GREEN + "✦ Вузол: " + ChatColor.WHITE + target.getName()
                             + ChatColor.GRAY + " · " + ChatColor.AQUA + essence
                             + ChatColor.GRAY + " · " + ChatColor.RED + healthPercent + "%"

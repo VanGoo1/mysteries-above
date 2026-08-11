@@ -10,6 +10,7 @@ import me.vangoo.domain.valueobjects.RetinueServant;
 import me.vangoo.domain.valueobjects.RetinueSnapshot;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.domain.valueobjects.SpiritGuideLore;
+import me.vangoo.infrastructure.compat.MobAiCompat;
 import me.vangoo.infrastructure.retinue.RetinueStore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -40,9 +41,9 @@ import java.util.UUID;
  * щойно власник вийшов зі світу.
  *
  * <p>Відмінність від почту духів принципова: духи НІКОЛИ не б'ються, а слуги б'ються — але
- * лише за наказом. «No will or vitality» вікі виражене тим, що в слуги знімаються ЦІЛЬОВІ
- * гоали ({@code GoalType.TARGET}): сам він ворога не вибирає й на удар не відповідає, а от
- * ближній бій по виставленій цілі працює ванільно (наказ приходить у Посл.-6 меню, M5).
+ * лише за наказом. «No will or vitality» вікі виражене тим, що в слуги гаситься власний вибір
+ * цілі ({@link MobAiCompat#suppressTargeting}): сам він ворога не шукає й на удар не відповідає,
+ * а от ближній бій по виставленій цілі працює ванільно (наказ приходить у Посл.-6 меню, M5).
  *
  * <p>Реєстр сесій — інстанс-поле {@link UndeadRetinue}, не {@code static}: почет належить
  * гравцеві, а екземпляр здібності спільний на шлях.
@@ -146,8 +147,9 @@ final class UndeadRetinueSession {
         servant.setRemoveWhenFarAway(false);
         // Знімаємо лише ЦІЛЬОВІ гоали: слуга більше не шукає ворога сам і не мститься за удар,
         // але ванільний ближній бій по виставленій цілі лишається — інакше наказ «атакувати»
-        // не мав би чим виконуватись.
-        Bukkit.getMobGoals().removeAllGoals(servant, com.destroystokyo.paper.entity.ai.GoalType.TARGET);
+        // не мав би чим виконуватись. Через MobAiCompat, бо Paper'ового Bukkit.getMobGoals()
+        // на сервері проєкту немає; там же — фолбек і його ціна (див. клас).
+        MobAiCompat.suppressTargeting(servant);
     }
 
     /** Тип/тег + ім'я слуги; PACT читає internal id пака з другого тега, решта — EntityType. */
@@ -234,14 +236,25 @@ final class UndeadRetinueSession {
         }
 
         for (Mob servant : List.copyOf(servants)) {
+            // «Слуги не бояться сонця»: ванільного setShouldBurnInDay у Spigot-API немає, тож
+            // вогонь гасимо щотакту — шкоди він устигає нанести рівно нуль (тік частіший).
+            servant.setFireTicks(0);
+
             switch (mode) {
-                case ATTACK -> servant.setTarget(victim);
+                // Наказ «убити» — єдиний час, коли слуга взагалі має битись; на серверах без
+                // Paper-гоалів AI на цей час вмикається назад, інакше бити було б нічим.
+                case ATTACK -> {
+                    MobAiCompat.allowVanillaCombat(servant);
+                    servant.setTarget(victim);
+                }
                 case GUARD -> {
+                    MobAiCompat.suppressTargeting(servant);
                     servant.setTarget(null);
                     walkTo(servant, post);
                 }
                 // Волі немає: ціль, підхоплену AI між тіками, щотакту скидаємо.
                 case FOLLOW -> {
+                    MobAiCompat.suppressTargeting(servant);
                     servant.setTarget(null);
                     walkTo(servant, owner.getLocation());
                 }
@@ -385,6 +398,9 @@ final class UndeadRetinueSession {
         servants.remove(servant);
         descriptors.remove(servant.getUniqueId());
         servant.removeScoreboardTag(UndeadRetinue.TAG);
+        // Слуга більше не наш — AI повертається йому цілком, інакше на серверах без
+        // Paper-гоалів перекинутий слуга стояв би заглушеним і бунт нічого не значив.
+        MobAiCompat.allowVanillaCombat(servant);
         servant.setTarget(owner);
         servant.getWorld().spawnParticle(Particle.ANGRY_VILLAGER, servant.getEyeLocation(),
                 6, 0.3, 0.3, 0.3);
@@ -403,8 +419,8 @@ final class UndeadRetinueSession {
         long now = System.currentTimeMillis();
         if (now < escapeReadyAtMillis) return;
 
-        double max = owner.getAttribute(Attribute.MAX_HEALTH) == null
-                ? 20.0 : owner.getAttribute(Attribute.MAX_HEALTH).getValue();
+        double max = owner.getAttribute(Attribute.GENERIC_MAX_HEALTH) == null
+                ? 20.0 : owner.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
         if (owner.getHealth() > max * ESCAPE_HEALTH_RATIO) return;
         if (!sacrificeOne()) return;
 
@@ -483,7 +499,7 @@ final class UndeadRetinueSession {
             return;
         }
         if (servantLocation.distance(anchor) > FOLLOW_DISTANCE) {
-            servant.getPathfinder().moveTo(anchor, FOLLOW_SPEED);
+            MobAiCompat.walkTo(servant, anchor, FOLLOW_SPEED);
         }
     }
 

@@ -132,7 +132,7 @@ final class UnderworldDescentSession {
     }
 
     private void healOwner(Player owner) {
-        var maxHealthAttr = owner.getAttribute(Attribute.MAX_HEALTH);
+        var maxHealthAttr = owner.getAttribute(Attribute.GENERIC_MAX_HEALTH);
         double maxHealth = maxHealthAttr != null ? maxHealthAttr.getValue() : 20.0;
         owner.setHealth(Math.min(maxHealth, owner.getHealth() + healPerSecond));
     }

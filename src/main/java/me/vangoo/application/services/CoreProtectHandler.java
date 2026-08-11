@@ -3,7 +3,7 @@ package me.vangoo.application.services;
 import me.vangoo.domain.valueobjects.RecordedEvent;
 import net.coreprotect.CoreProtect;
 import net.coreprotect.CoreProtectAPI;
-import net.coreprotect.utility.EntityUtils;
+import net.coreprotect.utility.Util;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -200,7 +200,8 @@ public class CoreProtectHandler {
      * Кого саме вбили. {@code ParseResult.getType()} для вбивства марний: він проганяє id
      * істоти через {@code Material}, і «ZOMBIE» перетворюється на null. Тому беремо id
      * напряму з того самого поля, що читає сам {@code ParseResult}, і резолвимо публічним
-     * {@code EntityUtils}.
+     * {@code Util.getEntityType(int)} (на CoreProtect 23.x цей метод переїхав у клас
+     * {@code EntityUtils} — на пришпиленій 22.4 він ще тут).
      */
     private static String victimName(String[] data) {
         // ponytail: індекс 5 — внутрішній layout лукапу CoreProtect (перевірено по реалізації
@@ -208,7 +209,7 @@ public class CoreProtectHandler {
         // на «істоту», ніколи в помилку.
         if (data == null || data.length < 13) return "істоту";
         try {
-            EntityType type = EntityUtils.getEntityType(Integer.parseInt(data[VICTIM_TYPE_INDEX]));
+            EntityType type = Util.getEntityType(Integer.parseInt(data[VICTIM_TYPE_INDEX]));
             return type != null ? cleanMaterialName(type.name()) : "істоту";
         } catch (Exception e) {
             return "істоту";

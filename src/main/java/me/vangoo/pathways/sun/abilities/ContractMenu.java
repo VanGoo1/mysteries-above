@@ -11,7 +11,6 @@ import me.vangoo.domain.contracts.ContractTerm;
 import me.vangoo.domain.entities.Beyonder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
@@ -25,7 +24,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffectType;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -176,10 +174,9 @@ public class ContractMenu {
             target.sendMessage(ChatColor.YELLOW + proposalDetail);
         }
         target.sendMessage(ChatColor.GOLD + "Присядьте (Shift) протягом " + CONSENT_SECONDS + " с, щоб засвідчити.");
-        target.showTitle(Title.title(
-                Component.text("Пропозиція контракту", NamedTextColor.GOLD),
-                Component.text(casterName + " • " + label, NamedTextColor.YELLOW),
-                Title.Times.times(Duration.ofMillis(200), Duration.ofSeconds(3), Duration.ofMillis(500))));
+        // Spigot-шлях замість Paper'ового showTitle(Title): тіки замість Duration.
+        target.sendTitle(ChatColor.GOLD + "Пропозиція контракту",
+                ChatColor.YELLOW + casterName + " • " + label, 4, 60, 10);
         context.messaging().sendMessageToActionBar(casterId,
                 Component.text("✎ Пропозицію надіслано: " + target.getName(), NamedTextColor.GOLD));
 

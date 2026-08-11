@@ -168,9 +168,14 @@
             <version>1.15.2</version>
             <scope>provided</scope>
         </dependency>
+        <!-- Spigot-API, а НЕ paper-api: живий сервер проєкту — Arclight (NeoForge + Bukkit),
+             і Paper'ових доповнень до Bukkit-інтерфейсів там немає. Компіляція проти
+             spigot-api робить кожен такий виклик помилкою збірки замість NoSuchMethodError
+             у грі. Paper-only API дозволене лише в infrastructure.compat через рефлексію —
+             див. .claude/rules/minecraft-version.md. -->
         <dependency>
-            <groupId>io.papermc.paper</groupId>
-            <artifactId>paper-api</artifactId>
+            <groupId>org.spigotmc</groupId>
+            <artifactId>spigot-api</artifactId>
             <version>1.21.1-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
@@ -196,6 +201,14 @@
             <artifactId>packetevents-spigot</artifactId>
             <version>2.8.0</version>
             <scope>compile</scope>
+        </dependency>
+        <!-- Netty віддає сам сервер (4.1.97.Final на Arclight 1.21.1) — лише для компіляції
+             PacketEventsUdpGuard, у джар НЕ пакується. -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport</artifactId>
+            <version>4.1.97.Final</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

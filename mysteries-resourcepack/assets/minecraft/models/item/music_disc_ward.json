@@ -4,10 +4,7 @@
     "layer0": "minecraft:item/music_disc_ward"
   },
   "overrides": [
-    {
-      "predicate": { "custom_model_data": 2049622 },
-      "model": "item/permanent_passive"
-    },
+    { "predicate": { "custom_model_data": 2049622 }, "model": "item/permanent_passive" },
     { "predicate": { "custom_model_data": 9049350 }, "model": "item/active" },
     { "predicate": { "custom_model_data": 9960359 }, "model": "item/passive" }
   ]

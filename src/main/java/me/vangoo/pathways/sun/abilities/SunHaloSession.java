@@ -4,6 +4,8 @@ import me.vangoo.domain.abilities.context.IAmplificationContext;
 import me.vangoo.domain.abilities.context.IBeyonderContext;
 import me.vangoo.domain.abilities.context.IVisualEffectsContext;
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.infrastructure.compat.ActionBars;
+import me.vangoo.infrastructure.compat.Nearby;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -109,14 +111,14 @@ final class SunHaloSession {
             return;
         }
         if (beyonder.getSpirituality().current() < periodicCost) {
-            owner.sendActionBar(Component.text("✗ Духовність вичерпана — німб згасає"));
+            ActionBars.send(owner, Component.text("✗ Духовність вичерпана — німб згасає"));
             cancel();
             return;
         }
         beyonder.setSpirituality(beyonder.getSpirituality().decrement(periodicCost));
 
         buffAlly(owner);
-        for (Player ally : owner.getWorld().getNearbyPlayers(owner.getLocation(), range)) {
+        for (Player ally : Nearby.players(owner.getLocation(), range)) {
             buffAlly(ally);
         }
 

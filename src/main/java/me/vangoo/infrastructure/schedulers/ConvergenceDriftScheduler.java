@@ -11,6 +11,7 @@ import me.vangoo.domain.creatures.PullResult;
 import me.vangoo.domain.creatures.ResonantBeyonder;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.entities.Pathway;
+import me.vangoo.infrastructure.compat.MobAiCompat;
 import me.vangoo.infrastructure.items.CharacteristicCodec;
 import me.vangoo.infrastructure.items.WardenRemnantCodec;
 import me.vangoo.infrastructure.mythic.MythicCreatureGateway;
@@ -182,7 +183,7 @@ public final class ConvergenceDriftScheduler {
             item.setVelocity(v);
         } else if (e instanceof Mob mob) {
             if (random.nextDouble() < mobNudgeChance * strength) {
-                mob.getPathfinder().moveTo(targetLoc);
+                MobAiCompat.walkTo(mob, targetLoc, 1.0);
             }
         }
     }

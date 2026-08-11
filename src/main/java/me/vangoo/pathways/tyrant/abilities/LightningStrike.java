@@ -6,6 +6,7 @@ import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.valueobjects.Sequence;
+import me.vangoo.infrastructure.compat.Nearby;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Color;
@@ -143,7 +144,7 @@ public class LightningStrike extends ActiveAbility {
 
         // «Електричні змійки»: розряд перекидається на сусідів навіть якщо основну ціль убито.
         Location origin = primary.getLocation();
-        primary.getWorld().getNearbyLivingEntities(origin, CHAIN_RADIUS).stream()
+        Nearby.living(origin, CHAIN_RADIUS).stream()
                 .filter(e -> !e.getUniqueId().equals(primary.getUniqueId()))
                 .filter(e -> !e.getUniqueId().equals(player.getUniqueId()))
                 .sorted(Comparator.comparingDouble(e -> e.getLocation().distanceSquared(origin)))

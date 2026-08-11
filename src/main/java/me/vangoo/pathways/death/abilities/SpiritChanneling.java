@@ -12,12 +12,12 @@ import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.domain.valueobjects.SpiritGuideLore;
 import me.vangoo.domain.valueobjects.SpiritMediumLore;
 import me.vangoo.pathways.common.SoulWard;
+import me.vangoo.pathways.common.UndeadEntities;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.Tag;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
@@ -232,7 +232,7 @@ public class SpiritChanneling extends ActiveAbility {
             if (candidates.size() >= room) break;
             if (!(nearby instanceof Mob undead)) continue;
             // getCategory() на 1.21+ кидає UnsupportedOperationException — нежить лише тегом.
-            if (!Tag.ENTITY_TYPES_UNDEAD.isTagged(undead.getType())) continue;
+            if (!UndeadEntities.isUndead(undead.getType())) continue;
             if (retinue.isLed(undead.getUniqueId())) continue;  // чужого слугу не забираємо
             candidates.add(undead);
         }

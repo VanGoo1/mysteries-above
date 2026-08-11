@@ -8,6 +8,7 @@ import io.lumine.mythic.api.skills.ThreadSafetyLevel;
 import io.lumine.mythic.bukkit.events.MythicMechanicLoadEvent;
 import io.lumine.mythic.core.skills.SkillMechanic;
 import io.lumine.mythic.core.utils.annotations.MythicMechanic;
+import me.vangoo.infrastructure.compat.MobAiCompat;
 import me.vangoo.infrastructure.creatures.SafeLocations;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -70,7 +71,7 @@ public class RangedStanceMechanic extends SkillMechanic implements ITargetedEnti
 
         double distance = mob.getLocation().distance(victim.getLocation());
         if (distance > max) {
-            mob.getPathfinder().moveTo(victim, 1.05);
+            MobAiCompat.walkTo(mob, victim, 1.05);
         } else if (distance < min) {
             backOff(mob, victim);
         } else {
@@ -86,7 +87,7 @@ public class RangedStanceMechanic extends SkillMechanic implements ITargetedEnti
 
     // PROVOKED: іде на кривдника; впритул — ванільний удар (swing + knockback + атрибут Damage)
     private void meleeRetaliate(Mob mob, LivingEntity victim, long now) {
-        mob.getPathfinder().moveTo(victim, 1.15);
+        MobAiCompat.walkTo(mob, victim, 1.15);
         if (mob.getLocation().distance(victim.getLocation()) > MELEE_REACH) return;
         long last = lastAttackAt.getOrDefault(mob.getUniqueId(), 0L);
         if (now - last < ATTACK_INTERVAL_MILLIS) return;
@@ -97,8 +98,8 @@ public class RangedStanceMechanic extends SkillMechanic implements ITargetedEnti
     }
 
     private void hold(Mob mob, LivingEntity victim) {
-        mob.getPathfinder().stopPathfinding();
-        mob.lookAt(victim);
+        MobAiCompat.stopMoving(mob);
+        MobAiCompat.lookAt(mob, victim);
     }
 
     // BACKOFF: крок до точки ~7 блоків у протилежний бік; нема валідної точки — тримає позицію
@@ -114,7 +115,7 @@ public class RangedStanceMechanic extends SkillMechanic implements ITargetedEnti
             hold(mob, victim);
             return;
         }
-        mob.getPathfinder().moveTo(dest, 1.15);
+        MobAiCompat.walkTo(mob, dest, 1.15);
     }
 
     private void purgeDeadEntries() {

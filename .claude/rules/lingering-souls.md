@@ -111,10 +111,11 @@ unlock у злодія, віддає `Optional<UnlockedRecipe>` (порожні�
 - `enroll(IAbilityContext, ownerId, Mob)` бере з контексту **лише глобальні сервіси**
   (`scheduling`, `beyonder`, `effects`) і віддає їх сесії; сам контекст кастера в сесію НЕ
   потрапляє (правило сесій, п. 3).
-- «No will or vitality» = знято **лише цільові** гоали
-  (`MobGoals.removeAllGoals(mob, GoalType.TARGET)`) + `setTarget(null)` щотакту в режимах
-  `FOLLOW`/`GUARD`. Рухові й бойові гоали лишаються, тож наказ `ATTACK` виконується ванільним
-  ближнім боєм. ❌ Не знімай усі гоали — слуга перестане бити взагалі.
+- «No will or vitality» = `MobAiCompat.suppressTargeting(mob)` + `setTarget(null)` щотакту в
+  режимах `FOLLOW`/`GUARD`; у режимі `ATTACK` — `MobAiCompat.allowVanillaCombat(mob)` перед
+  виставленням цілі, тож наказ виконується ванільним ближнім боєм. Через компат, бо
+  `Bukkit.getMobGoals()` на сервері проєкту падає — див. `.claude/rules/minecraft-version.md`.
+  ❌ Не глуши слугу назовсім і не знімай усі гоали — слуга перестане бити взагалі.
 - Слуга носить тег `UndeadRetinue.TAG` (`ma_retinue`); літерал живе лише там.
 - Наказ ОДИН на весь почет (`FOLLOW` / `ATTACK` / `GUARD`) — загонів вікі не знає.
 - Бунт (D3) і втеча в тінь (S1k-1) живуть у тіку сесії, раз на секунду. Бунт читає Беєндерів

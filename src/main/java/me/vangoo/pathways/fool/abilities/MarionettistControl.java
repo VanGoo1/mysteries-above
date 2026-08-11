@@ -1,6 +1,6 @@
 package me.vangoo.pathways.fool.abilities;
 
-import com.destroystokyo.paper.profile.PlayerProfile;
+import me.vangoo.infrastructure.compat.SkinProfiles.SkinProfile;
 import com.github.retrooper.packetevents.PacketEvents;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
@@ -21,6 +21,7 @@ import me.vangoo.infrastructure.disguise.PlayerVisibilityRefresher;
 import me.vangoo.pathways.common.SoulWard;
 import me.vangoo.infrastructure.disguise.SkinDisguiseService;
 import me.vangoo.infrastructure.ui.NBTBuilder;
+import me.vangoo.infrastructure.compat.ActionBars;
 import org.bukkit.plugin.java.JavaPlugin;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.event.NPCDeathEvent;
@@ -79,7 +80,7 @@ public class MarionettistControl extends ActiveAbility {
     private final Map<UUID, Set<Integer>>         marionetteNpcs = new ConcurrentHashMap<>(); // casterId -> набір npcId (кілька маріонеток)
     private final Map<UUID, BeyonderSnapshot>     possessions    = new ConcurrentHashMap<>();
     private final Map<UUID, String>               originalDisplayNames = new ConcurrentHashMap<>(); // casterId -> справжній нік до посесії
-    private final Map<UUID, PlayerProfile>        originalProfiles     = new ConcurrentHashMap<>(); // casterId -> профіль (скін+ім'я) до посесії
+    private final Map<UUID, SkinProfile>        originalProfiles     = new ConcurrentHashMap<>(); // casterId -> профіль (скін+ім'я) до посесії
     private final Map<UUID, Double>               preMaxHealth   = new ConcurrentHashMap<>();         // casterId -> макс. HP основного тіла до посесії
     private final Map<Integer, UUID>              marionetteOwner = new ConcurrentHashMap<>();       // npcId -> власник (завжди)
     private final Map<UUID, BukkitTask>           possessionMonitors = new ConcurrentHashMap<>();    // casterId -> тікер дистанції
@@ -695,7 +696,7 @@ public class MarionettistControl extends ActiveAbility {
      */
     private void restoreAppearance(IAbilityContext ctx, UUID casterId) {
         boolean wasMob = mobDisguised.remove(casterId);
-        PlayerProfile originalProfile = originalProfiles.remove(casterId);
+        SkinProfile originalProfile = originalProfiles.remove(casterId);
         String originalName = originalDisplayNames.remove(casterId);
 
         Player player = Bukkit.getPlayer(casterId);
@@ -1716,11 +1717,11 @@ public class MarionettistControl extends ActiveAbility {
 
         String name = attackerName(attacker);
         if (isPossessing(ownerId, npc.getId())) {
-            owner.sendActionBar(Component.text("⚠ Ваше основне тіло атакує " + name + "!",
+            ActionBars.send(owner, Component.text("⚠ Ваше основне тіло атакує " + name + "!",
                     NamedTextColor.RED));
         } else {
             // Маріонеток може бути кілька — називаємо, ЯКУ саме б'ють, інакше попередження марне.
-            owner.sendActionBar(Component.text(
+            ActionBars.send(owner, Component.text(
                     "⚠ Вашу маріонетку «" + marionetteName(npc) + "» атакує " + name + "!",
                     NamedTextColor.LIGHT_PURPLE));
         }

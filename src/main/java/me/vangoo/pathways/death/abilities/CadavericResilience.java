@@ -16,8 +16,8 @@ import java.util.UUID;
  *
  * <p>Вікі: трупозбирач «gains resistance to the Cold, Decay, and Corrosiveness of cadaveric
  * auras». Холод — абсолютний імунітет (тіло вже холодне, мерзнути нічому): freeze-тіки
- * тримаються на нулі й лочаться від ванільного годинника. Тління (Wither) та Їдкість (Poison)
- * згасають прискорено — множник живе в {@link CorpseCollectorLore}.
+ * гасяться щотакту. Тління (Wither) та Їдкість (Poison) згасають прискорено — множник живе
+ * в {@link CorpseCollectorLore}.
  */
 public class CadavericResilience extends PermanentPassiveAbility {
 
@@ -42,7 +42,6 @@ public class CadavericResilience extends PermanentPassiveAbility {
         if (player == null) return;
 
         player.setFreezeTicks(0);
-        player.lockFreezeTicks(true);
     }
 
     @Override
@@ -50,19 +49,22 @@ public class CadavericResilience extends PermanentPassiveAbility {
         Player player = context.getCasterPlayer();
         if (player == null || !player.isValid()) return;
 
-        // Лок не дає ванілі накручувати обмороження, але сторонній код (інший плагін,
-        // /data) може виставити тіки напряму — тоді гасимо їх і показуємо, що поглинуто.
-        if (player.getFreezeTicks() > 0) {
-            player.setFreezeTicks(0);
+        // Обмороження гасимо щотакту: Paper'ів lockFreezeTicks на цьому сервері відсутній
+        // (Arclight — Spigot-API), тож єдиний надійний імунітет — обнуляти лічильник.
+        boolean freezing = player.getFreezeTicks() > 0;
+        if (freezing) player.setFreezeTicks(0);
+
+        // Раз на секунду життя ГРАВЦЯ (не спільний лічильник здібності — екземпляр один
+        // на весь шлях, тож власне поле збивало б крок при кількох носіях).
+        if (player.getTicksLived() % 20 != 0) return;
+
+        // Показуємо поглинання холоду не щотакту, інакше в сніговому пуху це спам.
+        if (freezing) {
             context.effects().spawnParticle(Particle.SNOWFLAKE,
                     player.getLocation().add(0, 1.0, 0), 6, 0.3, 0.5, 0.3);
             context.effects().playSoundForPlayer(player.getUniqueId(),
                     Sound.BLOCK_POWDER_SNOW_BREAK, 0.3f, 1.6f);
         }
-
-        // Раз на секунду життя ГРАВЦЯ (не спільний лічильник здібності — екземпляр один
-        // на весь шлях, тож власне поле збивало б крок при кількох носіях).
-        if (player.getTicksLived() % 20 != 0) return;
 
         int extraTicks = CorpseCollectorLore.decayExtraTicksPerSecond(
                 context.getCasterBeyonder().getSequence());
@@ -76,6 +78,6 @@ public class CadavericResilience extends PermanentPassiveAbility {
         Player player = context.getCasterPlayer();
         if (player == null || !player.isValid()) return;
 
-        player.lockFreezeTicks(false);
+        player.setFreezeTicks(0);
     }
 }
