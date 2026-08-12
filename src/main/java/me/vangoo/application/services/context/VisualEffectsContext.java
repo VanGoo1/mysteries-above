@@ -544,6 +544,36 @@ public class VisualEffectsContext implements IVisualEffectsContext {
     }
 
     @Override
+    public void playAuraRing(Location center, double radius, Color color, int durationTicks) {
+        final World world = center.getWorld();
+        if (world == null) return;
+        final Location anchor = center.clone();
+        final Particle.DustOptions dust = new Particle.DustOptions(color, 1.0f);
+
+        new BukkitRunnable() {
+            int tick = 0;
+
+            @Override
+            public void run() {
+                if (tick >= durationTicks) {
+                    this.cancel();
+                    return;
+                }
+                // Кільце обертається повільно: повний оберт приблизно за 8 секунд.
+                double spin = tick * (2 * Math.PI / 160.0);
+                final int points = 20;
+                for (int i = 0; i < points; i++) {
+                    double angle = spin + 2 * Math.PI * i / points;
+                    world.spawnParticle(Particle.DUST,
+                            anchor.clone().add(Math.cos(angle) * radius, 0, Math.sin(angle) * radius),
+                            1, 0, 0, 0, 0, dust);
+                }
+                tick++;
+            }
+        }.runTaskTimer(plugin, 0L, 2L);
+    }
+
+    @Override
     public void playRisingSpiral(Location base, double height, double radius,
                                  Color color, int durationTicks) {
         final World world = base.getWorld();

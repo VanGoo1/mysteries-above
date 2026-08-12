@@ -100,6 +100,18 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         registerEvents();
         registerCommands();
 
+        // Pocket world with the temples: create it, paste the buildings and claim their
+        // anchors. Must run BEFORE spawnAllNpcs() — a freshly claimed site has no priest
+        // yet, and there would be nowhere to spawn one otherwise.
+        if (services.getChurchConfig().shrine().pocketWorldEnabled()) {
+            services.getChurchWorldProvider().initialize();
+        }
+        // Святині перевіряємо ПІСЛЯ храмів: перевірка рахує церкви, що ще чекають на свою,
+        // а це відомо лише коли храми вже заявлені.
+        if (services.getChurchConfig().shrine().placeNearVillages()) {
+            services.getVillageShrinePlacer().validateSetup();
+        }
+
         // Respawn church priests from persisted sites (Citizens already available via
         // depend).
         // Call exactly once — a double call would orphan duplicate NPCs.
@@ -337,9 +349,20 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 services.getChurchPriestService(), services.getChurchMenu(), services.getChurchService(),
                 services.getMythicCreatureGateway(), services.getRampageManager());
         ChurchSpawnListener churchSpawnListener = new ChurchSpawnListener(
-                services.getChurchSiteService(), services.getChurchConfig().spawnVillageOffset());
+                services.getChurchSiteService());
         getServer().getPluginManager().registerEvents(churchListener, this);
         getServer().getPluginManager().registerEvents(churchSpawnListener, this);
+        getServer().getPluginManager().registerEvents(
+                new ShrineListener(services.getShrineService()), this);
+        if (services.getChurchConfig().shrine().placeNearVillages()) {
+            getServer().getPluginManager().registerEvents(
+                    new VillageShrineListener(services.getVillageShrinePlacer()), this);
+        }
+        if (getConfig().getBoolean("church.protect-buildings", true)) {
+            getServer().getPluginManager().registerEvents(
+                    new ChurchProtectionListener(services.getChurchSiteService(),
+                            services.getShrineService()), this);
+        }
         getServer().getPluginManager().registerEvents(services.getDuelListener(), this);
 
         OrderListener orderListener = new OrderListener(
@@ -389,7 +412,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getCommand("gathering").setExecutor(gatheringCommand);
         getCommand("gathering").setTabCompleter(gatheringCommand);
 
-        ChurchCommand churchCommand = new ChurchCommand(services.getChurchService(), services.getChurchSiteService());
+        ChurchCommand churchCommand = new ChurchCommand(services.getChurchService(),
+                services.getChurchSiteService(), services.getShrineService());
         getCommand("church").setExecutor(churchCommand);
         getCommand("church").setTabCompleter(churchCommand);
 

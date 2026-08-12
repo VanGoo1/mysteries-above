@@ -1,5 +1,6 @@
 package me.vangoo.infrastructure.organizations;
 
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.Plugin;
 
@@ -21,9 +22,26 @@ public record ChurchConfig(int[] rankThresholds,
                            int pointsPerCoppet,
                            int vaultSeedBrewsPerRecipe,
                            int vaultSeedCharacteristicsPerSeq,
-                           int spawnVillageOffset) {
+                           ShrineSettings shrine) {
+
+    /**
+     * Кишеньковий світ храмів і шрайни в селах. Окремим записом, а не сімома полями в
+     * {@code ChurchConfig}: у нього вже 13 компонентів, і плоский список став би нечитним.
+     */
+    public record ShrineSettings(boolean pocketWorldEnabled,
+                                 int pocketWorldSpacing,
+                                 Material focusBlock,
+                                 double interactRadius,
+                                 boolean ambienceEnabled,
+                                 long ambiencePeriodTicks,
+                                 double ambienceRadius,
+                                 boolean placeNearVillages,
+                                 double villageGuardRadius) {}
 
     private static final int[] DEFAULT_RANK_THRESHOLDS = {0, 200, 600, 1500, 3500};
+    private static final Material DEFAULT_FOCUS_BLOCK = Material.BEACON;
+    /** Найбільший храм — 39×51×64, тож тісніша сітка ставила б будівлі одна в одну. */
+    private static final int MIN_POCKET_SPACING = 128;
     private static final Map<Integer, Integer> DEFAULT_ORDER_POINTS = Map.of(
             9, 60, 8, 90, 7, 140, 6, 200, 5, 280, 4, 380, 3, 500, 2, 650, 1, 850, 0, 1100);
     private static final Map<Integer, Integer> DEFAULT_DONATION_INGREDIENT = Map.of(
@@ -58,7 +76,40 @@ public record ChurchConfig(int[] rankThresholds,
                 cfg.getInt("church.donation.points-per-coppet", 1),
                 cfg.getInt("church.vault.seed.brews-per-recipe", 3),
                 cfg.getInt("church.vault.seed.characteristics-per-seq", 1),
-                cfg.getInt("church.spawn.village-offset", 24));
+                loadShrine(plugin));
+    }
+
+    private static ShrineSettings loadShrine(Plugin plugin) {
+        var cfg = plugin.getConfig();
+        int spacing = Math.max(MIN_POCKET_SPACING,
+                cfg.getInt("church.pocket-world.spacing", 512));
+        return new ShrineSettings(
+                cfg.getBoolean("church.pocket-world.enabled", true),
+                spacing,
+                focusBlock(plugin, cfg.getString("church.shrine.focus-block")),
+                cfg.getDouble("church.shrine.interact-radius", 2.5),
+                cfg.getBoolean("church.shrine.ambience-enabled", true),
+                cfg.getLong("church.shrine.ambience-period-ticks", 40L),
+                cfg.getDouble("church.shrine.ambience-radius", 32.0),
+                cfg.getBoolean("church.shrine.place-near-villages", true),
+                cfg.getDouble("church.shrine.village-guard-radius", 700.0));
+    }
+
+    /**
+     * Хибна назва блоку тут не має валити старт: вівтар — гейт кліку, і мовчазний
+     * {@code null} перетворив би всі шрайни на декорацію без жодного сліду в лозі.
+     */
+    private static Material focusBlock(Plugin plugin, String raw) {
+        if (raw == null || raw.isBlank()) {
+            return DEFAULT_FOCUS_BLOCK;
+        }
+        Material material = Material.matchMaterial(raw);
+        if (material == null || !material.isBlock()) {
+            plugin.getLogger().warning("church.shrine.focus-block: unknown block '" + raw
+                    + "'; using " + DEFAULT_FOCUS_BLOCK);
+            return DEFAULT_FOCUS_BLOCK;
+        }
+        return material;
     }
 
     private static Map<Integer, Integer> loadSeqMap(Plugin plugin, String path,

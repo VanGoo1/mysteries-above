@@ -1,7 +1,6 @@
 package me.vangoo.infrastructure.organizations;
 
 import me.vangoo.application.services.ChurchService;
-import me.vangoo.domain.organizations.Institution;
 import me.vangoo.infrastructure.citizens.ChurchPriestService;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -10,41 +9,87 @@ import org.bukkit.World;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Сайти храмів: ручний bind, автоспавн біля сіл (кожна церква — раз на світ), NPC. */
+/**
+ * Сайти храмів: ручний bind, заявка на храм, знайдений у світі (кожна церква — раз на
+ * світ), NPC-священики. Будівлі ставить датапак, не плагін — див.
+ * `.claude/rules/church-structures.md`.
+ */
 public class ChurchSiteService {
 
     private final ChurchSiteRepository repository;
     private final ChurchPriestService priests;
-    private final ChurchStructurePlacer placer;
     private final ChurchService churchService;
     private List<ChurchSiteRepository.Site> sites = new ArrayList<>();
-    private List<String> processedVillages = new ArrayList<>();
     private java.util.function.Predicate<String> priestClosurePredicate = id -> false;
 
     public ChurchSiteService(ChurchSiteRepository repository, ChurchPriestService priests,
-                             ChurchStructurePlacer placer, ChurchService churchService) {
+                             ChurchService churchService) {
         this.repository = repository;
         this.priests = priests;
-        this.placer = placer;
         this.churchService = churchService;
-        repository.load().ifPresent(m -> {
-            sites = new ArrayList<>(m.sites());
-            processedVillages = new ArrayList<>(m.processedVillageKeys());
-        });
+        repository.load().ifPresent(m -> sites = new ArrayList<>(m.sites()));
     }
 
+    /** Ручний bind (`/church bind`) габаритів будівлі не знає — блоки такий сайт не боронить. */
     public boolean bind(String institutionId, Location loc) {
-        sites.add(toSite(institutionId, loc));
+        return bind(institutionId, loc, null);
+    }
+
+    public boolean bind(String institutionId, Location loc, ChurchSiteRepository.Box box) {
+        sites.add(toSite(institutionId, loc, box));
         churchService.seedVaultIfAbsent(institutionId);
         priests.spawn(institutionId, loc);
         persist();
         return true;
     }
 
-    public boolean autoPlace(String villageKey, String institutionId, Location loc) {
-        placer.place(institutionId, loc); // false = без будівлі, сайт усе одно живе
-        markVillageProcessed(villageKey);
-        return bind(institutionId, loc);
+    /**
+     * Храм знайдено у світі — плагін побачив його якір-мітку. Церква унікальна на світ:
+     * перший заявлений храм свого типу отримує сайт, сховище й священика, повторна
+     * заявка тієї ж церкви нічого не робить.
+     *
+     * @return чи саме цей храм став «тим самим»
+     */
+    public boolean claim(String institutionId, Location priestSpot, ChurchSiteRepository.Box box) {
+        if (siteOf(institutionId).isPresent()) {
+            return false; // ця церква вже має свій храм десь у світі
+        }
+        if (!churchService.registry().isSpawnEnabled(institutionId)) {
+            return false; // шлях ще не реалізований — священика не спавнимо
+        }
+        return bind(institutionId, priestSpot, box);
+    }
+
+    /**
+     * Заявити всі храми, чиї якорі-мітки трапились серед {@code entities}, і прибрати ті
+     * мітки (сайт уже пам'ятає точку й кут). Спільна реалізація для двох входів:
+     * `ChurchSpawnListener` (мітка приїхала з чанком) і `ChurchWorldProvider` (мітку щойно
+     * наплодила паста — подій завантаження чанка там не буде взагалі).
+     */
+    public void claimAnchors(Iterable<org.bukkit.entity.Entity> entities) {
+        for (org.bukkit.entity.Entity entity : entities) {
+            ChurchAnchor.of(entity)
+                    .filter(ChurchAnchor::isPriest)
+                    .ifPresent(anchor -> {
+                        claim(anchor.institutionId(), anchor.marker().getLocation(), anchor.box());
+                        anchor.marker().remove();
+                    });
+        }
+    }
+
+    /**
+     * Забути сайт церкви разом із її священиком — щоб храм можна було заявити наново.
+     *
+     * <p>Потрібно рівно тоді, коли храм ПЕРЕКЛАДАЮТЬ (змінилась розкладка кишенькового
+     * світу): `claim` навмисно відмовляє другій заявці тієї ж церкви, тож без цього сайт
+     * лишався б із координатами старої розкладки, і священик спавнився б у камені.
+     * Сховище церкви не чіпаємо — воно до розташування будівлі не має стосунку.
+     */
+    public void forget(String institutionId) {
+        if (sites.removeIf(s -> s.institutionId().equals(institutionId))) {
+            priests.despawn(institutionId);
+            persist();
+        }
     }
 
     public boolean unbindNearest(Location loc) {
@@ -60,28 +105,6 @@ public class ChurchSiteService {
             }
         }
         return false;
-    }
-
-    public boolean isVillageProcessed(String key) {
-        return processedVillages.contains(key);
-    }
-
-    public void markVillageProcessed(String key) {
-        if (!processedVillages.contains(key)) {
-            processedVillages.add(key);
-            persist();
-        }
-    }
-
-    /** Церкви без жодного сайту — кандидати автоспавну (кожна — щонайбільше раз на світ). */
-    public List<String> unplacedChurchIds() {
-        List<String> placed = sites.stream()
-                .map(ChurchSiteRepository.Site::institutionId).toList();
-        return churchService.registry().churches().stream()
-                .map(Institution::id)
-                .filter(id -> !placed.contains(id))
-                .filter(churchService.registry()::isSpawnEnabled) // шлях ще не реалізований — не спавнити
-                .toList();
     }
 
     public void spawnAllNpcs() {
@@ -114,12 +137,36 @@ public class ChurchSiteService {
                 .findFirst();
     }
 
-    private static ChurchSiteRepository.Site toSite(String institutionId, Location l) {
+    private static ChurchSiteRepository.Site toSite(String institutionId, Location l,
+                                                    ChurchSiteRepository.Box box) {
         return new ChurchSiteRepository.Site(institutionId, l.getWorld().getName(),
-                l.getX(), l.getY(), l.getZ(), l.getYaw(), l.getPitch());
+                l.getX(), l.getY(), l.getZ(), l.getYaw(), l.getPitch(), box);
+    }
+
+    /**
+     * Чи належить блок якомусь храмові. Сайтів щонайбільше 10, тож лінійний прохід
+     * дешевший за будь-який індекс — а кличеться це з `BlockBreakEvent`.
+     */
+    public boolean isProtected(Location loc) {
+        if (loc.getWorld() == null) {
+            return false;
+        }
+        for (ChurchSiteRepository.Site s : sites) {
+            ChurchSiteRepository.Box box = s.box();
+            if (box == null || !s.world().equals(loc.getWorld().getName())) {
+                continue;
+            }
+            if (Math.abs(loc.getBlockX() - Math.floor(s.x())) <= box.half()
+                    && Math.abs(loc.getBlockZ() - Math.floor(s.z())) <= box.half()
+                    && loc.getBlockY() >= Math.floor(s.y()) - box.down()
+                    && loc.getBlockY() <= Math.floor(s.y()) + box.up()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void persist() {
-        repository.save(new ChurchSiteRepository.Model(sites, processedVillages));
+        repository.save(new ChurchSiteRepository.Model(sites, List.of()));
     }
 }

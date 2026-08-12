@@ -1,6 +1,7 @@
 package me.vangoo.domain.organizations;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -27,7 +28,35 @@ public final class InstitutionRegistry {
             "order-naturism-sect", "order-nightstalkers", "order-bliss-society",
             "order-god-descent-school");
 
+    /**
+     * Шлях, чиїм кольором брендується церква (святині, ефекти) — див.
+     * {@code PathwayBranding}.
+     *
+     * <p>Виводити це з {@code accesses} НЕ можна, хоч і спокусливо: перший повний доступ
+     * Церкви Блазня — це Двері (аквамарин), тобто шлях, який вона ДАЄ, а не той, чиє ім'я
+     * носить. Церква впізнається за своїм божеством, тож зв'язок задається явно.
+     */
+    private static final Map<String, String> BRANDING_PATHWAY = Map.ofEntries(
+            Map.entry("church-evernight", "Darkness"),
+            Map.entry("church-god-of-combat", "TwilightGiant"),
+            Map.entry("church-earth-mother", "Mother"),
+            Map.entry("church-lord-of-storms", "Tyrant"),
+            Map.entry("church-knowledge-wisdom", "WhiteTower"),
+            Map.entry("church-eternal-sun", "Sun"),
+            Map.entry("church-steam-machinery", "Paragon"),
+            Map.entry("church-fool", "Fool"),
+            Map.entry("church-eternal-darkness", "Abyss"),
+            Map.entry("church-ruler-of-calamity", "RedPriest"));
+
     private final List<Institution> all = buildAll();
+
+    /**
+     * Ім'я шляху для брендинг-кольору інституції. Невідома інституція (або орден, який
+     * кольору не має) віддає {@code null} — {@code PathwayBranding} сам відповість сірим.
+     */
+    public String brandingPathwayOf(String institutionId) {
+        return institutionId == null ? null : BRANDING_PATHWAY.get(institutionId);
+    }
 
     public List<Institution> all() {
         return all;

@@ -130,14 +130,31 @@ The pure core of `domain` (`entities`, `services`, `spells`, `brewing`, `creatur
   `trialPassed` [тимчасовий] + флаг «вже колись ініційований» `initiationUsed` [постійний]
   + історія замовлених зілль `orderedPotions` [в межах членства] + назавжди зречені церкви
   `abandonedChurches` [вихід із церкви необоротний]),
-  `church-sites.json` (сайти храмів + оброблені села), `churches-state.json`
-  (сховища церков) — усі пишуться після кожної мутації (`ChurchService`, каркас
+  `church-sites.json` (сайти храмів), `churches-state.json`
+  (сховища церков), `church-returns.json` (`ReturnPointRepository` — звідки шрайн забрав
+  гравця; персиститься навмисно, бо візит у храм рутинний і рестарт не має розкидати
+  відвідувачів по спавну) — усі пишуться після кожної мутації (`ChurchService`, каркас
   `GatheringSnapshotRepository`). Секція `church.*` у `config.yml` (ранги/завдання/замовлення/
-  пожертви/сід сховищ) читає `ChurchConfig` з дефолтами в коді. Реєстр інституцій — код
+  пожертви/сід сховищ/кишеньковий світ/шрайни) читає `ChurchConfig` з дефолтами в коді.
+  Реєстр інституцій — код
   (`InstitutionRegistry`), не конфіг. Ініціація — дуель проти Seq-9 істоти чужого домену
   в окремому void-світі `mysteries_duel` (`ChurchDuelService`/`DuelSession`/
   `DuelArenaProvider`/`DuelBriefing`/`DuelListener`), а не сховищний обряд. Див.
-  `.claude/rules/church-organizations.md`.
+  `docs/church-organizations.md`. **Храмів у звичайному світі немає**: будівлі — NBT у
+  `mysteries-datapack`, які `ChurchWorldProvider` ставить у спільний кишеньковий світ
+  `mysteries_churches`, а `VillageShrinePlacer` ставить біля щойно згенерованих сіл
+  маленькі шрайни — рівно один на село й рівно один на церкву на весь світ (реєстр
+  `shrines.json`, `ShrineRegistry`; датапак дає лише NBT, ванільні пули сіл НЕ
+  перевизначаються — пул безпам'ятний і давав до 5 святинь на село).
+  Шрайн переносить гравця до храму й назад (`ShrineService` + `ShrineListener`); церкву
+  йому обирає чиста `domain.organizations.ShrineAssignment` зі списку тих, що ще без
+  святині **й із живим храмом** (`ShrineService.hasTemple` — єдиний гейт і для worldgen'у,
+  і для `/church shrine`), і штампує тегом на мітку. Плагін впізнає і будівлю, і шрайн за
+  міткою-якорем (`ChurchAnchor`): у шрайна — за сутністю у світі, у храму — за міткою в
+  самому шаблоні (`ChurchWorldProvider.claimFromTemplate`, а не сканування чанків), і
+  боронить обидва від руйнування Й забудови
+  (`ChurchProtectionListener`, ключ `church.protect-buildings`) —
+  див. `.claude/rules/church-structures.md`.
 - Таємні організації (Економіка 6c): `order-memberships.json` (`JSONOrderMembershipRepository`
   — членства/ранг=послідовність/фавори/задачі/запрошення/кулдаун вступу/
   `abandonedOrders` [вихід із ордену необоротний]/`pendingRaidLoot`+
@@ -159,7 +176,8 @@ The pure core of `domain` (`entities`, `services`, `spells`, `brewing`, `creatur
   печатка здібностей 10-15 хв + Зламаний Сонячний Диск). `DivinePunishment` — перевикористовуваний
   ранер покарання для майбутніх механік. Прогрес `Beyonder`'а кара не чіпає. Див. `docs/contracts.md`.
 - Admin commands (all require `mysteriesabove.admin`): `/pathway`, `/mastery`, `/rampager`, `/potion`, `/custom-items`, `/recipe`, `/structure`, `/characteristic`, `/coins`. Creature testing goes through MythicMobs' own command: `/mm mobs spawn <id>`. `/gathering` — гравецька команда (join/menu), її start/stop — адмінські (перевірка права в коді). `/church` — гравецька (leave/info; `leave` двокрокова — діє лише `/church leave confirm`, бо
-вихід із церкви необоротний), bind/unbind — адмінські (перевірка права в коді). `/order` — гравецька команда (invites/accept/raid/leave/info; `leave` теж двокрокова —
+вихід із церкви необоротний), bind/unbind/shrine — адмінські (перевірка права в коді;
+`shrine` ставить святиню у вже згенерованому селі, куди worldgen більше не зазирне). `/order` — гравецька команда (invites/accept/raid/leave/info; `leave` теж двокрокова —
 `/order leave confirm`, вихід із ордену необоротний); сам вступ за шифрованим посланням
 йде через предмет-меню (`OrderMenu`), не команду, а головне меню ордену — вкладка в меню
 Містичних Здібностей (`AbilityMenu`, слот 6,5, лише члену), не предмет.
