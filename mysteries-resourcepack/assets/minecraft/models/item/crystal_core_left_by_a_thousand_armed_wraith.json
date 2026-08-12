@@ -1,0 +1,6 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "item/crystal_core_left_by_a_thousand_armed_wraith"
+    }
+}

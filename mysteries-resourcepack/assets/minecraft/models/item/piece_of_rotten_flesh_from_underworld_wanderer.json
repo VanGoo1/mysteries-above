@@ -1,0 +1,6 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "item/piece_of_rotten_flesh_from_underworld_wanderer"
+    }
+}
