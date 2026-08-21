@@ -24,7 +24,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class DivinationArts extends ActiveAbility {
-    private int BASE_COST = 120;
+    private int BASE_COST = 70;
     private final int BASE_COOLDOWN = 60;
     private final int ANTI_DIVINATION_UNLOCK_SEQUENCE = 7;
     private final int DIVINING_ROD_DURATION_TICKS = 1200; // 20 секунд замість 30
