@@ -2,6 +2,7 @@ package me.vangoo.pathways.common.abilities;
 
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.entities.Beyonder;
+import me.vangoo.domain.rituals.IngredientHint;
 import me.vangoo.domain.rituals.RitualEffectMath;
 import me.vangoo.domain.rituals.RitualRecipe;
 import me.vangoo.domain.rituals.SacrificeAppraiser;
@@ -84,10 +85,13 @@ public class RitualEffectRunner {
         Beyonder b = context.getCasterBeyonder();
         SacrificeKind kind = classifySacrifice(context, sacrificed);
         int restored = scale(SacrificeAppraiser.spiritualityFor(kind), b.getSequence());
-        Spirituality sp = b.getSpirituality();
-        b.setSpirituality(sp.increment(Math.min(restored, sp.maximum() - sp.current())));
-        context.messaging().sendMessage(context.getCasterId(),
-                ChatColor.GREEN + "✦ Жертву прийнято: +" + restored + " духовності.");
+        Spirituality before = b.getSpirituality();
+        Spirituality after = before.increment(restored); // increment сам підтягує до максимуму
+        b.setSpirituality(after);
+        int granted = after.current() - before.current();
+        context.messaging().sendMessage(context.getCasterId(), granted > 0
+                ? ChatColor.GREEN + "✦ Жертву прийнято: +" + granted + " духовності."
+                : ChatColor.YELLOW + "✦ Жертву прийнято, але духовність уже повна.");
     }
 
     public SacrificeKind classifySacrifice(IAbilityContext context, ItemStack item) {
@@ -115,31 +119,32 @@ public class RitualEffectRunner {
         return SacrificeKind.TRIFLE;
     }
 
+    /**
+     * Ритуал одкровення: жертва — інгредієнт чужого шляху наступної Послідовності
+     * (валідує RitualMagic ДО списання), нагорода — книга-натяк, де шукати свої.
+     * Матерії не створює навмисно: інформація не стакається, тож фарм жертви нічого не дає.
+     */
     private void runBestowment(IAbilityContext context) {
         Beyonder b = context.getCasterBeyonder();
         int level = b.getSequenceLevel();
         UUID casterId = context.getCasterId();
-        if (level == 0) {
-            context.messaging().sendMessage(casterId, ChatColor.YELLOW + "✦ Ви вже на вершині шляху.");
-            return;
-        }
-        List<ItemStack> ingredients =
-                context.beyonder().getIngredientsForPotion(b.getPathway(), Sequence.of(level - 1));
-        if (ingredients == null || ingredients.isEmpty()) {
+        List<IngredientHint> hints =
+                context.beyonder().ingredientHints(b.getPathway(), Sequence.of(level - 1));
+        if (hints.isEmpty()) {
             context.messaging().sendMessage(casterId, ChatColor.YELLOW + "✦ Сутності мовчать — дарунку немає.");
             return;
         }
-        double chance = RitualEffectMath.bestowmentChance(level);
-        if (rng.nextDouble() >= chance) {
+        if (rng.nextDouble() >= RitualEffectMath.bestowmentChance(level)) {
             context.messaging().sendMessage(casterId, ChatColor.YELLOW + "✦ Сутності прийняли дар, але не відповіли.");
             return;
         }
-        ItemStack gift = ingredients.get(rng.nextInt(ingredients.size())).clone();
-        gift.setAmount(1);
+        ItemStack book = RevelationBook.create(b.getPathway().getName(),
+                b.getPathway().getSequenceName(level - 1), level - 1, hints);
         Player player = context.getCasterPlayer();
-        player.getInventory().addItem(gift)
+        player.getInventory().addItem(book)
                 .values().forEach(rest -> player.getWorld().dropItemNaturally(player.getLocation(), rest));
-        context.messaging().sendMessage(casterId, ChatColor.GREEN + "✦ Брама відчинилась — ви отримали дарунок!");
+        context.messaging().sendMessage(casterId, ChatColor.GREEN
+                + "✦ Завіса розійшлась — сліди лягли на сторінки.");
     }
 
     private void runMediumship(IAbilityContext context, Location altar) {

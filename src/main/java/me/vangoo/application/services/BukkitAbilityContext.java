@@ -39,6 +39,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     private final PathwayManager pathwayManager;
     private final me.vangoo.infrastructure.mythic.MythicCreatureGateway mythicCreatureGateway;
     private final java.util.Map<String, me.vangoo.domain.creatures.CreatureDefinition> creatureRegistry;
+    private final me.vangoo.domain.rituals.IngredientSourceIndex ingredientSources;
 
     private IVisualEffectsContext visualEffectsContext;
     private ISchedulingContext schedulingContext;
@@ -69,7 +70,8 @@ public class BukkitAbilityContext implements IAbilityContext {
             AmplificationManager amplificationManager, me.vangoo.infrastructure.waypoints.WaypointStore waypointStore,
             me.vangoo.infrastructure.theft.TheftLedger theftLedger, PathwayManager pathwayManager,
             me.vangoo.infrastructure.mythic.MythicCreatureGateway mythicCreatureGateway,
-            java.util.Map<String, me.vangoo.domain.creatures.CreatureDefinition> creatureRegistry) {
+            java.util.Map<String, me.vangoo.domain.creatures.CreatureDefinition> creatureRegistry,
+            me.vangoo.domain.rituals.IngredientSourceIndex ingredientSources) {
         this.caster = caster;
         this.plugin = plugin;
         this.cooldownManager = cooldownManager;
@@ -92,6 +94,7 @@ public class BukkitAbilityContext implements IAbilityContext {
         this.pathwayManager = pathwayManager;
         this.mythicCreatureGateway = mythicCreatureGateway;
         this.creatureRegistry = creatureRegistry;
+        this.ingredientSources = ingredientSources;
     }
 
     // ==========================================
@@ -151,7 +154,7 @@ public class BukkitAbilityContext implements IAbilityContext {
     public IBeyonderContext beyonder() {
         if (beyonderContext == null) {
             beyonderContext = new BeyonderContext(beyonderService, passiveAbilityManager, recipeUnlockService, potionManager, theftLedger,
-                    pathwayManager, mythicCreatureGateway, creatureRegistry);
+                    pathwayManager, mythicCreatureGateway, creatureRegistry, ingredientSources);
         }
         return beyonderContext;
     }

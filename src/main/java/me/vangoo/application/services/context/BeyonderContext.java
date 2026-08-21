@@ -10,6 +10,8 @@ import me.vangoo.domain.abilities.context.IBeyonderContext;
 import me.vangoo.domain.creatures.CreatureDefinition;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.entities.Pathway;
+import me.vangoo.domain.rituals.IngredientHint;
+import me.vangoo.domain.rituals.IngredientSourceIndex;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.domain.valueobjects.UnlockedRecipe;
@@ -33,8 +35,9 @@ public class BeyonderContext implements IBeyonderContext {
     private final PathwayManager pathwayManager;
     private final MythicCreatureGateway mythicCreatureGateway;
     private final Map<String, CreatureDefinition> creatureRegistry;
+    private final IngredientSourceIndex ingredientSources;
 
-    public BeyonderContext(BeyonderService beyonderService, PassiveAbilityManager passiveAbilityManager, RecipeUnlockService recipeUnlockService, PotionManager potionManager, TheftLedger theftLedger, PathwayManager pathwayManager, MythicCreatureGateway mythicCreatureGateway, Map<String, CreatureDefinition> creatureRegistry) {
+    public BeyonderContext(BeyonderService beyonderService, PassiveAbilityManager passiveAbilityManager, RecipeUnlockService recipeUnlockService, PotionManager potionManager, TheftLedger theftLedger, PathwayManager pathwayManager, MythicCreatureGateway mythicCreatureGateway, Map<String, CreatureDefinition> creatureRegistry, IngredientSourceIndex ingredientSources) {
         this.beyonderService = beyonderService;
         this.passiveAbilityManager = passiveAbilityManager;
         this.recipeUnlockService = recipeUnlockService;
@@ -43,6 +46,7 @@ public class BeyonderContext implements IBeyonderContext {
         this.pathwayManager = pathwayManager;
         this.mythicCreatureGateway = mythicCreatureGateway;
         this.creatureRegistry = creatureRegistry;
+        this.ingredientSources = ingredientSources;
     }
 
     @Override
@@ -182,6 +186,25 @@ public class BeyonderContext implements IBeyonderContext {
             }
         }
         return found;
+    }
+
+    @Override
+    public List<IngredientHint> ingredientHints(Pathway pathway, Sequence sequence) {
+        List<IngredientHint> hints = new ArrayList<>();
+        for (ItemStack ingredient : getIngredientsForPotion(pathway, sequence)) {
+            String id = CustomItemFactory.getCustomItemId(ingredient).orElse(null);
+            if (id == null) continue;
+            hints.add(new IngredientHint(displayNameOf(ingredient, id),
+                    ingredientSources.sourceOf(id).orElse(null)));
+        }
+        return hints;
+    }
+
+    private static String displayNameOf(ItemStack item, String fallbackId) {
+        if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
+            return item.getItemMeta().getDisplayName();
+        }
+        return fallbackId;
     }
 
     @Override
