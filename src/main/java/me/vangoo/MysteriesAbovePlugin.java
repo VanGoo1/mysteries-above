@@ -42,6 +42,11 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         udpGuard.sweep();
         getServer().getPluginManager().registerEvents(udpGuard, this);
 
+        // Синхронізація реєстру чарів у PacketEvents падає на модованих предметах
+        // (create:potato_cannon) стек-трейсом на кожен вхід гравця — вимикаємо її.
+        me.vangoo.infrastructure.compat.PacketEventsModdedRegistryGuard
+                .disableEnchantmentSync(pluginLogger);
+
         // Команди Citizens не повинні ховати нік живого гравця (тіло-NPC носить нік
         // кастера).
         // Реєструється і як packet-, і як Bukkit-лістенер — див. javadoc класу.
