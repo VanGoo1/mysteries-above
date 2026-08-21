@@ -8,13 +8,14 @@ import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Arrow;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
-import java.util.Set;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -26,7 +27,8 @@ public class CombatProficiency extends PermanentPassiveAbility {
     // Використовуємо Integer.MAX_VALUE, але контролюємо виконання всередині події
     private static final int PERMANENT_DURATION = Integer.MAX_VALUE;
 
-    private final Set<UUID> registeredPlayers = ConcurrentHashMap.newKeySet();
+    /** playerId -> власний ключ підписки (не playerId: чужий unsubscribeAll(casterId) зняв би її). */
+    private final Map<UUID, UUID> subscriptions = new ConcurrentHashMap<>();
 
     @Override
     public String getName() {
@@ -46,8 +48,8 @@ public class CombatProficiency extends PermanentPassiveAbility {
         UUID casterId = context.getCasterId();
         if (casterId == null) return;
 
-        // Реєструємо слухачі тільки один раз для сесії гравця
-        if (registeredPlayers.add(casterId)) {
+        // Реєструємо слухачі рівно один раз на гравця за час життя сервера.
+        if (!subscriptions.containsKey(casterId)) {
             registerCombatEvents(context, casterId);
         }
     }
@@ -55,9 +57,14 @@ public class CombatProficiency extends PermanentPassiveAbility {
     /* ===================== EVENTS REGISTRATION ===================== */
 
     private void registerCombatEvents(IAbilityContext context, UUID playerId) {
+        // Попередню підписку знімаємо явно — інакше кожна повторна реєстрація множить ефект.
+        UUID previous = subscriptions.put(playerId, UUID.randomUUID());
+        if (previous != null) context.events().unsubscribeAll(previous);
+        UUID subKey = subscriptions.get(playerId);
+
         // АТАКА
         context.events().subscribeToTemporaryEvent(
-                playerId,
+                subKey,
                 EntityDamageByEntityEvent.class,
                 event -> isAttackByPlayer(event, playerId),
                 event -> handleAttack(context, playerId, event),
@@ -66,7 +73,7 @@ public class CombatProficiency extends PermanentPassiveAbility {
 
         // ЗАХИСТ (ПАРИРУВАННЯ)
         context.events().subscribeToTemporaryEvent(
-                playerId,
+                subKey,
                 EntityDamageEvent.class,
                 event -> event.getEntity() instanceof Player p && p.getUniqueId().equals(playerId),
                 event -> handleDefense(context, playerId, event),
@@ -130,9 +137,8 @@ public class CombatProficiency extends PermanentPassiveAbility {
         // Логіка КРИТИЧНОГО УДАРУ
         boolean isCrit = ThreadLocalRandom.current().nextDouble() < CRIT_CHANCE;
         if (isCrit) {
-            // Крит додає 30% до поточної шкоди події (включаючи чари і т.д.)
-            double critBonus = event.getDamage() * 0.3;
-            bonus += critBonus;
+            // Крит додає 30% до шкоди, що реально дійде до цілі (з бронею й резистами).
+            bonus += event.getFinalDamage() * 0.3;
 
             context.effects().spawnParticle(
                     Particle.CRIT,
@@ -146,8 +152,11 @@ public class CombatProficiency extends PermanentPassiveAbility {
             );
         }
 
-        // ВАЖЛИВО: Додаємо до існуючої шкоди, а не замінюємо її
-        event.setDamage(event.getDamage() + bonus);
+        // Бонус знімаємо зі здоров'я напряму (як Deduction / WindImbuedHands): правка шкоди
+        // в самій події перераховує модифікатори броні від нової бази, і приріст губиться.
+        if (event.getEntity() instanceof LivingEntity victim) {
+            victim.setHealth(Math.max(0.0, victim.getHealth() - bonus));
+        }
     }
 
     /* ===================== DEFENSE LOGIC ===================== */
@@ -183,8 +192,12 @@ public class CombatProficiency extends PermanentPassiveAbility {
             if (playerDirection.dot(directionToAttacker) < 0) return;
         }
 
-        double reduced = event.getDamage() * (1.0 - PARRY_REDUCTION_PERCENT);
-        event.setDamage(reduced);
+        // Знімаємо 20% САМЕ від шкоди, що дійде до гравця, і правимо лише BASE:
+        // setDamage(double) перераховував би модифікатори броні від нової бази
+        // (менша база -> слабша броня), і парирування з'їдалось або й оберталось приростом.
+        double parried = event.getFinalDamage() * PARRY_REDUCTION_PERCENT;
+        double base = event.getDamage(EntityDamageEvent.DamageModifier.BASE);
+        event.setDamage(EntityDamageEvent.DamageModifier.BASE, Math.max(0.0, base - parried));
 
         // Ефекти успішного парирування
         context.effects().playSound(
@@ -225,8 +238,10 @@ public class CombatProficiency extends PermanentPassiveAbility {
 
     @Override
     public void cleanUp() {
-        // Очищаємо список зареєстрованих.
-        // Самі івенти "відімруть" завдяки перевірці isValidUser, коли Beyonder об'єкт зникне або зміниться.
-        registeredPlayers.clear();
+        // НЕ чистимо subscriptions: cleanUp() кличеться на вихід БУДЬ-ЯКОГО гравця
+        // (PassiveAbilityManager.cleanupPlayer) на спільному екземплярі здібності. Очищення
+        // змушувало всіх онлайн-гравців перепідписатись наступним тіком, а старі слухачі
+        // лишались — бонус і парирування множились на кожен чужий вихід.
+        // Самі слухачі відмирають через isValidUser, коли Beyonder зникає або змінюється.
     }
 }
