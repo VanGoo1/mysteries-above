@@ -4,6 +4,7 @@ import me.vangoo.application.services.CustomItemService;
 import me.vangoo.infrastructure.forage.ForageNode;
 import me.vangoo.infrastructure.schedulers.ForageNodeSpawner;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
@@ -47,8 +48,12 @@ public class ForageHarvestListener implements Listener {
     public void onBlockBreak(BlockBreakEvent event) {
         Optional<ForageNode> node = spawner.nodeAt(event.getBlock());
         if (node.isEmpty()) return;
-        event.setDropItems(false); // ванільний дроп донора скасовано — падає лише інгредієнт
-        harvest(node.get(), event.getBlock());
+        // Ламаємо донора самі: Arclight ігнорує setDropItems(false) і все одно кидає
+        // ванільний предмет донора (пекельна трава/коріння) поруч з інгредієнтом.
+        event.setCancelled(true);
+        Block block = event.getBlock();
+        harvest(node.get(), block);
+        block.setType(Material.AIR, false);
     }
 
     private void harvest(ForageNode node, Block block) {
