@@ -148,7 +148,7 @@ public class RitualMagic extends ActiveAbility {
         if (player == null) return;
         player.closeInventory();
 
-        String rejection = bestowmentRejection(context, recipe);
+        String rejection = bestowmentRejection(context, recipe, false);
         if (rejection != null) {
             context.messaging().sendMessage(casterId, ChatColor.RED + rejection);
             return;
@@ -173,7 +173,11 @@ public class RitualMagic extends ActiveAbility {
         }
         context.events().publishAbilityUsedEvent(this, beyonder);
 
-        if (recipe.requiresHandSacrifice()) {
+        if (recipe.type() == RitualType.BESTOWMENT) {
+            context.messaging().sendMessage(casterId, ChatColor.GRAY
+                    + "Візьміть у головну руку інгредієнт ЧУЖОГО шляху Послідовності "
+                    + (beyonder.getSequenceLevel() - 1) + " до кінця заклинання.");
+        } else if (recipe.requiresHandSacrifice()) {
             context.messaging().sendMessage(casterId, ChatColor.GRAY
                     + "Візьміть жертву в головну руку до кінця заклинання.");
         }
@@ -216,7 +220,7 @@ public class RitualMagic extends ActiveAbility {
             }
         }
 
-        String rejection = bestowmentRejection(context, recipe);
+        String rejection = bestowmentRejection(context, recipe, true);
         if (rejection != null) {
             context.messaging().sendMessage(casterId, ChatColor.RED + "Обряд згас: " + rejection);
             return;
@@ -252,13 +256,16 @@ public class RitualMagic extends ActiveAbility {
 
     /**
      * Ритуал одкровення платить не матеріалом, а чужим знанням: у головній руці має бути
-     * інгредієнт ІНШОГО шляху й саме наступної Послідовності. Перевірка стоїть двічі —
-     * до списання духовності й до знищення предмета, бо жертва рідкісна, а
-     * {@code completeRitual} нищить її ще до запуску ефекту.
+     * інгредієнт ІНШОГО шляху й саме наступної Послідовності.
+     *
+     * <p>{@code checkHand} — бо на СТАРТІ рука зайнята предметом активації здібності, і
+     * жертву гравець бере вже під час читання (та сама причина, чому решта ритуалів
+     * списують інгредієнти в кінці). Тож на старті перевіряємо лише те, що від руки не
+     * залежить, а саму жертву — в {@code completeRitual}, перед її знищенням.
      *
      * @return причина відмови або null, якщо все гаразд (і для решти ритуалів теж)
      */
-    private String bestowmentRejection(IAbilityContext context, RitualRecipe recipe) {
+    private String bestowmentRejection(IAbilityContext context, RitualRecipe recipe, boolean checkHand) {
         if (recipe.type() != RitualType.BESTOWMENT) return null;
         Player player = context.getCasterPlayer();
         if (player == null) return "немає кому вести обряд.";
@@ -268,13 +275,13 @@ public class RitualMagic extends ActiveAbility {
         if (context.beyonder().ingredientHints(beyonder.getPathway(), Sequence.of(target)).isEmpty()) {
             return "Сутності мовчать: шлях далі за вас не описано.";
         }
+        if (!checkHand) return null;
         ItemStack hand = player.getInventory().getItemInMainHand();
         boolean valid = context.beyonder().findRecipesUsing(hand).stream()
                 .anyMatch(r -> r.sequence() == target
                         && !r.pathwayName().equalsIgnoreCase(beyonder.getPathway().getName()));
         if (!valid) {
-            return "Жертва не та: потрібен інгредієнт ЧУЖОГО шляху Послідовності "
-                    + target + " у головній руці.";
+            return "у головній руці немає інгредієнта ЧУЖОГО шляху Послідовності " + target + ".";
         }
         return null;
     }
