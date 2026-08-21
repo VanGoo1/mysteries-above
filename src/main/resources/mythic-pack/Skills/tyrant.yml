@@ -2,7 +2,7 @@
 # Наступальна: морський випад — притягування з ударом (SeaLunge, S9)
 MA_Tyrant_S9_SeaLunge:
   Skills:
-  - damage{amount=5}
+  - damage{amount=9}
   - pull{velocity=1.0}
   - effect:particles{p=bubble;amount=14;hS=0.3;vS=0.5;y=1;speed=0.05}
   - effect:sound{s=entity.player.splash;v=1;p=0.8}
@@ -17,7 +17,7 @@ MA_Tyrant_S9_IllusoryScales:
 # Наступальна: шалений удар (RagingBlow, S8)
 MA_Tyrant_S8_RagingBlow:
   Skills:
-  - damage{amount=7}
+  - damage{amount=12}
   - throw{velocity=6;velocityY=2}
   - effect:particles{p=crit;amount=14;hS=0.3;vS=0.4;y=1;speed=0.2}
   - effect:sound{s=entity.ravager.attack;v=0.8;p=0.9}
@@ -38,7 +38,7 @@ MA_Tyrant_S7_AzureWave:
   - effect:sound{s=entity.player.splash.high_speed;v=1;p=1.2} @self
 MA_Tyrant_S7_AzureWave_Hit:
   Skills:
-  - damage{amount=6}
+  - damage{amount=11}
   - throw{velocity=5;velocityY=2}
   - effect:particles{p=splash;amount=24;hS=0.5;vS=0.5;y=1;speed=0.05}
 
@@ -49,7 +49,7 @@ MA_Tyrant_S7_PreciseThrow:
   - effect:sound{s=entity.arrow.shoot;v=1;p=0.8} @self
 MA_Tyrant_S7_PreciseThrow_Hit:
   Skills:
-  - damage{amount=8}
+  - damage{amount=14}
   - effect:particles{p=crit;amount=10;hS=0.2;vS=0.2;y=1;speed=0.1}
 
 # Реактивна (поза ГКД): відновна вода — самозцілення (RestorativeWater, S7)
@@ -67,14 +67,14 @@ MA_Tyrant_S6_Windblades:
   - effect:sound{s=entity.breeze.shoot;v=1;p=1.2} @self
 MA_Tyrant_S6_Windblades_Hit:
   Skills:
-  - damage{amount=7}
+  - damage{amount=12}
   - effect:particles{p=sweep_attack;amount=3;hS=0.3;vS=0.3;y=1}
   - effect:particles{p=cloud;amount=12;hS=0.4;vS=0.4;y=1;speed=0.05}
 
 # Наступальна: хвиля тиску — відкидання (PressureWave, S6)
 MA_Tyrant_S6_PressureWave:
   Skills:
-  - damage{amount=5}
+  - damage{amount=9}
   - throw{velocity=9;velocityY=4}
   - potion{type=SLOWNESS;duration=30;level=1;particles=false}
   - effect:particles{p=cloud;amount=26;hS=0.6;vS=0.4;y=1;speed=0.1}

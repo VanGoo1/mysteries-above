@@ -20,8 +20,8 @@
 spirit_wandering:
   Type: VEX
   Display: '&7Блукаючий Дух'
-  Health: 20
-  Damage: 3
+  Health: 44
+  Damage: 5
   AITargetSelectors:
   - 0 clear
   - 1 attacker

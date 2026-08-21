@@ -2,8 +2,8 @@ death_blackspotted_frog_9:
   Template: MA_Death_S9
   Type: FROG
   Display: '&2Чорноплямиста жаба'
-  Health: 22
-  Damage: 4
+  Health: 48
+  Damage: 7
   # FROG — мирний ванільний тип: без цього блоку моб бере ціль (MA_Base), але не б'є.
   AIGoalSelectors:
   - 0 clear
@@ -18,8 +18,8 @@ death_calling_crow_8:
   Template: MA_Death_S8
   Type: PARROT
   Display: '&8Смертозивна ворона'
-  Health: 40
-  Damage: 5
+  Health: 80
+  Damage: 9
   # PARROT — мирний ванільний тип: той самий meleeattack-виняток.
   AIGoalSelectors:
   - 0 clear
@@ -34,8 +34,8 @@ death_phantom_cat_7:
   Template: MA_Death_S7
   Type: CAT
   Display: '&7Кіт-Привид'
-  Health: 66
-  Damage: 7
+  Health: 132
+  Damage: 12
   # CAT — мирний ванільний тип: той самий meleeattack-виняток.
   AIGoalSelectors:
   - 0 clear
@@ -51,8 +51,8 @@ death_pale_lich_6:
   Template: MA_Death_S6
   Type: WITHER_SKELETON
   Display: '&fБлідий Ліч'
-  Health: 92
-  Damage: 9
+  Health: 166
+  Damage: 16
   Options:
     MovementSpeed: 0.27
     Scale: 1.2
@@ -64,8 +64,8 @@ death_underworld_wanderer_5:
   # пише "Invalid villager type configured" незалежно від конфігу.
   Type: ZOMBIE
   Display: '&8Мандрівник Загробного світу'
-  Health: 140
-  Damage: 10
+  Health: 224
+  Damage: 18
   Options:
     MovementSpeed: 0.26
     Scale: 1.1
@@ -74,8 +74,8 @@ death_thousand_armed_wraith_5:
   Template: MA_Death_S5
   Type: VEX
   Display: '&5Тисячорукий Привид'
-  Health: 130
-  Damage: 12
+  Health: 208
+  Damage: 21
   Options:
     MovementSpeed: 0.32
     Scale: 1.6
