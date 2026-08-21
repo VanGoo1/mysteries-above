@@ -76,29 +76,33 @@ public class VanillaStructureLootListener implements Listener {
         Set<LootTier> base = EnumSet.of(LootTier.BASE);
         Set<LootTier> baseRare = EnumSet.of(LootTier.BASE, LootTier.RARE);
 
+        // Шанси свідомо низькі: інгредієнти тепер дають форедж, істоти MythicMobs,
+        // сховища церков і схованки орденів — скрині лишились найслабшим джерелом.
+
         // Звичайні скрині -> лише BASE
-        structures.put("shipwreck", new StructureLootRule(0.10, base));
-        structures.put("mineshaft", new StructureLootRule(0.10, base));
-        structures.put("desert_pyramid", new StructureLootRule(0.10, base));
-        structures.put("jungle_temple", new StructureLootRule(0.10, base));
-        structures.put("buried_treasure", new StructureLootRule(0.15, base));
-        structures.put("ocean_ruin_warm", new StructureLootRule(0.10, base));
-        structures.put("ocean_ruin_cold", new StructureLootRule(0.10, base));
-        structures.put("ruined_portal", new StructureLootRule(0.20, base));
-        structures.put("simple_dungeon", new StructureLootRule(0.10, base));
-        structures.put("trial_chambers/supply", new StructureLootRule(0.10, base));
+        structures.put("shipwreck", new StructureLootRule(0.03, base));
+        structures.put("mineshaft", new StructureLootRule(0.03, base));
+        structures.put("desert_pyramid", new StructureLootRule(0.03, base));
+        structures.put("jungle_temple", new StructureLootRule(0.03, base));
+        structures.put("buried_treasure", new StructureLootRule(0.05, base));
+        structures.put("ocean_ruin_warm", new StructureLootRule(0.03, base));
+        structures.put("ocean_ruin_cold", new StructureLootRule(0.03, base));
+        structures.put("ruined_portal", new StructureLootRule(0.06, base));
+        structures.put("simple_dungeon", new StructureLootRule(0.03, base));
+        structures.put("trial_chambers/supply", new StructureLootRule(0.03, base));
 
         // Данжі / спец-структури -> BASE + RARE
-        structures.put("mansion", new StructureLootRule(0.20, baseRare));
-        structures.put("ancient_city", new StructureLootRule(0.25, baseRare));
-        structures.put("bastion", new StructureLootRule(0.20, baseRare));
-        structures.put("nether_bridge", new StructureLootRule(0.05, baseRare));
-        structures.put("end_city", new StructureLootRule(0.10, baseRare));
-        structures.put("stronghold", new StructureLootRule(0.10, baseRare));
-        structures.put("pillager_outpost", new StructureLootRule(0.20, baseRare));
-        structures.put("trial_chambers/corridor", new StructureLootRule(0.10, baseRare));
-        structures.put("mysteries", new StructureLootRule(0.15, baseRare));
-        structures.put("nova_structures", new StructureLootRule(0.15, baseRare));
+        structures.put("mansion", new StructureLootRule(0.07, baseRare));
+        structures.put("ancient_city", new StructureLootRule(0.09, baseRare));
+        structures.put("bastion", new StructureLootRule(0.07, baseRare));
+        structures.put("nether_bridge", new StructureLootRule(0.02, baseRare));
+        structures.put("end_city", new StructureLootRule(0.04, baseRare));
+        structures.put("stronghold", new StructureLootRule(0.04, baseRare));
+        structures.put("pillager_outpost", new StructureLootRule(0.06, baseRare));
+        structures.put("trial_chambers/corridor", new StructureLootRule(0.04, baseRare));
+        // Власні структури плагіна лишаються найщедрішими зі скринь
+        structures.put("mysteries", new StructureLootRule(0.10, baseRare));
+        structures.put("nova_structures", new StructureLootRule(0.06, baseRare));
 
         logger.info("Enabled vanilla structures for custom loot: " + structures.size());
         return structures;
@@ -120,7 +124,7 @@ public class VanillaStructureLootListener implements Listener {
         }
 
         List<ItemStack> currentLoot = event.getLoot();
-        int itemsToAdd = (random.nextDouble() <= 0.20) ? 2 : 1;
+        int itemsToAdd = (random.nextDouble() <= 0.08) ? 2 : 1;
 
         logger.fine("Adding " + itemsToAdd + " custom items (tiers " + tiers + ") to " + lootTableKey);
 
