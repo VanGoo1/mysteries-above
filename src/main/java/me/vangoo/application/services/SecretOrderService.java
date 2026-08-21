@@ -1,6 +1,7 @@
 package me.vangoo.application.services;
 
 import me.vangoo.domain.brewing.RecipeDefinition;
+import me.vangoo.domain.creatures.ApexGate;
 import me.vangoo.domain.creatures.CreatureDefinition;
 import me.vangoo.domain.creatures.CreatureTier;
 import me.vangoo.domain.entities.Beyonder;
@@ -556,7 +557,7 @@ public class SecretOrderService {
         }
         Map<String, String> pathwayToGroup = pathwayToGroupMap();
         List<OrderTask> tasks = taskGenerator.generate(config.tasksMaxActive(), order, pathwayToGroup,
-                creatureCandidates(), ingredientCandidatesFor(player), raidableChurches(),
+                creatureCandidates(player), ingredientCandidatesFor(player), raidableChurches(),
                 doubleAgentChurchOf(player), rankOf(player), random);
         if (tasks.isEmpty()) {
             return false;
@@ -565,8 +566,12 @@ public class SecretOrderService {
         return true;
     }
 
-    private List<OrderTaskGenerator.CreatureCandidate> creatureCandidates() {
+    /** Той самий гейт, що й на спавні: апекс, якого гравець не зустріне, не може стати HUNT-ціллю. */
+    private List<OrderTaskGenerator.CreatureCandidate> creatureCandidates(Player player) {
+        Beyonder beyonder = beyonderService.getBeyonder(player.getUniqueId());
+        Integer sequence = beyonder == null ? null : beyonder.getSequenceLevel();
         return creatureRegistry.values().stream()
+                .filter(c -> ApexGate.allows(c.tier(), sequence))
                 .map(c -> new OrderTaskGenerator.CreatureCandidate(c.id(), c.pathway(), c.sequence()))
                 .toList();
     }

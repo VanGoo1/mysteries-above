@@ -2,10 +2,10 @@ package me.vangoo.infrastructure.schedulers;
 
 import me.vangoo.MysteriesAbovePlugin;
 import me.vangoo.application.services.BeyonderService;
+import me.vangoo.domain.creatures.ApexGate;
 import me.vangoo.domain.creatures.ConvergenceBias;
 import me.vangoo.domain.creatures.CreatureDefinition;
 import me.vangoo.domain.creatures.CreatureSelector;
-import me.vangoo.domain.creatures.SpawnDistanceGate;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.infrastructure.creatures.AmbientSpawnLocation;
 import me.vangoo.infrastructure.mythic.MythicCreatureGateway;
@@ -95,8 +95,7 @@ public final class AmbientCreatureSpawner {
 
         Location loc = player.getLocation();
         if (loc.getWorld() == null) return;
-        Location ws = loc.getWorld().getSpawnLocation();
-        if (!SpawnDistanceGate.isFarEnough(loc.getX() - ws.getX(), loc.getZ() - ws.getZ(), minSpawnDistance)) return;
+        if (!me.vangoo.infrastructure.creatures.SpawnDistance.isFarEnough(loc, minSpawnDistance)) return;
 
         if (random.nextDouble() >= chance) return;
 
@@ -110,6 +109,8 @@ public final class AmbientCreatureSpawner {
         String biome = loc.getBlock().getBiome().name();
         Optional<CreatureDefinition> pick = selector.pickForAmbient(biome, bias, random.nextDouble());
         if (pick.isEmpty()) return;
+        // Той самий гейт сили, що й у структурному спавні: apex не приходить до слабкого гравця
+        if (!ApexGate.allows(pick.get().tier(), beyonder.getSequenceLevel())) return;
 
         boolean aquatic = AmbientSpawnLocation.isAquatic(pick.get().baseEntityType());
         Optional<Location> spot = AmbientSpawnLocation.findSpawnNear(loc, SPAWN_MIN_R, SPAWN_MAX_R, aquatic);
