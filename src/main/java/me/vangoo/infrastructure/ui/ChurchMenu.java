@@ -451,7 +451,7 @@ public class ChurchMenu {
                 .disableAllInteractions()
                 .create();
         gui.setItem(2, 4, new GuiItem(button(Material.CHEST, ChatColor.GREEN + "Пожертвувати предмет у руці",
-                "Інгредієнт, книга рецептів чи Характеристика"),
+                "Інгредієнт чи Характеристика"),
                 e -> runSynced(player, () -> {
                     int points = churchService.donateFromHand(player);
                     if (points > 0) {
