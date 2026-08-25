@@ -75,6 +75,8 @@ public class ServiceContainer {
     private me.vangoo.infrastructure.organizations.JSONMembershipRepository membershipRepository;
     private me.vangoo.infrastructure.organizations.ChurchSiteRepository churchSiteRepository;
     private me.vangoo.infrastructure.organizations.ChurchStateRepository churchStateRepository;
+    private me.vangoo.infrastructure.organizations.ReturnPointRepository returnPointRepository;
+    private me.vangoo.infrastructure.organizations.ShrineRegistry shrineRegistry;
     private me.vangoo.infrastructure.organizations.OrderConfig orderConfig;
     private me.vangoo.infrastructure.organizations.JSONOrderMembershipRepository orderMembershipRepository;
     private me.vangoo.infrastructure.organizations.OrderStateRepository orderStateRepository;
@@ -98,8 +100,11 @@ public class ServiceContainer {
     private me.vangoo.application.services.CreatureNamer creatureNamer;
     private ChurchService churchService;
     private me.vangoo.infrastructure.citizens.ChurchPriestService churchPriestService;
-    private me.vangoo.infrastructure.organizations.ChurchStructurePlacer churchStructurePlacer;
     private me.vangoo.infrastructure.organizations.ChurchSiteService churchSiteService;
+    private me.vangoo.infrastructure.organizations.ChurchWorldProvider churchWorldProvider;
+    private me.vangoo.infrastructure.organizations.ShrineService shrineService;
+    private me.vangoo.infrastructure.organizations.VillageShrinePlacer villageShrinePlacer;
+    private me.vangoo.application.services.context.VisualEffectsContext ambientVisualEffects;
     private me.vangoo.infrastructure.organizations.DuelArenaProvider duelArenaProvider;
     private ChurchDuelService churchDuelService;
     private me.vangoo.presentation.listeners.DuelListener duelListener;
@@ -122,6 +127,7 @@ public class ServiceContainer {
     private me.vangoo.infrastructure.schedulers.ForageNodeSpawner forageNodeSpawner;
     private GatheringScheduler gatheringScheduler;
     private me.vangoo.infrastructure.schedulers.ChurchOrderScheduler churchOrderScheduler;
+    private me.vangoo.infrastructure.schedulers.ShrineAmbienceScheduler shrineAmbienceScheduler;
     private me.vangoo.infrastructure.schedulers.OrderScheduler orderScheduler;
 
     // Event listeners
@@ -130,6 +136,7 @@ public class ServiceContainer {
     private WardenRemnantCodec wardenRemnantCodec;
     private RampageRemnantDeathListener rampageRemnantDeathListener;
     private java.util.Map<String, me.vangoo.domain.creatures.CreatureDefinition> creatureRegistry;
+    private me.vangoo.infrastructure.forage.ForageConfig forageConfig;
     private me.vangoo.domain.creatures.CreatureSelector creatureSelector;
     private me.vangoo.infrastructure.mythic.MythicCreatureGateway mythicCreatureGateway;
     private me.vangoo.presentation.listeners.CreatureDeathListener creatureDeathListener;
@@ -251,6 +258,10 @@ public class ServiceContainer {
                 plugin.getDataFolder() + File.separator + "church-sites.json");
         this.churchStateRepository = new me.vangoo.infrastructure.organizations.ChurchStateRepository(
                 plugin.getDataFolder() + File.separator + "churches-state.json");
+        this.returnPointRepository = new me.vangoo.infrastructure.organizations.ReturnPointRepository(
+                plugin.getDataFolder() + File.separator + "church-returns.json");
+        this.shrineRegistry = new me.vangoo.infrastructure.organizations.ShrineRegistry(
+                plugin.getDataFolder() + File.separator + "shrines.json");
 
         // --- Спек 6c: таємні організації ---
         this.orderConfig = me.vangoo.infrastructure.organizations.OrderConfig.load(plugin);
@@ -294,14 +305,18 @@ public class ServiceContainer {
         this.creatureRegistry = java.util.Collections.unmodifiableMap(creatureConfigLoader.load());
         this.creatureSelector = new me.vangoo.domain.creatures.CreatureSelector(creatureRegistry.values());
         this.forageNodeCodec = new me.vangoo.infrastructure.forage.ForageNodeCodec(plugin);
+        // Форедж-конфіг читається тут, а не в initializeSchedulers: із нього ще до
+        // AbilityContextFactory будується IngredientSourceIndex (Ритуал одкровення).
+        this.forageConfig = new me.vangoo.infrastructure.forage.ForageConfigLoader(plugin).load();
         this.mythicCreatureGateway = new me.vangoo.infrastructure.mythic.MythicCreatureGateway(plugin);
         this.creatureDeathListener = new me.vangoo.presentation.listeners.CreatureDeathListener(
                 mythicCreatureGateway, creatureRegistry, lootGenerationService, beyonderService);
-        double minSpawnDistance = plugin.getConfig().getDouble("creatures.min-spawn-distance", 2000.0);
+        double minSpawnDistance = plugin.getConfig().getDouble("creatures.min-spawn-distance", 3000.0);
         this.naturalCreatureSpawnListener = new me.vangoo.presentation.listeners.NaturalCreatureSpawnListener(
                 creatureSelector, mythicCreatureGateway, minSpawnDistance, beyonderService);
         this.structureCreatureSpawnListener = new me.vangoo.presentation.listeners.StructureCreatureSpawnListener(
-                creatureSelector, mythicCreatureGateway, minSpawnDistance);
+                plugin, creatureSelector, mythicCreatureGateway, beyonderService, minSpawnDistance,
+                plugin.getConfig().getDouble("creatures.structure.chance", 0.10));
         this.creatureDamageListener = new me.vangoo.presentation.listeners.CreatureDamageListener(
                 mythicCreatureGateway, creatureRegistry, beyonderService);
 
@@ -332,7 +347,9 @@ public class ServiceContainer {
                 theftLedger,
                 pathwayManager,
                 mythicCreatureGateway,
-                creatureRegistry
+                creatureRegistry,
+                new me.vangoo.domain.rituals.IngredientSourceIndex(
+                        creatureRegistry.values(), forageConfig.biomes())
         );
 
         this.abilityExecutor = new AbilityExecutor(
@@ -361,7 +378,7 @@ public class ServiceContainer {
                 marketItemClassifier, gatheringVenueProvider, gatheringAnonymizer,
                 gatheringSnapshotRepository, organizerNpcService, beyonderService,
                 recipeUnlockService, potionManager, marketItemNamer);
-        this.abilityExecutor.setGatheringAbilityGuard(gatheringService);
+        this.abilityExecutor.addAbilityGuard(gatheringService);
 
         // --- Спек 6b: церкви ---
         this.churchService = new ChurchService(plugin, churchConfig, institutionRegistry,
@@ -371,9 +388,22 @@ public class ServiceContainer {
         // Личина (Помилка, Посл. 5) ходить у церкви через контекст здібностей.
         this.abilityContextFactory.setChurchService(churchService);
         this.churchPriestService = new me.vangoo.infrastructure.citizens.ChurchPriestService(institutionRegistry);
-        this.churchStructurePlacer = new me.vangoo.infrastructure.organizations.ChurchStructurePlacer(plugin);
         this.churchSiteService = new me.vangoo.infrastructure.organizations.ChurchSiteService(
-                churchSiteRepository, churchPriestService, churchStructurePlacer, churchService);
+                churchSiteRepository, churchPriestService, churchService);
+        var shrineSettings = churchConfig.shrine();
+        this.churchWorldProvider = new me.vangoo.infrastructure.organizations.ChurchWorldProvider(
+                plugin, institutionRegistry, churchSiteService, shrineSettings.pocketWorldSpacing());
+        this.shrineService = new me.vangoo.infrastructure.organizations.ShrineService(
+                institutionRegistry, churchWorldProvider, returnPointRepository, shrineRegistry,
+                shrineSettings.interactRadius(), shrineSettings.focusBlock());
+        // Ефекти святинь малює той самий VisualEffectsContext, що й здібності; він не
+        // прив'язаний до кастера, тож одного екземпляра на шедулер досить.
+        this.ambientVisualEffects = new me.vangoo.application.services.context.VisualEffectsContext(
+                effectManager, (MysteriesAbovePlugin) plugin);
+        // У храмі сили мовчать — той самий шов, що й на підпільних зборах.
+        this.abilityExecutor.addAbilityGuard(shrineService::blocksAbilities);
+        this.villageShrinePlacer = new me.vangoo.infrastructure.organizations.VillageShrinePlacer(
+                plugin, shrineRegistry, shrineService, shrineSettings.villageGuardRadius());
 
         // --- Спек 6c: таємні організації ---
         this.secretOrderService = new SecretOrderService(plugin, orderConfig, institutionRegistry,
@@ -435,7 +465,7 @@ public class ServiceContainer {
 
         this.rampageScheduler = new RampageScheduler(plugin, rampageManager);
 
-        double ambientMinDistance = plugin.getConfig().getDouble("creatures.min-spawn-distance", 2000.0);
+        double ambientMinDistance = plugin.getConfig().getDouble("creatures.min-spawn-distance", 3000.0);
         long ambientInterval = plugin.getConfig().getLong("creatures.ambient.interval-seconds", 60L);
         double ambientChance = plugin.getConfig().getDouble("creatures.ambient.chance", 0.022);
         int ambientMaxNearby = plugin.getConfig().getInt("creatures.ambient.max-nearby", 3);
@@ -453,13 +483,10 @@ public class ServiceContainer {
                 creatureRegistry, characteristicCodec, wardenRemnantCodec,
                 convInterval, convRadius, convDrift, convMobNudge, convWhisper);
 
-        me.vangoo.infrastructure.forage.ForageConfigLoader forageConfigLoader =
-                new me.vangoo.infrastructure.forage.ForageConfigLoader(plugin);
-        me.vangoo.infrastructure.forage.ForageConfig forageConfig = forageConfigLoader.load();
         me.vangoo.domain.forage.ForageSelector forageSelector =
-                new me.vangoo.domain.forage.ForageSelector(forageConfig.biomes());
+                new me.vangoo.domain.forage.ForageSelector(forageConfig.biomes(), potionRecipeConfig);
         this.forageNodeSpawner = new me.vangoo.infrastructure.schedulers.ForageNodeSpawner(
-                (MysteriesAbovePlugin) plugin, forageSelector, forageNodeCodec, forageConfig);
+                (MysteriesAbovePlugin) plugin, forageSelector, forageNodeCodec, forageConfig, beyonderService);
 
         this.abilityMenuItemUpdater = new AbilityMenuItemUpdater(
                 plugin,
@@ -469,6 +496,13 @@ public class ServiceContainer {
 
         this.gatheringScheduler = new GatheringScheduler(plugin, gatheringService);
         this.churchOrderScheduler = new me.vangoo.infrastructure.schedulers.ChurchOrderScheduler(plugin, churchService);
+
+        var shrineSettings = churchConfig.shrine();
+        if (shrineSettings.ambienceEnabled()) {
+            this.shrineAmbienceScheduler = new me.vangoo.infrastructure.schedulers.ShrineAmbienceScheduler(
+                    plugin, shrineService, ambientVisualEffects,
+                    shrineSettings.ambienceRadius(), shrineSettings.ambiencePeriodTicks());
+        }
         this.orderScheduler = new me.vangoo.infrastructure.schedulers.OrderScheduler(plugin, secretOrderService);
     }
 
@@ -545,6 +579,9 @@ public class ServiceContainer {
     public ChurchService getChurchService() { return churchService; }
     public me.vangoo.infrastructure.citizens.ChurchPriestService getChurchPriestService() { return churchPriestService; }
     public me.vangoo.infrastructure.organizations.ChurchSiteService getChurchSiteService() { return churchSiteService; }
+    public me.vangoo.infrastructure.organizations.ChurchWorldProvider getChurchWorldProvider() { return churchWorldProvider; }
+    public me.vangoo.infrastructure.organizations.ShrineService getShrineService() { return shrineService; }
+    public me.vangoo.infrastructure.organizations.VillageShrinePlacer getVillageShrinePlacer() { return villageShrinePlacer; }
     public ChurchDuelService getChurchDuelService() { return churchDuelService; }
     public me.vangoo.presentation.listeners.DuelListener getDuelListener() { return duelListener; }
     public SecretOrderService getSecretOrderService() { return secretOrderService; }
@@ -602,6 +639,9 @@ public class ServiceContainer {
         gatheringScheduler.start();
         churchOrderScheduler.start();
         orderScheduler.start();
+        if (shrineAmbienceScheduler != null) {
+            shrineAmbienceScheduler.start();
+        }
 
         // Start batched save scheduler (every 5 minutes)
         startBatchedSaveScheduler();
@@ -668,6 +708,9 @@ public class ServiceContainer {
         }
         if (orderScheduler != null) {
             orderScheduler.stop();
+        }
+        if (shrineAmbienceScheduler != null) {
+            shrineAmbienceScheduler.stop();
         }
     }
 

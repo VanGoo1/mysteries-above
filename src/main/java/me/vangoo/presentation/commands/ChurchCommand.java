@@ -7,6 +7,7 @@ import me.vangoo.domain.organizations.Institution;
 import me.vangoo.domain.organizations.Membership;
 import me.vangoo.domain.organizations.PotionOrder;
 import me.vangoo.infrastructure.organizations.ChurchSiteService;
+import me.vangoo.infrastructure.organizations.ShrineService;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -28,10 +29,13 @@ public class ChurchCommand implements CommandExecutor, TabCompleter {
 
     private final ChurchService churchService;
     private final ChurchSiteService siteService;
+    private final ShrineService shrineService;
 
-    public ChurchCommand(ChurchService churchService, ChurchSiteService siteService) {
+    public ChurchCommand(ChurchService churchService, ChurchSiteService siteService,
+                         ShrineService shrineService) {
         this.churchService = churchService;
         this.siteService = siteService;
+        this.shrineService = shrineService;
     }
 
     @Override
@@ -43,12 +47,54 @@ public class ChurchCommand implements CommandExecutor, TabCompleter {
         switch (args[0].toLowerCase()) {
             case "bind" -> handleBind(sender, args);
             case "unbind" -> handleUnbind(sender);
+            case "shrine" -> handleShrine(sender, args);
             case "leave" -> handleLeave(sender, args);
             case "info" -> handleInfo(sender);
             default -> sender.sendMessage(PREFIX + ChatColor.GRAY
-                    + "Використання: /church <bind|unbind|leave|info>");
+                    + "Використання: /church <bind|unbind|shrine|leave|info>");
         }
         return true;
+    }
+
+    /**
+     * Шрайни розсіює датапак, але лише по ЩОЙНО згенерованих чанках — у вже обжитому світі
+     * жодної святині не з'явиться. Ця команда закриває цю дірку вручну.
+     */
+    private void handleShrine(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("mysteriesabove.admin")) {
+            sender.sendMessage(PREFIX + ChatColor.RED + "Недостатньо прав.");
+            return;
+        }
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(PREFIX + ChatColor.RED + "Ця команда доступна лише гравцям.");
+            return;
+        }
+        if (args.length < 2) {
+            sender.sendMessage(PREFIX + ChatColor.GRAY + "Використання: /church shrine <institutionId>");
+            return;
+        }
+        String institutionId = args[1];
+        Optional<Institution> institution = churchService.registry().byId(institutionId);
+        if (institution.isEmpty()
+                || institution.get().type() != me.vangoo.domain.organizations.InstitutionType.CHURCH) {
+            player.sendMessage(PREFIX + ChatColor.RED + "Невідома церква: " + institutionId);
+            return;
+        }
+        // Церква без храму (шлях ще не реалізований або будівля не заявилась) дала б
+        // святиню, яка мовчки нікуди не веде — і виглядало б це як зламаний телепорт.
+        if (!shrineService.hasTemple(institution.get().id())) {
+            player.sendMessage(PREFIX + ChatColor.RED + "У церкви \""
+                    + institution.get().displayName() + "\" немає храму — святиня вела б у порожнечу.");
+            player.sendMessage(PREFIX + ChatColor.GRAY + "Доступні: "
+                    + String.join(", ", shrineService.usableChurchIds()));
+            return;
+        }
+        if (shrineService.placeMarker(player.getLocation(), institution.get().id())) {
+            player.sendMessage(PREFIX + ChatColor.GREEN + "Святиню \""
+                    + institution.get().displayName() + "\" поставлено тут.");
+        } else {
+            player.sendMessage(PREFIX + ChatColor.RED + "Не вдалося поставити святиню.");
+        }
     }
 
     private void handleBind(CommandSender sender, String[] args) {
@@ -173,12 +219,20 @@ public class ChurchCommand implements CommandExecutor, TabCompleter {
             if (admin) {
                 options.add("bind");
                 options.add("unbind");
+                options.add("shrine");
             }
             String lower = args[0].toLowerCase();
             return options.stream().filter(o -> o.startsWith(lower)).toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("leave")) {
             return "confirm".startsWith(args[1].toLowerCase()) ? List.of("confirm") : List.of();
+        }
+        if (args.length == 2 && admin && args[0].equalsIgnoreCase("shrine")) {
+            // Підказуємо лише ті, що справді мають храм: інші однаково відхилить команда.
+            String lower = args[1].toLowerCase();
+            return shrineService.usableChurchIds().stream()
+                    .filter(id -> id.toLowerCase().startsWith(lower))
+                    .toList();
         }
         if (args.length == 2 && admin && args[0].equalsIgnoreCase("bind")) {
             String lower = args[1].toLowerCase();

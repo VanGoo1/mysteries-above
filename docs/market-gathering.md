@@ -115,11 +115,15 @@
   `VIOLATION_DEBOUNCE_MILLIS` (2с) від спаму подій, при KICK — `bannedFromNext.add(id)`
   + `expel(player)` (звільняє ескроу гравця, знімає анонімність, телепортує додому) + `persist()`.
 - Каст здібності на зборах блокує `AbilityExecutor` через сеттер-інжектований
-  `GatheringAbilityGuard` (`application.services`, інтерфейс
+  `AbilityGuard` (`application.services`, інтерфейс
   `interceptAbility(UUID) → boolean`) — `GatheringService` реалізує його й
   фіксує порушення в `interceptAbility`. Провід —
-  `ServiceContainer`: `abilityExecutor.setGatheringAbilityGuard(gatheringService)`
+  `ServiceContainer`: `abilityExecutor.addAbilityGuard(gatheringService)`
   (не конструкторна залежність — уникає циклу `AbilityExecutor` ↔ market-сервіси).
+  Гардів кілька й вони нічого не знають один про одного: тим самим швом мовчать сили
+  в кишеньковому світі храмів (`ShrineService.blocksAbilities`, див.
+  `.claude/rules/church-structures.md`). Раніше інтерфейс звався
+  `GatheringAbilityGuard` і поле було одне — перейменовано, коли споживачів стало два.
   Удар/PvP на зборах — окрема точка входу в `GatheringListener`, що так само
   кличе `recordViolation`.
 - Бан діє РІВНО на наступний збір: `bannedFromNext` (накопичується під час

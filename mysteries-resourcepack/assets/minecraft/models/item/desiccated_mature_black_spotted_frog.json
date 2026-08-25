@@ -1,0 +1,6 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "item/desiccated_mature_black_spotted_frog"
+    }
+}

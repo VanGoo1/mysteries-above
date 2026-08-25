@@ -1,7 +1,7 @@
 name: Mysteries-Above
 version: 0.1
 main: me.vangoo.MysteriesAbovePlugin
-api-version: "26.2"
+api-version: "1.21"
 # BetterModel — softdepend: моделі мобів косметичні, без плагіна моби рендеряться ванільними.
 # Саме softdepend, а не depend, ще й тому, що він гарантує порядок: BetterModel увімкнеться
 # ДО нас, тож `bettermodel reload` у onEnable матиме що перезавантажувати.

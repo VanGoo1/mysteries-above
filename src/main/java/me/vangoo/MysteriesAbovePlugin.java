@@ -4,7 +4,6 @@ import com.github.retrooper.packetevents.PacketEvents;
 import de.slikey.effectlib.EffectManager;
 import fr.skytasul.glowingentities.GlowingEntities;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
-import me.vangoo.application.services.*;
 import me.vangoo.infrastructure.citizens.MarionetteMinionTrait;
 import me.vangoo.infrastructure.di.ServiceContainer;
 import me.vangoo.presentation.commands.*;
@@ -36,10 +35,10 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
         this.pluginLogger = this.getLogger();
 
-        // Команди Citizens не повинні ховати нік живого гравця (тіло-NPC носить нік кастера).
+        // Команди Citizens не повинні ховати нік живого гравця (тіло-NPC носить нік
+        // кастера).
         // Реєструється і як packet-, і як Bukkit-лістенер — див. javadoc класу.
-        me.vangoo.infrastructure.disguise.CitizensNameplateGuard nameplateGuard =
-                new me.vangoo.infrastructure.disguise.CitizensNameplateGuard();
+        me.vangoo.infrastructure.disguise.CitizensNameplateGuard nameplateGuard = new me.vangoo.infrastructure.disguise.CitizensNameplateGuard();
         PacketEvents.getAPI().getEventManager().registerListener(nameplateGuard);
         getServer().getPluginManager().registerEvents(nameplateGuard, this);
 
@@ -66,7 +65,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         }
 
         if (glowingEntities == null) {
-            pluginLogger.severe("GlowingEntities is null! Make sure the GlowingEntities plugin is installed and enabled.");
+            pluginLogger
+                    .severe("GlowingEntities is null! Make sure the GlowingEntities plugin is installed and enabled.");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
@@ -74,7 +74,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         // Initialize service container
         services = new ServiceContainer(this, glowingEntities, effectManager);
 
-        // MythicMobs bridge: static holder must be initialized before CustomComponentRegistry
+        // MythicMobs bridge: static holder must be initialized before
+        // CustomComponentRegistry
         // scans the components package (see .claude/rules/mythic-creatures.md).
         me.vangoo.infrastructure.mythic.MythicBridge.init(services.getBeyonderService(),
                 services.getAbilityLockManager(), services.getTheftLedger());
@@ -82,8 +83,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
         boolean packChanged = new me.vangoo.infrastructure.mythic.MythicPackInstaller(this).installOrUpdate();
         if (packChanged) {
-            getServer().getScheduler().runTaskLater(this, () ->
-                    getServer().dispatchCommand(getServer().getConsoleSender(), "mythicmobs reload"), 20L);
+            getServer().getScheduler().runTaskLater(this,
+                    () -> getServer().dispatchCommand(getServer().getConsoleSender(), "mythicmobs reload"), 20L);
         }
 
         installBetterModels();
@@ -92,7 +93,20 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         registerEvents();
         registerCommands();
 
-        // Respawn church priests from persisted sites (Citizens already available via depend).
+        // Pocket world with the temples: create it, paste the buildings and claim their
+        // anchors. Must run BEFORE spawnAllNpcs() — a freshly claimed site has no priest
+        // yet, and there would be nowhere to spawn one otherwise.
+        if (services.getChurchConfig().shrine().pocketWorldEnabled()) {
+            services.getChurchWorldProvider().initialize();
+        }
+        // Святині перевіряємо ПІСЛЯ храмів: перевірка рахує церкви, що ще чекають на свою,
+        // а це відомо лише коли храми вже заявлені.
+        if (services.getChurchConfig().shrine().placeNearVillages()) {
+            services.getVillageShrinePlacer().validateSetup();
+        }
+
+        // Respawn church priests from persisted sites (Citizens already available via
+        // depend).
         // Call exactly once — a double call would orphan duplicate NPCs.
         services.getChurchSiteService().spawnAllNpcs();
 
@@ -107,7 +121,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         // Start schedulers
         services.startSchedulers();
 
-        // Відновлення після рестарту/крашу: незакрита сесія Зборів → повернення власникам
+        // Відновлення після рестарту/крашу: незакрита сесія Зборів → повернення
+        // власникам
         services.getGatheringService().initializeFromSnapshot();
 
         // Setup event subscriptions
@@ -130,23 +145,28 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         pluginLogger.info("Custom items system initialized:");
         pluginLogger.info("  Total items: " + services.getCustomItemService().getStatistics().get("totalItems"));
         pluginLogger.info("Recipe and crafting system initialized");
-        // PathwayManager потрібен трейту для регідрації шляху під час завантаження NPC (load(DataKey)).
-        // Citizens завантажує NPC відкладено (після onEnable усіх плагінів), тож встигаємо подати його.
+        // PathwayManager потрібен трейту для регідрації шляху під час завантаження NPC
+        // (load(DataKey)).
+        // Citizens завантажує NPC відкладено (після onEnable усіх плагінів), тож
+        // встигаємо подати його.
         MarionetteMinionTrait.bindPathwayManager(services.getPathwayManager());
         CitizensAPI.getTraitFactory().registerTrait(
-                TraitInfo.create(MarionetteMinionTrait.class).withName("marionette_minion")
-        );
+                TraitInfo.create(MarionetteMinionTrait.class).withName("marionette_minion"));
         // Фолбек-скан: Citizens завантажує NPC через 1 тік після свого onEnable і кидає
-        // CitizensEnableEvent (його ловить MarionetteRestorer). Якщо подію пропущено (порядок
-        // увімкнення/особливості ядра) — повторюємо скан із запасом; restoreNow() ідемпотентний.
+        // CitizensEnableEvent (його ловить MarionetteRestorer). Якщо подію пропущено
+        // (порядок
+        // увімкнення/особливості ядра) — повторюємо скан із запасом; restoreNow()
+        // ідемпотентний.
         getServer().getScheduler().runTaskLater(this,
                 () -> services.getMarionetteRestorer().restoreNow(), 40L);
     }
 
     /**
-     * Ставить .bbmodel-моделі в plugins/BetterModel/models і перезавантажує BetterModel,
+     * Ставить .bbmodel-моделі в plugins/BetterModel/models і перезавантажує
+     * BetterModel,
      * якщо файли змінились (той самий контракт, що й для MythicMobs-паку вище).
-     * BetterModel у softdepend: без нього моби просто рендеряться ванільними, тому мовчки виходимо.
+     * BetterModel у softdepend: без нього моби просто рендеряться ванільними, тому
+     * мовчки виходимо.
      * Див. .claude/rules/bettermodel-models.md.
      */
     private void installBetterModels() {
@@ -176,8 +196,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                     }
                 },
                 20L,
-                20L
-        );
+                20L);
     }
 
     @Override
@@ -187,12 +206,15 @@ public class MysteriesAbovePlugin extends JavaPlugin {
             services.stopSchedulers();
         }
 
-        // Маріонетки: повертаємо гравців, що зараз керують маріонетками, у власне тіло ДО збереження
-        // (щоб тіло/інвентар/особистість/скін коректно зберіглись), і коректно завершуємо здібність —
-        // БЕЗ знищення NPC: їх збереже Citizens у saves.yml і відновить при наступному старті.
+        // Маріонетки: повертаємо гравців, що зараз керують маріонетками, у власне тіло
+        // ДО збереження
+        // (щоб тіло/інвентар/особистість/скін коректно зберіглись), і коректно
+        // завершуємо здібність —
+        // БЕЗ знищення NPC: їх збереже Citizens у saves.yml і відновить при наступному
+        // старті.
         if (services != null) {
-            me.vangoo.domain.abilities.core.Ability marionettist =
-                    services.getPathwayManager().findAbilityInAllPathways(
+            me.vangoo.domain.abilities.core.Ability marionettist = services.getPathwayManager()
+                    .findAbilityInAllPathways(
                             me.vangoo.pathways.fool.abilities.MarionettistControl.IDENTITY);
             if (marionettist instanceof me.vangoo.pathways.fool.abilities.MarionettistControl mc) {
                 for (java.util.UUID caster : mc.getPossessingCasters()) {
@@ -213,12 +235,14 @@ public class MysteriesAbovePlugin extends JavaPlugin {
             glowingEntities.disable();
         }
 
-        // Коректно закрити активний збір (повернути ескроу/телепортувати учасників) ДО збереження
+        // Коректно закрити активний збір (повернути ескроу/телепортувати учасників) ДО
+        // збереження
         if (services != null) {
             services.getGatheringService().forceCloseIfActive();
         }
 
-        // Despawn church priest NPCs (not persisted by Citizens; respawned from church-sites.json on next enable)
+        // Despawn church priest NPCs (not persisted by Citizens; respawned from
+        // church-sites.json on next enable)
         if (services != null) {
             services.getChurchDuelService().endAll();
             services.getChurchPriestService().despawnAll();
@@ -242,52 +266,46 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         super.onDisable();
     }
 
-
     private void registerEvents() {
-        AbilityMenuListener abilityMenuListener =
-                new AbilityMenuListener(services.getAbilityMenu(), services.getBeyonderService(),
-                        services.getAbilityItemFactory(), pluginLogger);
+        AbilityMenuListener abilityMenuListener = new AbilityMenuListener(this, services.getAbilityMenu(),
+                services.getBeyonderService(),
+                services.getAbilityItemFactory(), pluginLogger);
 
-        BeyonderPlayerListener beyonderPlayerListener =
-                new BeyonderPlayerListener(services.getBeyonderService(), services.getBossBarUtil(),
-                        services.getAbilityExecutor(), services.getAbilityItemFactory(),
-                        services.getRampageManager(), pluginLogger);
+        BeyonderPlayerListener beyonderPlayerListener = new BeyonderPlayerListener(services.getBeyonderService(),
+                services.getBossBarUtil(),
+                services.getAbilityExecutor(), services.getAbilityItemFactory(),
+                services.getRampageManager(), pluginLogger);
 
-        PathwayPotionListener pathwayPotionListener =
-                new PathwayPotionListener(services.getPotionManager(), services.getBeyonderService(),
-                        services.getPassiveAbilityScheduler());
+        PathwayPotionListener pathwayPotionListener = new PathwayPotionListener(services.getPotionManager(),
+                services.getBeyonderService(),
+                services.getPassiveAbilityScheduler(), services.getAbilityMenu());
 
-        PassiveAbilityLifecycleListener passiveAbilityLifecycleListener =
-                new PassiveAbilityLifecycleListener(services.getPassiveAbilityScheduler());
+        PassiveAbilityLifecycleListener passiveAbilityLifecycleListener = new PassiveAbilityLifecycleListener(
+                services.getPassiveAbilityScheduler());
 
-        RecipeBookInteractionListener recipeBookListener =
-                new RecipeBookInteractionListener(services.getRecipeBookFactory(), services.getRecipeUnlockService());
+        RecipeBookInteractionListener recipeBookListener = new RecipeBookInteractionListener(
+                services.getRecipeBookFactory(), services.getRecipeUnlockService());
 
-        PotionCraftingListener potionCraftingListener =
-                new PotionCraftingListener(this, services.getPotionCraftingService());
+        PotionCraftingListener potionCraftingListener = new PotionCraftingListener(this,
+                services.getPotionCraftingService());
 
         MasterRecipeBookListener masterRecipeBookListener = new MasterRecipeBookListener(
                 this,
                 services.getCustomItemService(),
                 services.getRecipeUnlockService(),
                 services.getPotionManager(),
-                services.getAbilityMenu()
-        );
-        VanillaStructureLootListener vanillaStructureLootListener =
-                new VanillaStructureLootListener(
-                        this,
-                        services.getLootGenerationService(),
-                        services.getLootTableConfigLoader().getGlobalLootTable(),
-                        services.getBeyonderService()
-                );
+                services.getAbilityMenu());
+        VanillaStructureLootListener vanillaStructureLootListener = new VanillaStructureLootListener(
+                this,
+                services.getLootGenerationService(),
+                services.getLootTableConfigLoader().getGlobalLootTable(),
+                services.getBeyonderService());
 
-        ArchaeologyLootListener archaeologyLootListener =
-                new ArchaeologyLootListener(
-                        this,
-                        services.getLootGenerationService(),
-                        services.getLootTableConfigLoader().getGlobalLootTable(),
-                        services.getBeyonderService()
-                );
+        ArchaeologyLootListener archaeologyLootListener = new ArchaeologyLootListener(
+                this,
+                services.getLootGenerationService(),
+                services.getLootTableConfigLoader().getGlobalLootTable(),
+                services.getBeyonderService());
 
         getServer().getPluginManager().registerEvents(abilityMenuListener, this);
         getServer().getPluginManager().registerEvents(beyonderPlayerListener, this);
@@ -323,9 +341,20 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 services.getChurchPriestService(), services.getChurchMenu(), services.getChurchService(),
                 services.getMythicCreatureGateway(), services.getRampageManager());
         ChurchSpawnListener churchSpawnListener = new ChurchSpawnListener(
-                services.getChurchSiteService(), services.getChurchConfig().spawnVillageOffset());
+                services.getChurchSiteService());
         getServer().getPluginManager().registerEvents(churchListener, this);
         getServer().getPluginManager().registerEvents(churchSpawnListener, this);
+        getServer().getPluginManager().registerEvents(
+                new ShrineListener(services.getShrineService()), this);
+        if (services.getChurchConfig().shrine().placeNearVillages()) {
+            getServer().getPluginManager().registerEvents(
+                    new VillageShrineListener(services.getVillageShrinePlacer()), this);
+        }
+        if (getConfig().getBoolean("church.protect-buildings", true)) {
+            getServer().getPluginManager().registerEvents(
+                    new ChurchProtectionListener(services.getChurchSiteService(),
+                            services.getShrineService()), this);
+        }
         getServer().getPluginManager().registerEvents(services.getDuelListener(), this);
 
         OrderListener orderListener = new OrderListener(
@@ -334,8 +363,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
                 services.getBeyonderService(), services.getRampageManager(), services.getCreatureRegistry());
         getServer().getPluginManager().registerEvents(orderListener, this);
 
-        me.vangoo.presentation.listeners.ContractListener contractListener =
-                new me.vangoo.presentation.listeners.ContractListener(this, services.getContractService());
+        me.vangoo.presentation.listeners.ContractListener contractListener = new me.vangoo.presentation.listeners.ContractListener(
+                this, services.getContractService());
         getServer().getPluginManager().registerEvents(contractListener, this);
     }
 
@@ -349,8 +378,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         RecipeBookCommand recipeBookCommand = new RecipeBookCommand(
                 services.getRecipeBookFactory(),
                 services.getPotionManager(),
-                services.getRecipeUnlockService()
-        );
+                services.getRecipeUnlockService());
         getCommand("pathway").setExecutor(pathwayCommand);
         getCommand("pathway").setTabCompleter(pathwayCommand);
         getCommand("potion").setExecutor(sequencePotionCommand);
@@ -376,7 +404,8 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getCommand("gathering").setExecutor(gatheringCommand);
         getCommand("gathering").setTabCompleter(gatheringCommand);
 
-        ChurchCommand churchCommand = new ChurchCommand(services.getChurchService(), services.getChurchSiteService());
+        ChurchCommand churchCommand = new ChurchCommand(services.getChurchService(),
+                services.getChurchSiteService(), services.getShrineService());
         getCommand("church").setExecutor(churchCommand);
         getCommand("church").setTabCompleter(churchCommand);
 

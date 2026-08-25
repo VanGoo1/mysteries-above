@@ -13,7 +13,7 @@ paths:
 ## Нова здібність
 
 1. Клас у `me.vangoo.pathways.<pathway>.abilities`, база — `ActiveAbility` / `PermanentPassiveAbility` / `ToggleablePassiveAbility` / `OneTimeUseAbility`.
-2. Балансні формули — у `domain` (VO або `domain.services`) з unit-тестом; у здібності лише glue + ефекти (див. правило pathway-abilities).
+2. Балансні формули — у `domain` (VO або `domain.services`); у здібності лише glue + ефекти (див. правило pathway-abilities). **Тест на самі числа НЕ пиши** — перевірки «вартість дорівнює 30» видалені свідомо (див. `domain-purity.md`); тестуй лише логіку, що має лишатись правдивою при будь-якому балансі.
 3. Додати в `initializeAbilities()` конкретного pathway: `sequenceAbilities.put(seq, List.of(...))`. Здібності нижчих Sequence успадковуються при advance через `AbilityTransformer`; заміна версії — через спільний `AbilityIdentity`.
 4. Опис/назва/повідомлення — українською; опис через `getDescription(Sequence)` показує вже відскейлені числа (`scaleValue`).
 5. Якщо здібність тримає стан — правила сесій + `cleanUp()` обов'язково.
@@ -53,4 +53,10 @@ Chained, WheelOfFortune). Кожна заготовка
 
 1. Предмет — у `custom-items.yml` (`CustomItemConfigLoader` → `CustomItemRegistry`); доступ у коді тільки через `CustomItemService`. Видача: `/custom-items give`.
 2. Лут — `global_loot.yml` (`LootTableConfigLoader`), генерація — `LootGenerationService` (структури, археологія, ванільні скрині).
-3. Нова команда — див. чеклист у правилі wiring (plugin.yml + registerCommands).
+3. **Кожен інгредієнт варіння МУСИТЬ мати запис у `global_loot.yml`.** Інваріант: усе, що
+   `potion-recipes.yml` називає `main`/`auxiliary`, трапляється в скринях — інакше зілля
+   неварабельне, і мовчки: жодної помилки при старті. Пінить `GlobalLootCoverageTest` (в обидва
+   боки: інгредієнт без луту + лут на неіснуючий предмет). Вага — за Послідовністю зілля:
+   9→60, 8→40, 7→25, 6→12 (`tier: rare`), 5→5 (`tier: rare`); рецепти 45/30/15/8/4, зілля 10/6/3.
+   Не інгредієнти (валюта, шифровка ордену, `master_recipe_book`) під інваріант не підпадають.
+4. Нова команда — див. чеклист у правилі wiring (plugin.yml + registerCommands).

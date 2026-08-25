@@ -42,7 +42,10 @@ class ResourcePackItemModelTest {
     private static final File PACK_MODELS = new File("mysteries-resourcepack/assets/minecraft/models/item");
 
     private static final Pattern CASE_KEY = Pattern.compile("\"when\"\\s*:\\s*\"([^\"]+)\"");
-    private static final Pattern MODEL_REF = Pattern.compile("\"model\"\\s*:\\s*\"item/([^\"]+)\"");
+    // Простір імен опційний: визначення пишуть і "item/x", і "minecraft:item/x". Без цієї
+    // гілки namespaced-посилання просто не збігалось, і зникла модель лишалась непоміченою.
+    private static final Pattern MODEL_REF =
+            Pattern.compile("\"model\"\\s*:\\s*\"(?:minecraft:)?item/([^\"]+)\"");
 
     @Test
     void everyConfiguredModelKeyIsCoveredByItsMaterialDefinition() {

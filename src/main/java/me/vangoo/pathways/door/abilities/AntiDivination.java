@@ -12,7 +12,6 @@ import org.bukkit.Sound;
 
 import java.util.UUID;
 
-
 public class AntiDivination extends ToggleablePassiveAbility {
 
     @Override
@@ -34,7 +33,8 @@ public class AntiDivination extends ToggleablePassiveAbility {
     @Override
     public void onEnable(IAbilityContext context) {
         UUID casterId = context.getCasterId();
-        context.messaging().sendMessageToActionBar(casterId, Component.text(ChatColor.GRAY + "Ви захищені від чужого ворожіння"));
+        context.messaging().sendMessageToActionBar(casterId,
+                Component.text(ChatColor.GRAY + "Ви захищені від чужого ворожіння"));
 
         context.effects().playSoundForPlayer(context.getCasterId(), Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 1.8f);
         context.effects().playSoundForPlayer(context.getCasterId(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 0.8f, 1.5f);
@@ -43,21 +43,20 @@ public class AntiDivination extends ToggleablePassiveAbility {
                 Particle.END_ROD,
                 context.getCasterLocation().add(0, 1.5, 0),
                 30, 0.5, 0.5,
-                0.1
-        );
+                0.1);
 
         context.effects().spawnParticle(
                 Particle.ENCHANT,
                 context.getCasterLocation().add(0, 1, 0),
                 20,
-                0.3, 0.5, 0.3
-        );
+                0.3, 0.5, 0.3);
     }
 
     @Override
     public void onDisable(IAbilityContext context) {
         UUID casterId = context.getCasterId();
-        context.messaging().sendMessageToActionBar(casterId, Component.text(ChatColor.GRAY + "Ви знову вразливі до ворожіння"));
+        context.messaging().sendMessageToActionBar(casterId,
+                Component.text(ChatColor.GRAY + "Ви знову вразливі до ворожіння"));
 
         context.effects().playSoundForPlayer(context.getCasterId(), Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 0.8f);
 
@@ -65,8 +64,7 @@ public class AntiDivination extends ToggleablePassiveAbility {
                 Particle.SMOKE,
                 context.getCasterLocation().add(0, 1, 0),
                 15,
-                0.3, 0.3, 0.3
-        );
+                0.3, 0.3, 0.3);
     }
 
     @Override
@@ -78,8 +76,7 @@ public class AntiDivination extends ToggleablePassiveAbility {
                         Particle.ENCHANT,
                         loc.add(0, 1.1, 0),
                         2,
-                        0.1, 0.15, 0.1
-                );
+                        0.1, 0.15, 0.1);
             }
         }
     }

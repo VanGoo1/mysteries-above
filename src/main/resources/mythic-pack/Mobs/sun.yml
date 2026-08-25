@@ -2,8 +2,8 @@ sun_siren_9:
   Template: MA_Sun_S9
   Type: DROWNED
   Display: '&bСирена'
-  Health: 26
-  Damage: 4
+  Health: 57
+  Damage: 7
   Options:
     MovementSpeed: 0.25
     Scale: 1.0
@@ -12,8 +12,8 @@ sun_magma_titan_8:
   Template: MA_Sun_S8
   Type: MAGMA_CUBE
   Display: '&cМагмовий Титан'
-  Health: 45
-  Damage: 6
+  Health: 90
+  Damage: 11
   Options:
     MovementSpeed: 0.24
     Scale: 1.2
@@ -25,8 +25,8 @@ sun_dawn_rooster_7:
   Template: MA_Sun_S7
   Type: CHICKEN
   Display: '&6Світанковий Півень'
-  Health: 60
-  Damage: 6
+  Health: 120
+  Damage: 11
   AIGoalSelectors:
   - 0 clear
   - 1 float
@@ -41,8 +41,8 @@ sun_spirit_pact_bird_6:
   Template: MA_Sun_S6
   Type: PARROT
   Display: '&eПтах Духовного Договору'
-  Health: 95
-  Damage: 8
+  Health: 171
+  Damage: 14
   AIGoalSelectors:
   - 0 clear
   - 1 float
@@ -57,8 +57,8 @@ sun_king_dawn_rooster_5:
   Template: MA_Sun_S5
   Type: CHICKEN
   Display: '&cКороль Світанкових Півнів'
-  Health: 180
-  Damage: 12
+  Health: 288
+  Damage: 21
   AIGoalSelectors:
   - 0 clear
   - 1 float

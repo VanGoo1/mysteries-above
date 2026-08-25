@@ -14,7 +14,8 @@ import java.util.Set;
  */
 public final class PathwayBranding {
 
-    public record Branding(Color liquid, ChatColor text) {}
+    public record Branding(Color liquid, ChatColor text) {
+    }
 
     private static final Branding FALLBACK = new Branding(Color.fromRGB(128, 128, 128), ChatColor.GRAY);
 
@@ -29,18 +30,18 @@ public final class PathwayBranding {
         put("Visionary", 143, 181, 241, ChatColor.GRAY);
         put("Door", 106, 230, 247, ChatColor.AQUA);
         put("Justiciar", 235, 195, 142, ChatColor.GOLD);
-        put("WhiteTower",118, 134, 225, ChatColor.AQUA);
-        put("Fool", 117, 75, 38, ChatColor.LIGHT_PURPLE);
+        put("WhiteTower", 118, 134, 225, ChatColor.AQUA);
+        put("Fool", 162, 110, 215, ChatColor.LIGHT_PURPLE);
 
         put("Sun", 251, 232, 107, ChatColor.YELLOW);
         put("Tyrant", 70, 115, 199, ChatColor.DARK_AQUA);
         put("HangedMan", 204, 54, 53, ChatColor.DARK_RED);
         put("Darkness", 127, 149, 185, ChatColor.DARK_GRAY);
         put("Death", 114, 143, 108, ChatColor.DARK_GREEN);
-        put("TwilightGiant",232, 120, 99, ChatColor.GOLD);
+        put("TwilightGiant", 232, 120, 99, ChatColor.GOLD);
         put("RedPriest", 255, 71, 58, ChatColor.RED);
         put("Demoness", 210, 64, 159, ChatColor.LIGHT_PURPLE);
-        put("Hermit",124, 98, 179, ChatColor.DARK_PURPLE);
+        put("Hermit", 124, 98, 179, ChatColor.DARK_PURPLE);
         put("Paragon", 243, 145, 75, ChatColor.GOLD);
         put("Mother", 60, 183, 153, ChatColor.GREEN);
         put("Moon", 255, 96, 104, ChatColor.RED);
@@ -52,10 +53,12 @@ public final class PathwayBranding {
 
     public static final Set<String> NAMES = Set.copyOf(TABLE.keySet());
 
-    private PathwayBranding() {}
+    private PathwayBranding() {
+    }
 
     public static Branding of(String pathwayName) {
-        if (pathwayName == null) return FALLBACK;
+        if (pathwayName == null)
+            return FALLBACK;
         return TABLE.getOrDefault(pathwayName, FALLBACK);
     }
 

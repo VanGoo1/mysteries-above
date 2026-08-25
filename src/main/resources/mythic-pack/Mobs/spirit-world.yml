@@ -28,8 +28,8 @@
 death_knight:
   Type: WITHER_SKELETON
   Display: '&8Лицар Смерті'
-  Health: 60
-  Damage: 8
+  Health: 120
+  Damage: 14
   Armor: 8
   # Слоти числами (0 — рука, 3 — нагрудник, 4 — шолом): формат, який MythicMobs розуміє
   # в усіх версіях, на відміну від іменованих HEAD/CHEST.
@@ -58,8 +58,8 @@ death_knight:
 shadow_swallowing_python:
   Type: CAVE_SPIDER
   Display: '&2Пітон, що ковтає тіні'
-  Health: 40
-  Damage: 5
+  Health: 80
+  Damage: 9
   AITargetSelectors:
   - 0 clear
   Options:
@@ -79,8 +79,8 @@ shadow_swallowing_python:
 living_shadow:
   Type: VEX
   Display: '&8Жива тінь'
-  Health: 30
-  Damage: 6
+  Health: 66
+  Damage: 11
   AITargetSelectors:
   - 0 clear
   Options:
@@ -100,8 +100,8 @@ living_shadow:
 lake_goddess:
   Type: DROWNED
   Display: '&3Богиня Озера'
-  Health: 70
-  Damage: 6
+  Health: 140
+  Damage: 11
   Armor: 4
   AITargetSelectors:
   - 0 clear
@@ -125,8 +125,8 @@ lake_goddess:
 death_envoy:
   Type: PHANTOM
   Display: '&5Посланець Смерті'
-  Health: 50
-  Damage: 7
+  Health: 100
+  Damage: 12
   AITargetSelectors:
   - 0 clear
   Options:
@@ -146,8 +146,8 @@ death_envoy:
 pus_of_man:
   Type: HUSK
   Display: '&0Гній Людини'
-  Health: 25
-  Damage: 3
+  Health: 55
+  Damage: 5
   AITargetSelectors:
   - 0 clear
   Options:
@@ -165,8 +165,8 @@ pus_of_man:
 pale_girl:
   Type: STRAY
   Display: '&bБліда Дівчинка'
-  Health: 35
-  Damage: 4
+  Health: 70
+  Damage: 7
   AITargetSelectors:
   - 0 clear
   Options:
@@ -185,8 +185,8 @@ pale_girl:
 sea_beasts:
   Type: GUARDIAN
   Display: '&9Морська Примара'
-  Health: 45
-  Damage: 6
+  Health: 90
+  Damage: 11
   AITargetSelectors:
   - 0 clear
   Options:

@@ -74,20 +74,55 @@ public final class CreatureSelector {
     public Optional<CreatureDefinition> pickForAmbient(String biome, ConvergenceBias bias, double roll) {
         if (bias == null) return Optional.empty();
         List<CreatureDefinition> candidates = new ArrayList<>();
-        double sumWeights = 0.0;
         for (CreatureDefinition def : creatures) {
             SpawnRule s = def.spawn();
             if (s.naturalChance() <= 0.0) continue;
             if (!s.naturalBiomes().contains(biome)) continue;
             candidates.add(def);
         }
+        return weightedPick(candidates, def -> def.spawn().naturalChance(), bias, roll);
+    }
+
+    /**
+     * Вибір істоти для структурного спавну — тобто «скриню відкрито». Ключі лут-таблиць у виборі
+     * НЕ беруть участі: працює будь-яка структура (ванільна, датапакова, модова), бо інакше
+     * ванільні скрині не давали нікого, крім блукаючого духа.
+     *
+     * <p>Пул — вікно з ДВОХ послідовностей навколо того, хто відкрив: його власна і наступна,
+     * сильніша ({@code seq} і {@code seq - 1}). Посл. 9 бачить 9–8, Посл. 8 — 8–7, …, Посл. 6 —
+     * 6–5. Це водночас замінює {@link ApexGate} на цьому шляху: Посл. 5 доступна лише гравцеві
+     * Посл. 6 або 5, тобто рівно те саме правило, тільки виражене вікном.
+     *
+     * <p>Рішення «чи спавнити взагалі» приймає не цей метод, а лістенер за конфігом
+     * ({@code creatures.structure.chance}) — тут лише КОГО, з ухилом Закону Конвергенції, як в
+     * ambient. {@code roll} у [0,1).
+     */
+    public Optional<CreatureDefinition> pickForStructure(int playerSequence, ConvergenceBias bias, double roll) {
+        List<CreatureDefinition> candidates = new ArrayList<>();
+        for (CreatureDefinition def : creatures) {
+            if (def.spawn().structureChance() <= 0.0) continue;
+            if (def.sequence() != playerSequence && def.sequence() != playerSequence - 1) continue;
+            candidates.add(def);
+        }
+        return weightedPick(candidates, def -> def.spawn().structureChance(), bias, roll);
+    }
+
+    /**
+     * Ваговий вибір без «порогу неспавну»: рішення «спавнити» вже прийнято, лишилось обрати кого.
+     * Спільний для ambient і структур — різняться вони лише пулом і полем-вагою.
+     */
+    private Optional<CreatureDefinition> weightedPick(List<CreatureDefinition> candidates,
+                                                      java.util.function.ToDoubleFunction<CreatureDefinition> weightOf,
+                                                      ConvergenceBias bias, double roll) {
         if (candidates.isEmpty()) return Optional.empty();
 
+        double sumWeights = 0.0;
         double[] weights = new double[candidates.size()];
         for (int i = 0; i < candidates.size(); i++) {
-            weights[i] = candidates.get(i).spawn().naturalChance() * multiplier(candidates.get(i), bias);
+            weights[i] = weightOf.applyAsDouble(candidates.get(i)) * multiplier(candidates.get(i), bias);
             sumWeights += weights[i];
         }
+        if (sumWeights <= 0.0) return Optional.empty();
 
         double target = roll * sumWeights;
         double cumulative = 0.0;
@@ -96,17 +131,5 @@ public final class CreatureSelector {
             if (target < cumulative) return Optional.of(candidates.get(i));
         }
         return Optional.of(candidates.get(candidates.size() - 1));
-    }
-
-    public Optional<CreatureDefinition> pickForStructure(String structureKey, double roll) {
-        double cumulative = 0.0;
-        for (CreatureDefinition def : creatures) {
-            SpawnRule s = def.spawn();
-            if (s.structureChance() <= 0.0) continue;
-            if (s.structureKeys().stream().noneMatch(structureKey::contains)) continue;
-            cumulative += s.structureChance();
-            if (roll < cumulative) return Optional.of(def);
-        }
-        return Optional.empty();
     }
 }

@@ -1,9 +1,6 @@
 {
     "type": "minecraft:jigsaw",
-    "biomes": [
-        "minecraft:meadow",
-        "minecraft:pale_garden"
-    ],
+    "biomes": "#mysteries:has_pale_lib",
     "step": "surface_structures",
     "terrain_adaptation": "beard_thin",
     "spawn_overrides": {},

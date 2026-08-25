@@ -53,7 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * телепорт/анонімність/NPC, ескроу реальних стаків і виконання Settlement/Refund
  * команд чистої MarketSession. Після кожної мутації — снепшот на диск.
  */
-public class GatheringService implements GatheringAbilityGuard {
+public class GatheringService implements AbilityGuard {
 
     private static final String PREFIX = ChatColor.DARK_PURPLE + "[Збори] " + ChatColor.RESET;
 

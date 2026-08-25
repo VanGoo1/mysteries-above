@@ -36,13 +36,7 @@ public class NaturalCreatureSpawnListener implements Listener {
         if (event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.NATURAL) return;
 
         org.bukkit.Location loc = event.getLocation();
-        if (loc.getWorld() != null) {
-            org.bukkit.Location ws = loc.getWorld().getSpawnLocation();
-            if (!me.vangoo.domain.creatures.SpawnDistanceGate.isFarEnough(
-                    loc.getX() - ws.getX(), loc.getZ() - ws.getZ(), minSpawnDistance)) {
-                return;
-            }
-        }
+        if (!me.vangoo.infrastructure.creatures.SpawnDistance.isFarEnough(loc, minSpawnDistance)) return;
 
         String biome = event.getLocation().getBlock().getBiome().name();
         String type = event.getEntityType().name();

@@ -32,12 +32,17 @@ class RitualCatalogTest {
         }
     }
 
+    /**
+     * Жертву з руки беруть рівно два ритуали, і саме вони не мають списку матеріалів:
+     * Жертвопринесення (палить будь-що) і Одкровення (платить інгредієнтом чужого шляху,
+     * якого не виразити через Material — див. RitualMagic.bestowmentRejection).
+     */
     @Test
-    void onlySacrificeUsesHandItemAndHasNoIngredientList() {
+    void handSacrificeRitualsHaveNoMaterialListAndViceVersa() {
         for (RitualRecipe r : RitualCatalog.ALL) {
-            if (r.type() == RitualType.SACRIFICE) {
-                assertTrue(r.requiresHandSacrifice());
-                assertTrue(r.ingredients().isEmpty());
+            if (r.type() == RitualType.SACRIFICE || r.type() == RitualType.BESTOWMENT) {
+                assertTrue(r.requiresHandSacrifice(), r.displayName());
+                assertTrue(r.ingredients().isEmpty(), r.displayName());
             } else {
                 assertFalse(r.requiresHandSacrifice(), r.displayName());
                 assertFalse(r.ingredients().isEmpty(), r.displayName());

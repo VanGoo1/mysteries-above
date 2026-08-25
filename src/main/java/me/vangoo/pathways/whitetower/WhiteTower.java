@@ -18,7 +18,7 @@ public class WhiteTower extends Pathway {
     @Override
     protected void initializeAbilities() {
         sequenceAbilities.put(9, List.of(new RitualMagic(), new EnhancedMentalAttributes()));
-        sequenceAbilities.put(8, List.of());
+        sequenceAbilities.put(8, List.of(new Deduction()));
         sequenceAbilities.put(7, List.of(new CombatProficiency(), new Agility(), new PhysicalEnhancement(
                 "Фізичні посилення",
                 "Ви отримуєте сильне тіло",

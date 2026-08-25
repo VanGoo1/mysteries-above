@@ -137,6 +137,20 @@ public interface IVisualEffectsContext {
     void playAlertHalo(Location location, Color color);
 
     /**
+     * Кільце з пилу кольору шляху, що повільно обертається на місці й тримається
+     * {@code durationTicks}. Свідомо не {@link #playCircleEffect} (той бере ванільний
+     * партикл без кольору й не обертається) і не {@link #playAlertHalo} (той — один кадр
+     * фіксованого радіуса над головою): це рівний спокійний ореол для декору, що стоїть у
+     * світі — святині, вівтарі, точки переходу. Самодостатнє (володіє власним таском).
+     *
+     * @param center        центр кільця
+     * @param radius        радіус
+     * @param color         колір пилу (з PathwayBranding)
+     * @param durationTicks скільки кільце тримається
+     */
+    void playAuraRing(Location center, double radius, Color color, int durationTicks);
+
+    /**
      * Тонкий м'який промінь, що ПОСТУПОВО тягнеться від {@code start} до {@code end}
      * (голова променя рухається щотіка, лишаючи короткий шлейф), а коли досягає цілі —
      * викликає {@code onArrival}. Колір бере відтінок шляху (через PathwayBranding);

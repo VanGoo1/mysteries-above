@@ -24,7 +24,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class DivinationArts extends ActiveAbility {
-    private int BASE_COST = 120;
+    private int BASE_COST = 70;
     private final int BASE_COOLDOWN = 60;
     private final int ANTI_DIVINATION_UNLOCK_SEQUENCE = 7;
     private final int DIVINING_ROD_DURATION_TICKS = 1200; // 20 секунд замість 30
@@ -34,7 +34,8 @@ public class DivinationArts extends ActiveAbility {
     private final Random rng = new Random();
     private final Random chanceRng = new Random();
 
-    // Інстанс-реєстри живих сесій (НЕ static): один екземпляр здібності спільний для свого Sequence.
+    // Інстанс-реєстри живих сесій (НЕ static): один екземпляр здібності спільний
+    // для свого Sequence.
     private final Map<UUID, DiviningRodSession> activeRods = new ConcurrentHashMap<>();
     private final Map<UUID, DreamVisionSession> activeDreams = new ConcurrentHashMap<>();
 
@@ -43,14 +44,18 @@ public class DivinationArts extends ActiveAbility {
         initDiviningRodTargets();
     }
 
+    @Override
+    public AbilityIdentity getIdentity() {
+        return AbilityIdentity.of("divination");
+    }
+
     // ========== ІНІЦІАЛІЗАЦІЯ ==========
     private void initPendulumQuestions() {
         pendulumQuestions.add(new PendulumQuestion(
                 "Чи є поблизу діаманти?",
                 ctx -> findNearbyOre(ctx, Material.DIAMOND_ORE, Material.DEEPSLATE_DIAMOND_ORE) != null
                         ? "Так — діаманти знайдено поблизу (в радіусі 50 блоків)"
-                        : "Ні — діамантів не виявлено в околиці"
-        ));
+                        : "Ні — діамантів не виявлено в околиці"));
 
         pendulumQuestions.add(new PendulumQuestion(
                 "Чи належить цей інгредієнт до мого шляху?",
@@ -64,7 +69,8 @@ public class DivinationArts extends ActiveAbility {
 
                     // Використовуємо метод з контексту для перевірки інгредієнта
                     for (int seq = 9; seq >= 0; seq--) {
-                        var ingredients = ctx.beyonder().getIngredientsForPotion(beyonder.getPathway(), Sequence.of(seq));
+                        var ingredients = ctx.beyonder().getIngredientsForPotion(beyonder.getPathway(),
+                                Sequence.of(seq));
                         if (ingredients != null) {
                             for (ItemStack ingredient : ingredients) {
                                 if (ingredient != null && ingredient.isSimilar(handItem)) {
@@ -76,8 +82,7 @@ public class DivinationArts extends ActiveAbility {
                         }
                     }
                     return "Ні — цей предмет не належить до шляху " + beyonder.getPathway().getName();
-                }
-        ));
+                }));
 
         pendulumQuestions.add(new PendulumQuestion(
                 "Чи є поблизу інші Beyonder'и?",
@@ -98,8 +103,7 @@ public class DivinationArts extends ActiveAbility {
                     } else {
                         return "Так — поблизу " + beyonderCount + " Beyonder'ів, будьте обережні";
                     }
-                }
-        ));
+                }));
 
         pendulumQuestions.add(new PendulumQuestion(
                 "Чи є тут сліди недавніх подій?",
@@ -120,8 +124,7 @@ public class DivinationArts extends ActiveAbility {
                     } else {
                         return "Так — відчуваються відлуння минулих подій";
                     }
-                }
-        ));
+                }));
 
         pendulumQuestions.add(new PendulumQuestion(
                 "Чи має цей гравець високу послідовність?",
@@ -139,7 +142,7 @@ public class DivinationArts extends ActiveAbility {
                         return "Ні — це звичайна людина без духовної сили";
                     }
 
-                    Beyonder targetBeyonder =  ctx.beyonder().getBeyonder(target.getUniqueId());
+                    Beyonder targetBeyonder = ctx.beyonder().getBeyonder(target.getUniqueId());
                     if (targetBeyonder == null) {
                         return "Невідомо — не вдається прочитати їхню ауру";
                     }
@@ -154,8 +157,7 @@ public class DivinationArts extends ActiveAbility {
                     } else {
                         return "Ні — їхня сила слабша за вашу";
                     }
-                }
-        ));
+                }));
 
         pendulumQuestions.add(new PendulumQuestion(
                 "Чи готовий я до просування послідовності?",
@@ -165,11 +167,13 @@ public class DivinationArts extends ActiveAbility {
                     if (!beyonder.canAdvance()) {
                         double mastery = beyonder.getMastery().value();
                         if (mastery < 50.0) {
-                            return "Ні — ваше засвоєння занадто низьке (" + String.format("%.1f%%", mastery) + "), потрібно більше практики";
+                            return "Ні — ваше засвоєння занадто низьке (" + String.format("%.1f%%", mastery)
+                                    + "), потрібно більше практики";
                         } else if (mastery < 80.0) {
                             return "Майже — засвоєння " + String.format("%.1f%%", mastery) + ", ще трохи практики";
                         } else {
-                            return "Майже — засвоєння високе (" + String.format("%.1f%%", mastery) + "), але досі недостатнє";
+                            return "Майже — засвоєння високе (" + String.format("%.1f%%", mastery)
+                                    + "), але досі недостатнє";
                         }
                     }
 
@@ -183,30 +187,39 @@ public class DivinationArts extends ActiveAbility {
                     double spiritualityPercent = (spirituality * 100.0) / maxSpirituality;
 
                     if (spiritualityPercent < 80.0) {
-                        return "Так, але — ваша духовність занадто низька (" + String.format("%.0f%%", spiritualityPercent) + "), відновіться перед ритуалом";
+                        return "Так, але — ваша духовність занадто низька ("
+                                + String.format("%.0f%%", spiritualityPercent) + "), відновіться перед ритуалом";
                     }
 
                     return "Так — ви готові до ритуалу просування, знайдіть відповідне зілля";
-                }
-        ));
+                }));
     }
+
     private void initDiviningRodTargets() {
         // Послідовність 9: Базові ресурси
-        diviningRodTargets.add(new DivinationTarget("Залізо", 9, Material.IRON_INGOT, Material.IRON_ORE, Material.DEEPSLATE_IRON_ORE));
-        diviningRodTargets.add(new DivinationTarget("Золото", 9, Material.GOLD_INGOT, Material.GOLD_ORE, Material.DEEPSLATE_GOLD_ORE));
-        diviningRodTargets.add(new DivinationTarget("Редстоун", 9, Material.REDSTONE, Material.REDSTONE_ORE, Material.DEEPSLATE_REDSTONE_ORE));
-        diviningRodTargets.add(new DivinationTarget("Лазурит", 9, Material.LAPIS_LAZULI, Material.LAPIS_ORE, Material.DEEPSLATE_LAPIS_ORE));
-        diviningRodTargets.add(new DivinationTarget("Вугілля", 9, Material.COAL, Material.COAL_ORE, Material.DEEPSLATE_COAL_ORE));
+        diviningRodTargets.add(
+                new DivinationTarget("Залізо", 9, Material.IRON_INGOT, Material.IRON_ORE, Material.DEEPSLATE_IRON_ORE));
+        diviningRodTargets.add(
+                new DivinationTarget("Золото", 9, Material.GOLD_INGOT, Material.GOLD_ORE, Material.DEEPSLATE_GOLD_ORE));
+        diviningRodTargets.add(new DivinationTarget("Редстоун", 9, Material.REDSTONE, Material.REDSTONE_ORE,
+                Material.DEEPSLATE_REDSTONE_ORE));
+        diviningRodTargets.add(new DivinationTarget("Лазурит", 9, Material.LAPIS_LAZULI, Material.LAPIS_ORE,
+                Material.DEEPSLATE_LAPIS_ORE));
+        diviningRodTargets
+                .add(new DivinationTarget("Вугілля", 9, Material.COAL, Material.COAL_ORE, Material.DEEPSLATE_COAL_ORE));
         diviningRodTargets.add(new DivinationTarget("Портал Незер", 9, Material.OBSIDIAN, Material.NETHER_PORTAL));
 
         // Послідовність 8: + Смарагди
-        diviningRodTargets.add(new DivinationTarget("Смарагди", 8, Material.EMERALD, Material.EMERALD_ORE, Material.DEEPSLATE_EMERALD_ORE));
+        diviningRodTargets.add(new DivinationTarget("Смарагди", 8, Material.EMERALD, Material.EMERALD_ORE,
+                Material.DEEPSLATE_EMERALD_ORE));
 
         // Послідовність 7: + Діаманти
-        diviningRodTargets.add(new DivinationTarget("Діаманти", 7, Material.DIAMOND, Material.DIAMOND_ORE, Material.DEEPSLATE_DIAMOND_ORE));
+        diviningRodTargets.add(new DivinationTarget("Діаманти", 7, Material.DIAMOND, Material.DIAMOND_ORE,
+                Material.DEEPSLATE_DIAMOND_ORE));
 
         // Послідовність 5: Древні уламки (ексклюзивно)
-        diviningRodTargets.add(new DivinationTarget("Стародавні уламки", 5, Material.ANCIENT_DEBRIS, Material.ANCIENT_DEBRIS));
+        diviningRodTargets
+                .add(new DivinationTarget("Стародавні уламки", 5, Material.ANCIENT_DEBRIS, Material.ANCIENT_DEBRIS));
     }
 
     // ========== ЛОГІКА ЗДІБНОСТІ ==========
@@ -255,8 +268,7 @@ public class DivinationArts extends ActiveAbility {
                 "Мистецтво Гадання",
                 types,
                 this::createDivinationTypeItem,
-                type -> handleDivinationChoice(ctx, type)
-        );
+                type -> handleDivinationChoice(ctx, type));
     }
 
     private ItemStack createDivinationTypeItem(DivinationType type) {
@@ -302,7 +314,8 @@ public class DivinationArts extends ActiveAbility {
 
         int casterSeq = sequenceLevelOrDefault(ctx, casterId, 9);
 
-        // Чисте правило балансу (тестується без сервера): підсумковий шанс від різниці Sequence.
+        // Чисте правило балансу (тестується без сервера): підсумковий шанс від різниці
+        // Sequence.
         double finalChance = new DivinationOdds(casterSeq, targetSeq).successProbability();
 
         tellActionBar(casterId, ChatColor.GRAY + "Шанс успіху гадання: " +
@@ -316,7 +329,8 @@ public class DivinationArts extends ActiveAbility {
      * якщо суб'єкт не є Beyonder або інформація недоступна.
      */
     private int sequenceLevelOrDefault(IAbilityContext ctx, UUID entityId, int defaultLevel) {
-        if (entityId == null) return defaultLevel;
+        if (entityId == null)
+            return defaultLevel;
 
         // Якщо контекст має методи isBeyonder/getBeyonder — використовуємо їх
         try {
@@ -327,14 +341,14 @@ public class DivinationArts extends ActiveAbility {
                 }
             }
         } catch (NoSuchMethodError | AbstractMethodError e) {
-            // Якщо IAbilityContext НЕ має цих методів в runtime — тихо падаємо в наступні варіанти
-        } catch (Exception ignored) {}
-
+            // Якщо IAbilityContext НЕ має цих методів в runtime — тихо падаємо в наступні
+            // варіанти
+        } catch (Exception ignored) {
+        }
 
         // Фінальний fallback
         return defaultLevel;
     }
-
 
     // ========== 2. АСТРОЛОГІЯ ==========
 
@@ -351,8 +365,7 @@ public class DivinationArts extends ActiveAbility {
             final int tick = i;
             ctx.scheduling().scheduleDelayed(() -> {
                 Location loc = ctx.getCasterLocation().add(
-                        Math.cos(tick) * 2, 2 + tick * 0.3, Math.sin(tick) * 2
-                );
+                        Math.cos(tick) * 2, 2 + tick * 0.3, Math.sin(tick) * 2);
                 spawnParticle(loc, Particle.END_ROD, 5, 0.1, 0.1, 0.1);
             }, i * 5L);
         }
@@ -382,8 +395,7 @@ public class DivinationArts extends ActiveAbility {
                 "Духовний Маятник",
                 pendulumQuestions,
                 this::createPendulumQuestionItem,
-                question -> performPendulumDivination(ctx, question)
-        );
+                question -> performPendulumDivination(ctx, question));
     }
 
     private ItemStack createPendulumQuestionItem(PendulumQuestion question) {
@@ -410,8 +422,7 @@ public class DivinationArts extends ActiveAbility {
         for (int i = 0; i < 4; i++) {
             ctx.scheduling().scheduleDelayed(
                     () -> playSound(casterId, Sound.BLOCK_NOTE_BLOCK_BELL, 0.3f, 1.5f),
-                    i * 8L
-            );
+                    i * 8L);
         }
 
         ctx.scheduling().scheduleDelayed(() -> {
@@ -426,7 +437,6 @@ public class DivinationArts extends ActiveAbility {
             playSound(casterId, Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1f, 1.2f);
         }, 40L);
     }
-
 
     // ========== 4. ЛОЗОШУКАННЯ ==========
 
@@ -446,14 +456,13 @@ public class DivinationArts extends ActiveAbility {
                 "Лозошукання",
                 availableTargets,
                 this::createDiviningRodTargetItem,
-                target -> startDiviningRodTracking(ctx, target)
-        );
+                target -> startDiviningRodTracking(ctx, target));
     }
-
 
     /**
      * Отримати доступні цілі для лозошукання в залежності від послідовності
-     * Послідовність 9: Базові ресурси (залізо, золото, редстоун, лазурит, вугілля, портал)
+     * Послідовність 9: Базові ресурси (залізо, золото, редстоун, лазурит, вугілля,
+     * портал)
      * Послідовність 8: + Смарагди
      * Послідовність 7: + Діаманти
      * Послідовність 5 та нижче: + стародавні уламки
@@ -506,9 +515,11 @@ public class DivinationArts extends ActiveAbility {
 
         tell(casterId, ChatColor.AQUA + "✓ Ціль виявлено! Стрілка вказує шлях...");
 
-        // Один активний стрижень на власника: новий каст замінює попередній (і не лишає завислого таску).
+        // Один активний стрижень на власника: новий каст замінює попередній (і не лишає
+        // завислого таску).
         DiviningRodSession previous = activeRods.remove(casterId);
-        if (previous != null) previous.cancel();
+        if (previous != null)
+            previous.cancel();
 
         DiviningRodSession session = new DiviningRodSession(
                 casterId, target.name, nearest, getColorForTarget(target.name), DIVINING_ROD_DURATION_TICKS);
@@ -532,8 +543,7 @@ public class DivinationArts extends ActiveAbility {
                 "Сонне Провидіння",
                 targets,
                 this::createDreamVisionPlayerItem,
-                target -> startDreamVisionSpectate(ctx, target)
-        );
+                target -> startDreamVisionSpectate(ctx, target));
     }
 
     private ItemStack createDreamVisionPlayerItem(Player player) {
@@ -581,7 +591,8 @@ public class DivinationArts extends ActiveAbility {
 
         // Один сон на власника: новий каст завершує попередній (і відновлює гравця).
         DreamVisionSession previous = activeDreams.remove(casterId);
-        if (previous != null) previous.cancel();
+        if (previous != null)
+            previous.cancel();
 
         DreamVisionSession session = new DreamVisionSession(
                 casterId, target.getUniqueId(), originalMode, originalLoc, ctx.events());
@@ -591,11 +602,13 @@ public class DivinationArts extends ActiveAbility {
 
     // ========== HELPER METHODS ==========
 
-    // --- Прямі Bukkit-обгортки замість context.messaging()/effects() (шар ефектів, Bukkit дозволено) ---
+    // --- Прямі Bukkit-обгортки замість context.messaging()/effects() (шар ефектів,
+    // Bukkit дозволено) ---
 
     private static void tell(UUID playerId, String message) {
         Player player = Bukkit.getPlayer(playerId);
-        if (player != null && player.isOnline()) player.sendMessage(message);
+        if (player != null && player.isOnline())
+            player.sendMessage(message);
     }
 
     private static void tellActionBar(UUID playerId, String message) {
@@ -607,24 +620,33 @@ public class DivinationArts extends ActiveAbility {
 
     private static void playSound(UUID playerId, Sound sound, float volume, float pitch) {
         Player player = Bukkit.getPlayer(playerId);
-        if (player == null) return;
+        if (player == null)
+            return;
         player.playSound(player.getLocation(), sound, SoundCategory.MASTER, volume, pitch);
     }
 
     private static void spawnParticle(Location loc, Particle particle, int count,
-                                      double offsetX, double offsetY, double offsetZ) {
-        if (loc == null || loc.getWorld() == null) return;
+            double offsetX, double offsetY, double offsetZ) {
+        if (loc == null || loc.getWorld() == null)
+            return;
         loc.getWorld().spawnParticle(particle, loc, count, offsetX, offsetY, offsetZ);
     }
 
     private Color getColorForTarget(String name) {
-        if(name.contains("Діамант")) return Color.AQUA;
-        if(name.contains("Залізо")) return Color.SILVER;
-        if(name.contains("Золото")) return Color.YELLOW;
-        if(name.contains("Смарагд")) return Color.LIME;
-        if(name.contains("Редстоун")) return Color.RED;
-        if(name.contains("Лазурит")) return Color.BLUE;
-        if(name.contains("Стародавні уламки")) return Color.fromRGB(128, 0, 128); // Фіолетовий для ancient debris
+        if (name.contains("Діамант"))
+            return Color.AQUA;
+        if (name.contains("Залізо"))
+            return Color.SILVER;
+        if (name.contains("Золото"))
+            return Color.YELLOW;
+        if (name.contains("Смарагд"))
+            return Color.LIME;
+        if (name.contains("Редстоун"))
+            return Color.RED;
+        if (name.contains("Лазурит"))
+            return Color.BLUE;
+        if (name.contains("Стародавні уламки"))
+            return Color.fromRGB(128, 0, 128); // Фіолетовий для ancient debris
         return Color.GRAY;
     }
 
@@ -657,13 +679,15 @@ public class DivinationArts extends ActiveAbility {
 
         return nearest;
     }
+
     private Location findNearbyBlock(IAbilityContext ctx, Material mat, int radius) {
         Location start = ctx.getCasterLocation();
-        for(int x = -radius; x <= radius; x++) {
-            for(int y = -radius; y <= radius; y++) {
-                for(int z = -radius; z <= radius; z++) {
+        for (int x = -radius; x <= radius; x++) {
+            for (int y = -radius; y <= radius; y++) {
+                for (int z = -radius; z <= radius; z++) {
                     Location loc = start.clone().add(x, y, z);
-                    if(loc.getBlock().getType() == mat) return loc;
+                    if (loc.getBlock().getType() == mat)
+                        return loc;
                 }
             }
         }
@@ -673,11 +697,12 @@ public class DivinationArts extends ActiveAbility {
     private Location findNearbyOre(IAbilityContext ctx, Material... mats) {
         Location start = ctx.getCasterLocation();
         Set<Material> targets = new HashSet<>(Arrays.asList(mats));
-        for(int x = -50; x <= 50; x++) {
-            for(int y = -50; y <= 50; y++) {
-                for(int z = -50; z <= 50; z++) {
+        for (int x = -50; x <= 50; x++) {
+            for (int y = -50; y <= 50; y++) {
+                for (int z = -50; z <= 50; z++) {
                     Location loc = start.clone().add(x, y, z);
-                    if(targets.contains(loc.getBlock().getType())) return loc;
+                    if (targets.contains(loc.getBlock().getType()))
+                        return loc;
                 }
             }
         }
@@ -690,7 +715,8 @@ public class DivinationArts extends ActiveAbility {
         ASTROLOGY("Астрологія", Material.SPYGLASS, ChatColor.BLUE, "Передбачає удачу або невдачу"),
         PENDULUM("Духовний маятник", Material.IRON_CHAIN, ChatColor.GOLD, "Відповідає на питання 'Так' чи 'Ні'"),
         DIVINING_ROD("Лозошукання", Material.STICK, ChatColor.GREEN, "Пошук ресурсів та об'єктів"),
-        DREAM_VISION("Сонне провидіння", Material.PHANTOM_MEMBRANE, ChatColor.DARK_AQUA, "Спостереження за гравцями у сні");
+        DREAM_VISION("Сонне провидіння", Material.PHANTOM_MEMBRANE, ChatColor.DARK_AQUA,
+                "Спостереження за гравцями у сні");
 
         final String displayName;
         final Material icon;
@@ -705,18 +731,22 @@ public class DivinationArts extends ActiveAbility {
         }
     }
 
-    private record PendulumQuestion(String question, Function<IAbilityContext, String> logic) {}
+    private record PendulumQuestion(String question, Function<IAbilityContext, String> logic) {
+    }
 
     /**
      * Ціль лозошукання з вимогою до послідовності
-     * @param name Назва ресурсу
-     * @param requiredSequence Мінімальна послідовність для доступу (9 = найлегше, 0 = найважче)
-     * @param iconMaterial Іконка в меню
-     * @param targetMaterials Матеріали, які шукаємо
+     * 
+     * @param name             Назва ресурсу
+     * @param requiredSequence Мінімальна послідовність для доступу (9 = найлегше, 0
+     *                         = найважче)
+     * @param iconMaterial     Іконка в меню
+     * @param targetMaterials  Матеріали, які шукаємо
      */
-    private record DivinationTarget(String name, int requiredSequence, Material iconMaterial, Material... targetMaterials) {
+    private record DivinationTarget(String name, int requiredSequence, Material iconMaterial,
+            Material... targetMaterials) {
         DivinationTarget(String name, int requiredSequence, Material icon, Material singleTarget) {
-            this(name, requiredSequence, icon, new Material[]{singleTarget});
+            this(name, requiredSequence, icon, new Material[] { singleTarget });
         }
     }
 }

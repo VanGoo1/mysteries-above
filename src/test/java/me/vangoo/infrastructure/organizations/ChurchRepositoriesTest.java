@@ -75,14 +75,32 @@ class ChurchRepositoriesTest {
         assertTrue(restored.orderedPotionKeys().isEmpty());
     }
 
+    /**
+     * На серверах є живий church-sites.json, писаний до появи захисту будівель.
+     * Запис без `box` мусить читатись, а не валити завантаження всіх сайтів.
+     */
+    @Test
+    void siteWithoutBoxStillLoads() throws IOException {
+        Path file = dir.resolve("church-sites.json");
+        Files.writeString(file, """
+                {"sites":[{"institutionId":"church-fool","world":"world",
+                "x":1.0,"y":65.0,"z":2.0,"yaw":180.0,"pitch":0.0}],"processedVillageKeys":[]}
+                """);
+        var loaded = new ChurchSiteRepository(file.toString()).load().orElseThrow();
+        assertEquals("church-fool", loaded.sites().get(0).institutionId());
+        assertNull(loaded.sites().get(0).box());
+    }
+
     @Test
     void sitesAndVaultsRoundTrip() {
         var sites = new ChurchSiteRepository(dir.resolve("church-sites.json").toString());
         sites.save(new ChurchSiteRepository.Model(
-                List.of(new ChurchSiteRepository.Site("church-fool", "world", 1, 65, 2, 0f, 0f)),
+                List.of(new ChurchSiteRepository.Site("church-fool", "world", 1, 65, 2, 0f, 0f,
+                        new ChurchSiteRepository.Box(20, 2, 30))),
                 List.of("world:100:200")));
         var loadedSites = sites.load().orElseThrow();
         assertEquals("church-fool", loadedSites.sites().get(0).institutionId());
+        assertEquals(20, loadedSites.sites().get(0).box().half());
         assertEquals(List.of("world:100:200"), loadedSites.processedVillageKeys());
 
         var state = new ChurchStateRepository(dir.resolve("churches-state.json").toString());
@@ -90,6 +108,24 @@ class ChurchRepositoriesTest {
                 Map.of("church-fool", Map.of("custom:night_vanilla", 6, "recipe:Door:9", 1))));
         assertEquals(6, state.load().orElseThrow()
                 .vaults().get("church-fool").get("custom:night_vanilla"));
+    }
+
+    @Test
+    void returnPointsRoundTripAndSurviveCorruption() throws IOException {
+        Path file = dir.resolve("church-returns.json");
+        var repo = new ReturnPointRepository(file.toString());
+        assertTrue(repo.load().isEmpty());
+
+        repo.save(new ReturnPointRepository.Model(List.of(new ReturnPointRepository.Point(
+                "11111111-1111-1111-1111-111111111111", "world", 10.5, 65, -3.25, 90f, 12f))));
+        var point = repo.load().orElseThrow().points().get(0);
+        assertEquals("world", point.world());
+        assertEquals(-3.25, point.z());
+        assertEquals(90f, point.yaw());
+
+        // Обрив на записі не має валити старт — гравець просто вийде каменем на світовий спавн.
+        Files.writeString(file, "{\"points\":[{\"world\"");
+        assertTrue(repo.load().isEmpty());
     }
 
     @Test

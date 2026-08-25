@@ -96,20 +96,34 @@
   Провід — `ServiceContainer` (реєстр у core, конфіг+репо в infrastructure, сервіс+сайти в
   application, меню в UI, планувальник у schedulers).
 - **Сайти** — `infrastructure.organizations.ChurchSiteService` (persist після мутації) +
-  `ChurchStructurePlacer` (датапак `mysteries:church_<shortId>`; нема NBT → warn+фолбек без
-  будівлі) + `infrastructure.citizens.ChurchPriestService` (NPC, SHOULD_SAVE=false — респавн
+  `infrastructure.citizens.ChurchPriestService` (NPC, SHOULD_SAVE=false — респавн
   зі `church-sites.json` в `onEnable().spawnAllNpcs()`, despawn в `onDisable`).
   `spawnAllNpcs()` пропускає (не спавнить) священика церкви, чий храм закритий замахом
   ордену (`ChurchSiteService.priestClosurePredicate`, інжектиться сеттером із
   `SecretOrderService.isTempleClosed` через `ServiceContainer`) — інакше рестарт сервера
   повертав би священика під час дії `priestClosedUntil`; респавн після закриття робить
   `SecretOrderService.tick()`, не `spawnAllNpcs()`.
-- **Автоспавн** — `presentation.listeners.ChurchSpawnListener` (`ChunkLoadEvent`): біля кожного
-  нового села — випадкова ще не розміщена церква (кожна — щонайбільше раз на світ; оброблені
-  села персистяться). Ключ села — min-кут bbox структури.
+- **Поява храмів** — у звичайному світі храмів немає. Датапак розсіює по селах маленькі
+  святині-**шрайни**, а `ChurchWorldProvider` створює спільний кишеньковий світ
+  `mysteries_churches`, ставить туди будівлі з NBT і одразу заявляє їхні якір-мітки
+  (`ChurchSiteService.claimAnchors` — після пасти події завантаження чанка не приходять).
+  Той самий `claimAnchors` живить `ChurchSpawnListener` для міток, що приїхали з чанком.
+  Перший заявлений храм свого типу отримує сайт, сховище й священика.
+- **Шрайн і телепорт** — `VillageShrinePlacer` ставить святиню біля щойно згенерованого
+  села: рівно одну на село й рівно одну на церкву на весь світ (реєстр `shrines.json`).
+  Церкву обирає чиста `domain.organizations.ShrineAssignment` зі списку тих, що ще без
+  святині. ПКМ по вівтарю веде до храму, ПКМ по каменю-виходу — назад; точка повернення
+  лежить у `church-returns.json`. Партикли над вівтарем і над каменем-виходом крутить
+  `ShrineAmbienceScheduler`, колір — `InstitutionRegistry.brandingPathwayOf` →
+  `PathwayBranding`. У самому храмі здібності не працюють (`ShrineService.blocksAbilities`
+  як `AbilityGuard`). Механізм — `.claude/rules/church-structures.md`.
+- **Недоторканність** — `ChurchProtectionListener` (ключ `church.protect-buildings`)
+  забороняє і ламати, і ставити блоки в храмі, на шрайні та в усьому кишеньковому світі;
+  священик невразливий сам по собі (`setProtected(true)`).
 - **UI/вхід** — `infrastructure.ui.ChurchMenu` (клік по священику через `ChurchListener`),
-  команда `/church bind|unbind|leave|info`. Kill-прогрес завдань і «зупинити рампейджера» —
-  `ChurchListener` (`EntityDeathEvent`/`PlayerDeathEvent`).
+  команда `/church bind|unbind|shrine|leave|info` (`shrine` — адмінська, ставить святиню
+  у вже згенерованому селі, куди worldgen більше не зазирне). Kill-прогрес завдань і
+  «зупинити рампейджера» — `ChurchListener` (`EntityDeathEvent`/`PlayerDeathEvent`).
 - **Точки дотику з таємними організаціями (Спек 6c)** — усі методи в `ChurchService` під
   коментарем `// ── Точки дотику з таємними організаціями (Спек 6c) ──`, детальний механізм
   описано в `.claude/rules/secret-orders.md`. `ChurchService` не знає про `SecretOrderService`

@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RitualMagic extends ActiveAbility {
 
-    private static final int BASE_COST = 100;
+    private static final int BASE_COST = 60;
     private static final int BASE_COOLDOWN = 60;
     private static final int ALTAR_RADIUS = 3;
     private static final int ABORT_SANITY_LOSS = 2;
@@ -134,7 +134,7 @@ public class RitualMagic extends ActiveAbility {
             case LUCK_PRAYER -> Material.RABBIT_FOOT;
             case SANCTIFICATION -> Material.ANVIL;
             case SACRIFICE -> Material.FLINT_AND_STEEL;
-            case BESTOWMENT -> Material.NETHERITE_SCRAP;
+            case BESTOWMENT -> Material.WRITTEN_BOOK;
             case MEDIUMSHIP -> Material.BONE;
             case MIRROR_DIVINATION -> Material.AMETHYST_SHARD;
             case SPIRIT_WALL -> Material.LAPIS_LAZULI;
@@ -147,6 +147,12 @@ public class RitualMagic extends ActiveAbility {
         Player player = context.getCasterPlayer();
         if (player == null) return;
         player.closeInventory();
+
+        String rejection = bestowmentRejection(context, recipe, false);
+        if (rejection != null) {
+            context.messaging().sendMessage(casterId, ChatColor.RED + rejection);
+            return;
+        }
 
         // М'яка перевірка інгредієнтів ДО списання духовності (щоб не витрачати її дарма).
         for (Map.Entry<String, Integer> entry : recipe.ingredients().entrySet()) {
@@ -167,7 +173,11 @@ public class RitualMagic extends ActiveAbility {
         }
         context.events().publishAbilityUsedEvent(this, beyonder);
 
-        if (recipe.requiresHandSacrifice()) {
+        if (recipe.type() == RitualType.BESTOWMENT) {
+            context.messaging().sendMessage(casterId, ChatColor.GRAY
+                    + "Візьміть у головну руку інгредієнт ЧУЖОГО шляху Послідовності "
+                    + (beyonder.getSequenceLevel() - 1) + " до кінця заклинання.");
+        } else if (recipe.requiresHandSacrifice()) {
             context.messaging().sendMessage(casterId, ChatColor.GRAY
                     + "Візьміть жертву в головну руку до кінця заклинання.");
         }
@@ -210,6 +220,12 @@ public class RitualMagic extends ActiveAbility {
             }
         }
 
+        String rejection = bestowmentRejection(context, recipe, true);
+        if (rejection != null) {
+            context.messaging().sendMessage(casterId, ChatColor.RED + "Обряд згас: " + rejection);
+            return;
+        }
+
         ItemStack sacrificed = null;
         if (recipe.requiresHandSacrifice()) {
             ItemStack hand = player.getInventory().getItemInMainHand();
@@ -236,6 +252,38 @@ public class RitualMagic extends ActiveAbility {
         }
 
         runner.run(recipe, context, altar, sacrificed);
+    }
+
+    /**
+     * Ритуал одкровення платить не матеріалом, а чужим знанням: у головній руці має бути
+     * інгредієнт ІНШОГО шляху й саме наступної Послідовності.
+     *
+     * <p>{@code checkHand} — бо на СТАРТІ рука зайнята предметом активації здібності, і
+     * жертву гравець бере вже під час читання (та сама причина, чому решта ритуалів
+     * списують інгредієнти в кінці). Тож на старті перевіряємо лише те, що від руки не
+     * залежить, а саму жертву — в {@code completeRitual}, перед її знищенням.
+     *
+     * @return причина відмови або null, якщо все гаразд (і для решти ритуалів теж)
+     */
+    private String bestowmentRejection(IAbilityContext context, RitualRecipe recipe, boolean checkHand) {
+        if (recipe.type() != RitualType.BESTOWMENT) return null;
+        Player player = context.getCasterPlayer();
+        if (player == null) return "немає кому вести обряд.";
+        Beyonder beyonder = context.getCasterBeyonder();
+        int target = beyonder.getSequenceLevel() - 1;
+        if (target < 0) return "Ви вже на вершині шляху — питати нема про що.";
+        if (context.beyonder().ingredientHints(beyonder.getPathway(), Sequence.of(target)).isEmpty()) {
+            return "Сутності мовчать: шлях далі за вас не описано.";
+        }
+        if (!checkHand) return null;
+        ItemStack hand = player.getInventory().getItemInMainHand();
+        boolean valid = context.beyonder().findRecipesUsing(hand).stream()
+                .anyMatch(r -> r.sequence() == target
+                        && !r.pathwayName().equalsIgnoreCase(beyonder.getPathway().getName()));
+        if (!valid) {
+            return "у головній руці немає інгредієнта ЧУЖОГО шляху Послідовності " + target + ".";
+        }
+        return null;
     }
 
     private void applyBacklash(IAbilityContext context, RitualRecipe recipe, String reason) {

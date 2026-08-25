@@ -19,10 +19,14 @@ public class AbilityExecutor {
     private final SanityPenaltyHandler sanityPenaltyHandler;
     private final DomainEventPublisher eventPublisher;
     private final me.vangoo.infrastructure.theft.TheftLedger theftLedger;
-    private GatheringAbilityGuard gatheringAbilityGuard;
+    /**
+     * Місця, де сили мовчать (збори, храм). Список, а не одне поле: підсистем уже дві, і
+     * вони нічого не знають одна про одну.
+     */
+    private final java.util.List<AbilityGuard> abilityGuards = new java.util.ArrayList<>();
 
-    public void setGatheringAbilityGuard(GatheringAbilityGuard guard) {
-        this.gatheringAbilityGuard = guard;
+    public void addAbilityGuard(AbilityGuard guard) {
+        abilityGuards.add(guard);
     }
 
     public AbilityExecutor(BeyonderService beyonderService, AbilityLockManager abilityLockManager,
@@ -46,9 +50,10 @@ public class AbilityExecutor {
             return AbilityResult.failure("Player not found");
         }
 
-        if (gatheringAbilityGuard != null
-                && gatheringAbilityGuard.interceptAbility(beyonder.getPlayerId())) {
-            return AbilityResult.failure("Тут ваші сили мовчать.");
+        for (AbilityGuard guard : abilityGuards) {
+            if (guard.interceptAbility(beyonder.getPlayerId())) {
+                return AbilityResult.failure("Тут ваші сили мовчать.");
+            }
         }
 
         // Check ability locks

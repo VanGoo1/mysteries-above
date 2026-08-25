@@ -7,6 +7,7 @@ import me.vangoo.domain.entities.Pathway;
 import me.vangoo.application.services.PotionManager;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.infrastructure.schedulers.PassiveAbilityScheduler;
+import me.vangoo.infrastructure.ui.AbilityMenu;
 import org.bukkit.ChatColor;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -28,11 +29,13 @@ public class PathwayPotionListener implements Listener {
     private final PotionManager potionManager;
     private final BeyonderService beyonderService;
     private final PassiveAbilityScheduler passiveAbilityScheduler;
+    private final AbilityMenu abilityMenu;
 
-    public PathwayPotionListener(PotionManager potionManager, BeyonderService beyonderService, PassiveAbilityScheduler passiveAbilityScheduler) {
+    public PathwayPotionListener(PotionManager potionManager, BeyonderService beyonderService, PassiveAbilityScheduler passiveAbilityScheduler, AbilityMenu abilityMenu) {
         this.potionManager = potionManager;
         this.beyonderService = beyonderService;
         this.passiveAbilityScheduler = passiveAbilityScheduler;
+        this.abilityMenu = abilityMenu;
     }
 
     @EventHandler
@@ -97,6 +100,9 @@ public class PathwayPotionListener implements Listener {
 
         // Add to service (this also creates UI)
         beyonderService.createBeyonder(beyonder);
+
+        // Предмет меню видається одразу, а не з наступного входу в гру
+        abilityMenu.giveAbilityMenuItemToPlayer(player, beyonder);
 
         player.sendMessage(ChatColor.GREEN +
                 "Вітаємо у світі Потойбічних, " + player.getDisplayName());

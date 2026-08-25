@@ -21,8 +21,17 @@ public class ChurchSiteRepository {
 
     private static final Logger LOGGER = Logger.getLogger(ChurchSiteRepository.class.getName());
 
+    /**
+     * Габарити будівлі відносно мітки священика: `half` — квадратна півширина по XZ
+     * (квадратна, бо worldgen повертає структуру випадково), `down`/`up` — скільки
+     * блоків будівля займає під міткою й над нею. Потрібні лише для захисту від
+     * поламки. `null` у записі — нормально: сайт, прив'язаний вручну (`/church bind`)
+     * або записаний до появи захисту, просто не боронить блоки.
+     */
+    public record Box(int half, int down, int up) {}
+
     public record Site(String institutionId, String world, double x, double y, double z,
-                       float yaw, float pitch) {}
+                       float yaw, float pitch, Box box) {}
 
     public record Model(List<Site> sites, List<String> processedVillageKeys) {}
 
