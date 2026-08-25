@@ -4,6 +4,11 @@
 # Покриття: по одному створінню на (шлях × послідовність), лут = main-інгредієнти того тіру
 # (auxiliary-трави/кристали приходять зі структур через global_loot.yml — тут не дублюються).
 # tier: common (Seq 9-6, дика природа) | apex (Seq 5, біля структур, зрідка в дикій природі).
+# spawn.natural — заміна ванільного моба свого біому; spawn.structure.chance — ВАГА в лотереї
+# «скриню відкрито» (0 = зі скринь ця істота не приходить взагалі). Ключів лут-таблиць більше
+# немає: спавнить БУДЬ-ЯКА структура, а кого саме — вирішує послідовність того, хто відкрив
+# (Посл. 9 бачить 9-8, Посл. 8 — 8-7, ..., Посл. 6 — 6-5). Сам шанс, що скриня когось приведе, —
+# creatures.structure.chance у config.yml.
 # Зменшений шанс дропу: min_items 0 / max_items 1 -> кіл часто дає 0, інколи 1 інгредієнт.
 creatures:
 
@@ -21,7 +26,7 @@ creatures:
         - { id: blood_speckled_black_mosquito, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [SWAMP, MANGROVE_SWAMP], replace: [BEE, SPIDER], chance: 0.005 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.005 }
 
   error_candle_devourer_9:
     base_entity: SILVERFISH
@@ -33,7 +38,7 @@ creatures:
         - { id: candle_devourer_core, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [DARK_FOREST, DRIPSTONE_CAVES], replace: [SILVERFISH, ZOMBIE], chance: 0.005 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.005 }
 
   error_pitcher_plant_8:
     base_entity: HUSK
@@ -46,7 +51,7 @@ creatures:
         - { id: anothers_tears, weight: 35, min: 1, max: 1 }
     spawn:
       natural: { biomes: [JUNGLE, SPARSE_JUNGLE], replace: [ZOMBIE, HUSK], chance: 0.00375 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.00375 }
 
   error_insect_colony_8:
     base_entity: SILVERFISH
@@ -58,7 +63,7 @@ creatures:
         - { id: soul_bewitching_insect_larvae, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [SWAMP, MANGROVE_SWAMP], replace: [SILVERFISH, SPIDER], chance: 0.00375 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.00375 }
 
   error_sphinx_7:
     base_entity: ENDERMAN
@@ -71,7 +76,7 @@ creatures:
         - { id: sphinx_blood, weight: 35, min: 1, max: 1 }
     spawn:
       natural: { biomes: [DESERT, BADLANDS], replace: [HUSK, ZOMBIE], chance: 0.0025 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0025 }
 
   error_insect_colony_7:
     base_entity: BEE
@@ -84,7 +89,7 @@ creatures:
         - { id: soul_bewitching_colony_mucus, weight: 35, min: 1, max: 1 }
     spawn:
       natural: { biomes: [SWAMP, JUNGLE], replace: [BEE, SPIDER], chance: 0.0025 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0025 }
 
   error_crystal_threadworm_6:
     base_entity: ENDERMITE
@@ -96,7 +101,7 @@ creatures:
         - { id: crystal_threadworm, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [DRIPSTONE_CAVES, LUSH_CAVES], replace: [SILVERFISH, SPIDER], chance: 0.0015 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0015 }
 
   error_cloaked_specter_6:
     base_entity: VEX
@@ -109,7 +114,7 @@ creatures:
         - { id: cloaked_specter_residual_powder, weight: 35, min: 1, max: 1 }
     spawn:
       natural: { biomes: [DARK_FOREST], replace: [VEX, ZOMBIE], chance: 0.0015 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0015 }
 
   error_dream_eating_rat_5:
     base_entity: RAVAGER
@@ -122,7 +127,7 @@ creatures:
         - { id: dream_eating_rat_blood, weight: 35, min: 1, max: 1 }
     spawn:
       natural: { biomes: [DARK_FOREST], replace: [], chance: 0.00075 }
-      structure: { keys: [mysteries, nova_structures], chance: 0.12 }
+      structure: { chance: 0.00075 }
 
   error_depraved_breath_5:
     base_entity: PHANTOM
@@ -135,7 +140,7 @@ creatures:
         - { id: despiritualized_depraved_breath, weight: 35, min: 1, max: 1 }
     spawn:
       natural: { biomes: [SWAMP], replace: [], chance: 0.00075 }
-      structure: { keys: [mysteries, nova_structures], chance: 0.12 }
+      structure: { chance: 0.00075 }
 
   # ========================== VISIONARY ==========================
   visionary_manhal_9:
@@ -149,7 +154,7 @@ creatures:
         - { id: goat_horned_blackfish_blood, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [OCEAN, DEEP_OCEAN], replace: [GUARDIAN, DROWNED], chance: 0.005 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0 }
 
   visionary_thoughtform_8:
     base_entity: VEX
@@ -161,7 +166,7 @@ creatures:
         - { id: thought_essence, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [DARK_FOREST], replace: [VEX, ZOMBIE], chance: 0.00375 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.00375 }
 
   visionary_mirror_dragon_7:
     base_entity: RAVAGER
@@ -174,7 +179,7 @@ creatures:
         - { id: mirror_dragon_blood, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [JUNGLE], replace: [PILLAGER, ZOMBIE], chance: 0.0025 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0025 }
 
   visionary_hunting_lizard_6:
     base_entity: ZOGLIN
@@ -187,7 +192,7 @@ creatures:
         - { id: split_personality_essence, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [JUNGLE, SWAMP], replace: [SPIDER], chance: 0.0015 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0015 }
 
   visionary_mind_dragon_5:
     base_entity: RAVAGER
@@ -200,7 +205,7 @@ creatures:
         - { id: adult_mind_dragon_blood, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [JUNGLE], replace: [], chance: 0.00075 }
-      structure: { keys: [mysteries, nova_structures], chance: 0.12 }
+      structure: { chance: 0.00075 }
 
   # ============================ DOOR =============================
   door_wanderer_9:
@@ -213,7 +218,7 @@ creatures:
         - { id: dimensional_wanderer_eye, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [PLAINS, DESERT], replace: [ENDERMAN, ZOMBIE], chance: 0.005 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.005 }
 
   door_spirit_eater_8:
     base_entity: DROWNED
@@ -226,7 +231,7 @@ creatures:
         - { id: deep_sea_marlin_blood, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [OCEAN, RIVER], replace: [DROWNED], chance: 0.00375 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.00375 }
 
   door_lavos_squid_7:
     base_entity: GUARDIAN
@@ -238,7 +243,7 @@ creatures:
         - { id: lavos_squid_blood, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [WARM_OCEAN, DEEP_OCEAN], replace: [GUARDIAN], chance: 0.0025 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0 }
 
   door_asmann_6:
     base_entity: HUSK
@@ -250,7 +255,7 @@ creatures:
         - { id: asmann_complete_brain, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [DESERT], replace: [HUSK], chance: 0.0015 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0015 }
 
   door_void_drifter_5:
     base_entity: ENDERMAN
@@ -262,7 +267,7 @@ creatures:
         - { id: void_drifter_heart, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [PLAINS], replace: [], chance: 0.00075 }
-      structure: { keys: [mysteries, nova_structures], chance: 0.12 }
+      structure: { chance: 0.00075 }
 
   # ========================== JUSTICIAR =========================
   justiciar_judge_9:
@@ -276,7 +281,7 @@ creatures:
         - { id: eye_of_judicial_insight, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [PLAINS, DARK_FOREST], replace: [VINDICATOR, PILLAGER], chance: 0.005 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.005 }
 
   justiciar_terror_worm_8:
     base_entity: ZOGLIN
@@ -289,7 +294,7 @@ creatures:
         - { id: silver_war_bears_right_palm, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [TAIGA], replace: [SPIDER], chance: 0.00375 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.00375 }
 
   justiciar_flash_snake_7:
     base_entity: CAVE_SPIDER
@@ -301,7 +306,7 @@ creatures:
         - { id: horn_of_a_flash_patterned_black_snake, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [JUNGLE], replace: [SPIDER], chance: 0.0025 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0025 }
 
   justiciar_silent_verdict_6:
     base_entity: EVOKER
@@ -314,7 +319,7 @@ creatures:
         - { id: fragment_of_a_sealed_domain, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [DARK_FOREST], replace: [VINDICATOR], chance: 0.0015 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0015 }
 
   justiciar_retribution_5:
     base_entity: IRON_GOLEM
@@ -327,7 +332,7 @@ creatures:
         - { id: brand_of_the_unforgiving_oath, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [PLAINS], replace: [], chance: 0.00075 }
-      structure: { keys: [mysteries, nova_structures], chance: 0.12 }
+      structure: { chance: 0.00075 }
 
   # ========================= WHITE TOWER ========================
   whitetower_manticore_9:
@@ -341,7 +346,7 @@ creatures:
         - { id: light_antelope_blood, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [SAVANNA, PLAINS], replace: [PHANTOM, ZOMBIE], chance: 0.005 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.005 }
 
   whitetower_cave_monkey_8:
     base_entity: PIGLIN
@@ -353,7 +358,7 @@ creatures:
         - { id: crystallized_cave_monkey_brain, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [JUNGLE], replace: [ZOMBIE], chance: 0.00375 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.00375 }
 
   whitetower_phantom_python_7:
     base_entity: WOLF
@@ -366,7 +371,7 @@ creatures:
         - { id: steel_toothed_wolf_heart, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [TAIGA, FOREST], replace: [WOLF], chance: 0.0025 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0025 }
 
   whitetower_chameleon_6:
     base_entity: CAVE_SPIDER
@@ -378,7 +383,7 @@ creatures:
         - { id: prismatic_chameleon_heart, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [JUNGLE], replace: [SPIDER], chance: 0.0015 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0015 }
 
   whitetower_void_beholder_5:
     base_entity: SHULKER
@@ -390,7 +395,7 @@ creatures:
         - { id: void_beholder_petrified_eye, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [PLAINS], replace: [], chance: 0.00075 }
-      structure: { keys: [mysteries, nova_structures], chance: 0.12 }
+      structure: { chance: 0.00075 }
 
   # ============================ FOOL ============================
   # Seq 9 (Провидець): кров Кальмара Лавос дає спільний Door-моб door_lavos_squid_7 (GUARDIAN),
@@ -405,7 +410,7 @@ creatures:
         - { id: hornacis_goat_horn, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [SNOWY_SLOPES, JAGGED_PEAKS, FROZEN_PEAKS, GROVE], replace: [GOAT], chance: 0.006 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.006 }
 
   fool_mist_treant_7:
     base_entity: GUARDIAN
@@ -417,7 +422,7 @@ creatures:
         - { id: mist_treant_root, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [OCEAN, DEEP_OCEAN], replace: [GUARDIAN, DROWNED], chance: 0.0025 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0 }
 
   fool_thousand_faced_hunter_6:
     base_entity: WITCH
@@ -430,7 +435,7 @@ creatures:
         - { id: thousand_faced_hunter_blood, weight: 40, min: 1, max: 1 }
     spawn:
       natural: { biomes: [SWAMP], replace: [WITCH, ZOMBIE], chance: 0.0015 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0015 }
 
   fool_ancient_wraith_5:
     base_entity: EVOKER
@@ -443,7 +448,7 @@ creatures:
         - { id: ancient_wraith_spirituality, weight: 35, min: 1, max: 1 }
     spawn:
       natural: { biomes: [DARK_FOREST], replace: [], chance: 0.00075 }
-      structure: { keys: [mysteries, nova_structures], chance: 0.12 }
+      structure: { chance: 0.00075 }
 
   fool_deep_sea_naga_6:
     base_entity: DROWNED
@@ -455,7 +460,7 @@ creatures:
         - { id: deep_sea_naga_hair, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [OCEAN, DEEP_OCEAN, WARM_OCEAN, LUKEWARM_OCEAN], replace: [DROWNED, GUARDIAN], chance: 0.002 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.002 }
 
   fool_dark_panther_7:
     base_entity: WOLF
@@ -467,7 +472,7 @@ creatures:
         - { id: dark_panther_spinal_fluid, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [JUNGLE, SPARSE_JUNGLE, FOREST], replace: [WOLF], chance: 0.0025 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0025 }
 
   fool_human_skin_shadow_6:
     base_entity: HUSK
@@ -479,7 +484,7 @@ creatures:
         - { id: human_skin_shadow_characteristic, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [DARK_FOREST, SWAMP], replace: [ZOMBIE, HUSK], chance: 0.0015 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0015 }
 
   fool_six_winged_gargoyle_5:
     base_entity: VEX
@@ -491,7 +496,7 @@ creatures:
         - { id: six_winged_gargoyle_core, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [WINDSWEPT_HILLS, JAGGED_PEAKS, STONY_PEAKS], replace: [], chance: 0.00075 }
-      structure: { keys: [mysteries, nova_structures], chance: 0.1 }
+      structure: { chance: 0.00075 }
 
   # ============================ SUN ============================
   # Головні-інгредієнти зі створінь (частини тіла); рослини/каміння/сік — форедж.
@@ -505,7 +510,7 @@ creatures:
         - { id: siren_rock, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [OCEAN, DEEP_OCEAN, WARM_OCEAN], replace: [DROWNED, GUARDIAN], chance: 0.005 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.005 }
 
   sun_magma_titan_8:
     base_entity: MAGMA_CUBE
@@ -517,7 +522,7 @@ creatures:
         - { id: heart_of_magma_titan, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [BASALT_DELTAS, NETHER_WASTES], replace: [MAGMA_CUBE], chance: 0.00375 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.00375 }
 
   sun_dawn_rooster_7:
     base_entity: CHICKEN
@@ -529,7 +534,7 @@ creatures:
         - { id: dawn_rooster_comb, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [PLAINS, SUNFLOWER_PLAINS, SAVANNA], replace: [CHICKEN], chance: 0.0025 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0025 }
 
   sun_spirit_pact_bird_6:
     base_entity: PARROT
@@ -541,7 +546,7 @@ creatures:
         - { id: spirit_pact_bird_feather, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [JUNGLE, SPARSE_JUNGLE, BAMBOO_JUNGLE], replace: [PARROT], chance: 0.0015 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0015 }
 
   sun_king_dawn_rooster_5:
     base_entity: CHICKEN
@@ -554,7 +559,7 @@ creatures:
         - { id: king_dawn_rooster_blood, weight: 40, min: 1, max: 1 }
     spawn:
       natural: { biomes: [SUNFLOWER_PLAINS, SAVANNA_PLATEAU], replace: [], chance: 0.00075 }
-      structure: { keys: [mysteries, nova_structures], chance: 0.1 }
+      structure: { chance: 0.00075 }
 
   # =========================== TYRANT ===========================
   # Виняток із загального правила «істоти дають лише main»: у Tyrant частина auxiliary —
@@ -571,7 +576,7 @@ creatures:
         - { id: man_eating_conch, weight: 40, min: 1, max: 1 }
     spawn:
       natural: { biomes: [OCEAN, WARM_OCEAN, LUKEWARM_OCEAN, RIVER], replace: [DROWNED], chance: 0.005 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.005 }
 
   tyrant_deep_diver_8:
     base_entity: DROWNED
@@ -585,7 +590,7 @@ creatures:
         - { id: deep_diver_tongue_half, weight: 40, min: 1, max: 1 }
     spawn:
       natural: { biomes: [DEEP_OCEAN, DEEP_LUKEWARM_OCEAN, COLD_OCEAN], replace: [DROWNED, GUARDIAN], chance: 0.00375 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.00375 }
 
   tyrant_black_scaled_shark_7:
     base_entity: GUARDIAN
@@ -599,7 +604,7 @@ creatures:
         - { id: raging_white_dolphin_blood, weight: 40, min: 1, max: 1 }
     spawn:
       natural: { biomes: [OCEAN, DEEP_OCEAN, DEEP_COLD_OCEAN], replace: [GUARDIAN, DROWNED], chance: 0.0025 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0 }
 
   tyrant_sea_condor_6:
     base_entity: PHANTOM
@@ -613,7 +618,7 @@ creatures:
         - { id: blue_shadow_falcon_bone, weight: 40, min: 1, max: 1 }
     spawn:
       natural: { biomes: [BEACH, STONY_SHORE, OCEAN, WARM_OCEAN], replace: [PHANTOM, DROWNED], chance: 0.0015 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0015 }
 
   tyrant_siren_5:
     base_entity: DROWNED
@@ -626,7 +631,7 @@ creatures:
         - { id: crystal_jellyfish_cluster, weight: 40, min: 1, max: 1 }
     spawn:
       natural: { biomes: [DEEP_OCEAN, DEEP_FROZEN_OCEAN], replace: [], chance: 0.00075 }
-      structure: { keys: [mysteries, nova_structures], chance: 0.1 }
+      structure: { chance: 0.00075 }
 
   # ============================ DEATH ============================
   death_blackspotted_frog_9:
@@ -639,7 +644,7 @@ creatures:
         - { id: desiccated_mature_black_spotted_frog, weight: 50, min: 1, max: 1 }
     spawn:
       natural: { biomes: [SWAMP, MANGROVE_SWAMP], replace: [FROG], chance: 0.005 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.005 }
 
   death_calling_crow_8:
     base_entity: PARROT
@@ -652,7 +657,7 @@ creatures:
         - { id: death_calling_crow_feather, weight: 35, min: 1, max: 1 }
     spawn:
       natural: { biomes: [DARK_FOREST, SWAMP], replace: [BAT], chance: 0.00375 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.00375 }
 
   death_phantom_cat_7:
     base_entity: CAT
@@ -665,7 +670,7 @@ creatures:
         - { id: phantom_cat_blood, weight: 35, min: 1, max: 1 }
     spawn:
       natural: { biomes: [DARK_FOREST, TAIGA], replace: [CAT], chance: 0.0025 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0025 }
 
   death_pale_lich_6:
     base_entity: WITHER_SKELETON
@@ -678,7 +683,7 @@ creatures:
         - { id: fragmented_bones_of_pale_lich, weight: 35, min: 1, max: 1 }
     spawn:
       natural: { biomes: [DRIPSTONE_CAVES, DARK_FOREST], replace: [WITHER_SKELETON, SKELETON], chance: 0.0015 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0015 }
 
   death_underworld_wanderer_5:
     base_entity: ZOMBIE_VILLAGER
@@ -691,7 +696,7 @@ creatures:
         - { id: piece_of_rotten_flesh_from_underworld_wanderer, weight: 35, min: 1, max: 1 }
     spawn:
       natural: { biomes: [SWAMP, DARK_FOREST], replace: [], chance: 0.00075 }
-      structure: { keys: [mysteries, nova_structures], chance: 0.12 }
+      structure: { chance: 0.00075 }
 
   death_thousand_armed_wraith_5:
     base_entity: VEX
@@ -704,7 +709,7 @@ creatures:
         - { id: residual_powder_of_a_thousand_armed_wraith, weight: 35, min: 1, max: 1 }
     spawn:
       natural: { biomes: [DARK_FOREST], replace: [], chance: 0.00075 }
-      structure: { keys: [mysteries, nova_structures], chance: 0.1 }
+      structure: { chance: 0.00075 }
 
   # ====================== БЕЗ ШЛЯХУ: ДУХИ ======================
   # Виняток із правила «одне створіння на (шлях × послідовність)»: дух не належить
@@ -729,7 +734,7 @@ creatures:
       items: []
     spawn:
       natural: { biomes: [SOUL_SAND_VALLEY, DRIPSTONE_CAVES, DEEP_DARK], replace: [SKELETON, STRAY, ZOMBIE], chance: 0.02 }
-      structure: { keys: [ancient_city, abandoned_mineshaft], chance: 0.08 }
+      structure: { chance: 0.02 }
 
   # =================== БЕЗ ШЛЯХУ: СВІТ ДУХІВ (ПЕКЛО) ===================
   # Ті самі чотири істоти S1g-j, що й mythic-pack/Mobs/spirit-world.yml — не належать жодному
@@ -751,7 +756,7 @@ creatures:
       items: []
     spawn:
       natural: { biomes: [NETHER_WASTES], replace: [WITHER_SKELETON, ZOMBIFIED_PIGLIN], chance: 0.01 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0 }
 
   shadow_swallowing_python:
     base_entity: CAVE_SPIDER
@@ -764,7 +769,7 @@ creatures:
       items: []
     spawn:
       natural: { biomes: [WARPED_FOREST, SOUL_SAND_VALLEY], replace: [ZOMBIFIED_PIGLIN, ENDERMAN], chance: 0.012 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0 }
 
   living_shadow:
     base_entity: VEX
@@ -777,7 +782,7 @@ creatures:
       items: []
     spawn:
       natural: { biomes: [CRIMSON_FOREST], replace: [ZOMBIFIED_PIGLIN, PIGLIN], chance: 0.012 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0 }
 
   lake_goddess:
     base_entity: DROWNED
@@ -790,7 +795,7 @@ creatures:
       items: []
     spawn:
       natural: { biomes: [SOUL_SAND_VALLEY, BASALT_DELTAS], replace: [STRIDER, ZOMBIFIED_PIGLIN], chance: 0.008 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0 }
 
   # Ще четверо S1g-j-подібних, цього разу з тіру Воротаря (Посл. 5): А10/А11/S2/S3 плану
   # death-seq5.md. Той самий трюк pathway: "spirit-world" — поза Конвергенцією й HUNT.
@@ -805,7 +810,7 @@ creatures:
       items: []
     spawn:
       natural: { biomes: [NETHER_WASTES, CRIMSON_FOREST], replace: [GHAST, ZOMBIFIED_PIGLIN], chance: 0.01 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0 }
 
   pus_of_man:
     base_entity: HUSK
@@ -818,7 +823,7 @@ creatures:
       items: []
     spawn:
       natural: { biomes: [BASALT_DELTAS, SOUL_SAND_VALLEY], replace: [ZOMBIFIED_PIGLIN, STRIDER], chance: 0.012 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0 }
 
   pale_girl:
     base_entity: STRAY
@@ -831,7 +836,7 @@ creatures:
       items: []
     spawn:
       natural: { biomes: [SOUL_SAND_VALLEY, CRIMSON_FOREST], replace: [ZOMBIFIED_PIGLIN, PIGLIN], chance: 0.01 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0 }
 
   sea_beasts:
     base_entity: GUARDIAN
@@ -844,4 +849,4 @@ creatures:
       items: []
     spawn:
       natural: { biomes: [BASALT_DELTAS, WARPED_FOREST], replace: [STRIDER, HOGLIN], chance: 0.008 }
-      structure: { keys: [], chance: 0.0 }
+      structure: { chance: 0.0 }

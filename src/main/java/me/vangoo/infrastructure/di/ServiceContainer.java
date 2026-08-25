@@ -136,6 +136,7 @@ public class ServiceContainer {
     private WardenRemnantCodec wardenRemnantCodec;
     private RampageRemnantDeathListener rampageRemnantDeathListener;
     private java.util.Map<String, me.vangoo.domain.creatures.CreatureDefinition> creatureRegistry;
+    private me.vangoo.infrastructure.forage.ForageConfig forageConfig;
     private me.vangoo.domain.creatures.CreatureSelector creatureSelector;
     private me.vangoo.infrastructure.mythic.MythicCreatureGateway mythicCreatureGateway;
     private me.vangoo.presentation.listeners.CreatureDeathListener creatureDeathListener;
@@ -304,14 +305,18 @@ public class ServiceContainer {
         this.creatureRegistry = java.util.Collections.unmodifiableMap(creatureConfigLoader.load());
         this.creatureSelector = new me.vangoo.domain.creatures.CreatureSelector(creatureRegistry.values());
         this.forageNodeCodec = new me.vangoo.infrastructure.forage.ForageNodeCodec(plugin);
+        // Форедж-конфіг читається тут, а не в initializeSchedulers: із нього ще до
+        // AbilityContextFactory будується IngredientSourceIndex (Ритуал одкровення).
+        this.forageConfig = new me.vangoo.infrastructure.forage.ForageConfigLoader(plugin).load();
         this.mythicCreatureGateway = new me.vangoo.infrastructure.mythic.MythicCreatureGateway(plugin);
         this.creatureDeathListener = new me.vangoo.presentation.listeners.CreatureDeathListener(
                 mythicCreatureGateway, creatureRegistry, lootGenerationService, beyonderService);
-        double minSpawnDistance = plugin.getConfig().getDouble("creatures.min-spawn-distance", 2000.0);
+        double minSpawnDistance = plugin.getConfig().getDouble("creatures.min-spawn-distance", 3000.0);
         this.naturalCreatureSpawnListener = new me.vangoo.presentation.listeners.NaturalCreatureSpawnListener(
                 creatureSelector, mythicCreatureGateway, minSpawnDistance, beyonderService);
         this.structureCreatureSpawnListener = new me.vangoo.presentation.listeners.StructureCreatureSpawnListener(
-                creatureSelector, mythicCreatureGateway, minSpawnDistance);
+                plugin, creatureSelector, mythicCreatureGateway, beyonderService, minSpawnDistance,
+                plugin.getConfig().getDouble("creatures.structure.chance", 0.10));
         this.creatureDamageListener = new me.vangoo.presentation.listeners.CreatureDamageListener(
                 mythicCreatureGateway, creatureRegistry, beyonderService);
 
@@ -342,7 +347,9 @@ public class ServiceContainer {
                 theftLedger,
                 pathwayManager,
                 mythicCreatureGateway,
-                creatureRegistry
+                creatureRegistry,
+                new me.vangoo.domain.rituals.IngredientSourceIndex(
+                        creatureRegistry.values(), forageConfig.biomes())
         );
 
         this.abilityExecutor = new AbilityExecutor(
@@ -458,7 +465,7 @@ public class ServiceContainer {
 
         this.rampageScheduler = new RampageScheduler(plugin, rampageManager);
 
-        double ambientMinDistance = plugin.getConfig().getDouble("creatures.min-spawn-distance", 2000.0);
+        double ambientMinDistance = plugin.getConfig().getDouble("creatures.min-spawn-distance", 3000.0);
         long ambientInterval = plugin.getConfig().getLong("creatures.ambient.interval-seconds", 60L);
         double ambientChance = plugin.getConfig().getDouble("creatures.ambient.chance", 0.022);
         int ambientMaxNearby = plugin.getConfig().getInt("creatures.ambient.max-nearby", 3);
@@ -476,13 +483,10 @@ public class ServiceContainer {
                 creatureRegistry, characteristicCodec, wardenRemnantCodec,
                 convInterval, convRadius, convDrift, convMobNudge, convWhisper);
 
-        me.vangoo.infrastructure.forage.ForageConfigLoader forageConfigLoader =
-                new me.vangoo.infrastructure.forage.ForageConfigLoader(plugin);
-        me.vangoo.infrastructure.forage.ForageConfig forageConfig = forageConfigLoader.load();
         me.vangoo.domain.forage.ForageSelector forageSelector =
-                new me.vangoo.domain.forage.ForageSelector(forageConfig.biomes());
+                new me.vangoo.domain.forage.ForageSelector(forageConfig.biomes(), potionRecipeConfig);
         this.forageNodeSpawner = new me.vangoo.infrastructure.schedulers.ForageNodeSpawner(
-                (MysteriesAbovePlugin) plugin, forageSelector, forageNodeCodec, forageConfig);
+                (MysteriesAbovePlugin) plugin, forageSelector, forageNodeCodec, forageConfig, beyonderService);
 
         this.abilityMenuItemUpdater = new AbilityMenuItemUpdater(
                 plugin,

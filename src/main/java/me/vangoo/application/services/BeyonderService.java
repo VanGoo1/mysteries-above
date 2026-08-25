@@ -117,8 +117,11 @@ public class BeyonderService {
             return;
         if (!beyonder.getSpirituality().isFull()) {
             beyonder.regenerateSpirituality();
-            updateSpiritualityBar(player, beyonder);
         }
+        // Бар оновлюємо завжди: духовність змінюють і поза регенерацією
+        // (жертвоприношення, перекачка крадіжкою), і при заповненні до максимуму
+        // стара гілка залишала бар застарілим назавжди.
+        updateSpiritualityBar(player, beyonder);
     }
 
     public void createSpiritualityBar(Player player, Beyonder beyonder) {

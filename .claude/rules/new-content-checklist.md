@@ -53,4 +53,10 @@ Chained, WheelOfFortune). Кожна заготовка
 
 1. Предмет — у `custom-items.yml` (`CustomItemConfigLoader` → `CustomItemRegistry`); доступ у коді тільки через `CustomItemService`. Видача: `/custom-items give`.
 2. Лут — `global_loot.yml` (`LootTableConfigLoader`), генерація — `LootGenerationService` (структури, археологія, ванільні скрині).
-3. Нова команда — див. чеклист у правилі wiring (plugin.yml + registerCommands).
+3. **Кожен інгредієнт варіння МУСИТЬ мати запис у `global_loot.yml`.** Інваріант: усе, що
+   `potion-recipes.yml` називає `main`/`auxiliary`, трапляється в скринях — інакше зілля
+   неварабельне, і мовчки: жодної помилки при старті. Пінить `GlobalLootCoverageTest` (в обидва
+   боки: інгредієнт без луту + лут на неіснуючий предмет). Вага — за Послідовністю зілля:
+   9→60, 8→40, 7→25, 6→12 (`tier: rare`), 5→5 (`tier: rare`); рецепти 45/30/15/8/4, зілля 10/6/3.
+   Не інгредієнти (валюта, шифровка ордену, `master_recipe_book`) під інваріант не підпадають.
+4. Нова команда — див. чеклист у правилі wiring (plugin.yml + registerCommands).

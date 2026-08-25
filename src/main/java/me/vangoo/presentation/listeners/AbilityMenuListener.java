@@ -29,17 +29,20 @@ import java.util.logging.Logger;
  * Updated to work with new triumph-gui based menu system.
  */
 public class AbilityMenuListener implements Listener {
+    private final org.bukkit.plugin.Plugin plugin;
     private final AbilityMenu abilityMenu;
     private final BeyonderService beyonderService;
     private final AbilityItemFactory abilityItemFactory;
     private final Logger logger;
 
     public AbilityMenuListener(
+            org.bukkit.plugin.Plugin plugin,
             AbilityMenu abilityMenu,
             BeyonderService beyonderService,
             AbilityItemFactory abilityItemFactory,
             Logger logger
     ) {
+        this.plugin = plugin;
         this.abilityMenu = abilityMenu;
         this.beyonderService = beyonderService;
         this.abilityItemFactory = abilityItemFactory;
@@ -318,7 +321,7 @@ public class AbilityMenuListener implements Listener {
 
         // Даємо предмет меню назад через тік
         org.bukkit.Bukkit.getScheduler().runTaskLater(
-                org.bukkit.Bukkit.getPluginManager().getPlugin("mysteries-above"),
+                plugin,
                 () -> abilityMenu.giveAbilityMenuItemToPlayer(player, beyonder),
                 1L
         );

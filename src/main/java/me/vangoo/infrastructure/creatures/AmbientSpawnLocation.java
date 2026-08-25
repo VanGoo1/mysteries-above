@@ -50,7 +50,7 @@ public final class AmbientSpawnLocation {
             int x = (int) Math.floor(center.getX() + Math.cos(angle) * r);
             int z = (int) Math.floor(center.getZ() + Math.sin(angle) * r);
 
-            Block top = world.getHighestBlockAt(x, z);
+            Block top = surfaceAt(world, x, z, center.getBlockY());
 
             if (aquatic) {
                 // потрібен водний стовп (не калюжа в один блок)
@@ -67,5 +67,20 @@ public final class AmbientSpawnLocation {
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * Опора під точкою (x, z). У світі зі стелею (Незер) {@code getHighestBlockAt} віддає бедрок
+     * даху, тож ambient-істоти ставились на дах Незеру замість того, щоб прийти до гравця —
+     * там шукаємо перший твердий блок ВНИЗ від рівня центру.
+     */
+    private static Block surfaceAt(World world, int x, int z, int centerY) {
+        if (!world.hasCeiling()) return world.getHighestBlockAt(x, z);
+        int from = Math.min(centerY + 8, world.getMaxHeight() - 1);
+        for (int y = from; y > world.getMinHeight(); y--) {
+            Block b = world.getBlockAt(x, y, z);
+            if (b.getType().isSolid()) return b;
+        }
+        return world.getBlockAt(x, world.getMinHeight(), z);
     }
 }

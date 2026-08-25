@@ -50,6 +50,9 @@ public class MessagingContext implements IMessagingContext {
         holo.setMarker(true);
         holo.setCustomNameVisible(true);
         holo.setInvulnerable(true);
+        // Не зберігати в чанк: якщо таск зняття не встиг (рестарт/вимкнення плагіна),
+        // голограма інакше лишається у світі назавжди.
+        holo.setPersistent(false);
 
         String serializedText = LegacyComponentSerializer.legacySection().serialize(text);
         holo.setCustomName(serializedText);
@@ -72,6 +75,9 @@ public class MessagingContext implements IMessagingContext {
         holo.setMarker(true);
         holo.setCustomNameVisible(true);
         holo.setInvulnerable(true);
+        // Не зберігати в чанк: якщо таск зняття не встиг (рестарт/вимкнення плагіна),
+        // голограма інакше лишається у світі назавжди.
+        holo.setPersistent(false);
 
         String serialized = LegacyComponentSerializer.legacySection().serialize(text);
         holo.setCustomName(serialized);

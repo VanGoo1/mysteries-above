@@ -29,6 +29,7 @@ public class AbilityContextFactory {
     private final PathwayManager pathwayManager;
     private final me.vangoo.infrastructure.mythic.MythicCreatureGateway mythicCreatureGateway;
     private final java.util.Map<String, me.vangoo.domain.creatures.CreatureDefinition> creatureRegistry;
+    private final me.vangoo.domain.rituals.IngredientSourceIndex ingredientSources;
     /**
      * Церкви приходять сеттером, а не конструктором: ChurchService будується пізніше за цю
      * фабрику (той самий прийом, що й ChurchService.setFalsePapersCheck). Контексти
@@ -56,7 +57,8 @@ public class AbilityContextFactory {
             me.vangoo.infrastructure.theft.TheftLedger theftLedger,
             PathwayManager pathwayManager,
             me.vangoo.infrastructure.mythic.MythicCreatureGateway mythicCreatureGateway,
-            java.util.Map<String, me.vangoo.domain.creatures.CreatureDefinition> creatureRegistry
+            java.util.Map<String, me.vangoo.domain.creatures.CreatureDefinition> creatureRegistry,
+            me.vangoo.domain.rituals.IngredientSourceIndex ingredientSources
     ) {
         this.plugin = Objects.requireNonNull(plugin, "Plugin cannot be null");
         this.cooldownManager = Objects.requireNonNull(cooldownManager, "CooldownManager cannot be null");
@@ -77,6 +79,7 @@ public class AbilityContextFactory {
         this.pathwayManager = Objects.requireNonNull(pathwayManager, "PathwayManager cannot be null");
         this.mythicCreatureGateway = Objects.requireNonNull(mythicCreatureGateway, "MythicCreatureGateway cannot be null");
         this.creatureRegistry = Objects.requireNonNull(creatureRegistry, "Creature registry cannot be null");
+        this.ingredientSources = Objects.requireNonNull(ingredientSources, "Ingredient source index cannot be null");
     }
 
 
@@ -106,7 +109,8 @@ public class AbilityContextFactory {
                 theftLedger,
                 pathwayManager,
                 mythicCreatureGateway,
-                creatureRegistry
+                creatureRegistry,
+                ingredientSources
         );
     }
 }

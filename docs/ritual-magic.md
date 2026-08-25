@@ -8,7 +8,9 @@
   (Посл. 9 — 3, 8 — 5, 7 — усі 7), сила ефектів — `SequenceScaler` (MODERATE).
 - **Домен** — `domain.rituals` (у `PURE_DOMAIN` ArchUnit, нуль Bukkit): `RitualType`,
   `RitualRecipe` (гейт послідовності, свічки, інгредієнти як імена `Material` у String),
-  `RitualCatalog` (юніт-тест `RitualCatalogTest`), `SacrificeKind`/`SacrificeAppraiser`
+  `RitualCatalog` (юніт-тест `RitualCatalogTest`), `IngredientSourceIndex` (звідки береться
+  інгредієнт: істота з `creatures.yml` чи форедж із `forage.yml`; юніт-тест
+  `IngredientSourceIndexTest`) + `IngredientHint`, `SacrificeKind`/`SacrificeAppraiser`
   (юніт-тест `SacrificeAppraiserTest`), `RitualEffectMath` (базові числа тривалостей/ремонту
   до Sequence-скейлу — `LUCK_BASE_TICKS`, `SANCTIFY_BASE_DURABILITY`,
   `EVENTS_BASE_WINDOW_SECONDS`, `WALL_BASE_TICKS` — і формула шансу Дарування
@@ -29,9 +31,9 @@
   Реєстр сесій — instance-поле `RitualMagic`, `cleanUp()` скасовує всі.
 - **Ефекти** — `RitualEffectRunner` (stateless, живе в `pathways.common.abilities`): удача
   (Luck), освячення (ремонт міцності), жертвопринесення (духовність за `SacrificeAppraiser`),
-  дарування (шанс інгредієнта наступної посл. за `RitualEffectMath.bestowmentChance`),
-  спіритизм/дзеркало (минулі події через `IEventContext.getPastEvents` — CoreProtect), стіна
-  духовності (відштовхує монстрів + Resistance, самозгасний таск). Runner лише читає базові
+  одкровення (книга-натяк за `RitualEffectMath.bestowmentChance`), спіритизм/дзеркало (минулі події через `IEventContext.getPastEvents` — CoreProtect), стіна
+  духовності (відштовхує монстрів + Resistance, самозгасний таск). Одкровення предметів НЕ
+  створює — див. окремий розділ нижче. Runner лише читає базові
   числа з `RitualEffectMath`, скейлить їх через `SequenceScaler` і виконує Bukkit-ефекти —
   сам нових балансних чисел не тримає.
 
@@ -43,6 +45,43 @@
 4. Гілка в `RitualEffectRunner.run` + іконка в `RitualMagic.iconFor`.
 5. Онови пінінг у `RitualCatalogTest` (кількість, гейти) і, якщо додав формулу, —
    `RitualEffectMathTest`.
+
+## Ритуал одкровення (`BESTOWMENT`, Посл. 8) — нагорода є ЗНАННЯМ, не матерією
+
+**Інваріант: ритуал ніколи не створює інгредієнт.** Раніше він видавав випадковий інгредієнт
+наступної Послідовності за `3× NETHERITE_SCRAP` — і на сервері з Create (де незерит
+фармиться конвеєром) це був прямий конвеєр «руда → прогрес по шляху». Виправлення не в
+піднятті ціни: будь-яку фармабельну валюту мод рано чи пізно здешевить. Нагорода змінена на
+таку, що **не стакається** — інформацію. Другий каст на ту саму Послідовність дає ту саму
+книгу, тож фарм жертви не конвертується ні в що.
+
+- **Плата** — не `Material`, а один інгредієнт **чужого шляху** й саме Посл. N−1, із головної
+  руки (`requiresHandSacrifice = true`, `ingredients = Map.of()`). Виражати таку жертву через
+  `RitualRecipe.ingredients` не можна: там імена `Material`, а інгредієнти — кастомні
+  предмети з NBT. Валідатор — `RitualMagic.bestowmentRejection` через наявний
+  `context.beyonder().findRecipesUsing(hand)`.
+- **Жертву читаємо ЛИШЕ в кінці заклинання.** На старті головна рука зайнята предметом
+  активації здібності, тож тримати там ще й інгредієнт фізично неможливо — гравець бере
+  його вже під час читання (та сама причина, чому решта ритуалів списують інгредієнти в
+  `completeRitual`). Тому `bestowmentRejection(..., checkHand)` на старті перевіряє тільки
+  те, що від руки не залежить (є куди рости, шлях описано), а саму жертву — у
+  `completeRitual`, перед її знищенням. Старт натомість каже вголос, ЩО саме взяти в руку.
+- **Нагорода** — `RevelationBook`: `WRITTEN_BOOK` **без NBT**, тож
+  `RecipeBookFactory.isRecipeBook` її не впізнає й прочитання нічого не розблоковує. Це
+  свідомо: рецепти дають лут, церкви й ордени — ритуал дає лише сліди.
+- **Текст — натяк, не карта**: імені моба й точного біома книга не називає, лише сімейство
+  місцевості (`RevelationBook.family`: `*OCEAN` → «у морях», `*CAVES`/`DEEP_DARK` → «у
+  глибоких печерах», нетерські → «у Незері» тощо). Шукати все одно доводиться.
+- **Дані** — `IngredientSourceIndex`, який `ServiceContainer` будує раз на старті з
+  `creatureRegistry` + `forageConfig.biomes()` і віддає в `AbilityContextFactory` поруч із
+  `creatureRegistry`. Саме тому `forage.yml` тепер читається в `initializeApplicationServices`,
+  а не в `initializeSchedulers`. `global_loot.yml` для цього марний: лут глобальний, місця в
+  ньому немає — інгредієнт без джерела дає «сліди губляться».
+- Джойн «інгредієнт → джерело» робить `BeyonderContext.ingredientHints`, бо id дістається з
+  NBT (інфраструктура), а шар здібностей має бачити вже готові підказки.
+
+❌ Не повертати видачу предметів у `runBestowment` і не платити за нього ванільним
+матеріалом — обидва рухи відкривають ту саму дірку заново.
 
 ## Кришталева куля (Door, Посл. 7)
 
@@ -70,5 +109,5 @@ instance-поле, `cleanUp()` знімає всі. Викриває маску�
   тривалостей/шансів, `SacrificeAppraiser` для оцінки жертви) — нові формули тільки чистими
   VO/константами з тестами, не локальними числами в `RitualEffectRunner`.
 - ❌ `static` реєстри сесій/масок (правило сесій `pathway-abilities.md`).
-- ❌ Видавати інгредієнти/Характеристики повз `RitualEffectRunner.runBestowment` —
-  єдиний канал видачі предметів ритуалами.
+- ❌ Видавати інгредієнти чи Характеристики БУДЬ-ЯКИМ ритуалом: єдиний предмет, який
+  ритуали створюють, — книга-натяк Одкровення (див. розділ вище).

@@ -16,9 +16,10 @@ public final class RitualCatalog {
             new RitualRecipe(RitualType.SACRIFICE, "Жертвопринесення",
                     "Спаліть предмет із головної руки — відновіть духовність",
                     9, 3, Map.of(), true),
-            new RitualRecipe(RitualType.BESTOWMENT, "Ритуал дарування",
-                    "Шанс отримати інгредієнт зілля наступної послідовності",
-                    8, 3, Map.of("NETHERITE_SCRAP", 3), false),
+            new RitualRecipe(RitualType.BESTOWMENT, "Ритуал одкровення",
+                    "Жертва — інгредієнт ЧУЖОГО шляху наступної послідовності; "
+                            + "у відповідь сутності підкажуть, де шукати ваші",
+                    8, 3, Map.of(), true),
             new RitualRecipe(RitualType.MEDIUMSHIP, "Спіритизм",
                     "Духи розкажуть про минулі події поблизу",
                     8, 3, Map.of("BONE", 1), false),

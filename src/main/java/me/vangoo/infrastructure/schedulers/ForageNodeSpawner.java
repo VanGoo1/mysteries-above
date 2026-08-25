@@ -1,6 +1,9 @@
 package me.vangoo.infrastructure.schedulers;
 
 import me.vangoo.MysteriesAbovePlugin;
+import me.vangoo.application.services.BeyonderService;
+import me.vangoo.domain.creatures.ConvergenceBias;
+import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.forage.ForageSelector;
 import me.vangoo.infrastructure.forage.ForageConfig;
 import me.vangoo.infrastructure.forage.ForageNode;
@@ -29,6 +32,10 @@ import java.util.Random;
  * підміняє найближчу вегетацію/листя на блок-донор (ресурспак малює його зачарованим) і
  * пам'ятає оригінал для відновлення (TTL/stop/креш через PDC чанка). Без дистанційного
  * гейту — форедж усюди. Інваріант: живі ноди існують лише в завантажених чанках.
+ *
+ * <p>Послідовність гравця на ПОЯВУ ноди не впливає (шанс, TTL, ліміт — ті самі для всіх),
+ * лише на те, ЩО в ній лежить: Beyonder'у передається {@link ConvergenceBias}, і селектор
+ * схиляє вибір до інгредієнтів його шляху. Не-Beyonder дістає рівні ваги біому.
  */
 public final class ForageNodeSpawner {
 
@@ -36,6 +43,7 @@ public final class ForageNodeSpawner {
 
     private final MysteriesAbovePlugin plugin;
     private final ForageSelector selector;
+    private final BeyonderService beyonderService;
     private final ForageNodeCodec codec;
     private final ForageConfig config;
     private final Random random = new Random();
@@ -48,9 +56,11 @@ public final class ForageNodeSpawner {
     private BukkitTask particleTask;
 
     public ForageNodeSpawner(MysteriesAbovePlugin plugin, ForageSelector selector,
-                             ForageNodeCodec codec, ForageConfig config) {
+                             ForageNodeCodec codec, ForageConfig config,
+                             BeyonderService beyonderService) {
         this.plugin = plugin;
         this.selector = selector;
+        this.beyonderService = beyonderService;
         this.codec = codec;
         this.config = config;
         this.intervalTicks = Math.max(20L, config.intervalSeconds() * 20L);
@@ -177,10 +187,18 @@ public final class ForageNodeSpawner {
                 config.donors().donorFor(block.getType().name(), isLeaves));
         if (donor == null) return; // донори валідує лоадер; це страховка
 
-        Optional<String> pick = selector.pickForBiome(block.getBiome().name(), random.nextDouble());
+        Optional<String> pick = selector.pickForBiome(
+                block.getBiome().name(), biasOf(player), random.nextDouble());
         if (pick.isEmpty()) return;
 
         register(ForageNode.place(block, donor, pick.get()));
+    }
+
+    /** Ухил Закону Конвергенції для цього гравця, або null — якщо він не потойбічний. */
+    private ConvergenceBias biasOf(Player player) {
+        Beyonder beyonder = beyonderService.getBeyonder(player.getUniqueId());
+        if (beyonder == null || beyonder.getPathway() == null) return null;
+        return new ConvergenceBias(beyonder.getPathway().getName(), beyonder.getSequenceLevel());
     }
 
     private Optional<Block> findTarget(Player player) {
