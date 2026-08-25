@@ -279,7 +279,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     }
 
     private void registerEvents() {
-        AbilityMenuListener abilityMenuListener = new AbilityMenuListener(services.getAbilityMenu(),
+        AbilityMenuListener abilityMenuListener = new AbilityMenuListener(this, services.getAbilityMenu(),
                 services.getBeyonderService(),
                 services.getAbilityItemFactory(), pluginLogger);
 
