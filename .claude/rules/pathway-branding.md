@@ -6,16 +6,13 @@
 - **Зілля**: `PathwayPotions` бере колір рідини (`PathwayBranding.liquidOf`) і колір
   назви (`PathwayBranding.textOf`) з брендингу за іменем шляху — конструктор
   `*Potions` кольорів НЕ приймає. Стосується всіх 22 шляхів.
-- **Характеристики**: `CharacteristicCodec` фарбує назву `PathwayBranding.textOf(name)` і
-  ставить ключ моделі `CharacteristicCodec.modelKeyFor(name)` (`characteristic_<name>`,
-  окремий на кожен шлях) — не тонування дай-компонентом: на 1.21.1 `dyed_color` до
-  не-шкіряних предметів ще не застосовується (Paper `io.papermc.paper.datacomponent`
-  з'явився в 1.21.4), і рядкових `minecraft:select`-ключів там теж ще немає, тільки числові
-  `custom_model_data`-override'и. Кожен pathway-ключ мусить мати свій override у
-  `models/item/music_disc_chirp.json` (генерує `tools/resourcepack/rp-item-models.gen.ps1`) —
-  інакше Характеристика того шляху падає на ванільний вигляд диска. Доки художньо не
-  намальовано окрему текстуру на pathway, усі 22 override'и можуть показувати ту саму
-  модель — інфраструктура вже per-pathway, розрізнити вигляд можна пізніше без зміни коду.
+- **Характеристики**: `CharacteristicCodec` фарбує назву `PathwayBranding.textOf(name)`,
+  ставить УНІВЕРСАЛЬНИЙ ключ моделі `characteristic` (`CharacteristicCodec.MODEL_KEY`, один
+  на всі шляхи) і компонент `DYED_COLOR` = `PathwayBranding.liquidOf(name)`. Ресурс-пак
+  тонує одну модель диска через `minecraft:dye`-tint, читаючи цей компонент — колір задає
+  дай, НЕ пер-шляховий ключ. Ключ моделі мусить збігатися з єдиним кейсом
+  `"when": "characteristic"` в `items/music_disc_chirp.json`, інакше select падає на
+  ванільну модель без tint і колір не застосовується.
 - Невідомий/`null` шлях → нейтральний сірий фолбек.
 
 ## Як додати/змінити колір
@@ -23,8 +20,8 @@
 1. Додай/зміни рядок `put("<Name>", r, g, b, ChatColor.X)` у статичному блоці
    `PathwayBranding`. Ім'я = ключ `PathwayManager` (без пробілів).
 2. Онови `PathwayBrandingTest` (кількість 22, наявність нового імені).
-3. Ресурс-пак: перегенеруй `music_disc_chirp.json` (`tools/resourcepack/rp-item-models.gen.ps1`) —
-   новий шлях автоматично отримає власний ключ `characteristic_<Name>` і override.
+3. Ресурс-пак: колір Характеристики бере дай (`DYED_COLOR`) — окрема текстура на шлях НЕ
+   потрібна, вистачає однієї тонованої моделі під ключем `characteristic`.
 
 ## Заборони
 
