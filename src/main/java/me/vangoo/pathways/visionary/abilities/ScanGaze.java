@@ -15,6 +15,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 
 import java.util.Optional;
+import java.util.UUID;
 
 
 public class ScanGaze extends ActiveAbility {
@@ -42,10 +43,10 @@ public class ScanGaze extends ActiveAbility {
     }
 
     @Override
-    protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
+    protected Optional<UUID> getSequenceCheckTarget(IAbilityContext context) {
         return context.targeting().getTargetedPlayer(RANGE)
-                .filter(p -> context.beyonder().isBeyonder(p.getUniqueId()))
-                .map(p -> p);
+                .map(Player::getUniqueId)
+                .filter(id -> context.beyonder().isBeyonder(id));
     }
 
     @Override

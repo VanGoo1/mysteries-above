@@ -5,11 +5,11 @@ import me.vangoo.domain.services.SequenceScaler;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.domain.valueobjects.SequenceBasedSuccessChance;
-import org.bukkit.entity.LivingEntity;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 public abstract class Ability {
     public abstract String getName();
@@ -136,7 +136,7 @@ public abstract class Ability {
         // Override for effects after execution
     }
 
-    protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
+    protected Optional<UUID> getSequenceCheckTarget(IAbilityContext context) {
         return Optional.empty(); // Default: no sequence check
     }
 
@@ -144,22 +144,20 @@ public abstract class Ability {
      * Override this method to enable sequence-based success checking for this ability.
      *
      * @param context Ability context
-     * @return Optional with target entity if this ability should check sequence-based success,
+     * @return Optional with the target's id if this ability should check sequence-based success,
      * empty Optional if ability doesn't use sequence-based success
      */
     @Nullable
     private AbilityResult performSequenceBasedSuccessCheck(IAbilityContext context) {
         // Get target for sequence check
-        Optional<LivingEntity> targetOpt = getSequenceCheckTarget(context);
+        Optional<UUID> targetOpt = getSequenceCheckTarget(context);
 
         if (targetOpt.isEmpty()) {
             return null; // No sequence check for this ability
         }
 
-        LivingEntity target = targetOpt.get();
-
         // Get target's beyonder (if they are one)
-        Beyonder targetBeyonder = context.beyonder().getBeyonder(target.getUniqueId());
+        Beyonder targetBeyonder = context.beyonder().getBeyonder(targetOpt.get());
 
         if (targetBeyonder == null) {
             return null; // Target is not a beyonder, no resistance

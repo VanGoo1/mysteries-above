@@ -50,8 +50,8 @@ public class BattleHypnotism extends ActiveAbility {
     }
 
     @Override
-    protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
-        return context.targeting().getTargetedEntity(BASE_RANGE);
+    protected Optional<UUID> getSequenceCheckTarget(IAbilityContext context) {
+        return context.targeting().getTargetedEntity(BASE_RANGE).map(LivingEntity::getUniqueId);
     }
 
     private int getRange(int sequence) {

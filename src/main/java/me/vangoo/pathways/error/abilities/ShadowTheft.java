@@ -46,8 +46,8 @@ public class ShadowTheft extends ActiveAbility {
     }
 
     @Override
-    protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
-        return context.targeting().getTargetedEntity(RANGE);
+    protected Optional<UUID> getSequenceCheckTarget(IAbilityContext context) {
+        return context.targeting().getTargetedEntity(RANGE).map(LivingEntity::getUniqueId);
     }
     @Override
     protected void preExecution(IAbilityContext context) {

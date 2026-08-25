@@ -51,8 +51,8 @@ public class Guidance extends ActiveAbility {
     }
 
     @Override
-    protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
-        return context.targeting().getTargetedEntity(CAST_RANGE);
+    protected Optional<UUID> getSequenceCheckTarget(IAbilityContext context) {
+        return context.targeting().getTargetedEntity(CAST_RANGE).map(LivingEntity::getUniqueId);
     }
 
     @Override

@@ -62,9 +62,9 @@ public class Notarization extends ActiveAbility {
     }
 
     @Override
-    protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
+    protected Optional<UUID> getSequenceCheckTarget(IAbilityContext context) {
         if (!context.playerData().isSneaking(context.getCasterId())) return Optional.empty();
-        return context.targeting().getTargetedEntity(RANGE);
+        return context.targeting().getTargetedEntity(RANGE).map(LivingEntity::getUniqueId);
     }
 
     @Override

@@ -17,6 +17,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.*;
+import java.util.UUID;
 
 public class Alteration extends ActiveAbility {
     // КОНСТАНТИ
@@ -53,8 +54,8 @@ public class Alteration extends ActiveAbility {
     }
 
     @Override
-    protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
-        return context.targeting().getTargetedEntity(RANGE);
+    protected Optional<UUID> getSequenceCheckTarget(IAbilityContext context) {
+        return context.targeting().getTargetedEntity(RANGE).map(LivingEntity::getUniqueId);
     }
 
     @Override

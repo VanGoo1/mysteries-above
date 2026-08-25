@@ -56,8 +56,8 @@ public class Eloquence extends ActiveAbility {
     }
 
     @Override
-    protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
-        return context.targeting().getTargetedEntity(SwindlerInfluence.ELOQUENCE_RANGE);
+    protected Optional<UUID> getSequenceCheckTarget(IAbilityContext context) {
+        return context.targeting().getTargetedEntity(SwindlerInfluence.ELOQUENCE_RANGE).map(LivingEntity::getUniqueId);
     }
 
     @Override
