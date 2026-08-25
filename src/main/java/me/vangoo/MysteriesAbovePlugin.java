@@ -290,7 +290,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
         PathwayPotionListener pathwayPotionListener = new PathwayPotionListener(services.getPotionManager(),
                 services.getBeyonderService(),
-                services.getPassiveAbilityScheduler());
+                services.getPassiveAbilityScheduler(), services.getAbilityMenu());
 
         PassiveAbilityLifecycleListener passiveAbilityLifecycleListener = new PassiveAbilityLifecycleListener(
                 services.getPassiveAbilityScheduler());
