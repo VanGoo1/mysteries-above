@@ -9,7 +9,7 @@
     <version>1.0-SNAPSHOT</version>
 
     <properties>
-        <maven.compiler.release>21</maven.compiler.release>
+        <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -19,17 +19,17 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
+                <version>3.15.0</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.5</version>
+                <version>3.5.6</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.2</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -104,8 +104,8 @@
 
     <repositories>
         <repository>
-            <id>spigot-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+            <id>papermc</id>
+            <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
         <repository>
             <id>Maven Central</id>
@@ -127,24 +127,18 @@
             <id>lumine-repo</id>
             <url>https://mvn.lumine.io/repository/maven-public/</url>
         </repository>
-        <repository>
-            <id>papermc</id>
-            <url>https://repo.papermc.io/repository/maven-public/</url>
-        </repository>
     </repositories>
     <dependencies>
         <dependency>
             <groupId>net.citizensnpcs</groupId>
             <artifactId>citizens-main</artifactId>
-            <!-- 2.0.35-SNAPSHOT — гілка Citizens доби MC 1.21.1 (останній білд 23.10.2024). -->
-            <version>2.0.35-SNAPSHOT</version>
+            <version>2.0.43-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>net.coreprotect</groupId>
             <artifactId>coreprotect</artifactId>
-            <!-- 22.4 — останній реліз CoreProtect під 1.21/1.21.1 (23.x = CE, від 1.21.2+). -->
-            <version>22.4</version>
+            <version>24.0</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -154,78 +148,62 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>io.papermc.paper</groupId>
+            <artifactId>paper-api</artifactId>
+            <version>[26.2.build,)</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>io.lumine</groupId>
             <artifactId>Mythic-Dist</artifactId>
-            <version>5.12.1</version>
+            <version>5.13.0</version>
             <scope>provided</scope>
         </dependency>
-        <!-- BetterModel: 3D-моделі мобів. Окремий плагін (softdepend), не shade.
-             1.15.2 — остання гілка з NMS-модулем v1_21_R1 (тобто з підтримкою 1.21/1.21.1);
-             наступник bettermodel-bukkit-api (2.x/3.x) починається з v1_21_R3 і на 1.21.1 не працює. -->
         <dependency>
             <groupId>io.github.toxicity188</groupId>
-            <artifactId>bettermodel</artifactId>
-            <version>1.15.2</version>
-            <scope>provided</scope>
-        </dependency>
-        <!-- Spigot-API, а НЕ paper-api: живий сервер проєкту — Arclight (NeoForge + Bukkit),
-             і Paper'ових доповнень до Bukkit-інтерфейсів там немає. Компіляція проти
-             spigot-api робить кожен такий виклик помилкою збірки замість NoSuchMethodError
-             у грі. Paper-only API дозволене лише в infrastructure.compat через рефлексію —
-             див. .claude/rules/minecraft-version.md. -->
-        <dependency>
-            <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
-            <version>1.21.1-R0.1-SNAPSHOT</version>
+            <artifactId>bettermodel-bukkit-api</artifactId>
+            <version>3.3.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>fr.skytasul</groupId>
             <artifactId>glowingentities</artifactId>
-            <version>1.4.11</version>
+            <version>2.0.1</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.elmakers.mine.bukkit</groupId>
             <artifactId>EffectLib</artifactId>
-            <version>10.2</version>
+            <version>10.10</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>dev.triumphteam</groupId>
             <artifactId>triumph-gui</artifactId>
-            <version>3.1.7</version>
+            <version>3.1.13</version>
         </dependency>
         <dependency>
             <groupId>com.github.retrooper</groupId>
             <artifactId>packetevents-spigot</artifactId>
-            <version>2.8.0</version>
+            <version>2.13.0</version>
             <scope>compile</scope>
-        </dependency>
-        <!-- Netty віддає сам сервер (4.1.97.Final на Arclight 1.21.1) — лише для компіляції
-             PacketEventsUdpGuard, у джар НЕ пакується. -->
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-transport</artifactId>
-            <version>4.1.97.Final</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.10.2</version>
+            <version>6.1.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.tngtech.archunit</groupId>
             <artifactId>archunit-junit5</artifactId>
-            <version>1.3.0</version>
+            <version>1.5.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <version>1.7.36</version>
+            <version>2.0.17</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
