@@ -484,9 +484,9 @@ public class ServiceContainer {
                 convInterval, convRadius, convDrift, convMobNudge, convWhisper);
 
         me.vangoo.domain.forage.ForageSelector forageSelector =
-                new me.vangoo.domain.forage.ForageSelector(forageConfig.biomes());
+                new me.vangoo.domain.forage.ForageSelector(forageConfig.biomes(), potionRecipeConfig);
         this.forageNodeSpawner = new me.vangoo.infrastructure.schedulers.ForageNodeSpawner(
-                (MysteriesAbovePlugin) plugin, forageSelector, forageNodeCodec, forageConfig);
+                (MysteriesAbovePlugin) plugin, forageSelector, forageNodeCodec, forageConfig, beyonderService);
 
         this.abilityMenuItemUpdater = new AbilityMenuItemUpdater(
                 plugin,
