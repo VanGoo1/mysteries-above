@@ -2,6 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> ## ⛔ ЦЕЙ ПЛАГІН ЗАМОРОЖЕНО — 26.08.2026
+>
+> Розробка перенесена на Fabric-мод мовою Kotlin:
+> **[Yumeead/mysteries-above-mod](https://github.com/Yumeead/mysteries-above-mod)** (приватний).
+>
+> **Нових фіч сюди не додавати.** Кожна нова здібність тут — це та сама робота,
+> зроблена двічі: мод ще наздоганяє, і рухома ціль була головним ризиком порту.
+> Рішення свідоме й остаточне, а не пауза.
+>
+> Що тут ще дозволено:
+> - **критичні багфікси**, якщо на плагіні лишились живі гравці;
+> - **читання** — це джерело правди для порту (правила, баланс, лор, конфіги).
+>
+> Хочеш нову механіку — вона йде в мод. План порту й поточна фаза:
+> див. `[[kotlin-mod-port-in-progress]]` у пам'яті або README мод-репозиторію.
+
 ## Overview
 
 `mysteries-above` is a Spigot/Bukkit Minecraft plugin (Java 21, API 1.21) inspired by *Lord of the Mysteries*. Players become **Beyonders** who progress along a **Pathway** through **Sequences** (9 = weakest → 0 = strongest), unlocking **Abilities** at each sequence by drinking potions. Much of the in-code text, descriptions, and comments are in **Ukrainian** — keep new user-facing strings consistent with that.
