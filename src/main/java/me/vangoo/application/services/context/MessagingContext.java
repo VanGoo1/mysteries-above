@@ -35,10 +35,14 @@ public class MessagingContext implements IMessagingContext {
 
     @Override
     public void sendMessageToActionBar(UUID playerId, Component message) {
+        sendMessageToActionBar(playerId, LegacyComponentSerializer.legacySection().serialize(message));
+    }
+
+    @Override
+    public void sendMessageToActionBar(UUID playerId, String message) {
         Player player = Bukkit.getPlayer(playerId);
         if (player != null && player.isOnline()) {
-            String legacy = LegacyComponentSerializer.legacySection().serialize(message);
-            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(legacy));
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
         }
     }
 

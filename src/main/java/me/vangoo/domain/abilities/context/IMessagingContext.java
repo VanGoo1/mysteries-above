@@ -11,6 +11,13 @@ public interface IMessagingContext {
 
     void sendMessageToActionBar(UUID playerId, Component message);
 
+    /**
+     * Той самий actionbar, але звичайним рядком із {@code §}-кодами. Існує, щоб ядро
+     * {@code abilities.core} лишалось без залежності від Adventure — реалізація й так
+     * зводить {@link Component} до legacy-рядка.
+     */
+    void sendMessageToActionBar(UUID playerId, String message);
+
     void spawnTemporaryHologram(Location location, Component text, long durationTicks);
 
     void spawnFollowingHologramForPlayer(Player viewer, Player target, Component text, long durationTicks, long updateIntervalTicks);
