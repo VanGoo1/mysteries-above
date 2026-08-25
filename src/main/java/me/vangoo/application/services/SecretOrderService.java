@@ -255,6 +255,13 @@ public class SecretOrderService {
                 priestClosedUntil.putAll(model.priestClosedUntil());
             }
         });
+        // Добив схованок: сід ставиться лише при вступі, тож шлях (чи послідовність),
+        // рецепти якого додали пізніше, у вже записану схованку інакше не потрапить ніколи.
+        // seedStashIfAbsent ідемпотентний по (шлях, посл.), тож для актуальних схованок це no-op.
+        memberships.values().stream()
+                .map(OrderMembership::institutionId)
+                .distinct()
+                .forEach(this::seedStashIfAbsent);
     }
 
     private static UUID parseUuid(String raw) {
@@ -1037,26 +1044,30 @@ public class SecretOrderService {
 
     /**
      * Ордени з непорожніми доступами (реалізовані шляхи) — по {@code config.stashSeedIngredientsPerRecipe()}
-     * інгредієнтів Seq-9 рецепта кожного доступного шляху. Ордени «будь-хто» (порожні доступи,
-     * {@link Institution#acceptsAnyPathway()}) — по 1x інгредієнти Seq-9 КОЖНОГО реалізованого шляху.
+     * інгредієнтів КОЖНОЇ послідовності рецептів кожного доступного шляху. Ордени «будь-хто»
+     * (порожні доступи, {@link Institution#acceptsAnyPathway()}) — по 1x інгредієнти кожної
+     * послідовності КОЖНОГО реалізованого шляху.
+     *
+     * <p>Ідемпотентно по (шлях, послідовність) через інертний маркер {@code seed:<шлях>:<посл.>}
+     * — той самий прийом, що й ключ {@code recipe:} у {@code ChurchService.seedVaultIfAbsent}.
+     * Тому повторний виклик на вже засіяній схованці лише добиває те, чого бракує (напр. шлях,
+     * рецепти якого додали пізніше), а не пропускає її цілком.
      */
     public void seedStashIfAbsent(String orderId) {
-        if (stashes.containsKey(orderId)) {
-            return;
-        }
         Optional<Institution> opt = registry.byId(orderId);
         if (opt.isEmpty()) {
             return;
         }
         Institution order = opt.get();
-        OrderStash stash = new OrderStash();
+        OrderStash stash = stashes.computeIfAbsent(orderId, k -> new OrderStash());
+        boolean changed = false;
         if (order.acceptsAnyPathway()) {
             for (String pathwayName : pathwayManager.getAllPathwayNames()) {
                 Pathway pathway = pathwayManager.getPathway(pathwayName);
                 if (pathway == null || !pathway.hasAnyAbility()) {
                     continue;
                 }
-                seedIngredientsForSeq9(stash, pathwayName, 1);
+                changed |= seedIngredients(stash, pathwayName, 1);
             }
         } else {
             for (PathwayAccess access : order.accesses()) {
@@ -1064,28 +1075,44 @@ public class SecretOrderService {
                 if (pathway == null || !pathway.hasAnyAbility()) {
                     continue;
                 }
-                seedIngredientsForSeq9(stash, access.pathwayName(), config.stashSeedIngredientsPerRecipe());
+                changed |= seedIngredients(stash, access.pathwayName(), config.stashSeedIngredientsPerRecipe());
             }
         }
-        stashes.put(orderId, stash);
-        persistState();
+        if (changed) {
+            persistState();
+        }
     }
 
-    private void seedIngredientsForSeq9(OrderStash stash, String pathwayName, int multiplier) {
+    /**
+     * Послідовність 9 навмисно пропущена: {@code claimIngredients} завжди просить
+     * {@code getSequenceLevel() - 1}, а членство без шляху неможливе, тож затребувана
+     * послідовність — завжди ≤ 8. Засіяний Seq-9 був би мертвим вантажем у файлі.
+     */
+    private boolean seedIngredients(OrderStash stash, String pathwayName, int multiplier) {
         Map<Integer, RecipeDefinition> bySeq = potionRecipeConfig.get(pathwayName);
         if (bySeq == null) {
-            return;
+            return false;
         }
-        RecipeDefinition def = bySeq.get(9);
-        if (def == null) {
-            return;
-        }
-        for (String rawId : allIds(def)) {
-            if (rawId.startsWith("vanilla:")) {
+        boolean changed = false;
+        for (Map.Entry<Integer, RecipeDefinition> entry : bySeq.entrySet()) {
+            int seq = entry.getKey();
+            if (seq >= 9) {
                 continue;
             }
-            stash.add(ingredientKey(rawId), multiplier);
+            String marker = "seed:" + pathwayName + ":" + seq;
+            if (stash.amountOf(marker) > 0) {
+                continue;
+            }
+            stash.add(marker, 1);
+            changed = true;
+            for (String rawId : allIds(entry.getValue())) {
+                if (rawId.startsWith("vanilla:")) {
+                    continue;
+                }
+                stash.add(ingredientKey(rawId), multiplier);
+            }
         }
+        return changed;
     }
 
     public OrderStash stashOf(String orderId) {
