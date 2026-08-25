@@ -1,7 +1,11 @@
 # global_loot.yml
 # Баланс: "Золота середина" (Balanced RPG)
-# Шанс топ-предметів (Seq 5): ~0.28%
-# Шанс звичайних (Seq 9): ~3.4%
+# Таблиця мусить покривати УСІ інгредієнти з custom-items.yml (звіряй із potion-recipes.yml —
+# саме він каже, до якого шляху й Послідовності належить інгредієнт). Пропущений інгредієнт
+# = зілля, яке неможливо зварити з луту. Тест: GlobalLootCoverageTest.
+# Ваги за Послідовністю: 9→60, 8→40, 7→25, 6→12 (rare), 5→5 (rare);
+# рецепти 45/30/15/8/4, зілля 10/6/3.
+# Сумарна вага 5619 → шанс одного ролу: Seq 9 ~1.07%, Seq 5 ~0.09% (на 9 шляхів).
 
 global_loot:
   min_items: 1
@@ -626,6 +630,820 @@ global_loot:
       amount_max: 1
       tier: rare
 
+    # =====================================================================
+    #                          ERROR PATHWAY
+    # =====================================================================
+
+    # --- Seq 9 Ingredients (Вага 60) ---
+    blood_speckled_black_mosquito:
+      item_id: "blood_speckled_black_mosquito"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+    candle_devourer_core:
+      item_id: "candle_devourer_core"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+    verbena_powder:
+      item_id: "verbena_powder"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+
+    # --- Seq 8 Ingredients (Вага 40) ---
+    human_faced_pitcher_plant:
+      item_id: "human_faced_pitcher_plant"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+    soul_bewitching_insect_larvae:
+      item_id: "soul_bewitching_insect_larvae"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+    anothers_tears:
+      item_id: "anothers_tears"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+    white_chestnut_balm:
+      item_id: "white_chestnut_balm"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+
+    # --- Seq 7 Ingredients (Вага 25) ---
+    sphinx_brain:
+      item_id: "sphinx_brain"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+    soul_bewitching_adult_insect:
+      item_id: "soul_bewitching_adult_insect"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+    sphinx_blood:
+      item_id: "sphinx_blood"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+    soul_bewitching_colony_mucus:
+      item_id: "soul_bewitching_colony_mucus"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+
+    # --- Seq 6 Ingredients (Вага 12) ---
+    crystal_threadworm:
+      item_id: "crystal_threadworm"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    cloaked_specter_attachment:
+      item_id: "cloaked_specter_attachment"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    cloaked_specter_residual_powder:
+      item_id: "cloaked_specter_residual_powder"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    larch_essential_oil:
+      item_id: "larch_essential_oil"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
+    # --- Seq 5 Ingredients (Вага 5) ---
+    dream_eating_rat_heart:
+      item_id: "dream_eating_rat_heart"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    spirit_of_depraved_breath:
+      item_id: "spirit_of_depraved_breath"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    dream_eating_rat_blood:
+      item_id: "dream_eating_rat_blood"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    despiritualized_depraved_breath:
+      item_id: "despiritualized_depraved_breath"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
+    # --- Error Recipes ---
+    error_recipe_9:
+      item_id: "recipe:Error:9"
+      weight: 45
+      amount_min: 1
+      amount_max: 1
+    error_recipe_8:
+      item_id: "recipe:Error:8"
+      weight: 30
+      amount_min: 1
+      amount_max: 1
+    error_recipe_7:
+      item_id: "recipe:Error:7"
+      weight: 15
+      amount_min: 1
+      amount_max: 1
+    error_recipe_6:
+      item_id: "recipe:Error:6"
+      weight: 8
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    error_recipe_5:
+      item_id: "recipe:Error:5"
+      weight: 4
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
+    # --- Error Potions ---
+    error_potion_9:
+      item_id: "potion:Error:9"
+      weight: 10
+      amount_min: 1
+      amount_max: 1
+    error_potion_8:
+      item_id: "potion:Error:8"
+      weight: 6
+      amount_min: 1
+      amount_max: 1
+    error_potion_7:
+      item_id: "potion:Error:7"
+      weight: 3
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
+    # =====================================================================
+    #                          FOOL PATHWAY
+    # =====================================================================
+
+    # --- Seq 9 Ingredients (Вага 60) ---
+    star_crystal:
+      item_id: "star_crystal"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+    poison_hemlock:
+      item_id: "poison_hemlock"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+    dragon_blood_grass_powder:
+      item_id: "dragon_blood_grass_powder"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+
+    # --- Seq 8 Ingredients (Вага 40) ---
+    hornacis_goat_horn:
+      item_id: "hornacis_goat_horn"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+    human_faced_rose_stalk:
+      item_id: "human_faced_rose_stalk"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+    black_rimmed_sunflower_powder:
+      item_id: "black_rimmed_sunflower_powder"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+    golden_cloak_grass_powder:
+      item_id: "golden_cloak_grass_powder"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+
+    # --- Seq 7 Ingredients (Вага 25) ---
+    mist_treant_root:
+      item_id: "mist_treant_root"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+    dark_panther_spinal_fluid:
+      item_id: "dark_panther_spinal_fluid"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+    fantasy_grass_oil:
+      item_id: "fantasy_grass_oil"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+    droplet_gem_powder:
+      item_id: "droplet_gem_powder"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+
+    # --- Seq 6 Ingredients (Вага 12) ---
+    thousand_faced_hunter_pituitary:
+      item_id: "thousand_faced_hunter_pituitary"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    human_skin_shadow_characteristic:
+      item_id: "human_skin_shadow_characteristic"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    thousand_faced_hunter_blood:
+      item_id: "thousand_faced_hunter_blood"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    deep_sea_naga_hair:
+      item_id: "deep_sea_naga_hair"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
+    # --- Seq 5 Ingredients (Вага 5) ---
+    ancient_wraith_dust:
+      item_id: "ancient_wraith_dust"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    six_winged_gargoyle_core:
+      item_id: "six_winged_gargoyle_core"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    ancient_wraith_spirituality:
+      item_id: "ancient_wraith_spirituality"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
+    # --- Fool Recipes ---
+    fool_recipe_9:
+      item_id: "recipe:Fool:9"
+      weight: 45
+      amount_min: 1
+      amount_max: 1
+    fool_recipe_8:
+      item_id: "recipe:Fool:8"
+      weight: 30
+      amount_min: 1
+      amount_max: 1
+    fool_recipe_7:
+      item_id: "recipe:Fool:7"
+      weight: 15
+      amount_min: 1
+      amount_max: 1
+    fool_recipe_6:
+      item_id: "recipe:Fool:6"
+      weight: 8
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    fool_recipe_5:
+      item_id: "recipe:Fool:5"
+      weight: 4
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
+    # --- Fool Potions ---
+    fool_potion_9:
+      item_id: "potion:Fool:9"
+      weight: 10
+      amount_min: 1
+      amount_max: 1
+    fool_potion_8:
+      item_id: "potion:Fool:8"
+      weight: 6
+      amount_min: 1
+      amount_max: 1
+    fool_potion_7:
+      item_id: "potion:Fool:7"
+      weight: 3
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
+    # =====================================================================
+    #                          SUN PATHWAY
+    # =====================================================================
+
+    # --- Seq 9 Ingredients (Вага 60) ---
+    crystal_sunflower:
+      item_id: "crystal_sunflower"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+    siren_rock:
+      item_id: "siren_rock"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+    elf_dark_leaf:
+      item_id: "elf_dark_leaf"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+    midsummer_grass:
+      item_id: "midsummer_grass"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+
+    # --- Seq 8 Ingredients (Вага 40) ---
+    dazzling_soul_powder:
+      item_id: "dazzling_soul_powder"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+    heart_of_magma_titan:
+      item_id: "heart_of_magma_titan"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+    aconite_juice:
+      item_id: "aconite_juice"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+
+    # --- Seq 7 Ingredients (Вага 25) ---
+    dawn_rooster_comb:
+      item_id: "dawn_rooster_comb"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+    radiance_pact_tree_fruit:
+      item_id: "radiance_pact_tree_fruit"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+    solidified_magma:
+      item_id: "solidified_magma"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+    fingered_citron_powder:
+      item_id: "fingered_citron_powder"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+
+    # --- Seq 6 Ingredients (Вага 12) ---
+    tree_of_elders_crystalized_roots:
+      item_id: "tree_of_elders_crystalized_roots"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    spirit_pact_bird_feather:
+      item_id: "spirit_pact_bird_feather"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    radiance_pact_tree_juice:
+      item_id: "radiance_pact_tree_juice"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    aqua_fern_juice:
+      item_id: "aqua_fern_juice"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
+    # --- Seq 5 Ingredients (Вага 5) ---
+    king_dawn_rooster_comb:
+      item_id: "king_dawn_rooster_comb"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    pure_white_brilliant_rock:
+      item_id: "pure_white_brilliant_rock"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    rosemary:
+      item_id: "rosemary"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    king_dawn_rooster_blood:
+      item_id: "king_dawn_rooster_blood"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
+    # --- Sun Recipes ---
+    sun_recipe_9:
+      item_id: "recipe:Sun:9"
+      weight: 45
+      amount_min: 1
+      amount_max: 1
+    sun_recipe_8:
+      item_id: "recipe:Sun:8"
+      weight: 30
+      amount_min: 1
+      amount_max: 1
+    sun_recipe_7:
+      item_id: "recipe:Sun:7"
+      weight: 15
+      amount_min: 1
+      amount_max: 1
+    sun_recipe_6:
+      item_id: "recipe:Sun:6"
+      weight: 8
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    sun_recipe_5:
+      item_id: "recipe:Sun:5"
+      weight: 4
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
+    # --- Sun Potions ---
+    sun_potion_9:
+      item_id: "potion:Sun:9"
+      weight: 10
+      amount_min: 1
+      amount_max: 1
+    sun_potion_8:
+      item_id: "potion:Sun:8"
+      weight: 6
+      amount_min: 1
+      amount_max: 1
+    sun_potion_7:
+      item_id: "potion:Sun:7"
+      weight: 3
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
+    # =====================================================================
+    #                          TYRANT PATHWAY
+    # =====================================================================
+
+    # --- Seq 9 Ingredients (Вага 60) ---
+    murloc_bladder:
+      item_id: "murloc_bladder"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+    man_eating_conch:
+      item_id: "man_eating_conch"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+    murloc_scales:
+      item_id: "murloc_scales"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+
+    # --- Seq 8 Ingredients (Вага 40) ---
+    deep_diver_alveoli:
+      item_id: "deep_diver_alveoli"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+    war_cry_bird_breastbone:
+      item_id: "war_cry_bird_breastbone"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+    deep_diver_tongue_half:
+      item_id: "deep_diver_tongue_half"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+    war_cry_bird_beak_segment:
+      item_id: "war_cry_bird_beak_segment"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+
+    # --- Seq 7 Ingredients (Вага 25) ---
+    black_scaled_shark_pituitary:
+      item_id: "black_scaled_shark_pituitary"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+    raging_white_dolphin_heart:
+      item_id: "raging_white_dolphin_heart"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+    black_scaled_shark_fin:
+      item_id: "black_scaled_shark_fin"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+    raging_white_dolphin_blood:
+      item_id: "raging_white_dolphin_blood"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+
+    # --- Seq 6 Ingredients (Вага 12) ---
+    blue_shadow_falcon_feather:
+      item_id: "blue_shadow_falcon_feather"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    sea_condor_eyeballs:
+      item_id: "sea_condor_eyeballs"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    blue_shadow_falcon_bone:
+      item_id: "blue_shadow_falcon_bone"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    sea_condor_feathers:
+      item_id: "sea_condor_feathers"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
+    # --- Seq 5 Ingredients (Вага 5) ---
+    siren_throat:
+      item_id: "siren_throat"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    crystal_jellyfish_cluster:
+      item_id: "crystal_jellyfish_cluster"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    siren_hair_strands:
+      item_id: "siren_hair_strands"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    crystal_jellyfish_tentacles:
+      item_id: "crystal_jellyfish_tentacles"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
+    # --- Tyrant Recipes ---
+    tyrant_recipe_9:
+      item_id: "recipe:Tyrant:9"
+      weight: 45
+      amount_min: 1
+      amount_max: 1
+    tyrant_recipe_8:
+      item_id: "recipe:Tyrant:8"
+      weight: 30
+      amount_min: 1
+      amount_max: 1
+    tyrant_recipe_7:
+      item_id: "recipe:Tyrant:7"
+      weight: 15
+      amount_min: 1
+      amount_max: 1
+    tyrant_recipe_6:
+      item_id: "recipe:Tyrant:6"
+      weight: 8
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    tyrant_recipe_5:
+      item_id: "recipe:Tyrant:5"
+      weight: 4
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
+    # --- Tyrant Potions ---
+    tyrant_potion_9:
+      item_id: "potion:Tyrant:9"
+      weight: 10
+      amount_min: 1
+      amount_max: 1
+    tyrant_potion_8:
+      item_id: "potion:Tyrant:8"
+      weight: 6
+      amount_min: 1
+      amount_max: 1
+    tyrant_potion_7:
+      item_id: "potion:Tyrant:7"
+      weight: 3
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
+    # =====================================================================
+    #                          DEATH PATHWAY
+    # =====================================================================
+
+    # --- Seq 9 Ingredients (Вага 60) ---
+    desiccated_mature_black_spotted_frog:
+      item_id: "desiccated_mature_black_spotted_frog"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+    cloth_wrapped_persons_crystal:
+      item_id: "cloth_wrapped_persons_crystal"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+    black_lily:
+      item_id: "black_lily"
+      weight: 60
+      amount_min: 1
+      amount_max: 1
+
+    # --- Seq 8 Ingredients (Вага 40) ---
+    death_calling_crows_eyeball:
+      item_id: "death_calling_crows_eyeball"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+    death_calling_crow_feather:
+      item_id: "death_calling_crow_feather"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+    cemetery_blood_rose:
+      item_id: "cemetery_blood_rose"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+    corpse_scented_essential_oil:
+      item_id: "corpse_scented_essential_oil"
+      weight: 40
+      amount_min: 1
+      amount_max: 1
+
+    # --- Seq 7 Ingredients (Вага 25) ---
+    phantom_cats_forepaw:
+      item_id: "phantom_cats_forepaw"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+    piece_of_spirit_world_crystal:
+      item_id: "piece_of_spirit_world_crystal"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+    phantom_cat_blood:
+      item_id: "phantom_cat_blood"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+    leaf_blessed_by_a_natural_spirit:
+      item_id: "leaf_blessed_by_a_natural_spirit"
+      weight: 25
+      amount_min: 1
+      amount_max: 1
+
+    # --- Seq 6 Ingredients (Вага 12) ---
+    soul_of_a_pale_lich:
+      item_id: "soul_of_a_pale_lich"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    fragmented_bones_of_pale_lich:
+      item_id: "fragmented_bones_of_pale_lich"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    shadow_of_death:
+      item_id: "shadow_of_death"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    decomposing_fluid_from_the_dead:
+      item_id: "decomposing_fluid_from_the_dead"
+      weight: 12
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
+    # --- Seq 5 Ingredients (Вага 5) ---
+    skull_of_an_underworld_wanderer:
+      item_id: "skull_of_an_underworld_wanderer"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    crystal_core_left_by_a_thousand_armed_wraith:
+      item_id: "crystal_core_left_by_a_thousand_armed_wraith"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    piece_of_rotten_flesh_from_underworld_wanderer:
+      item_id: "piece_of_rotten_flesh_from_underworld_wanderer"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    residual_powder_of_a_thousand_armed_wraith:
+      item_id: "residual_powder_of_a_thousand_armed_wraith"
+      weight: 5
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
+    # --- Death Recipes ---
+    death_recipe_9:
+      item_id: "recipe:Death:9"
+      weight: 45
+      amount_min: 1
+      amount_max: 1
+    death_recipe_8:
+      item_id: "recipe:Death:8"
+      weight: 30
+      amount_min: 1
+      amount_max: 1
+    death_recipe_7:
+      item_id: "recipe:Death:7"
+      weight: 15
+      amount_min: 1
+      amount_max: 1
+    death_recipe_6:
+      item_id: "recipe:Death:6"
+      weight: 8
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+    death_recipe_5:
+      item_id: "recipe:Death:5"
+      weight: 4
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
+    # --- Death Potions ---
+    death_potion_9:
+      item_id: "potion:Death:9"
+      weight: 10
+      amount_min: 1
+      amount_max: 1
+    death_potion_8:
+      item_id: "potion:Death:8"
+      weight: 6
+      amount_min: 1
+      amount_max: 1
+    death_potion_7:
+      item_id: "potion:Death:7"
+      weight: 3
+      amount_min: 1
+      amount_max: 1
+      tier: rare
+
     # --- Валюта підпільного ринку (рідкісна; НЕ Характеристика — інваріант луту дотримано) ---
     gold_pound:
       item_id: "currency:pound"
@@ -641,6 +1459,6 @@ global_loot:
     # --- Secret orders (6c) ---
     order_cipher_message:
       item_id: "order_cipher_message"
-      weight: 8
+      weight: 60
       amount_min: 1
       amount_max: 1

@@ -2,13 +2,14 @@ package me.vangoo.pathways.whitetower.abilities;
 
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.abilities.core.PermanentPassiveAbility;
+import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.Sequence;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.Container;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.LivingEntity;
@@ -25,6 +26,7 @@ import org.bukkit.util.Vector;
 
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class EnhancedMentalAttributes extends PermanentPassiveAbility {
 
@@ -37,10 +39,17 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
     // Polymath константи
     private static final double POLYMATH_XP_MULTIPLIER = 1.5; // +50% досвіду
     private static final double POLYMATH_ENCHANT_LUCK = 0.25; // 25% шанс покращити зачарування
-    private static final int POLYMATH_BREWING_BONUS = 1; // +1 пляшка при варінні
+    private static final double POLYMATH_BREW_CHANCE = 0.35; // шанс на дублікат зілля
+    private static final double BREW_RANGE_SQUARED = 25.0;  // 5 блоків до стійки
 
     private final Random random = new Random();
-    private int tickCounter = 0;
+    /**
+     * Кастер → ВЛАСНИЙ ключ підписки (не {@code casterId}: чужий
+     * {@code unsubscribeAll(casterId)} зняв би наші слухачі). Підписки без TTL, тож без
+     * відписки в {@link #onDeactivate} кожен вхід чи підвищення Послідовності додавав би
+     * ще один комплект — і множники досвіду перемножувались би.
+     */
+    private final Map<UUID, UUID> subscriptions = new ConcurrentHashMap<>();
 
     @Override
     public String getName() {
@@ -65,20 +74,44 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
 
     @Override
     public void onActivate(IAbilityContext context) {
-        super.onActivate(context);
-        int seq = context.beyonder().getBeyonder(context.getCasterId()).getSequenceLevel();
-        if (seq <= 6) {
-            registerPolymathEvents(context);
-        }
+        UUID casterId = context.getCasterId();
+        if (casterId == null) return;
+
+        UUID previous = subscriptions.remove(casterId);
+        if (previous != null) context.events().unsubscribeAll(previous);
+
+        Beyonder beyonder = context.beyonder().getBeyonder(casterId);
+        if (beyonder == null || beyonder.getSequenceLevel() > 6) return;
+
+        UUID subKey = UUID.randomUUID();
+        subscriptions.put(casterId, subKey);
+        registerPolymathEvents(context, subKey);
+    }
+
+    @Override
+    public void onDeactivate(IAbilityContext context) {
+        UUID casterId = context.getCasterId();
+        if (casterId == null) return;
+
+        UUID subKey = subscriptions.remove(casterId);
+        if (subKey != null) context.events().unsubscribeAll(subKey);
     }
 
     @Override
     public void tick(IAbilityContext context) {
-        tickCounter++;
         UUID casterId = context.getCasterId();
-        if (!context.playerData().isOnline(casterId)) return;
+        Player caster = context.getCasterPlayer();
+        if (caster == null || !context.playerData().isOnline(casterId)) return;
 
-        int currentSeq = context.beyonder().getBeyonder(casterId).getSequenceLevel();
+        // Такт беремо з самого гравця: екземпляр здібності спільний для всього шляху,
+        // тож інстанс-лічильник із двома носіями рахував би вдвічі швидше й роздавав
+        // XP то одному, то іншому.
+        int ticks = caster.getTicksLived();
+
+        Beyonder beyonder = context.beyonder().getBeyonder(casterId);
+        if (beyonder == null) return;
+
+        int currentSeq = beyonder.getSequenceLevel();
         boolean isSeq8 = currentSeq <= 8;
         boolean isSeq7 = currentSeq <= 7;
         boolean isSeq6 = currentSeq <= 6;
@@ -87,25 +120,28 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
         removeNegativeEffects(context, isSeq8, isSeq6);
 
         // --- 2. Passive Learning ---
-        if (tickCounter % XP_INTERVAL_TICKS == 0) {
-            givePassiveXP(context, isSeq7, isSeq8, isSeq6);
+        if (ticks % XP_INTERVAL_TICKS == 0) {
+            givePassiveXP(context, ticks, isSeq7, isSeq8, isSeq6);
         }
 
         // --- 3. Analytical Sight & Danger Sense ---
-        if (tickCounter % ANALYSIS_INTERVAL_TICKS == 0) {
-            analyzeTarget(context, isSeq8, isSeq7, isSeq6);
-            if (isSeq7) {
-                checkDangerSense(context); // Тепер перевіряємо це частіше
+        // Аналіз, загроза і скарби пишуть в ОДИН екшн-бар, тож порядок = пріоритет:
+        // загроза > ціль > скарби. Інакше найчастіший напис затирає найважливіший.
+        boolean actionBarTaken = false;
+        if (ticks % ANALYSIS_INTERVAL_TICKS == 0) {
+            actionBarTaken = isSeq7 && checkDangerSense(context, ticks);
+            if (!actionBarTaken) {
+                actionBarTaken = analyzeTarget(context, ticks, isSeq8, isSeq7, isSeq6);
             }
         }
 
         // --- 4. Reveal Invisible (ЗАМІНА: Сліди ворогів -> Бачення невидимого) ---
-        if (isSeq7 && tickCounter % 10 == 0) {
+        if (isSeq7 && ticks % TRACE_INTERVAL_TICKS == 0) {
             revealInvisibleTargets(context);
         }
 
         // --- 5. Treasure Sense ---
-        if (isSeq8 && tickCounter % TREASURE_INTERVAL_TICKS == 0) {
+        if (isSeq8 && !actionBarTaken && ticks % TREASURE_INTERVAL_TICKS == 0) {
             detectNearestTreasure(context, isSeq6);
         }
     }
@@ -115,11 +151,11 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
     /**
      * Реєструє івенти для Полімата
      */
-    private void registerPolymathEvents(IAbilityContext context) {
+    private void registerPolymathEvents(IAbilityContext context, UUID subKey) {
         UUID casterId = context.getCasterId();
 
         // 1. Бонус досвіду від всіх джерел
-        context.events().subscribeToTemporaryEvent(casterId,
+        context.events().subscribeToTemporaryEvent(subKey,
                 PlayerExpChangeEvent.class,
                 e -> e.getPlayer().getUniqueId().equals(casterId),
                 e -> {
@@ -153,7 +189,7 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
         );
 
         // 2. Покращення зачарувань
-        context.events().subscribeToTemporaryEvent(casterId,
+        context.events().subscribeToTemporaryEvent(subKey,
                 EnchantItemEvent.class,
                 e -> e.getEnchanter().getUniqueId().equals(casterId),
                 e -> {
@@ -196,17 +232,20 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
         );
 
         // 3. Бонус при варінні зілля
-        context.events().subscribeToTemporaryEvent(casterId,
+        context.events().subscribeToTemporaryEvent(subKey,
                 BrewEvent.class,
                 e -> {
                     Location brewLoc = e.getBlock().getLocation();
                     Location playerLoc = context.playerData().getCurrentLocation(casterId);
-                    // Перевірка дистанції (гравець має бути поруч)
-                    return playerLoc != null && brewLoc.distance(playerLoc) < 5.0;
+                    // Світи звіряємо ПЕРЕД відстанню: distance() між світами кидає виняток,
+                    // а фільтр бачить кожне варіння на сервері.
+                    return playerLoc != null
+                            && brewLoc.getWorld() != null
+                            && brewLoc.getWorld().equals(playerLoc.getWorld())
+                            && brewLoc.distanceSquared(playerLoc) < BREW_RANGE_SQUARED;
                 },
                 e -> {
-                    // Шанс 35%
-                    if (random.nextDouble() > 0.35) return;
+                    if (random.nextDouble() > POLYMATH_BREW_CHANCE) return;
 
                     context.scheduling().scheduleDelayed(() -> {
                         var contents = e.getContents();
@@ -275,19 +314,19 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
         }
     }
 
-    private void givePassiveXP(IAbilityContext context, boolean isSeq7, boolean isSeq8, boolean isSeq6) {
+    private void givePassiveXP(IAbilityContext context, int ticks, boolean isSeq7, boolean isSeq8, boolean isSeq6) {
         // Базовий XP (без Polymath множника, бо він додається через івент)
         int xpAmount = isSeq6 ? 4 : (isSeq7 ? 3 : (isSeq8 ? 2 : 1));
 
         context.entity().giveExperience(context.getCasterId(), xpAmount);
 
         float pitch = isSeq6 ? 2.0f : (isSeq8 ? 1.8f : 1.5f);
-        if (!isSeq6 || tickCounter % (XP_INTERVAL_TICKS * 2) == 0) {
+        if (!isSeq6 || ticks % (XP_INTERVAL_TICKS * 2) == 0) {
             context.effects().playSoundForPlayer(context.getCasterId(), Sound.ITEM_BOOK_PAGE_TURN, 0.5f, pitch);
         }
     }
 
-    private boolean analyzeTarget(IAbilityContext context, boolean isDeepAnalysis, boolean isDetectiveAnalysis, boolean isPolymathAnalysis) {
+    private boolean analyzeTarget(IAbilityContext context, int ticks, boolean isDeepAnalysis, boolean isDetectiveAnalysis, boolean isPolymathAnalysis) {
         double range = isPolymathAnalysis ? 35.0 : (isDeepAnalysis ? 25.0 : 15.0);
         Optional<LivingEntity> targetOpt = context.targeting().getTargetedEntity(range);
 
@@ -299,7 +338,7 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
         Component info = buildTargetInfo(context, target, isDeepAnalysis, isDetectiveAnalysis, isPolymathAnalysis);
         context.messaging().sendMessageToActionBar(context.getCasterId(), info);
 
-        if (isPolymathAnalysis && tickCounter % 40 == 0) {
+        if (isPolymathAnalysis && ticks % 40 == 0) {
             context.effects().spawnParticle(Particle.ENCHANT, target.getEyeLocation().add(0, 0.5, 0), 5, 0.3, 0.3, 0.3);
         }
         return true;
@@ -334,9 +373,8 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
         // ВИПРАВЛЕНО: Беремо HP прямо з моба/гравця
         double health = target.getHealth();
         // Отримуємо макс. HP безпечно (деякі моби можуть не мати атрибуту, тому дефолт 20)
-        double maxHealth = target.getAttribute(Attribute.GENERIC_MAX_HEALTH) != null
-                ? target.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()
-                : 20.0;
+        var maxHealthAttr = target.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        double maxHealth = maxHealthAttr != null ? maxHealthAttr.getValue() : 20.0;
 
         String hpStr = isPolymathAnalysis ? String.format("%.1f", health) : DF.format(health);
         String maxHpStr = isPolymathAnalysis ? String.format("%.1f", maxHealth) : DF.format(maxHealth);
@@ -390,33 +428,31 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
         World world = casterLoc.getWorld();
         if (world == null) return;
 
+        double radiusSquared = radius * (double) radius;
+        int chunkRange = (int) Math.ceil(radius / 16.0);
+        int centerChunkX = casterLoc.getBlockX() >> 4;
+        int centerChunkZ = casterLoc.getBlockZ() >> 4;
+
         Location closestContainerLoc = null;
         double minDistanceSq = Double.MAX_VALUE;
 
-        for (int x = -radius; x <= radius; x++) {
-            for (int y = -radius; y <= radius; y++) {
-                for (int z = -radius; z <= radius; z++) {
-                    Block block = world.getBlockAt(casterLoc.getBlockX() + x, casterLoc.getBlockY() + y, casterLoc.getBlockZ() + z);
+        // Ванільний getTileEntities() по ВЖЕ завантажених чанках. Попередній перебір куба
+        // (до 9261 getBlockAt() кожні 2 с на кожного носія) не лише грів CPU — getBlockAt
+        // синхронно ПІДВАНТАЖУВАВ чанки за межею прогрузки.
+        for (int dx = -chunkRange; dx <= chunkRange; dx++) {
+            for (int dz = -chunkRange; dz <= chunkRange; dz++) {
+                if (!world.isChunkLoaded(centerChunkX + dx, centerChunkZ + dz)) continue;
 
-                    // Швидка перевірка матеріалу перед зверненням до стейту
-                    if (isValidContainerType(block.getType())) {
+                for (BlockState state : world.getChunkAt(centerChunkX + dx, centerChunkZ + dz).getTileEntities()) {
+                    if (!(state instanceof Container container)) continue;
+                    if (!isValidContainerType(state.getType())) continue;
+                    if (isPolymath && container.getInventory().isEmpty()) continue;
 
-                        // Перевірка стейту - найважча частина. Робимо її тільки якщо блок підходить.
-                        if (isPolymath) {
-                            // Обережно з getState() - це навантажує сервер
-                            if (block.getState() instanceof Container container) {
-                                if (container.getInventory().isEmpty()) {
-                                    continue;
-                                }
-                            }
-                        }
+                    double distSq = state.getLocation().distanceSquared(casterLoc);
+                    if (distSq > radiusSquared || distSq >= minDistanceSq) continue;
 
-                        double distSq = casterLoc.distanceSquared(block.getLocation());
-                        if (distSq < minDistanceSq) {
-                            minDistanceSq = distSq;
-                            closestContainerLoc = block.getLocation();
-                        }
-                    }
+                    minDistanceSq = distSq;
+                    closestContainerLoc = state.getLocation();
                 }
             }
         }
@@ -431,25 +467,7 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
         }
     }
 
-    private void visualizeTraces(IAbilityContext context) {
-        double range = 15.0;
-        UUID casterId = context.getCasterId();
-        context.targeting().getNearbyEntities(range).forEach(entity -> {
-            if (entity.getUniqueId().equals(casterId)) return;
-
-            Vector velocity = entity.getVelocity();
-            boolean isOnGround = entity.isOnGround();
-
-            if (velocity != null && (velocity.length() > 0.08 || !isOnGround)) {
-                Location entityLoc = entity.getLocation();
-                if (entityLoc != null) {
-                    context.effects().spawnParticle(Particle.END_ROD, entityLoc, 0, 0, 0, 0);
-                }
-            }
-        });
-    }
-
-    private boolean checkDangerSense(IAbilityContext context) {
+    private boolean checkDangerSense(IAbilityContext context, int ticks) {
         double dangerRange = 25.0;
         UUID casterId = context.getCasterId();
         Location casterLoc = context.playerData().getCurrentLocation(casterId);
@@ -492,7 +510,7 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
             context.messaging().sendMessageToActionBar(casterId, warning);
 
             // Тихий звук "клац" (рідко, щоб не спамило)
-            if (tickCounter % 20 == 0) {
+            if (ticks % 20 == 0) {
                 context.effects().playSoundForPlayer(casterId, Sound.UI_BUTTON_CLICK, 0.5f, 2.0f);
             }
             return true;
@@ -526,10 +544,5 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
         return type.equals(PotionEffectType.REGENERATION) || type.equals(PotionEffectType.SPEED) ||
                 type.equals(PotionEffectType.STRENGTH) || type.equals(PotionEffectType.RESISTANCE) ||
                 type.equals(PotionEffectType.FIRE_RESISTANCE) || type.equals(PotionEffectType.ABSORPTION);
-    }
-
-    @Override
-    public void cleanUp() {
-        tickCounter = 0;
     }
 }

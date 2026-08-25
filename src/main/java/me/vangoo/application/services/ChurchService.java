@@ -2,6 +2,7 @@ package me.vangoo.application.services;
 
 import me.vangoo.domain.brewing.BrewRecipe;
 import me.vangoo.domain.brewing.RecipeDefinition;
+import me.vangoo.domain.creatures.ApexGate;
 import me.vangoo.domain.creatures.CreatureDefinition;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.entities.Pathway;
@@ -472,6 +473,12 @@ public class ChurchService {
         }
     }
 
+    /** Послідовність гравця, або null, якщо він не потойбічний (тоді апекс йому не пропонують). */
+    private Integer sequenceOf(UUID playerId) {
+        Beyonder beyonder = beyonderService.getBeyonder(playerId);
+        return beyonder == null ? null : beyonder.getSequenceLevel();
+    }
+
     /** @return true, якщо набір справді згенеровано (інакше квота не витрачається). */
     private boolean generateTaskSet(Membership membership) {
         Institution church = registry.byId(membership.institutionId()).orElse(null);
@@ -491,7 +498,10 @@ public class ChurchService {
                 pathwayToGroup.put(name.toLowerCase(Locale.ROOT), group);
             }
         }
+        // Той самий гейт, що й на спавні: апекс, якого гравець не зустріне, не може стати HUNT-ціллю.
+        Integer sequence = sequenceOf(membership.playerId());
         List<ChurchTaskGenerator.CreatureCandidate> creatures = creatureRegistry.values().stream()
+                .filter(c -> ApexGate.allows(c.tier(), sequence))
                 .map(c -> new ChurchTaskGenerator.CreatureCandidate(c.id(), c.pathway(), c.sequence()))
                 .toList();
         List<ChurchTaskGenerator.IngredientCandidate> ingredients = new ArrayList<>();

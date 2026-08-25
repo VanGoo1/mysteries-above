@@ -14,7 +14,7 @@ MA_Sun_S9_Singing:
 # Наступальна: сонячне сяйво — спалах світла (Sunshine, S8)
 MA_Sun_S8_Sunshine:
   Skills:
-  - damage{amount=5}
+  - damage{amount=9}
   - potion{type=BLINDNESS;duration=30;level=0;particles=false}
   - effect:particles{p=end_rod;amount=20;hS=0.4;vS=0.6;y=1;speed=0.02}
   - effect:sound{s=block.beacon.activate;v=0.7;p=1.6}
@@ -35,13 +35,13 @@ MA_Sun_S7_HolyLight:
   - effect:sound{s=block.beacon.activate;v=1;p=1.2} @self
 MA_Sun_S7_HolyLight_Hit:
   Skills:
-  - damage{amount=7}
+  - damage{amount=12}
   - effect:particles{p=end_rod;amount=18;hS=0.3;vS=0.3;y=1;speed=0.05}
 
 # Наступальна: розсічення очищення — удар з відкиданням (CleaveOfPurification, S7)
 MA_Sun_S7_Cleave:
   Skills:
-  - damage{amount=8}
+  - damage{amount=14}
   - throw{velocity=6;velocityY=2}
   - effect:particles{p=sweep_attack;amount=3;hS=0.3;vS=0.3;y=1}
   - effect:sound{s=entity.player.attack.sweep;v=1;p=0.9}
@@ -50,7 +50,7 @@ MA_Sun_S7_Cleave:
 MA_Sun_S7_FireOfLight:
   Skills:
   - ignite{ticks=80}
-  - damage{amount=3}
+  - damage{amount=5}
   - effect:particles{p=soul_fire_flame;amount=16;hS=0.3;vS=0.5;y=1;speed=0.02}
   - effect:sound{s=entity.blaze.shoot;v=0.8;p=1.6}
 
@@ -65,7 +65,7 @@ MA_Sun_S7_Halo:
 # Наступальна: свята хвиля — вибух світла (HolyWave, S5)
 MA_Sun_S5_HolyWave:
   Skills:
-  - damage{amount=11}
+  - damage{amount=19}
   - throw{velocity=8;velocityY=3}
   - potion{type=BLINDNESS;duration=40;level=0;particles=false}
   - effect:particles{p=end_rod;amount=40;hS=0.8;vS=0.8;y=1;speed=0.1}

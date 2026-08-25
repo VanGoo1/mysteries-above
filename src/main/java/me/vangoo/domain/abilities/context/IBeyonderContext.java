@@ -2,6 +2,7 @@ package me.vangoo.domain.abilities.context;
 
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.entities.Pathway;
+import me.vangoo.domain.rituals.IngredientHint;
 import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.domain.valueobjects.UnlockedRecipe;
@@ -28,6 +29,13 @@ public interface IBeyonderContext {
 
     /** Рецепти зілль (шлях+послідовність), у які входить цей інгредієнт; порожньо — якщо ніде. */
     List<UnlockedRecipe> findRecipesUsing(ItemStack ingredient);
+
+    /**
+     * Ритуал одкровення (RitualType.BESTOWMENT): інгредієнти Послідовності + звідки їх брати.
+     * Джойн робиться тут, бо id інгредієнта дістається лише з NBT (інфраструктура),
+     * а шар здібностей має бачити вже готові підказки.
+     */
+    List<IngredientHint> ingredientHints(Pathway pathway, Sequence sequence);
 
     /**
      * Голос мертвих (Смерть, Посл. 7): ОДНА транзакція «забрати в жертви — віддати злодію».

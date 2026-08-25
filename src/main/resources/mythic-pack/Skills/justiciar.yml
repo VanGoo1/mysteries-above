@@ -27,7 +27,7 @@ MA_Justiciar_S8_Jurisdiction:
 # Наступальна: батіг болю + псі-пробій (WhipOfPain + PsychicPiercing, S7)
 MA_Justiciar_S7_Whip:
   Skills:
-  - damage{amount=5}
+  - damage{amount=9}
   - drainsanity{amount=1} 0.15
   - effect:particles{p=crit;amount=12;hS=0.3;vS=0.5;y=1;speed=0.2}
   - effect:sound{s=entity.ravager.attack;v=0.8;p=1.4}
@@ -43,14 +43,14 @@ MA_Justiciar_S7_Brand:
 # Наступальна: вирок — бурст (Verdict, S6)
 MA_Justiciar_S6_Verdict:
   Skills:
-  - damage{amount=7}
+  - damage{amount=12}
   - effect:particles{p=wax_off;amount=24;hS=0.5;vS=0.8;y=1;speed=0.05}
   - effect:sound{s=block.anvil.land;v=0.8;p=1.2}
 
 # Наступальна: кара (Punishment, S5)
 MA_Justiciar_S5_Punishment:
   Skills:
-  - damage{amount=10}
+  - damage{amount=18}
   - potion{type=SLOWNESS;duration=30;level=1;particles=false}
   - effect:particles{p=explosion;amount=2;y=1}
   - effect:sound{s=entity.lightning_bolt.thunder;v=0.7;p=1.4}

@@ -42,6 +42,11 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         udpGuard.sweep();
         getServer().getPluginManager().registerEvents(udpGuard, this);
 
+        // Синхронізація реєстру чарів у PacketEvents падає на модованих предметах
+        // (create:potato_cannon) стек-трейсом на кожен вхід гравця — вимикаємо її.
+        me.vangoo.infrastructure.compat.PacketEventsModdedRegistryGuard
+                .disableEnchantmentSync(pluginLogger);
+
         // Команди Citizens не повинні ховати нік живого гравця (тіло-NPC носить нік
         // кастера).
         // Реєструється і як packet-, і як Bukkit-лістенер — див. javadoc класу.
@@ -274,7 +279,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
     }
 
     private void registerEvents() {
-        AbilityMenuListener abilityMenuListener = new AbilityMenuListener(services.getAbilityMenu(),
+        AbilityMenuListener abilityMenuListener = new AbilityMenuListener(this, services.getAbilityMenu(),
                 services.getBeyonderService(),
                 services.getAbilityItemFactory(), pluginLogger);
 
@@ -285,7 +290,7 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
         PathwayPotionListener pathwayPotionListener = new PathwayPotionListener(services.getPotionManager(),
                 services.getBeyonderService(),
-                services.getPassiveAbilityScheduler());
+                services.getPassiveAbilityScheduler(), services.getAbilityMenu());
 
         PassiveAbilityLifecycleListener passiveAbilityLifecycleListener = new PassiveAbilityLifecycleListener(
                 services.getPassiveAbilityScheduler());

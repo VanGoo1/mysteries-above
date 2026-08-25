@@ -21,7 +21,7 @@ custom-items:
     material: MUSIC_DISC_FAR
     lore:
       - ""
-    glow: true
+    glow: false
     custom-model-data: "manhal_fish_eyeball"
 
   goat_horned_blackfish_blood:

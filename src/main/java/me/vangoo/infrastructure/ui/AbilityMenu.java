@@ -799,7 +799,15 @@ public class AbilityMenu {
         }
 
         ItemStack menuItem = getMenuItem(beyonder);
+        ItemStack displaced = player.getInventory().getItem(9);
         player.getInventory().setItem(9, menuItem);
+
+        // Слот 9 міг бути зайнятий: пересуваємо предмет у вільний слот, а якщо інвентар
+        // повний — кидаємо на землю, щоб меню ніколи не з'їдало чужий предмет.
+        if (displaced != null && displaced.getType() != org.bukkit.Material.AIR) {
+            player.getInventory().addItem(displaced).values().forEach(leftover ->
+                    player.getWorld().dropItemNaturally(player.getLocation(), leftover));
+        }
     }
 
     /**

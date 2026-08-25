@@ -22,11 +22,20 @@ class CreatureSelectorTest {
     }
 
     private SpawnRule natural(double chance) {
-        return new SpawnRule(List.of("OCEAN"), List.of("GUARDIAN"), chance, List.of(), 0.0);
+        return new SpawnRule(List.of("OCEAN"), List.of("GUARDIAN"), chance, 0.0);
     }
 
     private SpawnRule structure(double chance) {
-        return new SpawnRule(List.of(), List.of(), 0.0, List.of("mysteries"), chance);
+        return new SpawnRule(List.of(), List.of(), 0.0, chance);
+    }
+
+    /** Усе, кого може віддати вікно послідовності playerSequence, за 1000 рівномірних roll'ів. */
+    private java.util.Set<String> structurePool(CreatureSelector s, int playerSequence) {
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (int i = 0; i < 1000; i++) {
+            s.pickForStructure(playerSequence, null, i / 1000.0).ifPresent(d -> seen.add(d.id()));
+        }
+        return seen;
     }
 
     @Test
@@ -54,15 +63,55 @@ class CreatureSelectorTest {
     }
 
     @Test
-    void structureKeyContainsMatchReturnsCreature() {
-        CreatureSelector s = new CreatureSelector(List.of(def("a", structure(0.5))));
-        assertTrue(s.pickForStructure("minecraft:mysteries/dungeon", 0.4).isPresent());
+    void structureWindowIsOwnAndNextSequence() {
+        CreatureSelector s = new CreatureSelector(List.of(
+                def("s9", structure(0.5), "visionary", 9),
+                def("s8", structure(0.5), "visionary", 8),
+                def("s7", structure(0.5), "visionary", 7)));
+        assertEquals(java.util.Set.of("s9", "s8"), structurePool(s, 9));
+        assertEquals(java.util.Set.of("s8", "s7"), structurePool(s, 8));
     }
 
     @Test
-    void structureKeyNoMatchReturnsEmpty() {
-        CreatureSelector s = new CreatureSelector(List.of(def("a", structure(0.5))));
-        assertTrue(s.pickForStructure("minecraft:village/house", 0.1).isEmpty());
+    void structureApexNeedsSequenceSixOrStronger() {
+        CreatureSelector s = new CreatureSelector(List.of(
+                def("apex", structure(0.5), "visionary", 5),
+                def("weak", structure(0.5), "visionary", 9)));
+        for (int seq = 9; seq >= 7; seq--) {
+            assertFalse(structurePool(s, seq).contains("apex"), "Посл. " + seq + " не має бачити apex");
+        }
+        assertTrue(structurePool(s, 6).contains("apex"));
+        assertTrue(structurePool(s, 5).contains("apex"));
+    }
+
+    @Test
+    void structureZeroWeightNeverSpawns() {
+        CreatureSelector s = new CreatureSelector(List.of(def("mute", structure(0.0), "visionary", 9)));
+        assertTrue(structurePool(s, 9).isEmpty());
+    }
+
+    @Test
+    void structureIgnoresBiomeAndReplaceRules() {
+        // натуральні правила порожні — структурний спавн на них не дивиться
+        CreatureSelector s = new CreatureSelector(List.of(def("a", structure(0.5), "visionary", 9)));
+        assertEquals(java.util.Set.of("a"), structurePool(s, 9));
+    }
+
+    @Test
+    void structureBiasPrefersOwnPathwayButKeepsOthersReachable() {
+        CreatureSelector s = new CreatureSelector(List.of(
+                def("mine", structure(0.5), "visionary", 8),
+                def("other", structure(0.5), "fool", 8)));
+        ConvergenceBias bias = new ConvergenceBias("visionary", 9);
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        int mine = 0;
+        for (int i = 0; i < 1000; i++) {
+            CreatureDefinition d = s.pickForStructure(9, bias, i / 1000.0).orElseThrow();
+            seen.add(d.id());
+            if (d.id().equals("mine")) mine++;
+        }
+        assertEquals(java.util.Set.of("mine", "other"), seen, "чужий шлях лишається досяжним");
+        assertTrue(mine > 500, "свій шлях мусить важити більше, а не рівно");
     }
 
     @Test
@@ -76,10 +125,18 @@ class CreatureSelectorTest {
     }
 
     @Test
+    void structureEveryCandidateInWindowIsReachable() {
+        // 12 кандидатів однієї послідовності: жоден не мусить лишитись за межею сегментів
+        List<CreatureDefinition> all = new java.util.ArrayList<>();
+        for (int i = 0; i < 12; i++) all.add(def("c" + i, structure(0.12), "visionary", 9));
+        assertEquals(12, structurePool(new CreatureSelector(all), 9).size());
+    }
+
+    @Test
     void emptyRegistryReturnsEmpty() {
         CreatureSelector s = new CreatureSelector(List.of());
         assertTrue(s.pickForBiome("OCEAN", "GUARDIAN", 0.0).isEmpty());
-        assertTrue(s.pickForStructure("mysteries", 0.0).isEmpty());
+        assertTrue(s.pickForStructure(9, null, 0.0).isEmpty());
     }
 
     @Test
