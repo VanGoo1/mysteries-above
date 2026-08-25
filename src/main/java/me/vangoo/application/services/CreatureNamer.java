@@ -64,7 +64,7 @@ public class CreatureNamer {
         return names;
     }
 
-    /** Чи трапляється істота біля структур (apex-тір) — окрема підказка для гравця. */
+    /** Чи трапляється істота біля структур (вага структурного спавну > 0) — підказка гравцю. */
     public boolean spawnsNearStructures(String creatureId) {
         CreatureDefinition definition = creatureRegistry.get(creatureId);
         return definition != null && definition.spawn() != null

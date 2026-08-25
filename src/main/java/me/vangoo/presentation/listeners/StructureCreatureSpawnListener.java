@@ -1,7 +1,7 @@
 package me.vangoo.presentation.listeners;
 
 import me.vangoo.application.services.BeyonderService;
-import me.vangoo.domain.creatures.ApexGate;
+import me.vangoo.domain.creatures.ConvergenceBias;
 import me.vangoo.domain.creatures.CreatureDefinition;
 import me.vangoo.domain.creatures.CreatureSelector;
 import me.vangoo.domain.entities.Beyonder;
@@ -25,17 +25,26 @@ import java.util.Optional;
 import java.util.Random;
 
 /**
- * Спавнить apex-істот біля кастомних/ванільних структур, реагуючи на генерацію їхнього луту
- * (LootGenerateEvent). Окремий лістенер: спавн ІСТОТИ — не генерація предмета (тому не в
- * VanillaStructureLootListener).
+ * Спавнить істот біля структур, реагуючи на генерацію їхнього луту (LootGenerateEvent). Окремий
+ * лістенер: спавн ІСТОТИ — не генерація предмета (тому не у VanillaStructureLootListener).
  *
- * <p>Захист від надмірного спавну: LootGenerateEvent спрацьовує для кожного контейнера (скрині),
- * тому щільна структура може роллити шанс багато разів. Per-chunk cooldown гарантує, що в одному
- * чанку протягом {@link #SPAWN_COOLDOWN_MS} мс з'явиться не більше однієї істоти.
+ * <p><b>Структура — будь-яка.</b> Ключ лут-таблиці не фільтрується: село, храм, шахта, бастіон,
+ * датапакова чи модова структура — усі однакові. Раніше збігом ключа проходили тільки
+ * {@code mysteries}/{@code nova_structures} (і дві ванільні для блукаючого духа), тож із ванільних
+ * скринь не з'являлось майже нікого.
  *
- * <p>Три правила проти «ваншоту зі скрині», на які скаржились гравці:
+ * <p><b>Кого приведе — вирішує послідовність того, хто відкрив</b>
+ * ({@link CreatureSelector#pickForStructure}): Посл. 9 бачить істот 9–8, Посл. 8 — 8–7, …,
+ * Посл. 6 — 6–5. Не-потойбічний рахується найслабшим (Посл. 9), тож структури працюють для будь-
+ * якого гравця. Окремий {@code ApexGate} тут більше не потрібен — вікно вже не пускає Посл. 5
+ * нікому, слабшому за Посл. 6 (гейт лишається чинним для ambient-спавну).
+ *
+ * <p>Захист від надмірного спавну: LootGenerateEvent спрацьовує для кожного контейнера, тому
+ * щільна структура може роллити шанс багато разів. Per-chunk cooldown гарантує, що в одному чанку
+ * протягом {@link #SPAWN_COOLDOWN_MS} мс з'явиться не більше однієї істоти.
+ *
+ * <p>Два правила проти «ваншоту зі скрині», на які скаржились гравці:
  * <ol>
- *   <li>apex приходить лише до гравця, що вже підійшов до Посл. 5 ({@link ApexGate});</li>
  *   <li>місце спавну мусить бути валідним і не впритул — інакше істота не з'являється взагалі
  *       (раніше фолбек ставив її в стіну);</li>
  *   <li>поява телеграфиться звуком і повідомленням за {@link #TELEGRAPH_TICKS} тіків, щоб гравець
@@ -48,23 +57,26 @@ public class StructureCreatureSpawnListener implements Listener {
     private static final int MIN_SPAWN_RADIUS = 5;
     private static final int MAX_SPAWN_RADIUS = 10;
     private static final long TELEGRAPH_TICKS = 80L; // 4 секунди
+    private static final int WEAKEST_SEQUENCE = 9;
 
     private final Plugin plugin;
     private final CreatureSelector selector;
     private final MythicCreatureGateway gateway;
     private final BeyonderService beyonderService;
     private final double minSpawnDistance;
+    private final double spawnChance;
     private final Random random = new Random();
     private final Map<String, Long> lastSpawnByChunk = new HashMap<>();
 
     public StructureCreatureSpawnListener(Plugin plugin, CreatureSelector selector,
                                           MythicCreatureGateway gateway, BeyonderService beyonderService,
-                                          double minSpawnDistance) {
+                                          double minSpawnDistance, double spawnChance) {
         this.plugin = plugin;
         this.selector = selector;
         this.gateway = gateway;
         this.beyonderService = beyonderService;
         this.minSpawnDistance = minSpawnDistance;
+        this.spawnChance = spawnChance;
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -82,12 +94,17 @@ public class StructureCreatureSpawnListener implements Listener {
         long now = System.currentTimeMillis();
         if (now - lastSpawnByChunk.getOrDefault(chunkKey, 0L) < SPAWN_COOLDOWN_MS) return;
 
-        String key = event.getLootTable().getKey().toString();
-        Optional<CreatureDefinition> pick = selector.pickForStructure(key, random.nextDouble());
-        if (pick.isEmpty()) return;
+        if (random.nextDouble() >= spawnChance) return;
 
         Player opener = event.getEntity() instanceof Player p ? p : null;
-        if (!ApexGate.allows(pick.get().tier(), sequenceOf(opener))) return;
+        Beyonder beyonder = opener == null ? null : beyonderService.getBeyonder(opener.getUniqueId());
+        // Не-потойбічний рахується найслабшим: структура має працювати й для нього.
+        int sequence = beyonder == null ? WEAKEST_SEQUENCE : beyonder.getSequenceLevel();
+        ConvergenceBias bias = beyonder == null
+                ? null : new ConvergenceBias(beyonder.getPathway().getName(), sequence);
+
+        Optional<CreatureDefinition> pick = selector.pickForStructure(sequence, bias, random.nextDouble());
+        if (pick.isEmpty()) return;
 
         // Шукаємо місце навколо ГРАВЦЯ, а не скрині: мінімальний радіус має означати саме
         // «не впритул до того, хто відкрив».
@@ -106,13 +123,6 @@ public class StructureCreatureSpawnListener implements Listener {
             lastSpawnByChunk.values().removeIf(t -> now - t > SPAWN_COOLDOWN_MS);
         }
         lastSpawnByChunk.put(chunkKey, now);
-    }
-
-    /** Послідовність гравця, або null — якщо він не потойбічний (тоді apex до нього не прийде). */
-    private Integer sequenceOf(Player player) {
-        if (player == null) return null;
-        Beyonder beyonder = beyonderService.getBeyonder(player.getUniqueId());
-        return beyonder == null ? null : beyonder.getSequenceLevel();
     }
 
     private void telegraph(Player player) {

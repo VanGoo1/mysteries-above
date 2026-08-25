@@ -32,8 +32,47 @@ public class CreatureConfigLoader {
         ConfigurationSection root = config.getConfigurationSection("creatures");
         if (root == null) {
             plugin.getLogger().warning("No 'creatures' section in creatures.yml. No creatures loaded.");
-            return result;
+        } else {
+            parseAll(root, result);
         }
+
+        int fromDisk = result.size();
+        mergeBundledDefaults(result);
+        plugin.getLogger().info("Loaded " + result.size() + " creatures from creatures.yml"
+                + (result.size() > fromDisk ? " (" + (result.size() - fromDisk) + " from bundled defaults)" : ""));
+        return result;
+    }
+
+    /**
+     * Доливає істот, яких у файлі гравця немає, з версії в джарі. {@code saveResource(.., false)}
+     * оновлює creatures.yml лише коли файлу немає взагалі, тож новий моб (напр. четвірка Світу
+     * Духів) на живому сервері не потрапляв у реєстр і не спавнився. Злиття — у ПАМ'ЯТІ: файл не
+     * переписуємо, щоб не стерти ні коментарі, ні адмінське тюнінг-редагування шансів.
+     */
+    private void mergeBundledDefaults(Map<String, CreatureDefinition> result) {
+        try (java.io.InputStream in = plugin.getResource("creatures.yml")) {
+            if (in == null) return;
+            YamlConfiguration bundled = YamlConfiguration.loadConfiguration(
+                    new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8));
+            ConfigurationSection root = bundled.getConfigurationSection("creatures");
+            if (root == null) return;
+            for (String id : root.getKeys(false)) {
+                if (result.containsKey(id)) continue;
+                ConfigurationSection c = root.getConfigurationSection(id);
+                if (c == null) continue;
+                try {
+                    result.put(id, parseCreature(id, c));
+                    plugin.getLogger().info("creatures.yml is missing '" + id + "', using bundled default");
+                } catch (Exception ex) {
+                    plugin.getLogger().warning("Skipping bundled creature '" + id + "': " + ex.getMessage());
+                }
+            }
+        } catch (java.io.IOException ex) {
+            plugin.getLogger().warning("Cannot read bundled creatures.yml: " + ex);
+        }
+    }
+
+    private void parseAll(ConfigurationSection root, Map<String, CreatureDefinition> result) {
         for (String id : root.getKeys(false)) {
             ConfigurationSection c = root.getConfigurationSection(id);
             if (c == null) continue;
@@ -43,8 +82,6 @@ public class CreatureConfigLoader {
                 plugin.getLogger().warning("Skipping creature '" + id + "': " + ex.getMessage());
             }
         }
-        plugin.getLogger().info("Loaded " + result.size() + " creatures from creatures.yml");
-        return result;
     }
 
     private CreatureDefinition parseCreature(String id, ConfigurationSection c) {
@@ -113,16 +150,15 @@ public class CreatureConfigLoader {
 
     private SpawnRule parseSpawn(ConfigurationSection s) {
         if (s == null) {
-            return new SpawnRule(List.of(), List.of(), 0.0, List.of(), 0.0);
+            return new SpawnRule(List.of(), List.of(), 0.0, 0.0);
         }
         ConfigurationSection nat = s.getConfigurationSection("natural");
         ConfigurationSection str = s.getConfigurationSection("structure");
         List<String> biomes = nat == null ? List.of() : upper(nat.getStringList("biomes"));
         List<String> replace = nat == null ? List.of() : upper(nat.getStringList("replace"));
         double natChance = nat == null ? 0.0 : nat.getDouble("chance", 0.0);
-        List<String> keys = str == null ? List.of() : str.getStringList("keys");
         double strChance = str == null ? 0.0 : str.getDouble("chance", 0.0);
-        return new SpawnRule(biomes, replace, natChance, keys, strChance);
+        return new SpawnRule(biomes, replace, natChance, strChance);
     }
 
     private List<String> upper(List<String> in) {

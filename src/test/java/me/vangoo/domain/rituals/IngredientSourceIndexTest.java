@@ -18,7 +18,7 @@ class IngredientSourceIndexTest {
     private static CreatureDefinition creature(String id, String ingredient, String... biomes) {
         return new CreatureDefinition(id, "ZOMBIE", CreatureTier.COMMON,
                 new LootTableData(List.of(new LootItem(ingredient, 50, 1, 1)), 0, 1),
-                new SpawnRule(List.of(biomes), List.of(), 0.005, List.of(), 0.0),
+                new SpawnRule(List.of(biomes), List.of(), 0.005, 0.0),
                 "Error", 9);
     }
 

@@ -315,7 +315,8 @@ public class ServiceContainer {
         this.naturalCreatureSpawnListener = new me.vangoo.presentation.listeners.NaturalCreatureSpawnListener(
                 creatureSelector, mythicCreatureGateway, minSpawnDistance, beyonderService);
         this.structureCreatureSpawnListener = new me.vangoo.presentation.listeners.StructureCreatureSpawnListener(
-                plugin, creatureSelector, mythicCreatureGateway, beyonderService, minSpawnDistance);
+                plugin, creatureSelector, mythicCreatureGateway, beyonderService, minSpawnDistance,
+                plugin.getConfig().getDouble("creatures.structure.chance", 0.10));
         this.creatureDamageListener = new me.vangoo.presentation.listeners.CreatureDamageListener(
                 mythicCreatureGateway, creatureRegistry, beyonderService);
 
