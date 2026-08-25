@@ -1,6 +1,5 @@
 package me.vangoo.domain.valueobjects;
 
-import org.bukkit.Material;
 
 import java.util.List;
 import java.util.Objects;
@@ -11,7 +10,7 @@ import java.util.Objects;
 public record CustomItem(
         String id,
         String displayName,
-        Material material,
+        String material,
         List<String> lore,
         boolean glow,
         String customModelData
@@ -20,6 +19,9 @@ public record CustomItem(
         Objects.requireNonNull(id, "ID cannot be null");
         Objects.requireNonNull(displayName, "Display name cannot be null");
         Objects.requireNonNull(material, "Material cannot be null");
+        if (material.isBlank()) {
+            throw new IllegalArgumentException("Material cannot be blank");
+        }
 
         // Ensure lore is never null
         if (lore == null) {

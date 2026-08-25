@@ -3,8 +3,6 @@ package me.vangoo.domain.abilities.core;
 
 import me.vangoo.domain.valueobjects.AbilityIdentity;
 import me.vangoo.domain.valueobjects.Sequence;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 
 /**
  * Domain: Wrapper для одноразових здібностей
@@ -75,7 +73,7 @@ public class OneTimeUseAbility extends ActiveAbility {
             } else {
                 // Ще залишилися використання
                 context.messaging().sendMessageToActionBar(context.getCasterId(),
-                        Component.text("Використань залишилось ").append(Component.text(usesRemaining, NamedTextColor.YELLOW)));
+                        "Використань залишилось §e" + usesRemaining);
             }
         }
 

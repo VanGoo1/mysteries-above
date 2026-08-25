@@ -16,19 +16,32 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 class ArchitectureTest {
 
     /**
-     * Зелений стартовий скоуп: пакети domain, що ВЖЕ чисті від Bukkit.
-     * Розширюй у міру чистки решти (valueobjects, abilities.core/context...).
+     * Пакети domain, чисті від Bukkit/GUI. Тримає межу портованого ядра: усе тут
+     * переїжджає на іншу платформу без правок.
+     * <p>
+     * НАВМИСНО поза списком і чистити НЕ треба:
+     * <ul>
+     *   <li>{@code domain.abilities.context} + {@code IAbilityContext} — це і є межа
+     *       платформи (~2360 викликів у 150 файлах); на іншій платформі вони
+     *       переписуються цілком, а не конвертуються;</li>
+     *   <li>{@code PathwayBranding} / {@code PathwayPotions} / {@code IItemResolver} —
+     *       таблиця кольорів і фабрика предметів, 58+25 файлів брижі заради даних,
+     *       які переносяться копіюванням.</li>
+     * </ul>
      */
     private static final String[] PURE_DOMAIN = {
             "me.vangoo.domain.entities",
             "me.vangoo.domain.services",
             "me.vangoo.domain.spells",
             "me.vangoo.domain.brewing",
+            "me.vangoo.domain.contracts",
             "me.vangoo.domain.creatures",
+            "me.vangoo.domain.events",
             "me.vangoo.domain.forage",
             "me.vangoo.domain.market",
             "me.vangoo.domain.organizations",
-            "me.vangoo.domain.rituals"
+            "me.vangoo.domain.rituals",
+            "me.vangoo.domain.valueobjects"
     };
 
     @Test

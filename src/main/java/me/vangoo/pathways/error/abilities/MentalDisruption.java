@@ -68,8 +68,8 @@ public class MentalDisruption extends ActiveAbility {
     }
 
     @Override
-    protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
-        return context.targeting().getTargetedEntity(SwindlerInfluence.DISRUPTION_RANGE);
+    protected Optional<UUID> getSequenceCheckTarget(IAbilityContext context) {
+        return context.targeting().getTargetedEntity(SwindlerInfluence.DISRUPTION_RANGE).map(LivingEntity::getUniqueId);
     }
 
     @Override

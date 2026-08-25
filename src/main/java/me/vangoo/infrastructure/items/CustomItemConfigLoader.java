@@ -100,9 +100,11 @@ public class CustomItemConfigLoader {
             throw new IllegalArgumentException("Missing 'material' for item: " + itemId);
         }
 
-        Material material;
+        // Валідуємо тут, щоб побитий конфіг падав на завантаженні, а не при видачі предмета;
+        // у CustomItem їде канонічна назва рядком — VO лишається без залежності від Bukkit.
+        String material;
         try {
-            material = Material.valueOf(materialStr.toUpperCase());
+            material = Material.valueOf(materialStr.toUpperCase()).name();
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid material '" + materialStr + "' for item: " + itemId);
         }

@@ -5,6 +5,7 @@ import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.valueobjects.RecordedEvent;
 import me.vangoo.domain.valueobjects.Sequence;
+import me.vangoo.pathways.common.RecordedEvents;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
@@ -74,12 +75,15 @@ public class MysticalReenactment extends ActiveAbility {
                     for (RecordedEvent event : events) {
                         if (shownCount >= maxEventsToShow) break;
 
+                        Location eventLoc = RecordedEvents.toLocation(event);
+                        if (eventLoc == null) continue;
+
                         // Логіка стеку: якщо координати ті самі, піднімаємо текст
-                        if (lastLoc != null && event.getLocation().distanceSquared(lastLoc) < 1.0) {
+                        if (lastLoc != null && eventLoc.distanceSquared(lastLoc) < 1.0) {
                             verticalOffset += 0.25;
                         } else {
                             verticalOffset = 0;
-                            lastLoc = event.getLocation();
+                            lastLoc = eventLoc;
                             // Якщо це новий блок, скидаємо лічильник для нього (опціонально)
                             // Але тут ми просто обмежуємо загальну кількість для чистоти
                         }
@@ -98,7 +102,10 @@ public class MysticalReenactment extends ActiveAbility {
     }
 
     private void visualizeEvent(IAbilityContext context, RecordedEvent event, double yOffset) {
-        Location loc = event.getLocation();
+        Location loc = RecordedEvents.toLocation(event);
+        if (loc == null) {
+            return;
+        }
         long minutesAgo = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - event.getTimestamp());
         String timeStr = (minutesAgo == 0) ? "зараз" : minutesAgo + "хв";
 

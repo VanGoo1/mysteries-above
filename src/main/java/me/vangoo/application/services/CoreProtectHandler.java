@@ -38,6 +38,7 @@ public class CoreProtectHandler {
         if (!initialized) init();
         if (api == null || !api.isEnabled()) return Collections.emptyList();
 
+        String worldName = center.getWorld().getName();
         List<RecordedEvent> events = new ArrayList<>();
 
         // 1. ТРАНЗАКЦІЇ (Речі)
@@ -52,12 +53,10 @@ public class CoreProtectHandler {
             if (containerLookup != null) {
                 for (String[] data : containerLookup) {
                     CoreProtectAPI.ParseResult result = api.parseResult(data);
-                    Location loc = new Location(center.getWorld(), result.getX(), result.getY(), result.getZ());
-
                     String description = formatContainerTransaction(result.getPlayer(), result, data);
 
                     events.add(new RecordedEvent(
-                            loc,
+                            worldName, result.getX(), result.getY(), result.getZ(),
                             description,
                             RecordedEvent.EventType.CONTAINER_TRANSACTION,
                             result.getTime() * 1000L,
@@ -83,11 +82,10 @@ public class CoreProtectHandler {
                     if (isIgnored(result.getType())) continue;
 
                     RecordedEvent.EventType type = mapType(result.getActionId());
-                    Location loc = new Location(center.getWorld(), result.getX(), result.getY(), result.getZ());
                     String description = formatDescription(result, type);
 
                     events.add(new RecordedEvent(
-                            loc,
+                            worldName, result.getX(), result.getY(), result.getZ(),
                             description,
                             type,
                             result.getTime() * 1000L,
@@ -110,10 +108,8 @@ public class CoreProtectHandler {
             if (killLookup != null) {
                 for (String[] data : killLookup) {
                     CoreProtectAPI.ParseResult result = api.parseResult(data);
-                    Location loc = new Location(center.getWorld(), result.getX(), result.getY(), result.getZ());
-
                     events.add(new RecordedEvent(
-                            loc,
+                            worldName, result.getX(), result.getY(), result.getZ(),
                             formatKill(result, data),
                             RecordedEvent.EventType.DEATH,
                             result.getTimestamp(),

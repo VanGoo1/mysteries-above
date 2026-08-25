@@ -12,6 +12,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.*;
+import java.util.UUID;
 
 public class PsychicLashing extends ActiveAbility {
 
@@ -48,8 +49,8 @@ public class PsychicLashing extends ActiveAbility {
      * Якщо вона резистить атаку — ланцюг навіть не почнеться.
      */
     @Override
-    protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
-        return context.targeting().getTargetedEntity(CAST_RANGE);
+    protected Optional<UUID> getSequenceCheckTarget(IAbilityContext context) {
+        return context.targeting().getTargetedEntity(CAST_RANGE).map(LivingEntity::getUniqueId);
     }
 
     @Override

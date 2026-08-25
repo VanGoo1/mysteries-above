@@ -15,6 +15,7 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import java.util.Optional;
+import java.util.UUID;
 
 public class MirrorCurse extends ActiveAbility {
 
@@ -44,8 +45,8 @@ public class MirrorCurse extends ActiveAbility {
     }
 
     @Override
-    protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
-        return context.targeting().getTargetedEntity(RANGE);
+    protected Optional<UUID> getSequenceCheckTarget(IAbilityContext context) {
+        return context.targeting().getTargetedEntity(RANGE).map(LivingEntity::getUniqueId);
     }
 
     @Override

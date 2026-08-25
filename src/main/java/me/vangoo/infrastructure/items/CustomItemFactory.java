@@ -2,6 +2,7 @@ package me.vangoo.infrastructure.items;
 
 import me.vangoo.domain.valueobjects.CustomItem;
 import me.vangoo.infrastructure.ui.NBTBuilder;
+import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -29,7 +30,8 @@ public class CustomItemFactory {
      * Create ItemStack from CustomItem definition with specified amount
      */
     public ItemStack createItemStack(CustomItem item, int amount) {
-        ItemStack itemStack = new ItemStack(item.material(), amount);
+        Material material = Material.valueOf(item.material());
+        ItemStack itemStack = new ItemStack(material, amount);
         ItemMeta meta = itemStack.getItemMeta();
 
         if (meta == null) {
@@ -72,7 +74,7 @@ public class CustomItemFactory {
 
         // Предмети на музичній пластинці стакаються до 1 у ванілі — вирівнюємо до 64, як було на
         // папері. Гейт на матеріал: книга рецептів (ENCHANTED_BOOK) мусить лишитись нестакованою.
-        if (DiscItems.isDisc(item.material())) {
+        if (DiscItems.isDisc(material)) {
             DiscItems.applyStackSize(meta);
         }
 

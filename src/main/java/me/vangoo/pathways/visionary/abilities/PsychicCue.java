@@ -19,6 +19,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.*;
+import java.util.UUID;
 
 public class PsychicCue extends ActiveAbility {
     private static final int BASE_RANGE = 3;
@@ -58,8 +59,8 @@ public class PsychicCue extends ActiveAbility {
     }
 
     @Override
-    protected Optional<LivingEntity> getSequenceCheckTarget(IAbilityContext context) {
-        return context.targeting().getTargetedEntity(BASE_RANGE);
+    protected Optional<UUID> getSequenceCheckTarget(IAbilityContext context) {
+        return context.targeting().getTargetedEntity(BASE_RANGE).map(LivingEntity::getUniqueId);
     }
 
     @Override
