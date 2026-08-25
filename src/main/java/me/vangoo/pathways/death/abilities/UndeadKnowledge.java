@@ -7,6 +7,7 @@ import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.valueobjects.CorpseCollectorLore;
 import me.vangoo.domain.valueobjects.RecordedEvent;
 import me.vangoo.domain.valueobjects.Sequence;
+import me.vangoo.pathways.common.RecordedEvents;
 import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
@@ -215,7 +216,9 @@ public class UndeadKnowledge extends ActiveAbility {
                     ChatColor.GRAY, death.getDescription(), ChatColor.DARK_GRAY, minutesAgo));
 
             // Позначка трупа двома шарами: кільце душ по землі + висхідний пил кольору шляху.
-            Location grave = death.getLocation().clone().add(0, 0.2, 0);
+            Location grave = RecordedEvents.toLocation(death);
+            if (grave == null) continue;
+            grave.add(0, 0.2, 0);
             context.effects().playCircleEffect(grave, 0.8, Particle.SOUL, 60);
             context.effects().playGlowingDust(grave, deathColor);
         }

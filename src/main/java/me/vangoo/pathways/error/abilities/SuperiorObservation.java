@@ -12,6 +12,7 @@ import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.domain.valueobjects.SwindlerInfluence;
 import me.vangoo.infrastructure.abilities.AbilityItemFactory;
 import me.vangoo.infrastructure.items.CustomItemFactory;
+import me.vangoo.pathways.common.RecordedEvents;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.*;
@@ -166,12 +167,13 @@ public class SuperiorObservation extends PermanentPassiveAbility {
         for (RecordedEvent trace : traces) {
             // Власні сліди кастера не підсвічуємо — здібність шукає ЧУЖУ активність.
             if (casterName != null && casterName.equalsIgnoreCase(trace.getActor())) continue;
-            Location loc = trace.getLocation();
-            if (!seen.add(loc.getBlockX() + ":" + loc.getBlockY() + ":" + loc.getBlockZ())) continue;
+            if (!seen.add(RecordedEvents.blockKey(trace))) continue;
+            Location loc = RecordedEvents.toLocation(trace);
+            if (loc == null) continue;
             // Нерухома мітка, що лежить кілька секунд: слідів буває до 8 одразу — має бути
             // помітно й достатньо довго, щоб встигнути глянути, але не «ялинка». Бачить лише
             // сам кастер — інакше чужі сліди підсвічувались би всім гравцям поблизу.
-            context.effects().playDustMarkFor(casterId, loc.clone().add(0.5, 0.6, 0.5), errorColor,
+            context.effects().playDustMarkFor(casterId, loc.add(0.5, 0.6, 0.5), errorColor,
                     0.2, 1.0f, 6, EVIDENCE_MARK_TICKS);
             if (seen.size() >= MAX_EVIDENCE_MARKS) return;
         }

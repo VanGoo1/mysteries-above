@@ -16,6 +16,7 @@ import me.vangoo.domain.valueobjects.UnlockedRecipe;
 import me.vangoo.infrastructure.items.CharacteristicCodec;
 import me.vangoo.infrastructure.items.CustomItemFactory;
 import me.vangoo.infrastructure.items.PotionItemFactory;
+import me.vangoo.pathways.common.RecordedEvents;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -175,9 +176,7 @@ public class Decryption extends ActiveAbility {
         Map<String, RecordedEvent> containers = new LinkedHashMap<>();
         for (RecordedEvent trace : traces) {
             if (trace.getType() != RecordedEvent.EventType.CONTAINER_TRANSACTION) continue;
-            Location loc = trace.getLocation();
-            containers.putIfAbsent(
-                    loc.getBlockX() + ":" + loc.getBlockY() + ":" + loc.getBlockZ(), trace);
+            containers.putIfAbsent(RecordedEvents.blockKey(trace), trace);
         }
         List<RecordedEvent> disturbed = new ArrayList<>(containers.values());
 
@@ -218,7 +217,9 @@ public class Decryption extends ActiveAbility {
                             + disturbed.size());
             for (int i = 0; i < Math.min(SCENE_HOLOGRAMS, disturbed.size()); i++) {
                 RecordedEvent trace = disturbed.get(i);
-                Location spot = trace.getLocation().clone().add(0.5, 0.5, 0.5);
+                Location spot = RecordedEvents.toLocation(trace);
+                if (spot == null) continue;
+                spot.add(0.5, 0.5, 0.5);
                 context.effects().playAlertHalo(spot, errorColor);
                 context.messaging().spawnTemporaryHologram(spot.clone().add(0, 1.3, 0),
                         Component.text(trace.getDescription()), HOLOGRAM_TICKS);
@@ -438,8 +439,10 @@ public class Decryption extends ActiveAbility {
 
         for (int i = 0; i < Math.min(SCENE_HOLOGRAMS, traces.size()); i++) {
             RecordedEvent trace = traces.get(i);
+            Location mark = RecordedEvents.toLocation(trace);
+            if (mark == null) continue;
             context.messaging().spawnTemporaryHologram(
-                    trace.getLocation().clone().add(0.5, 1.3 + 0.25 * i, 0.5),
+                    mark.add(0.5, 1.3 + 0.25 * i, 0.5),
                     Component.text(trace.getDescription()), HOLOGRAM_TICKS);
         }
         context.effects().playSoundForPlayer(casterId, Sound.BLOCK_NOTE_BLOCK_BIT, 0.5f, 1.2f);
