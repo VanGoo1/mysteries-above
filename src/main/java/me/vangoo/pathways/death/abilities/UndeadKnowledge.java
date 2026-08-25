@@ -7,7 +7,6 @@ import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.valueobjects.CorpseCollectorLore;
 import me.vangoo.domain.valueobjects.RecordedEvent;
 import me.vangoo.domain.valueobjects.Sequence;
-import me.vangoo.pathways.common.UndeadEntities;
 import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
@@ -15,6 +14,7 @@ import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
+import org.bukkit.Tag;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -94,7 +94,7 @@ public class UndeadKnowledge extends ActiveAbility {
                 .getTargetedEntity(CorpseCollectorLore.markRange(sequence));
 
         // getCategory() на 1.21+ кидає UnsupportedOperationException — нежить лише тегом.
-        if (aimed.isPresent() && UndeadEntities.isUndead(aimed.get().getType())) {
+        if (aimed.isPresent() && Tag.ENTITY_TYPES_UNDEAD.isTagged(aimed.get().getType())) {
             return markWeakness(context, caster, sequence, aimed.get());
         }
         return performAutopsy(context, caster, sequence);

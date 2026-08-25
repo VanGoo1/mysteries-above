@@ -70,7 +70,7 @@ public class Balance extends PermanentPassiveAbility {
         Player player = context.getCasterPlayer();
         if (player == null || !player.isValid()) return;
 
-        AttributeInstance attr = player.getAttribute(Attribute.GENERIC_KNOCKBACK_RESISTANCE);
+        AttributeInstance attr = player.getAttribute(Attribute.KNOCKBACK_RESISTANCE);
         if (attr != null && Math.abs(attr.getBaseValue() - value) > 1e-4) {
             attr.setBaseValue(value);
         }

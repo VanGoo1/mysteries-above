@@ -3,8 +3,6 @@ package me.vangoo.pathways.sun.abilities;
 import me.vangoo.domain.abilities.context.IBeyonderContext;
 import me.vangoo.domain.abilities.context.IVisualEffectsContext;
 import me.vangoo.domain.entities.Beyonder;
-import me.vangoo.infrastructure.compat.ActionBars;
-import me.vangoo.infrastructure.compat.Nearby;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -70,7 +68,7 @@ final class BlessingSession {
         sessions.remove(ownerId);
         Player owner = Bukkit.getPlayer(ownerId);
         if (owner != null) {
-            for (Player target : Nearby.players(owner.getLocation(), range)) {
+            for (Player target : owner.getWorld().getNearbyPlayers(owner.getLocation(), range)) {
                 target.removePotionEffect(PotionEffectType.RESISTANCE);
             }
             owner.removePotionEffect(PotionEffectType.RESISTANCE);
@@ -86,7 +84,7 @@ final class BlessingSession {
         Player owner = Bukkit.getPlayer(ownerId);
         if (owner == null) return;
         boolean ownerSeen = false;
-        for (Player target : Nearby.players(owner.getLocation(), range)) {
+        for (Player target : owner.getWorld().getNearbyPlayers(owner.getLocation(), range)) {
             bless(target);
             visuals.playFadingAura(target.getLocation(), color, AURA_DURATION_TICKS);
             if (target.getUniqueId().equals(ownerId)) ownerSeen = true;
@@ -111,7 +109,7 @@ final class BlessingSession {
             return;
         }
         if (beyonder.getSpirituality().current() < periodicCost) {
-            ActionBars.send(owner, Component.text("✗ Духовність вичерпана — благословення згасає"));
+            owner.sendActionBar(Component.text("✗ Духовність вичерпана — благословення згасає"));
             cancel();
             return;
         }
@@ -120,7 +118,7 @@ final class BlessingSession {
     }
 
     private void applyBlessing(Player owner) {
-        for (Player target : Nearby.players(owner.getLocation(), range)) {
+        for (Player target : owner.getWorld().getNearbyPlayers(owner.getLocation(), range)) {
             bless(target);
         }
         bless(owner); // на випадок, якщо власник поза вибіркою getNearbyPlayers

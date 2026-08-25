@@ -1,7 +1,7 @@
 package me.vangoo.pathways.fool.abilities;
 
-import me.vangoo.infrastructure.compat.SkinProfiles;
-import me.vangoo.infrastructure.compat.SkinProfiles.SkinProfile;
+import com.destroystokyo.paper.profile.PlayerProfile;
+import com.destroystokyo.paper.profile.ProfileProperty;
 import me.vangoo.domain.abilities.core.AbilityResourceConsumer;
 import me.vangoo.domain.abilities.core.AbilityResult;
 import me.vangoo.domain.abilities.core.ActiveAbility;
@@ -131,17 +131,27 @@ public class Shapeshifting extends ActiveAbility {
         context.events().publishAbilityUsedEvent(this, context.getCasterBeyonder());
 
         String disguiseName = target.getName();
-        SkinProfile originalProfile = SkinProfiles.snapshot(caster);
+        PlayerProfile originalProfile = caster.getPlayerProfile();
 
         // Скін: копіюємо textures цілі, якщо кешовані; інакше — лише ім'я (фолбек зі спеки).
-        Optional<String[]> textures = SkinProfiles.textures(target);
+        PlayerProfile masked = caster.getPlayerProfile();
+        masked.setName(disguiseName);
+        PlayerProfile targetProfile = target.getPlayerProfile();
+        // Синхронне заповнення з локального кешу Paper (без блокуючого запиту в Mojang) —
+        // офлайн-гравці не мають "живого" GameProfile, тож без цього textures частіше порожні,
+        // навіть якщо гравець колись реально заходив і скін уже закешовано сервером.
+        targetProfile.completeFromCache();
+        Optional<ProfileProperty> textures = targetProfile.getProperties().stream()
+                .filter(p -> p.getName().equals(TEXTURES_PROPERTY))
+                .findFirst();
         if (textures.isPresent()) {
-            SkinProfiles.disguise(caster, textures.get()[0], textures.get()[1], disguiseName);
+            masked.setProperty(textures.get());
         } else {
-            SkinProfiles.disguiseNameOnly(caster, disguiseName);
+            masked.removeProperty(TEXTURES_PROPERTY);
             context.messaging().sendMessage(casterId, ChatColor.YELLOW
                     + "⚠ Скін цієї личини не збережено на сервері — скопійовано лише ім'я.");
         }
+        caster.setPlayerProfile(masked);
         caster.setDisplayName(disguiseName);
         caster.setPlayerListName(disguiseName);
 
@@ -187,7 +197,7 @@ public class Shapeshifting extends ActiveAbility {
         session.task().cancel();
 
         if (player != null && player.isOnline()) {
-            SkinProfiles.restore(player, session.originalProfile());
+            player.setPlayerProfile(session.originalProfile());
             player.setDisplayName(null);
             player.setPlayerListName(null);
             Location loc = player.getLocation();
@@ -206,6 +216,6 @@ public class Shapeshifting extends ActiveAbility {
         activeMasks.clear();
     }
 
-    private record MaskSession(BukkitTask task, SkinProfile originalProfile, String disguiseName) {
+    private record MaskSession(BukkitTask task, PlayerProfile originalProfile, String disguiseName) {
     }
 }

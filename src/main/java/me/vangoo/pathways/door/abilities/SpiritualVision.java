@@ -209,7 +209,7 @@ public class SpiritualVision extends ToggleablePassiveAbility {
 
     private Color getHealthColor(LivingEntity entity) {
         double health = entity.getHealth();
-        double maxHealth = Objects.requireNonNull(entity.getAttribute(Attribute.GENERIC_MAX_HEALTH)).getValue();
+        double maxHealth = Objects.requireNonNull(entity.getAttribute(Attribute.MAX_HEALTH)).getValue();
         double healthPercentage = health / maxHealth;
 
         if (healthPercentage > 0.75) return Color.fromRGB(0, 255, 100);

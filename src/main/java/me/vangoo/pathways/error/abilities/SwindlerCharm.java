@@ -1,5 +1,7 @@
 package me.vangoo.pathways.error.abilities;
 
+import com.destroystokyo.paper.entity.villager.Reputation;
+import com.destroystokyo.paper.entity.villager.ReputationType;
 import me.vangoo.domain.PathwayBranding;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.abilities.core.PermanentPassiveAbility;
@@ -11,12 +13,9 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.IronGolem;
 import org.bukkit.entity.Mob;
-import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
 import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 
 import java.util.Map;
 import java.util.UUID;
@@ -28,17 +27,12 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * <p>Пасивка, не активна здібність: вороже створіння з шансом не може взяти
  * кастера на приціл (залізні големи — ніколи), а селяни торгують дешевше.
- * Знижку дає ванільний «Герой селища» (репутація селянина — Paper-only API,
- * див. {@code .claude/rules/minecraft-version.md}), тож ціни рахує сам сервер
- * і діють вони лише на цього гравця.
+ * Знижка йде через ванільну репутацію селянина (MAJOR_POSITIVE), тож ціни
+ * рахує сам сервер і бачить лише цей гравець.
  */
 public class SwindlerCharm extends PermanentPassiveAbility {
 
     private static final long FEEDBACK_INTERVAL_MS = 2000;
-    /** Скільки триває торгова прихильність після дотику до селянина (тіки). */
-    private static final int CHARM_TRADE_TICKS = 1200;
-    /** Від цієї знижки й вище дається другий рівень «Героя селища». */
-    private static final double DEEP_DISCOUNT = 0.25;
 
     // Підписки під ВЛАСНИМ ключем (не casterId) — щоб unsubscribeAll іншої здібності їх не стер.
     private final Map<UUID, UUID> subscriptions = new ConcurrentHashMap<>();
@@ -116,22 +110,16 @@ public class SwindlerCharm extends PermanentPassiveAbility {
 
     private void charmVillager(IAbilityContext context, UUID casterId, Villager villager) {
         Beyonder caster = context.getCasterBeyonder();
-        Player player = context.getCasterPlayer();
-        if (caster == null || player == null) return;
+        if (caster == null) return;
 
-        // Репутація селянина (MAJOR_POSITIVE) — Paper-only API, якого на сервері проєкту немає.
-        // Ту саму роль грає ванільний «Герой селища»: знижку рахує сам сервер, ефект особистий
-        // і на інших гравців не поширюється. Ціна заміни — ефект діє на ВСІХ селян, а не лише
-        // на того, кого зачарували.
-        int amplifier = SwindlerInfluence.charmTradeDiscount(caster.getSequence()) >= DEEP_DISCOUNT ? 1 : 0;
-        PotionEffect current = player.getPotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE);
-        if (current != null && current.getAmplifier() >= amplifier
-                && current.getDuration() > CHARM_TRADE_TICKS / 2) {
-            return;
-        }
+        // Ванільна репутація: сума ваг → знижка. MAJOR_POSITIVE важить 5 і не розходиться
+        // між селянами, тож чарівність лишається особистою справою Афериста.
+        int gossip = (int) Math.round(SwindlerInfluence.charmTradeDiscount(caster.getSequence()) * 100);
+        Reputation reputation = villager.getReputation(casterId);
+        if (reputation.getReputation(ReputationType.MAJOR_POSITIVE) >= gossip) return;
 
-        player.addPotionEffect(new PotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE,
-                CHARM_TRADE_TICKS, amplifier, false, false, true));
+        reputation.setReputation(ReputationType.MAJOR_POSITIVE, gossip);
+        villager.setReputation(casterId, reputation);
         charmFeedback(context, casterId, villager.getLocation());
     }
 

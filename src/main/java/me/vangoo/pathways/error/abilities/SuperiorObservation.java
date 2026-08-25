@@ -371,10 +371,8 @@ public class SuperiorObservation extends PermanentPassiveAbility {
             for (int dz = -chunkRange; dz <= chunkRange; dz++) {
                 if (!world.isChunkLoaded(centerChunkX + dx, centerChunkZ + dz)) continue;
                 Chunk chunk = world.getChunkAt(centerChunkX + dx, centerChunkZ + dz);
-                // Ванільний getTileEntities() без предиката (Paper-перевантаження з фільтром
-                // тут немає) — відсіюємо за відстанню самі.
-                for (BlockState state : chunk.getTileEntities()) {
-                    if (state.getLocation().distanceSquared(center) > radiusSquared) continue;
+                for (BlockState state : chunk.getTileEntities(
+                        block -> block.getLocation().distanceSquared(center) <= radiusSquared, false)) {
                     if (!(state instanceof Container container)) continue;
                     Treasure treasure = appraise(state.getLocation().add(0.5, 0.6, 0.5),
                             container.getInventory().getContents());

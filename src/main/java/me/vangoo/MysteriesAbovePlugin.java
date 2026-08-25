@@ -35,18 +35,6 @@ public class MysteriesAbovePlugin extends JavaPlugin {
 
         this.pluginLogger = this.getLogger();
 
-        // PacketEvents 2.8.0 вішає серверний хендлер на будь-який канал зі списку з'єднань,
-        // включно з UDP чужих модів, і той падає на кожній датаграмі. Знімаємо його звідти.
-        me.vangoo.infrastructure.compat.PacketEventsUdpGuard udpGuard =
-                new me.vangoo.infrastructure.compat.PacketEventsUdpGuard(pluginLogger);
-        udpGuard.sweep();
-        getServer().getPluginManager().registerEvents(udpGuard, this);
-
-        // Синхронізація реєстру чарів у PacketEvents падає на модованих предметах
-        // (create:potato_cannon) стек-трейсом на кожен вхід гравця — вимикаємо її.
-        me.vangoo.infrastructure.compat.PacketEventsModdedRegistryGuard
-                .disableEnchantmentSync(pluginLogger);
-
         // Команди Citizens не повинні ховати нік живого гравця (тіло-NPC носить нік
         // кастера).
         // Реєструється і як packet-, і як Bukkit-лістенер — див. javadoc класу.
@@ -333,7 +321,6 @@ public class MysteriesAbovePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(services.getMarionetteExitListener(), this);
         getServer().getPluginManager().registerEvents(services.getPaperThrowListener(), this);
         getServer().getPluginManager().registerEvents(new PaperWeaponProtectionListener(), this);
-        getServer().getPluginManager().registerEvents(new JukeboxGuardListener(), this);
         getServer().getPluginManager().registerEvents(services.getMainBodyAbilityListener(), this);
         getServer().getPluginManager().registerEvents(services.getMarionetteLifecycleListener(), this);
         getServer().getPluginManager().registerEvents(services.getMarionetteRestorer(), this);

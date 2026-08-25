@@ -237,8 +237,8 @@ public class ChurchDuelService {
     // ── Хелпери ────────────────────────────────────────────────────────────────
 
     private void healToFull(Player player) {
-        double max = player.getAttribute(Attribute.GENERIC_MAX_HEALTH) != null
-                ? player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue() : 20.0;
+        double max = player.getAttribute(Attribute.MAX_HEALTH) != null
+                ? player.getAttribute(Attribute.MAX_HEALTH).getValue() : 20.0;
         player.setHealth(max);
         player.setFireTicks(0);
     }

@@ -2,7 +2,6 @@ package me.vangoo.pathways.sun.abilities;
 
 import me.vangoo.domain.abilities.context.IBeyonderContext;
 import me.vangoo.domain.entities.Beyonder;
-import me.vangoo.infrastructure.compat.ActionBars;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -65,7 +64,7 @@ final class DaytimeSession {
         if (tickCounter % DRAIN_EVERY_N_TICKS == 0) {
             Beyonder beyonder = beyonderContext.getBeyonder(ownerId);
             if (beyonder == null || beyonder.getSpirituality().current() < periodicCost) {
-                ActionBars.send(owner, Component.text("✗ Духовність вичерпана — денне світло згасає"));
+                owner.sendActionBar(Component.text("✗ Духовність вичерпана — денне світло згасає"));
                 cancel();
                 return;
             }

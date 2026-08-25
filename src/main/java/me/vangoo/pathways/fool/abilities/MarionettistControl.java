@@ -1,6 +1,6 @@
 package me.vangoo.pathways.fool.abilities;
 
-import me.vangoo.infrastructure.compat.SkinProfiles.SkinProfile;
+import com.destroystokyo.paper.profile.PlayerProfile;
 import com.github.retrooper.packetevents.PacketEvents;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
@@ -21,7 +21,6 @@ import me.vangoo.infrastructure.disguise.PlayerVisibilityRefresher;
 import me.vangoo.pathways.common.SoulWard;
 import me.vangoo.infrastructure.disguise.SkinDisguiseService;
 import me.vangoo.infrastructure.ui.NBTBuilder;
-import me.vangoo.infrastructure.compat.ActionBars;
 import org.bukkit.plugin.java.JavaPlugin;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.event.NPCDeathEvent;
@@ -80,7 +79,7 @@ public class MarionettistControl extends ActiveAbility {
     private final Map<UUID, Set<Integer>>         marionetteNpcs = new ConcurrentHashMap<>(); // casterId -> набір npcId (кілька маріонеток)
     private final Map<UUID, BeyonderSnapshot>     possessions    = new ConcurrentHashMap<>();
     private final Map<UUID, String>               originalDisplayNames = new ConcurrentHashMap<>(); // casterId -> справжній нік до посесії
-    private final Map<UUID, SkinProfile>        originalProfiles     = new ConcurrentHashMap<>(); // casterId -> профіль (скін+ім'я) до посесії
+    private final Map<UUID, PlayerProfile>        originalProfiles     = new ConcurrentHashMap<>(); // casterId -> профіль (скін+ім'я) до посесії
     private final Map<UUID, Double>               preMaxHealth   = new ConcurrentHashMap<>();         // casterId -> макс. HP основного тіла до посесії
     private final Map<Integer, UUID>              marionetteOwner = new ConcurrentHashMap<>();       // npcId -> власник (завжди)
     private final Map<UUID, BukkitTask>           possessionMonitors = new ConcurrentHashMap<>();    // casterId -> тікер дистанції
@@ -330,7 +329,7 @@ public class MarionettistControl extends ActiveAbility {
 
         // HP цілі (разом із бонусом від послідовності) — щоб маріонетка успадкувала його.
         double maxHealth = 20.0;
-        AttributeInstance mhAttr = target.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        AttributeInstance mhAttr = target.getAttribute(Attribute.MAX_HEALTH);
         if (mhAttr != null) maxHealth = mhAttr.getValue();
         final double fMaxHealth = maxHealth;
         final double fHealth    = Math.max(1.0, Math.min(target.getHealth(), maxHealth));
@@ -374,7 +373,7 @@ public class MarionettistControl extends ActiveAbility {
             // Маріонетка успадковує HP цілі (разом із бонусом від послідовності).
             Entity npcEntity = npc.getEntity();
             if (npcEntity instanceof LivingEntity le) {
-                AttributeInstance attr = le.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+                AttributeInstance attr = le.getAttribute(Attribute.MAX_HEALTH);
                 if (attr != null) attr.setBaseValue(fMaxHealth);
                 le.setHealth(Math.min(fHealth, fMaxHealth));
             }
@@ -696,7 +695,7 @@ public class MarionettistControl extends ActiveAbility {
      */
     private void restoreAppearance(IAbilityContext ctx, UUID casterId) {
         boolean wasMob = mobDisguised.remove(casterId);
-        SkinProfile originalProfile = originalProfiles.remove(casterId);
+        PlayerProfile originalProfile = originalProfiles.remove(casterId);
         String originalName = originalDisplayNames.remove(casterId);
 
         Player player = Bukkit.getPlayer(casterId);
@@ -1629,7 +1628,7 @@ public class MarionettistControl extends ActiveAbility {
     /** Переймає макс. HP маріонетки на гравця, зберігаючи попередній (для відновлення на виході). */
     private void applyPossessionMaxHealth(Player player, MarionetteMinionTrait trait) {
         if (player == null || trait == null) return;
-        AttributeInstance attr = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        AttributeInstance attr = player.getAttribute(Attribute.MAX_HEALTH);
         if (attr == null) return;
 
         double oldMax = attr.getBaseValue();
@@ -1649,7 +1648,7 @@ public class MarionettistControl extends ActiveAbility {
         if (oldMax == null) return;
         Player player = Bukkit.getPlayer(casterId);
         if (player == null) return;
-        AttributeInstance attr = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        AttributeInstance attr = player.getAttribute(Attribute.MAX_HEALTH);
         if (attr == null) return;
 
         double curMax = attr.getBaseValue();
@@ -1717,11 +1716,11 @@ public class MarionettistControl extends ActiveAbility {
 
         String name = attackerName(attacker);
         if (isPossessing(ownerId, npc.getId())) {
-            ActionBars.send(owner, Component.text("⚠ Ваше основне тіло атакує " + name + "!",
+            owner.sendActionBar(Component.text("⚠ Ваше основне тіло атакує " + name + "!",
                     NamedTextColor.RED));
         } else {
             // Маріонеток може бути кілька — називаємо, ЯКУ саме б'ють, інакше попередження марне.
-            ActionBars.send(owner, Component.text(
+            owner.sendActionBar(Component.text(
                     "⚠ Вашу маріонетку «" + marionetteName(npc) + "» атакує " + name + "!",
                     NamedTextColor.LIGHT_PURPLE));
         }

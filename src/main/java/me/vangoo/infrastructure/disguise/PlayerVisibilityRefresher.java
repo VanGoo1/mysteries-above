@@ -1,6 +1,5 @@
 package me.vangoo.infrastructure.disguise;
 
-import me.vangoo.infrastructure.compat.SkinProfiles;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -58,7 +57,7 @@ public final class PlayerVisibilityRefresher {
             }
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 if (player.isOnline()) {
-                    SkinProfiles.refresh(player);
+                    player.setPlayerProfile(player.getPlayerProfile());
                 }
             }, 1L);
         }, 2L);

@@ -6,12 +6,11 @@ import me.vangoo.domain.abilities.context.IVisualEffectsContext;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.CorpseCollectorLore;
 import me.vangoo.infrastructure.disguise.EntityDisguiseService;
-import me.vangoo.pathways.common.UndeadEntities;
-import me.vangoo.infrastructure.compat.ActionBars;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Sound;
+import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -37,9 +36,6 @@ final class CorpseGuiseSession {
     private static final int COST_EVERY = 4;   // ціна раз на 20т (1 с)
     private static final int REMASK_EVERY = 20; // пакети маски раз на 100т (5 с) — для нових глядачів
     private static final int SUN_FIRE_TICKS = 60;
-    /** Межі світлового дня в тіках світу — ті самі, за якими горить ванільна нежить. */
-    private static final long DUSK_TICKS = 12300L;
-    private static final long DAWN_TICKS = 23850L;
 
     /** Аури гниття, що труп просто не помічає. */
     private static final PotionEffectType[] IGNORED_EFFECTS = {
@@ -94,7 +90,7 @@ final class CorpseGuiseSession {
 
         Beyonder beyonder = beyonderContext.getBeyonder(ownerId);
         if (beyonder == null || beyonder.getSpirituality().current() < periodicCost) {
-            ActionBars.send(owner, Component.text("✗ Духовність вичерпана — личина спадає"));
+            owner.sendActionBar(Component.text("✗ Духовність вичерпана — личина спадає"));
             cancel();
             return;
         }
@@ -135,7 +131,7 @@ final class CorpseGuiseSession {
 
         for (Entity nearby : owner.getNearbyEntities(radius, radius, radius)) {
             // getCategory() на 1.21+ кидає UnsupportedOperationException — нежить лише тегом.
-            if (!(nearby instanceof Mob mob) || !UndeadEntities.isUndead(nearby.getType())) continue;
+            if (!(nearby instanceof Mob mob) || !Tag.ENTITY_TYPES_UNDEAD.isTagged(nearby.getType())) continue;
             if (mob.getTarget() == null || !ownerId.equals(mob.getTarget().getUniqueId())) continue;
             mob.setTarget(null);
         }
@@ -145,25 +141,14 @@ final class CorpseGuiseSession {
     private void burnInSunlight(Player owner) {
         World world = owner.getWorld();
         boolean exposed = world.getEnvironment() == World.Environment.NORMAL
-                && isDayTime(world)
+                && world.isDayTime()
                 && !world.hasStorm()
                 && !owner.isInWater()
                 && owner.getEyeLocation().getBlock().getLightFromSky() == 15;
         if (!exposed) return;
 
         owner.setFireTicks(Math.max(owner.getFireTicks(), SUN_FIRE_TICKS));
-
         effects.playDustMark(owner.getEyeLocation(), PathwayBranding.liquidOf("Death"),
                 0.35, 1.0f, 6, 0);
-    }
-
-    /**
-     * Ванільне «зараз день»: {@code World.isDayTime()} — доповнення Paper, якого немає на
-     * сервері проєкту. Межі ті самі, що в грі: нежить починає горіти на світанку й гасне
-     * ввечері.
-     */
-    private static boolean isDayTime(World world) {
-        long time = world.getTime();
-        return time < DUSK_TICKS || time > DAWN_TICKS;
     }
 }

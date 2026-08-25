@@ -4,9 +4,9 @@ import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.abilities.core.PermanentPassiveAbility;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.pathways.common.Spirits;
-import me.vangoo.pathways.common.UndeadEntities;
 import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
+import org.bukkit.Tag;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
@@ -71,7 +71,7 @@ public class SpiritWorldKnowledge extends PermanentPassiveAbility {
             return new Kind("Дух", "прикликання й накази провідника");
         }
         // getCategory() на 1.21+ кидає UnsupportedOperationException — нежить лише тегом.
-        if (UndeadEntities.isUndead(target.getType())) {
+        if (Tag.ENTITY_TYPES_UNDEAD.isTagged(target.getType())) {
             return new Kind("Нежить", "сонячне світло й освячена сталь");
         }
         if (target instanceof Player player && context.rampage().isInRampage(player.getUniqueId())) {

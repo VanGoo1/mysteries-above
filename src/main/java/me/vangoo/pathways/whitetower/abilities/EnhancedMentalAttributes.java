@@ -373,7 +373,7 @@ public class EnhancedMentalAttributes extends PermanentPassiveAbility {
         // ВИПРАВЛЕНО: Беремо HP прямо з моба/гравця
         double health = target.getHealth();
         // Отримуємо макс. HP безпечно (деякі моби можуть не мати атрибуту, тому дефолт 20)
-        var maxHealthAttr = target.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        var maxHealthAttr = target.getAttribute(Attribute.MAX_HEALTH);
         double maxHealth = maxHealthAttr != null ? maxHealthAttr.getValue() : 20.0;
 
         String hpStr = isPolymathAnalysis ? String.format("%.1f", health) : DF.format(health);

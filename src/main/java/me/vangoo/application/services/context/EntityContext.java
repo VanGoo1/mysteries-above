@@ -61,7 +61,7 @@ public class EntityContext implements IEntityContext {
         if (amount <= 0) return;
         Entity entity = getEntity(entityId);
         if (entity instanceof LivingEntity living) {
-            double maxHealth = Objects.requireNonNull(living.getAttribute(Attribute.GENERIC_MAX_HEALTH)).getValue();
+            double maxHealth = Objects.requireNonNull(living.getAttribute(Attribute.MAX_HEALTH)).getValue();
             double newHealth = Math.min(living.getHealth() + amount, maxHealth);
             living.setHealth(newHealth);
         }

@@ -141,7 +141,7 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
         }
 
         Sequence sequence = context.getCasterBeyonder().getSequence();
-        AttributeInstance healthAttr = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        AttributeInstance healthAttr = player.getAttribute(Attribute.MAX_HEALTH);
 
         if (healthAttr == null) return;
 
@@ -182,7 +182,7 @@ public class PhysicalEnhancement extends PermanentPassiveAbility {
             return;
         }
 
-        AttributeInstance healthAttr = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        AttributeInstance healthAttr = player.getAttribute(Attribute.MAX_HEALTH);
         if (healthAttr != null && healthAttr.getBaseValue() > DEFAULT_HEALTH) {
             double oldMax = healthAttr.getBaseValue();
             double currentHp = player.getHealth();

@@ -268,7 +268,7 @@ public class InternalUnderworld extends ActiveAbility {
 
     /** Розраховує ерозію пропорційно поточному відсотку HP — той самий прийом, що PhysicalEnhancement. */
     private static void applyErosion(Player player, double amount) {
-        AttributeInstance attr = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        AttributeInstance attr = player.getAttribute(Attribute.MAX_HEALTH);
         if (attr == null) return;
         double oldMax = attr.getBaseValue();
         double newMax = Math.max(2.0, oldMax - amount);
@@ -278,7 +278,7 @@ public class InternalUnderworld extends ActiveAbility {
     }
 
     private static void restoreErosion(Player player, double amount) {
-        AttributeInstance attr = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        AttributeInstance attr = player.getAttribute(Attribute.MAX_HEALTH);
         if (attr == null) return;
         double oldMax = attr.getBaseValue();
         double newMax = oldMax + amount;

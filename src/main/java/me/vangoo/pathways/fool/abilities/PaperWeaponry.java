@@ -11,7 +11,6 @@ import me.vangoo.domain.valueobjects.PaperThrowDamage;
 import me.vangoo.domain.valueobjects.PaperWeaponType;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.infrastructure.ui.NBTBuilder;
-import me.vangoo.infrastructure.compat.ActionBars;
 import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -226,7 +225,7 @@ public class PaperWeaponry extends ActiveAbility implements PaperThrower {
             attacker.getInventory().setItemInMainHand(null);
             attacker.getWorld().spawnParticle(Particle.SMOKE, attacker.getLocation().add(0, 1, 0), 12, 0.3, 0.4, 0.3);
             attacker.playSound(attacker.getLocation(), Sound.ITEM_BOOK_PAGE_TURN, 0.8f, 0.6f);
-            ActionBars.send(attacker, Component.text("📜 " + type.displayName() + " розсипалась"));
+            attacker.sendActionBar(Component.text("📜 " + type.displayName() + " розсипалась"));
         } else {
             ItemStack updated = new NBTBuilder(hand).setInt(WEAPON_USES_NBT, uses).build();
             attacker.getInventory().setItemInMainHand(updated);

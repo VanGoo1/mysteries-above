@@ -107,7 +107,7 @@ public class IntentReader extends ActiveAbility {
         }
 
         // ВТЕЧА
-        boolean lowHealth = (suspect.getHealth() / suspect.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue()) < 0.3;
+        boolean lowHealth = (suspect.getHealth() / suspect.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue()) < 0.3;
         if (dotProduct < -0.5) {
             if (suspect instanceof Player p && p.isSprinting()) return IntentState.FLEEING;
             if (lowHealth) return IntentState.FLEEING;

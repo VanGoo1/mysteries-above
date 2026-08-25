@@ -7,9 +7,9 @@ import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.domain.valueobjects.CorpseCollectorLore;
 import me.vangoo.domain.valueobjects.Sequence;
 import me.vangoo.pathways.common.Spirits;
-import me.vangoo.pathways.common.UndeadEntities;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.Tag;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
@@ -191,7 +191,7 @@ public class GloomyPresence extends PermanentPassiveAbility {
      * getCategory() на 1.21+ кидає UnsupportedOperationException — тільки тег.
      */
     private boolean isUndead(org.bukkit.entity.Entity entity) {
-        return entity instanceof LivingEntity && UndeadEntities.isUndead(entity.getType());
+        return entity instanceof LivingEntity && Tag.ENTITY_TYPES_UNDEAD.isTagged(entity.getType());
     }
 
     /**

@@ -20,34 +20,32 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Предмети плагіну стоять на музичних пластинках, а їхній вигляд задає ресурс-пак через
- * {@code custom_model_data}: {@code assets/minecraft/models/item/<material>.json} мапить ЧИСЛО
- * (яке рахує {@link ItemModelData} з читабельного ключа) на файл моделі в тій самій теці.
- * Обидва боки зв'язані ЛИШЕ цим числом — одрук чи забутий файл виявляється аж на клієнті, де
- * предмет тихо стає звичайною пластинкою.
+ * {@code custom_model_data}: {@code assets/minecraft/items/<material>.json} мапить ключ моделі на
+ * файл у {@code models/item/}. Обидва боки зв'язані ЛИШЕ рядком — одрук чи забутий файл виявляється
+ * аж на клієнті, де предмет тихо стає звичайною пластинкою.
  *
- * <p>Тест пінить три боки цього зв'язку:
+ * <p>Тест пінить два боки цього зв'язку:
  * <ol>
- *   <li>кожен {@code custom-model-data} з {@code custom-items.yml}, чий матеріал має модель у
- *       паку, покритий override'ом із ПРАВИЛЬНИМ числом;</li>
- *   <li>кожна модель, на яку посилається override, реально існує;</li>
- *   <li>override'и йдуть за ЗРОСТАННЯМ числа — ванільний числовий предикат матчить {@code >=} і
- *       виграє останній збіг, тож зворотний порядок мовчки підставив би чужу модель.</li>
+ *   <li>кожен {@code custom-model-data} з {@code custom-items.yml}, чий матеріал має визначення в
+ *       паку, покритий кейсом у цьому визначенні;</li>
+ *   <li>кожна модель, на яку посилається визначення, реально існує в {@code models/item/}.</li>
  * </ol>
  *
- * <p>Предмет, чий матеріал взагалі не має моделі з override'ами (сьогодні —
+ * <p>Предмет, чий матеріал взагалі не має файлу в {@code items/} (сьогодні —
  * {@code MUSIC_DISC_11} орденів і {@code ENCHANTED_BOOK} книги рецептів), свідомо пропускається:
  * він законно падає на ванільний вигляд, доки для нього не намалюють текстуру.
  */
 class ResourcePackItemModelTest {
 
     private static final File CONFIG = new File("src/main/resources/custom-items.yml");
+    private static final File PACK_ITEMS = new File("mysteries-resourcepack/assets/minecraft/items");
     private static final File PACK_MODELS = new File("mysteries-resourcepack/assets/minecraft/models/item");
 
-    private static final Pattern OVERRIDE = Pattern.compile(
-            "\"custom_model_data\"\\s*:\\s*(\\d+)\\s*\\}\\s*,\\s*\"model\"\\s*:\\s*\"item/([^\"]+)\"");
+    private static final Pattern CASE_KEY = Pattern.compile("\"when\"\\s*:\\s*\"([^\"]+)\"");
+    private static final Pattern MODEL_REF = Pattern.compile("\"model\"\\s*:\\s*\"item/([^\"]+)\"");
 
     @Test
-    void everyConfiguredModelKeyIsCoveredByItsMaterialModel() {
+    void everyConfiguredModelKeyIsCoveredByItsMaterialDefinition() {
         ConfigurationSection items = customItems();
 
         List<String> missing = new ArrayList<>();
@@ -61,83 +59,60 @@ class ResourcePackItemModelTest {
             if (modelKey == null || material == null) {
                 continue;
             }
-            File definition = new File(PACK_MODELS, material.toLowerCase(Locale.ROOT) + ".json");
-            if (!definition.isFile() || !read(definition).contains("\"overrides\"")) {
-                // Матеріал без override'ів у паку — законний ванільний фолбек, не помилка.
+            File definition = new File(PACK_ITEMS, material.toLowerCase(Locale.ROOT) + ".json");
+            if (!definition.isFile()) {
+                // Матеріал без визначення в паку — законний ванільний фолбек, не помилка.
                 continue;
             }
-            if (!dataValuesOf(definition).contains(ItemModelData.of(modelKey))) {
-                missing.add(id + " (" + material + " → \"" + modelKey + "\" = "
-                        + ItemModelData.of(modelKey) + ")");
+            if (!casesOf(definition).contains(modelKey)) {
+                missing.add(id + " (" + material + " → \"" + modelKey + "\")");
             }
         }
 
         assertTrue(missing.isEmpty(),
-                "custom-model-data без override'а в models/item/<material>.json — предмет стане "
-                        + "звичайною пластинкою (перегенеруй пак: tools/resourcepack/rp-item-models.gen.ps1): "
+                "custom-model-data без кейсу в items/<material>.json — предмет стане звичайною пластинкою: "
                         + missing);
     }
 
     @Test
     void everyModelReferencedByThePackExists() {
         List<File> definitions = definitionFiles();
-        assertFalse(definitions.isEmpty(),
-                "У паку немає жодної моделі пластинки з override'ами — шлях зламано");
+        assertFalse(definitions.isEmpty(), "У паку немає жодного items/*.json — шлях зламано");
 
         List<String> missing = new ArrayList<>();
         for (File definition : definitions) {
-            Matcher matcher = OVERRIDE.matcher(read(definition));
+            Matcher matcher = MODEL_REF.matcher(read(definition));
             while (matcher.find()) {
-                String model = matcher.group(2);
+                String model = matcher.group(1);
+                if (isVanillaFallback(definition, model)) {
+                    continue;
+                }
                 if (!new File(PACK_MODELS, model + ".json").isFile()) {
                     missing.add(definition.getName() + " → models/item/" + model + ".json");
                 }
             }
         }
 
-        assertTrue(missing.isEmpty(), "Override посилається на неіснуючу модель: " + missing);
+        assertTrue(missing.isEmpty(), "Визначення посилається на неіснуючу модель: " + missing);
     }
 
-    @Test
-    void overridesAreSortedAscending() {
-        for (File definition : definitionFiles()) {
-            List<Integer> values = new ArrayList<>();
-            Matcher matcher = OVERRIDE.matcher(read(definition));
-            while (matcher.find()) {
-                values.add(Integer.parseInt(matcher.group(1)));
-            }
-            for (int i = 1; i < values.size(); i++) {
-                assertTrue(values.get(i - 1) < values.get(i),
-                        definition.getName() + ": override'и мусять іти за зростанням "
-                                + "custom_model_data (предикат матчить >= і виграє останній збіг), "
-                                + "але " + values.get(i - 1) + " стоїть перед " + values.get(i));
-            }
-        }
+    /** Фолбек кожного визначення вказує на ванільну модель самого матеріалу — свого файлу не має. */
+    private boolean isVanillaFallback(File definition, String model) {
+        return model.equals(definition.getName().replace(".json", ""));
     }
 
-    private Set<Integer> dataValuesOf(File definition) {
-        Set<Integer> values = new HashSet<>();
-        Matcher matcher = OVERRIDE.matcher(read(definition));
+    private Set<String> casesOf(File definition) {
+        Set<String> keys = new HashSet<>();
+        Matcher matcher = CASE_KEY.matcher(read(definition));
         while (matcher.find()) {
-            values.add(Integer.parseInt(matcher.group(1)));
+            keys.add(matcher.group(1));
         }
-        return values;
+        return keys;
     }
 
-    /** Моделі пластинок, що реально несуть override'и (решта моделей — самі цілі override'ів). */
     private List<File> definitionFiles() {
-        File[] files = PACK_MODELS.listFiles(
-                (dir, name) -> name.startsWith("music_disc_") && name.endsWith(".json"));
-        if (files == null) {
-            return List.of();
-        }
-        List<File> withOverrides = new ArrayList<>();
-        for (File file : files) {
-            if (read(file).contains("\"overrides\"")) {
-                withOverrides.add(file);
-            }
-        }
-        return withOverrides;
+        File[] files = PACK_ITEMS.listFiles((dir, name) -> name.endsWith(".json"));
+        return files == null ? List.of() : List.of(files);
     }
 
     private ConfigurationSection customItems() {

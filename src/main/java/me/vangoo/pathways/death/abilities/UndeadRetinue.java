@@ -15,6 +15,8 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Skeleton;
+import org.bukkit.entity.Zombie;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.Map;
@@ -216,8 +218,10 @@ public final class UndeadRetinue {
             mob.setCustomName(record.customName());
             mob.setCustomNameVisible(true);
         }
-        // Денне сонце слугам не шкодить — вогонь гасить сесія почту щотакту (ванільного
-        // `setShouldBurnInDay` у Spigot-API немає).
+        if (record.kind() == RetinueServant.Kind.RESURRECTED) {
+            if (mob instanceof Zombie zombie) zombie.setShouldBurnInDay(false);
+            if (mob instanceof Skeleton skeleton) skeleton.setShouldBurnInDay(false);
+        }
         mob.setCanPickupItems(false);
         return mob;
     }

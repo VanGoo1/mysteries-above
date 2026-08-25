@@ -72,7 +72,7 @@ public class StormHeart extends PermanentPassiveAbility {
     }
 
     private boolean dropsBelowThreshold(Player player, double finalDamage) {
-        double max = player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+        double max = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
         double after = player.getHealth() - finalDamage;
         return after > 0 && after < max * HP_THRESHOLD;
     }

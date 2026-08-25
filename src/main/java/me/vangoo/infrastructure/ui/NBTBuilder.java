@@ -96,28 +96,6 @@ public class NBTBuilder {
                 container.get(createKey(key), dataType));
     }
 
-    /**
-     * Чи належить предмет плагіну — тобто чи має він БУДЬ-ЯКИЙ ключ у нашому неймспейсі.
-     * Розпізнавання по NBT, а не по матеріалу чи lore (див. {@code .claude/rules/item-materials.md}):
-     * категорію предмета цей метод не знає й знати не мусить — це загальний фільтр «наше / ванільне».
-     */
-    public static boolean isPluginItem(ItemStack itemStack) {
-        if (itemStack == null || plugin == null) {
-            return false;
-        }
-        ItemMeta meta = itemStack.getItemMeta();
-        if (meta == null) {
-            return false;
-        }
-        String namespace = plugin.getName().toLowerCase(java.util.Locale.ROOT);
-        for (NamespacedKey key : meta.getPersistentDataContainer().getKeys()) {
-            if (key.getNamespace().equals(namespace)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public static <T> boolean hasKey(ItemStack itemStack, String key, PersistentDataType<?, T> dataType) {
         ItemMeta meta = itemStack.getItemMeta();
         if (meta == null) return false;

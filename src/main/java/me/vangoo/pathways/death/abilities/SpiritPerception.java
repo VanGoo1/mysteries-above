@@ -8,12 +8,12 @@ import me.vangoo.domain.valueobjects.SpiritGuideLore;
 import me.vangoo.domain.valueobjects.SpiritMediumLore;
 import me.vangoo.pathways.common.SpiritWorldCreatures;
 import me.vangoo.pathways.common.Spirits;
-import me.vangoo.pathways.common.UndeadEntities;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.Tag;
 import org.bukkit.entity.AbstractSkeleton;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
@@ -50,7 +50,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * в усіх медіумів сервера.
  *
  * <p>Death Sequence 5 (Воротар, T2) підсилює ту саму пасивку: коли Послідовність кастера ≤ 5,
- * тік додатково стежить, чи не зайшла у радіус нежить ({@link UndeadEntities#isUndead}) чи істота
+ * тік додатково стежить, чи не зайшла у радіус нежить (Tag.ENTITY_TYPES_UNDEAD) чи істота
  * Світу Духів ({@link SpiritWorldCreatures#isSpiritWorldCreature}) — і попереджає про
  * НОВОприбулих, а не про кожного, хто вже стоїть поруч. Поведінка Посл. 7/6 (радіус, душі,
  * тіла, шепіт про небезпеку) цим не зачіпається — це окрема гілка, а не заміна існуючої.
@@ -277,7 +277,7 @@ public class SpiritPerception extends PermanentPassiveAbility {
         for (LivingEntity entity : context.targeting().getNearbyEntities(UNDERWORLD_APPROACH_RADIUS)) {
             if (entity.getUniqueId().equals(casterId)) continue;
             boolean tracked = SpiritWorldCreatures.isSpiritWorldCreature(entity)
-                    || UndeadEntities.isUndead(entity.getType());
+                    || Tag.ENTITY_TYPES_UNDEAD.isTagged(entity.getType());
             if (!tracked) continue;
 
             currentlyNear.add(entity.getUniqueId());

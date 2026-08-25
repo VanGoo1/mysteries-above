@@ -1,8 +1,6 @@
 package me.vangoo.presentation.listeners;
 
 import me.vangoo.pathways.fool.abilities.PaperWeaponry;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
@@ -140,8 +138,7 @@ public class PaperWeaponProtectionListener implements Listener {
 
     private void deny(HumanEntity who) {
         if (who instanceof Player player) {
-            // Spigot-шлях, а не Paper'ів sendActionBar(Component): сервер проєкту — Arclight.
-            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(DENY_MESSAGE));
+            player.sendActionBar(net.kyori.adventure.text.Component.text(DENY_MESSAGE));
         }
     }
 }

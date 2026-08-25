@@ -399,7 +399,7 @@ public class DivinationArts extends ActiveAbility {
     }
 
     private ItemStack createPendulumQuestionItem(PendulumQuestion question) {
-        ItemStack item = new ItemStack(Material.CHAIN);
+        ItemStack item = new ItemStack(Material.IRON_CHAIN);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(ChatColor.GOLD + question.question);
@@ -713,7 +713,7 @@ public class DivinationArts extends ActiveAbility {
 
     private enum DivinationType {
         ASTROLOGY("Астрологія", Material.SPYGLASS, ChatColor.BLUE, "Передбачає удачу або невдачу"),
-        PENDULUM("Духовний маятник", Material.CHAIN, ChatColor.GOLD, "Відповідає на питання 'Так' чи 'Ні'"),
+        PENDULUM("Духовний маятник", Material.IRON_CHAIN, ChatColor.GOLD, "Відповідає на питання 'Так' чи 'Ні'"),
         DIVINING_ROD("Лозошукання", Material.STICK, ChatColor.GREEN, "Пошук ресурсів та об'єктів"),
         DREAM_VISION("Сонне провидіння", Material.PHANTOM_MEMBRANE, ChatColor.DARK_AQUA,
                 "Спостереження за гравцями у сні");

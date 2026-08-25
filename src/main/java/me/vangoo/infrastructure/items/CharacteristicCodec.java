@@ -1,21 +1,24 @@
 package me.vangoo.infrastructure.items;
 
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.DyedItemColor;
 import me.vangoo.domain.PathwayBranding;
 import me.vangoo.domain.brewing.Characteristic;
 import me.vangoo.infrastructure.ui.NBTBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.components.CustomModelDataComponent;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Будує предмет «Характеристика» та читає його назад. Шлях+послідовність
- * зберігаються у NBT через
+ * Будує предмет «Характеристика» та читає його назад. Шлях+послідовність зберігаються у NBT через
  * {@link NBTBuilder} (та сама техніка, що для кастомних предметів).
  */
 public final class CharacteristicCodec {
@@ -24,34 +27,16 @@ public final class CharacteristicCodec {
     public static final String NBT_SEQUENCE = "characteristic_sequence";
 
     /**
-     * Префікс ключа custom-model-data для ресурс-паку. Повний ключ моделі —
-     * {@link #modelKeyFor(String)} ({@code characteristic_<pathwayName>}), окремий
-     * на
-     * кожен шлях. Мусить збігатися з відповідним override'ом
-     * {@code custom_model_data} у
-     * {@code models/item/music_disc_chirp.json} (число рахує
-     * {@link ItemModelData}), інакше
-     * предмет намалюється ванільною пластинкою.
-     *
-     * <p>
-     * На 1.21.1 компонент {@code dyed_color} до не-шкіряних предметів ще не
-     * застосовується
-     * (Paper-API для запису компонентів {@code io.papermc.paper.datacomponent}
-     * з'явився лише
-     * в 1.21.4), тож тонування кольором шляху через дай тут неможливе — саме тому
-     * кожен шлях
-     * отримує власний ключ моделі (а не спільну модель з дай-tint'ом). Колір назви
-     * предмета
-     * лишається окремо, через {@link PathwayBranding#textOf}.
+     * Ключ custom-model-data для ресурс-паку. УНІВЕРСАЛЬНИЙ ({@code characteristic}) —
+     * одна тонована модель на всі шляхи; колір задає компонент {@code DYED_COLOR}
+     * (див. нижче), а не пер-шляховий ключ моделі. Мусить збігатися з єдиним кейсом
+     * {@code "when": "characteristic"} у {@code items/music_disc_chirp.json}, інакше
+     * select падає на ванільну модель без tint і колір не застосовується.
      */
     public static final String MODEL_KEY = "characteristic";
 
-    /**
-     * Ключ моделі Характеристики для конкретного шляху — власний override на кожен
-     * шлях.
-     */
     public static String modelKeyFor(String pathwayName) {
-        return MODEL_KEY + "_" + pathwayName;
+        return MODEL_KEY;
     }
 
     /** Будує стак Характеристики для (шлях, seq). */
@@ -65,20 +50,25 @@ public final class CharacteristicCodec {
                 ChatColor.GRAY + "Кристалічна есенція сили.",
                 ChatColor.DARK_GRAY + "Замінює всі основні інгредієнти рецепта."
         ));
-        // Диск у ванілі стакається до 1 — піднімаємо ліміт стака через компонент
-        // max_stack_size.
+        // Диск у ванілі стакається до 1 — піднімаємо ліміт стака через компонент max_stack_size.
         DiscItems.applyStackSize(meta);
-        // Незнищенний: захист від поломки/зношення (диск і так не має міцності — це
-        // підстраховка).
+        // Незнищенний: захист від поломки/зношення (диск і так не має міцності — це підстраховка).
         meta.setUnbreakable(true);
         meta.addItemFlags(
                 ItemFlag.HIDE_ATTRIBUTES,
                 ItemFlag.HIDE_ADDITIONAL_TOOLTIP,
                 ItemFlag.HIDE_UNBREAKABLE,
-                ItemFlag.HIDE_DYE);
+                ItemFlag.HIDE_DYE
+        );
 
-        // Підготовка під текстуру ресурс-паку (як у CustomItemFactory).
-        ItemModelData.apply(meta, modelKeyFor(pathwayName));
+        // Підготовка під текстуру ресурс-паку (рядковий custom-model-data, як у CustomItemFactory).
+        try {
+            CustomModelDataComponent cmd = meta.getCustomModelDataComponent();
+            cmd.setStrings(List.of(modelKeyFor(pathwayName)));
+            meta.setCustomModelDataComponent(cmd);
+        } catch (Throwable ignored) {
+            // Старіше API без CustomModelDataComponent — пропускаємо, предмет лишається валідним.
+        }
 
         item.setItemMeta(meta);
 
@@ -88,6 +78,13 @@ public final class CharacteristicCodec {
                 .build();
         DiscItems.stripJukeboxPlayable(built);
 
+        try {
+            built.setData(
+                    DataComponentTypes.DYED_COLOR,
+                    DyedItemColor.dyedItemColor(PathwayBranding.liquidOf(pathwayName))
+            );
+        } catch (Throwable ignored) {}
+
         return built;
     }
 
@@ -96,8 +93,7 @@ public final class CharacteristicCodec {
         if (item == null || item.getType() == Material.AIR) {
             return false;
         }
-        // Статична перевірка без клонування стака (NBTBuilder.hasKey сам обробляє
-        // null-meta).
+        // Статична перевірка без клонування стака (NBTBuilder.hasKey сам обробляє null-meta).
         return NBTBuilder.hasKey(item, NBT_PATHWAY, PersistentDataType.STRING);
     }
 

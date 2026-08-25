@@ -8,7 +8,6 @@ import io.lumine.mythic.api.skills.ThreadSafetyLevel;
 import io.lumine.mythic.bukkit.events.MythicMechanicLoadEvent;
 import io.lumine.mythic.core.skills.SkillMechanic;
 import io.lumine.mythic.core.utils.annotations.MythicMechanic;
-import me.vangoo.infrastructure.compat.MobAiCompat;
 import me.vangoo.infrastructure.creatures.SafeLocations;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -71,7 +70,7 @@ public class RangedStanceMechanic extends SkillMechanic implements ITargetedEnti
 
         double distance = mob.getLocation().distance(victim.getLocation());
         if (distance > max) {
-            MobAiCompat.walkTo(mob, victim, 1.05);
+            mob.getPathfinder().moveTo(victim, 1.05);
         } else if (distance < min) {
             backOff(mob, victim);
         } else {
@@ -87,19 +86,19 @@ public class RangedStanceMechanic extends SkillMechanic implements ITargetedEnti
 
     // PROVOKED: іде на кривдника; впритул — ванільний удар (swing + knockback + атрибут Damage)
     private void meleeRetaliate(Mob mob, LivingEntity victim, long now) {
-        MobAiCompat.walkTo(mob, victim, 1.15);
+        mob.getPathfinder().moveTo(victim, 1.15);
         if (mob.getLocation().distance(victim.getLocation()) > MELEE_REACH) return;
         long last = lastAttackAt.getOrDefault(mob.getUniqueId(), 0L);
         if (now - last < ATTACK_INTERVAL_MILLIS) return;
-        if (mob.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE) == null) return; // Type без атрибута атаки (Shulker) — без мілі
+        if (mob.getAttribute(Attribute.ATTACK_DAMAGE) == null) return; // Type без атрибута атаки (Shulker) — без мілі
         mob.attack(victim);
         lastAttackAt.put(mob.getUniqueId(), now);
         purgeDeadEntries();
     }
 
     private void hold(Mob mob, LivingEntity victim) {
-        MobAiCompat.stopMoving(mob);
-        MobAiCompat.lookAt(mob, victim);
+        mob.getPathfinder().stopPathfinding();
+        mob.lookAt(victim);
     }
 
     // BACKOFF: крок до точки ~7 блоків у протилежний бік; нема валідної точки — тримає позицію
@@ -115,7 +114,7 @@ public class RangedStanceMechanic extends SkillMechanic implements ITargetedEnti
             hold(mob, victim);
             return;
         }
-        MobAiCompat.walkTo(mob, dest, 1.15);
+        mob.getPathfinder().moveTo(dest, 1.15);
     }
 
     private void purgeDeadEntries() {

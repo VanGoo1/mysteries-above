@@ -4,13 +4,12 @@ import me.vangoo.domain.abilities.context.IBeyonderContext;
 import me.vangoo.domain.abilities.context.IGlowingContext;
 import me.vangoo.domain.entities.Beyonder;
 import me.vangoo.pathways.common.Spirits;
-import me.vangoo.pathways.common.UndeadEntities;
-import me.vangoo.infrastructure.compat.ActionBars;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.Tag;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Entity;
@@ -18,7 +17,6 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.util.RayTraceResult;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -88,7 +86,7 @@ final class SpiritVisionSession {
 
         Beyonder beyonder = beyonderContext.getBeyonder(ownerId);
         if (beyonder == null || beyonder.getSpirituality().current() < periodicCost) {
-            ActionBars.send(owner, Component.text("✗ Духовність вичерпана — зір мутніє"));
+            owner.sendActionBar(Component.text("✗ Духовність вичерпана — зір мутніє"));
             cancel();
             return;
         }
@@ -133,7 +131,7 @@ final class SpiritVisionSession {
         for (Entity entity : owner.getNearbyEntities(range, range, range)) {
             if (!(entity instanceof LivingEntity)) continue;
             // getCategory() на 1.21+ кидає UnsupportedOperationException — нежить лише тегом.
-            boolean visible = UndeadEntities.isUndead(entity.getType())
+            boolean visible = Tag.ENTITY_TYPES_UNDEAD.isTagged(entity.getType())
                     || (spiritsToo && Spirits.isSpirit(entity));
             if (!visible) continue;
             inRange.add(entity.getUniqueId());
@@ -160,15 +158,11 @@ final class SpiritVisionSession {
 
     /** «Deduce a person's health and emotions»: стан і активні ефекти цілі під поглядом. */
     private void reportGazedTarget(Player owner) {
-        // Ванільний промінь замість Paper'ового getTargetEntity: 0.5 — «товщина» погляду,
-        // інакше в ціль треба було б цілитись піксель-в-піксель.
-        RayTraceResult hit = owner.getWorld().rayTraceEntities(owner.getEyeLocation(),
-                owner.getEyeLocation().getDirection(), range, 0.5,
-                entity -> !entity.getUniqueId().equals(ownerId));
-        if (hit == null || !(hit.getHitEntity() instanceof LivingEntity target)) return;
+        Entity gazed = owner.getTargetEntity((int) range);
+        if (!(gazed instanceof LivingEntity target)) return;
 
         // Атрибут теоретично може бути відсутній — NPE тут убив би весь тік зору.
-        AttributeInstance maxHealth = target.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        AttributeInstance maxHealth = target.getAttribute(Attribute.MAX_HEALTH);
         int healthPercent = maxHealth == null || maxHealth.getValue() <= 0
                 ? 100
                 : (int) Math.round(100.0 * target.getHealth() / maxHealth.getValue());
@@ -182,14 +176,14 @@ final class SpiritVisionSession {
         String essence = "плоть";
         if (Spirits.isSpirit(target)) {
             essence = "дух";
-        } else if (UndeadEntities.isUndead(target.getType())) {
+        } else if (Tag.ENTITY_TYPES_UNDEAD.isTagged(target.getType())) {
             essence = "нежить";
         } else if (target instanceof Player p) {
             Beyonder targetBeyonder = beyonderContext.getBeyonder(p.getUniqueId());
             if (targetBeyonder != null) essence = "потойбічний (" + targetBeyonder.getPathway().getName() + ")";
         }
 
-        ActionBars.send(owner, Component.text(
+        owner.sendActionBar(Component.text(
                 ChatColor.DARK_GREEN + "✦ " + ChatColor.WHITE + target.getName()
                         + ChatColor.GRAY + " · " + ChatColor.RED + healthPercent + "%"
                         + ChatColor.GRAY + " · " + ChatColor.AQUA + essence

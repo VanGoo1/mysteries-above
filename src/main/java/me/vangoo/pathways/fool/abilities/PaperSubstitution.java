@@ -5,7 +5,6 @@ import me.vangoo.domain.abilities.core.ActiveAbility;
 import me.vangoo.domain.abilities.core.IAbilityContext;
 import me.vangoo.domain.valueobjects.DollBatch;
 import me.vangoo.domain.valueobjects.Sequence;
-import me.vangoo.infrastructure.compat.ActionBars;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
@@ -197,12 +196,12 @@ public class PaperSubstitution extends ActiveAbility {
             }
         }
 
-        ActionBars.send(player, Component.text("📜 Лялька прийняла удар! (лишилось " + dolls + ")",
+        player.sendActionBar(Component.text("📜 Лялька прийняла удар! (лишилось " + dolls + ")",
                 NamedTextColor.GREEN));
         if (dolls <= 0) {
             protecting.remove(casterId);
             stopAbsorb(context, casterId);
-            ActionBars.send(player, Component.text("📜 Ляльки скінчились — захист знято", NamedTextColor.GRAY));
+            player.sendActionBar(Component.text("📜 Ляльки скінчились — захист знято", NamedTextColor.GRAY));
         }
         return true;
     }

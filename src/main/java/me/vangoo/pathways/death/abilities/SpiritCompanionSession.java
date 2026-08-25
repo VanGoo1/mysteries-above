@@ -132,14 +132,12 @@ final class SpiritCompanionSession {
         spirit.setTarget(null);
         spirit.setRemoveWhenFarAway(false);
 
-        // Ванільні гоали весксу щотакту перебивали б наше ведення; заглушений AI їх не тікає,
-        // тож рух — лише наш. Це саме `setAware`, а не Paper'ів `Bukkit.getMobGoals()`: на
-        // сервері проєкту (Arclight) того API немає й виклик падав NoSuchMethodError.
-        spirit.setAware(false);
+        // Ванільні гоали весксу щотакту перебивали б наше ведення; без них рух — лише наш.
+        Bukkit.getMobGoals().removeAllGoals(spirit);
         spirit.setGravity(false);
 
         // Почет тримає, а не вбиває: навіть якщо AI встигне вдарити між тіками — це 0 шкоди.
-        AttributeInstance attack = spirit.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
+        AttributeInstance attack = spirit.getAttribute(Attribute.ATTACK_DAMAGE);
         if (attack != null) attack.setBaseValue(0.0);
 
         spirit.getWorld().spawnParticle(Particle.SCULK_SOUL, spirit.getEyeLocation(), 12, 0.3, 0.4, 0.3);

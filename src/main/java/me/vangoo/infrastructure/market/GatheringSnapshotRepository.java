@@ -3,7 +3,6 @@ package me.vangoo.infrastructure.market;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
-import me.vangoo.infrastructure.compat.ItemStacks;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
@@ -68,19 +67,12 @@ public class GatheringSnapshotRepository {
         }
     }
 
-    /** Ванільна Bukkit-серіалізація (див. {@link ItemStacks}) — Paper'ових байтів тут немає. */
+    /** Paper ItemStack#serializeAsBytes — стабільний бінарний формат із міграцією версій. */
     public static String encodeStack(ItemStack stack) {
-        byte[] bytes = ItemStacks.toBytes(stack);
-        return bytes == null ? null : Base64.getEncoder().encodeToString(bytes);
+        return Base64.getEncoder().encodeToString(stack.serializeAsBytes());
     }
 
-    /** {@code null} — запис порожній, побитий або писаний іншим форматом (ескроу переживе). */
     public static ItemStack decodeStack(String base64) {
-        if (base64 == null || base64.isBlank()) return null;
-        try {
-            return ItemStacks.fromBytes(Base64.getDecoder().decode(base64));
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
+        return ItemStack.deserializeBytes(Base64.getDecoder().decode(base64));
     }
 }

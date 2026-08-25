@@ -31,7 +31,6 @@ import org.bukkit.event.player.PlayerBedEnterEvent;
 import org.bukkit.event.player.PlayerExpChangeEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.event.player.PlayerToggleSprintEvent;
-import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
@@ -67,7 +66,7 @@ public class ConceptualTheft extends ActiveAbility {
     private static final int MAX_TARGETS = 27;
     /** Скільки тіків тримається мітка над головою цілі, поки летить промінь. */
     private static final int MARK_DURATION_TICKS = 40;
-    /** Ключ модифікатора здоров'я режиму «Серце» — по ньому ж він і знімається. */
+    /** Ключ транзієнтного модифікатора здоров'я режиму «Серце» — по ньому ж і знімається. */
     private static final NamespacedKey HEART_KEY =
             NamespacedKey.fromString("mysteriesabove:conceptual_heart");
 
@@ -529,21 +528,9 @@ public class ConceptualTheft extends ActiveAbility {
         }
     }
 
-    /**
-     * Вимкнення плагіна: повертаємо позичені серця всім, кому таймер ще не встиг. Модифікатор
-     * не транзієнтний (див. {@link #shiftMaxHealth}), тож без цього він потрапив би у файл
-     * гравця й лишився назавжди.
-     */
-    @Override
-    public void cleanUp() {
-        for (Player online : Bukkit.getOnlinePlayers()) {
-            restoreMaxHealth(online.getUniqueId());
-        }
-    }
-
     private AttributeInstance maxHealth(UUID entityId) {
         return Bukkit.getEntity(entityId) instanceof LivingEntity living
-                ? living.getAttribute(Attribute.GENERIC_MAX_HEALTH) : null;
+                ? living.getAttribute(Attribute.MAX_HEALTH) : null;
     }
 
     private void shiftMaxHealth(UUID entityId, double delta) {
@@ -551,11 +538,8 @@ public class ConceptualTheft extends ActiveAbility {
         if (attribute == null) {
             return;
         }
-        // Транзієнтних модифікаторів у Spigot-API немає (це доповнення Paper), тож модифікатор
-        // звичайний — і його доводиться знімати самим: за таймером нижче, а на вимкненні
-        // сервера — в cleanUp(), інакше він переживе рестарт і серця не повернуться.
-        attribute.addModifier(new AttributeModifier(HEART_KEY, delta,
-                AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY));
+        attribute.addTransientModifier(
+                new AttributeModifier(HEART_KEY, delta, AttributeModifier.Operation.ADD_NUMBER));
         clampHealth(entityId, attribute);
     }
 

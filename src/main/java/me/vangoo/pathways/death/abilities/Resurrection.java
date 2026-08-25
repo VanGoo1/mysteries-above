@@ -136,12 +136,16 @@ public class Resurrection extends ActiveAbility {
         Location where = corpse.location().clone().add(0, 0.2, 0);
         String name = ChatColor.DARK_GREEN + "Слуга: " + ChatColor.GRAY + corpse.victimName();
 
-        // Сонце гасить сама сесія почту (`setFireTicks(0)` щотакту): ванільного
-        // `setShouldBurnInDay` у Spigot-API немає — див. `.claude/rules/minecraft-version.md`.
         if (corpse.skeletal()) {
-            return where.getWorld().spawn(where, Skeleton.class, skeleton -> dress(skeleton, name));
+            return where.getWorld().spawn(where, Skeleton.class, skeleton -> {
+                dress(skeleton, name);
+                skeleton.setShouldBurnInDay(false);
+            });
         }
-        return where.getWorld().spawn(where, Zombie.class, zombie -> dress(zombie, name));
+        return where.getWorld().spawn(where, Zombie.class, zombie -> {
+            dress(zombie, name);
+            zombie.setShouldBurnInDay(false);
+        });
     }
 
     private void dress(Mob servant, String name) {

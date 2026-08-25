@@ -315,7 +315,7 @@ public class Recognition extends ToggleablePassiveAbility {
 
         double maxHealth = Objects.requireNonNull(
 
-                target.getAttribute(Attribute.GENERIC_MAX_HEALTH)
+                target.getAttribute(Attribute.MAX_HEALTH)
 
         ).getValue();
 

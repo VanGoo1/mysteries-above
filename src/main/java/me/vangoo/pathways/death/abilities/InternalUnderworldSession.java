@@ -4,7 +4,6 @@ import me.vangoo.domain.abilities.context.IBeyonderContext;
 import me.vangoo.domain.abilities.context.IEventContext;
 import me.vangoo.domain.valueobjects.GatekeeperLore;
 import me.vangoo.infrastructure.abilities.AbilityItemFactory;
-import me.vangoo.infrastructure.compat.ActionBars;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -119,7 +118,7 @@ final class InternalUnderworldSession {
         }
 
         if (isHoldingAbilityItem(owner)) {
-            ActionBars.send(owner, Component.text("☠ " + occupant.title + " — " + occupant.power,
+            owner.sendActionBar(Component.text("☠ " + occupant.title + " — " + occupant.power,
                     NamedTextColor.DARK_PURPLE));
         }
     }
