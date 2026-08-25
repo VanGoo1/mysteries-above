@@ -1,0 +1,19 @@
+{
+  "model": {
+    "type": "select",
+    "property": "custom_model_data",
+    "fallback": {
+      "type": "model",
+      "model": "item/music_disc_11"
+    },
+    "cases": [
+      {
+        "when": "order_cipher_message",
+        "model": {
+          "type": "model",
+          "model": "item/order_cipher_message"
+        }
+      }
+    ]
+  }
+}

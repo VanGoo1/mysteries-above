@@ -1,9 +1,0 @@
-{
-  "parent": "minecraft:item/template_music_disc",
-  "textures": {
-    "layer0": "minecraft:item/music_disc_stal"
-  },
-  "overrides": [
-    { "predicate": { "custom_model_data": 5276955 }, "model": "item/coppet" }
-  ]
-}

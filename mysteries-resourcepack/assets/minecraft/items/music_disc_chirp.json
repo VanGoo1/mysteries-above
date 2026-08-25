@@ -1,0 +1,25 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:custom_model_data",
+    "cases": [
+      {
+        "when": "characteristic",
+        "model": {
+          "type": "minecraft:model",
+          "model": "minecraft:item/music_disc_chirp_custom_w7yj",
+          "tints": [
+            {
+              "type": "minecraft:dye",
+              "default": 8421504
+            }
+          ]
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "minecraft:item/music_disc_chirp"
+    }
+  }
+}
