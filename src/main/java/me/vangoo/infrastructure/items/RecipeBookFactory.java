@@ -40,7 +40,9 @@ public class RecipeBookFactory {
         } else {
             rankColor = ChatColor.GREEN;
         }
-        meta.setTitle(ChatColor.GRAY + "Рецепт: " + rankColor + sequenceName + ChatColor.GRAY + " (" + sequence + ")");
+        // Номер Послідовності — в lore: у заголовку на нього немає 32 символів,
+        // а обрізана назва Послідовності гірша за відсутній номер.
+        meta.setTitle(BookTitles.fit(ChatColor.GRAY + "Рецепт: " + rankColor + sequenceName));
         meta.setAuthor(ChatColor.GRAY + "Невідомий Алхімік");
         meta.setGeneration(BookMeta.Generation.TATTERED);
         List<String> lore = new ArrayList<>();

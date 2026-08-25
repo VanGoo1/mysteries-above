@@ -2,6 +2,7 @@ package me.vangoo.pathways.common.abilities;
 
 import me.vangoo.domain.rituals.IngredientHint;
 import me.vangoo.domain.rituals.IngredientSourceIndex;
+import me.vangoo.infrastructure.items.BookTitles;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -31,7 +32,9 @@ final class RevelationBook {
         BookMeta meta = (BookMeta) book.getItemMeta();
         if (meta == null) return book;
 
-        meta.setTitle(ChatColor.GRAY + "Одкровення: " + ChatColor.LIGHT_PURPLE + sequenceName);
+        // Коротке "Слід:" замість "Одкровення:" — інакше довгі назви Послідовностей
+        // (Matriarch of Desolation) не влазять у ліміт заголовка й ріжуться.
+        meta.setTitle(BookTitles.fit(ChatColor.GRAY + "Слід: " + ChatColor.LIGHT_PURPLE + sequenceName));
         meta.setAuthor(ChatColor.GRAY + "Голос за Завісою");
         meta.setGeneration(BookMeta.Generation.TATTERED);
         meta.setLore(List.of(
