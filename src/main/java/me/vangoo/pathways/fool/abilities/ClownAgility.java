@@ -20,9 +20,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * Sequence 8: Clown — Clown Agility (Спритність клоуна).
  *
  * <p>Реворк: прибрано Стрибок +1; лишилась Швидкість. Додано акробатику:
- * повний імунітет до шкоди від падіння та лазіння по стінах (притиснувшись до
- * вертикальної стіни в присіді, клоун повільно дереться вгору). Швидкість
- * лазіння — {@link WallClimbRules}.
+ * повний імунітет до шкоди від падіння та лазіння по стінах: стрибок у вертикальну
+ * стіну в присіді (Shift+Пробіл) чіпляє клоуна, і поки він у повітрі й тримає Shift —
+ * повільно дереться вгору. Швидкість лазіння — {@link WallClimbRules}.
  */
 public class ClownAgility extends PermanentPassiveAbility {
 
@@ -38,7 +38,7 @@ public class ClownAgility extends PermanentPassiveAbility {
     @Override
     public String getDescription(Sequence userSequence) {
         return "Надзвичайна спритність акробата. Швидкість +1. Повний імунітет до " +
-                "шкоди від падіння. Притиснувшись до стіни в присіді — дертеся вгору.";
+                "шкоди від падіння. Стрибок у стіну в присіді (Shift+Пробіл) — дертеся вгору.";
     }
 
     @Override
@@ -98,6 +98,9 @@ public class ClownAgility extends PermanentPassiveAbility {
         if (player == null) return;
         if (!player.isSneaking()) return;
         if (player.isFlying() || player.isGliding()) return;
+        // Старт лазіння — тільки в повітрі (shift+стрибок у стіну). Присід на землі
+        // під час будівництва більше не чіпляє гравця до стіни.
+        if (player.isOnGround()) return;
 
         Location loc = player.getLocation();
         World world = loc.getWorld();
